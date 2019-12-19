@@ -1,0 +1,181 @@
+/**
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import {AfterViewInit, Component, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {MatButton} from '@angular/material/button';
+import {ActivatedRoute, Router} from '@angular/router';
+import {first} from 'rxjs/operators';
+
+import {MttClient} from '../services/mtt_client';
+import {BuildChannel, DeviceAction, newDeviceAction, TestResourceType} from '../services/mtt_models';
+import {Notifier} from '../services/notifier';
+import {FormChangeTracker} from '../shared/can_deactivate';
+import {buildApiErrorMessage} from '../shared/util';
+
+/**
+ * Form for creating a device action
+ */
+@Component({
+  selector: 'device-action-edit-page',
+  styleUrls: ['device_action_edit_page.css'],
+  templateUrl: './device_action_edit_page.ng.html',
+})
+export class DeviceActionEditPage extends FormChangeTracker implements
+    OnInit, AfterViewInit {
+  editMode = false;
+  data: Partial<DeviceAction> = newDeviceAction();
+  options = Object.values(TestResourceType);
+  buildChannels: BuildChannel[] = [];
+
+  @ViewChild('backButton', {static: false}) backButton?: MatButton;
+  @ViewChildren(FormChangeTracker) trackers!: QueryList<FormChangeTracker>;
+
+  constructor(
+      private readonly mttClient: MttClient,
+      private readonly notifier: Notifier,
+      private readonly route: ActivatedRoute, private readonly router: Router) {
+    super();
+  }
+
+  ngOnInit() {
+    this.route.params.pipe(first()).subscribe(params => {
+      if (params['id']) {
+        this.editMode = true;
+        this.loadDeviceAction(params['id']);
+      }
+      if (params['copy_id']) {
+        this.loadDeviceAction(params['copy_id']);
+      }
+    });
+    this.loadBuildChannels();
+  }
+
+  ngAfterViewInit() {
+    this.backButton!.focus();
+  }
+
+  loadBuildChannels() {
+    this.mttClient.getBuildChannels().pipe(first()).subscribe(
+        result => {
+          this.buildChannels = result.build_channels || [];
+        },
+        error => {
+          this.notifier.showError(
+              'Failed to load build channels.', buildApiErrorMessage(error));
+        },
+    );
+  }
+
+  loadDeviceAction(id: string) {
+    this.mttClient.getDeviceAction(id).pipe(first()).subscribe(
+        result => {
+          this.data = result;
+          this.data.test_resource_defs = result.test_resource_defs || [];
+          this.data.tradefed_target_preparers =
+              result.tradefed_target_preparers || [];
+          if (!this.editMode) {
+            // Clear ID to ensure a new device action is created
+            delete this.data.id;
+            this.data.name = `${this.data.name} (copy)`;
+          }
+        },
+        error => {
+          this.notifier.showError(
+              `Failed to load device action '${id}'`,
+              buildApiErrorMessage(error));
+        },
+    );
+  }
+
+  onAddTargetPreparer() {
+    this.data.tradefed_target_preparers!.push(
+        {class_name: '', option_values: []});
+  }
+
+  onDeleteTargetPreparer(index: number) {
+    this.data.tradefed_target_preparers!.splice(index, 1);
+  }
+
+  onAddTestResourceDef() {
+    this.data.test_resource_defs!.push({
+      name: '',
+      test_resource_type: TestResourceType.UNKNOWN,
+    });
+  }
+
+  onRemoveTestResourceDef(i: number) {
+    this.data.test_resource_defs!.splice(i, 1);
+  }
+
+  back() {
+    this.router.navigate(['/', 'settings', 'device_actions']);
+  }
+
+  validate(): boolean {
+    this.invalidInputs = this.getInvalidInputs();
+    this.trackers.forEach((tracker) => {
+      this.invalidInputs.push(...tracker.getInvalidInputs());
+    });
+    return !this.invalidInputs.length;
+  }
+
+  onSubmit() {
+    if (!this.validate()) {
+      return;
+    }
+    const resultDeviceAction: DeviceAction = {...this.data} as DeviceAction;
+    if (this.editMode) {
+      this.mttClient
+          .updateDeviceAction(resultDeviceAction.id, resultDeviceAction)
+          .pipe(first())
+          .subscribe(
+              result => {
+                // Reset form state, because we prevent dirty forms from
+                // navigating away
+                super.resetForm();
+                this.back();
+                this.notifier.showMessage(
+                    `Device action '${resultDeviceAction.name}' updated`);
+              },
+              error => {
+                this.notifier.showError(
+                    `Failed to update device action '${
+                        resultDeviceAction.name}'.`,
+                    buildApiErrorMessage(error));
+              },
+          );
+    } else {
+      this.mttClient.createDeviceAction(resultDeviceAction)
+          .pipe(first())
+          .subscribe(
+              result => {
+                // Reset form state, because we prevent dirty forms from
+                // navigating away
+                super.resetForm();
+                this.back();
+                this.notifier.showMessage(
+                    `Device action '${resultDeviceAction.name}' created`);
+              },
+              error => {
+                this.notifier.showError(
+                    `Failed to create device action '${
+                        resultDeviceAction.name}'.`,
+                    buildApiErrorMessage(error));
+              },
+          );
+    }
+  }
+}

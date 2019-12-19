@@ -1,0 +1,238 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<h2 mat-dialog-title>Select a file</h2>
+
+<mat-tab-group
+  (selectedTabChange)="onSelectedTabChange($event)"
+  [selectedIndex]="selectedTabIndex">
+
+  <!-- url tab -->
+  <mat-tab label="By Url">
+    <div class="url-tab-content">
+      <mat-form-field appearance="outline" floatLabel="always"
+        fxLayout="column">
+        <mat-label> Enter the URL of the file </mat-label>
+        <input
+          matInput type="text" [(ngModel)]="searchBarUrlValue" name="url">
+      </mat-form-field>
+      <button mat-button color="accent" mat-dialog-close>
+        Cancel
+      </button>
+      <button mat-flat-button color="accent" (click)="selectUrl(true)"
+              [attr.aria-disabled]="!searchBarUrlValue">
+        Select
+      </button>
+    </div>
+  </mat-tab>
+
+  <mat-tab [label]="buildChannel.name" *ngFor="let buildChannel of data.buildChannels">
+    <ng-container [ngSwitch]="buildChannel.provider_name">
+
+      <ng-container *ngSwitchCase="providerType.LOCAL_STORE">
+        <local_file_store
+          [selectedFile]="searchBarFilenameValue"
+          [selection]="selection"
+          [buildChannel]="buildChannel"
+          (fileSelected)="selectFile($event)"
+          >
+        </local_file_store>
+        <div class="button-group">
+          <button mat-button color="accent" mat-dialog-close>
+            Cancel
+          </button>
+          <button
+            mat-flat-button
+            color="accent"
+            (click)="selectUrl(false)"
+            [attr.aria-disabled]="!selection.selected.length && !searchBarFilenameValue"
+            >
+            Select
+          </button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngSwitchDefault>
+        <ng-container
+          [ngTemplateOutlet]="isBuildChannelAvailable(buildChannel) ? channelTemplate : authTemplate"
+          [ngTemplateOutletContext]="{buildChannel: buildChannel}"
+          >
+        </ng-container>
+        <div *ngIf="isBuildChannelAvailable(buildChannel)" class="button-group">
+          <button mat-button color="accent" mat-dialog-close>
+            Cancel
+          </button>
+          <button
+            mat-flat-button
+            color="accent"
+            (click)="selectUrl(false)"
+            [attr.aria-disabled]="!selection.selected.length && !searchBarFilenameValue"
+            >
+            Select
+          </button>
+        </div>
+      </ng-container> <!-- End of ngswitch default -->
+    </ng-container> <!-- End of ngswitch -->
+  </mat-tab>
+</mat-tab-group>
+
+<ng-template #channelTemplate let-buildChannel='buildChannel'>
+  <mat-spinner
+    class="loading-spinner"
+    color="accent"
+    *ngIf="isLoadingBuildItems">
+  </mat-spinner>
+  <div [class.loading-mask]="isLoadingBuildItems">
+    <div class="stick-top">
+      <!-- Search bar -->
+      <div class="search-bar">
+        <mat-form-field appearance="outline" floatLabel="always"
+          fxLayout="column">
+          <mat-label>Directory</mat-label>
+          <input matInput type="text"
+            [(ngModel)]="searchBarUrlValue"
+            (input)="onSearchBarValueChange($event.target.value)"
+            name="searchBarUrlValue">
+        </mat-form-field>
+        <mat-form-field id="filename" appearance="outline" floatLabel="always"
+          fxLayout="column">
+          <mat-label>Filename (can support wildcards)</mat-label>
+          <input matInput type="text"
+            [(ngModel)]="searchBarFilenameValue"
+            (input)="onFilenameValueChange($event.target.value)" name="searchBarFilenameValue">
+          </mat-form-field>
+      </div>
+
+      <!-- Breadcrumb -->
+      <breadcrumb
+        [data]="buildChannel"
+        [path]="searchBarUrlValue"
+        (pathChange)="onBreadCrumbPathChange($event)">
+      </breadcrumb>
+    </div>
+
+    <!-- Build item content -->
+    <!-- Table to display the content -->
+    <ng-container *ngIf="!isFnmatchPattern(searchBarFilenameValue); else fnmatchTemplate">
+      <mat-table
+        [dataSource]="buildItems"
+        *ngIf="buildItems && buildItems.length; else noContentTemplate"
+        mttInfiniteScroll
+        [enableInfiniteScroll]="nextPageToken.length > 0"
+        [scrollThreshold]="80"
+        (scrollLoad)="onScrollLoad($event)"
+        id="build-picker-table"
+        aria-label="Build picker">
+        <!-- Name -->
+        <ng-container matColumnDef="name">
+          <mat-header-cell *matHeaderCellDef [fxFlex]="45">
+            Name
+          </mat-header-cell>
+          <mat-cell *matCellDef="let item" [fxFlex]="45">
+            {{item.name}}
+          </mat-cell>
+        </ng-container>
+
+        <!-- Description -->
+        <ng-container matColumnDef="description">
+          <mat-header-cell *matHeaderCellDef [fxFlex]="35">
+            Description
+          </mat-header-cell>
+          <mat-cell *matCellDef="let item" [fxFlex]="35">
+            {{item.description}}
+          </mat-cell>
+        </ng-container>
+
+        <!-- Timestamp -->
+        <ng-container matColumnDef="timestamp">
+          <mat-header-cell *matHeaderCellDef [fxFlex]="35">
+            Timestamp
+          </mat-header-cell>
+          <mat-cell *matCellDef="let item" [fxFlex]="35">
+            {{ item.timestamp | utc | date:'MM/dd/yyyy h:mma' }}
+          </mat-cell>
+        </ng-container>
+        <!-- Size -->
+        <ng-container matColumnDef="size">
+          <mat-header-cell *matHeaderCellDef [fxFlex]="15">
+            Size
+          </mat-header-cell>
+          <mat-cell *matCellDef="let item" [fxFlex]="15">
+            {{item.is_file ? item.size : ''}}
+          </mat-cell>
+        </ng-container>
+        <!-- Folder navigation icon -->
+        <ng-container matColumnDef="navIcon">
+          <mat-header-cell *matHeaderCellDef [fxFlex]="5">
+          </mat-header-cell>
+          <mat-cell *matCellDef="let item" [fxFlex]="5">
+            <mat-icon *ngIf="!item.is_file">
+              navigate_next
+            </mat-icon>
+          </mat-cell>
+        </ng-container>
+        <mat-header-row *matHeaderRowDef="columnsToDisplay">
+        </mat-header-row>
+        <mat-row *matRowDef="let row; columns: columnsToDisplay;" tabindex="0"
+          (click)="selectFile(row)"
+          (dblclick)="openFolder(row)"
+          (keyup.enter)="row.is_file ? selectFile(row) : openFolder(row)"
+          [ngClass]="{ 'selected': selection.isSelected(row)}"
+        >
+        </mat-row>
+      </mat-table>
+    </ng-container>
+
+  </div> <!-- loading mask div -->
+</ng-template>
+
+<!-- Authentication template -->
+<ng-template #authTemplate let-buildChannel='buildChannel'>
+    <h3 class="auth-template">
+      You haven't setup this build channel
+      <br/>
+      <button mat-flat-button color="accent" (click)="authorize(buildChannel.id)">
+          Click To Authorize
+      </button>
+    </h3>
+</ng-template>
+
+<!-- No content found template -->
+<ng-template #noContentTemplate>
+  <h3 class="not-found"
+      *ngIf="!isMissingGcsBucket(); else missingGcsBucketTemplate">
+    No Content Found
+  </h3>
+
+  <ng-template #missingGcsBucketTemplate>
+    <h3 class="not-found">
+      Please enter the GCS bucket name into the search bar
+    </h3>
+  </ng-template>
+</ng-template>
+
+<!-- Fnmatch Pattern Template -->
+<ng-template #fnmatchTemplate>
+  <div class="fnmatch-template">
+    <mat-icon>info</mat-icon>
+    <div class="fnmatch-description">
+        Your filename contains wildcard characters. The first file which matches this pattern will be used.
+      <a target="_blank"
+         aria-label="Fnmatch documentation"
+         href="https://docs.python.org/2/library/fnmatch.html">Documentation</a>
+    </div>
+  </div>
+</ng-template>

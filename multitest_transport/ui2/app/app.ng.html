@@ -1,0 +1,94 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-toolbar>
+  <button id="toggleSidenavButton" mat-icon-button (click)="sideNavExpanded = !sideNavExpanded"
+          matTooltip="Main menu" aria-label="Toggle sidenav menu">
+    <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
+  </button>
+  <a routerLink="/" class="title">Android Test Station</a>
+  <div id="version-info">
+    Version: {{appData?.mttVersion}}<br>
+    ADB: {{appData?.adbVersion}}
+  </div>
+</mat-toolbar>
+
+<mat-sidenav-container [class.collapsed]="!sideNavExpanded">
+
+  <!--Sidenav menu-->
+  <mat-sidenav mode="side" opened role="navigation">
+
+    <div class="sidenav-container">
+      <mat-nav-list>
+
+        <h3 matSubheader>
+          <span>Testing</span>
+        </h3>
+
+        <a mat-list-item routerLink='/tests' routerLinkActive="active" [matTooltip]="'Test Suites'">
+          <mat-icon matListIcon>assignment</mat-icon>
+          <span>Test Suites</span>
+        </a>
+
+        <a mat-list-item routerLink='/test_plans' routerLinkActive="active" [matTooltip]="'Test Plans'">
+          <mat-icon matListIcon>date_range</mat-icon>
+          <span>Test Plans</span>
+        </a>
+
+        <a mat-list-item routerLink='/test_runs' routerLinkActive="active" [matTooltip]="'Test Results'">
+          <mat-icon matListIcon>bar_chart</mat-icon>
+          <span>Test Results</span>
+        </a>
+
+        <mat-divider></mat-divider>
+
+        <h3 matSubheader>
+          <span>Devices</span>
+        </h3>
+
+        <a mat-list-item routerLink='/devices' routerLinkActive="active" [matTooltip]="'Devices'">
+          <mat-icon matListIcon>phone_android</mat-icon>
+          <span>Devices</span>
+        </a>
+
+        <mat-divider></mat-divider>
+
+        <h3 matSubheader>
+          <span>Settings</span>
+        </h3>
+
+        <a mat-list-item routerLink='/settings' routerLinkActive="active" matTooltip='Settings'>
+          <mat-icon matListIcon>settings</mat-icon>
+          <span> Settings </span>
+        </a>
+
+      </mat-nav-list>
+    </div>
+
+  </mat-sidenav>
+
+  <!--Routed content-->
+  <mat-sidenav-content>
+    <main>
+      <router-outlet></router-outlet>
+    </main>
+    <footer *ngIf="appData.analyticsTrackingId">
+      Android Test Station collects anonymous usage statistics to help us improve it, in accordance with our
+      <a href="https://accounts.google.com/TOS" target="_blank">Terms of Service</a> and
+      <a href="https://accounts.google.com/TOS?privacy=true" target="_blank">Privacy Policy</a>.
+    </footer>
+  </mat-sidenav-content>
+</mat-sidenav-container>

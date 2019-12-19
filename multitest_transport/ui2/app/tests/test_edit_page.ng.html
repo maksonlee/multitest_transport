@@ -1,0 +1,158 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<!-- TODO: Add tooltip to each field -->
+<div class="header">
+  <div *ngIf="title" class="back-button-label">{{title}}</div>
+  <h1 class="subtitle">
+    <button mat-icon-button (click)="back()" #backButton id="back-button"
+      matTooltip="Return to test suites page"
+      aria-label="Return to test suites page">
+      <mat-icon class="back-button-icon">arrow_back</mat-icon>
+    </button>
+    {{editMode? 'Edit Test' : 'New Test'}}
+  </h1>
+</div>
+
+<div class="page">
+  <!-- Name -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label> Name </mat-label>
+    <input matInput type="text" [(ngModel)]="data.name" name="name" required #name="ngModel">
+    <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
+  </mat-form-field>
+
+  <mat-divider></mat-divider>
+
+  <!-- Test Resource Defs -->
+  <h2> Test Resource Defs </h2>
+  <test-resource-form
+    [data]="data.test_resource_defs"
+    [options]="options"
+    (addTestResource)="onAddTestResourceDef()"
+    (removeTestResource)="onRemoveTestResourceDef($event)"
+    [buildChannels]="buildChannels"
+    testResourceClassType="TestResourceDef"
+  >
+  </test-resource-form>
+
+  <mat-divider></mat-divider>
+
+  <!-- Command -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label> Command </mat-label>
+    <input matInput type="text"
+      [(ngModel)]="data.command"
+      name="command"
+      required
+      #command="ngModel">
+    <mat-error *ngIf="command.invalid && command.touched">Command is required</mat-error>
+  </mat-form-field>
+
+  <mat-divider></mat-divider>
+
+  <!-- Environment Variables -->
+  <h2> Environment Variables </h2>
+  <name-value-pair-list-form [data]="data.env_vars"
+    (addNameValuePair)="onAddEnvironmentVariable()"
+    (removeNameValuePair)="onRemoveEnvironmentVariable($event)">
+  </name-value-pair-list-form>
+
+  <mat-divider></mat-divider>
+
+  <!-- Setup Scripts -->
+  <h2> Setup Scripts </h2>
+  <list-form
+    [data]="setupScripts"
+             label="Script"
+    (addItem)="onAddScript()"
+    (removeItem)="onRemoveScript($event)">
+  </list-form>
+
+  <mat-divider></mat-divider>
+
+  <!-- Output File Patterns -->
+  <h2> Output File Patterns </h2>
+  <list-form
+    [data]="outputFilePatterns"
+    label="File Pattern"
+    (addItem)="onAddOutputFilePattern()"
+    (removeItem)="onRemoveOutputFilePattern($event)">
+  </list-form>
+
+  <mat-divider></mat-divider>
+
+  <!-- Result File -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label> Result File </mat-label>
+    <input matInput type="text" [(ngModel)]="data.result_file" name="result_file">
+  </mat-form-field>
+
+  <mat-divider></mat-divider>
+
+  <h2> JVM Options </h2>
+  <list-form
+      [data]="data.jvm_options"
+      label="Option"
+      (addItem)="onAddJvmOption()"
+      (removeItem)="onRemoveJvmOption($event)">
+  </list-form>
+
+  <mat-divider></mat-divider>
+
+  <!-- Java Properties -->
+  <h2>Java Properties</h2>
+  <name-value-pair-list-form [data]="data.java_properties"
+    (addNameValuePair)="onAddJavaProperty()"
+    (removeNameValuePair)="onRemoveJavaProperty($event)">
+  </name-value-pair-list-form>
+
+  <mat-divider></mat-divider>
+
+  <!-- Context File Pattern -->
+  <div fxLayout="row" fxLayoutGap="20px">
+    <mat-form-field appearance="outline" floatLabel="always" fxFlex>
+      <mat-label> Context File Directory </mat-label>
+      <input matInput type="text" [(ngModel)]="data.context_file_dir">
+    </mat-form-field>
+    <mat-form-field appearance="outline" floatLabel="always" fxFlex>
+      <mat-label> Context File Pattern </mat-label>
+      <input matInput type="text" [(ngModel)]="data.context_file_pattern">
+    </mat-form-field>
+  </div>
+
+  <!-- Retry Command Line -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label> Retry Command Line </mat-label>
+    <input matInput type="text" [(ngModel)]="data.retry_command_line" name="retry_command_line">
+  </mat-form-field>
+
+  <!-- Runner Sharding Args -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label> Runner Sharding Args </mat-label>
+    <input matInput type="text" [(ngModel)]="data.runner_sharding_args" name="runner_sharding_args">
+  </mat-form-field>
+
+  <!-- Update/Create Button and Cancel Button-->
+  <div>
+    <button mat-flat-button color="accent" type="button" (click)="onSubmit()">
+      {{editMode? 'Update' : 'Create'}}
+    </button>
+    <button mat-button color="accent" type="button" (click)="back()">Cancel</button>
+    <!-- Error messages after validation -->
+    <form-error-info [invalidInputs]="invalidInputs"></form-error-info>
+  </div>
+</div>

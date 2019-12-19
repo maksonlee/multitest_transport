@@ -1,0 +1,49 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<ng-container *ngIf="data.length > 0">
+  <!-- Show first item -->
+  <!-- TODO: Should show as many items as possible if there is extra space -->
+  <ng-container *ngIf="overflowListType === OverflowListType.CHIP; else buttonTemplate">
+    <mat-chip-list [tabIndex]="-1">
+      <mat-chip>{{ data[0] }}</mat-chip>
+    </mat-chip-list>
+  </ng-container>
+  <ng-template #buttonTemplate>
+    <button mat-menu-item class="main-button" disabled>{{ data[0] }}</button>
+  </ng-template>
+
+  <!-- Dropdown Button -->
+  <ng-container *ngIf="data.length > 1">
+    <button
+      mat-icon-button
+      [matMenuTriggerFor]="appMenu"
+      class="dropdown-button"
+      tabindex="-1"
+      (click)="stopPropagation($event)"
+    >
+      +{{ data.length - 1 }}
+      <mat-icon aria-label="More" matTooltip="More">arrow_drop_down</mat-icon>
+    </button>
+  </ng-container>
+
+  <!-- Dropdown Menu -->
+  <mat-menu #appMenu="matMenu">
+    <button mat-menu-item *ngFor="let item of data | slice: 1" disabled>
+      {{ item }}
+    </button>
+  </mat-menu>
+</ng-container>

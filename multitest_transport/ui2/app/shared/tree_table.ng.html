@@ -1,0 +1,72 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<!-- Header row -->
+<table class="mat-table">
+  <thead class="mat-header-row">
+    <th class="mat-header-cell" *ngFor="let column of columns" [fxFlex]="column.flexWidth">
+      {{ column.title }}
+    </th>
+  </thead>
+</table>
+
+<mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
+
+  <!-- Tree node template for leaf nodes -->
+  <mat-tree-node *matTreeNodeDef="let node" matTreeNodeToggle>
+    <div *ngFor="let content of node.content; let i = index" [fxFlex]="columns[i].flexWidth">
+
+      <!-- Indent first column -->
+      <div *ngIf="i==0; else dataColsLeaf" [style.padding-left]="44 + (20 * node.level) + 'px'"
+           [innerHTML]="content">
+      </div>
+
+      <!-- Other columns -->
+      <ng-template #dataColsLeaf>
+        <div [innerHTML]="content"></div>
+      </ng-template>
+
+    </div>
+  </mat-tree-node>
+
+  <!-- Tree node template for expandable nodes -->
+  <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChild">
+    <div class="mat-tree-node">
+      <div *ngFor="let content of node.content; let i = index" [fxFlex]="columns[i].flexWidth">
+
+        <!-- Indent first column and show toggle button -->
+        <div *ngIf="i==0; else dataCols" [style.padding-left]="20 * node.level + 'px'">
+          <button mat-icon-button matTreeNodeToggle aria-label="Toggle">
+            <mat-icon class="mat-icon-rtl-mirror">
+              {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+            </mat-icon>
+          </button>
+          <!-- TODO: Use templates instead of passing in HTML directly -->
+          <div [innerHTML]="content" class="inline"></div>
+        </div>
+
+        <!-- Other columns -->
+        <ng-template #dataCols>
+          <div [innerHTML]="content"></div>
+        </ng-template>
+
+      </div>
+    </div>
+
+    <ng-container matTreeNodeOutlet *ngIf="treeControl.isExpanded(node)"></ng-container>
+
+  </mat-nested-tree-node>
+</mat-tree>

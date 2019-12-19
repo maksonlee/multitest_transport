@@ -1,0 +1,119 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<!-- Name Field -->
+<mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+  <mat-label> Name </mat-label>
+  <!-- TODO: followup on the design for this input field -->
+  <mat-select required
+    [(ngModel)]="testId"
+    (selectionChange)="testIdChange.emit($event.value)"
+    #name="ngModel"
+    >
+    <mat-option *ngFor="let item of testMap | keyvalue" [value]="item.value.id">
+      {{item.value.name}}
+    </mat-option>
+  </mat-select>
+  <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
+</mat-form-field>
+
+<div fxLayout="row">
+  <!-- Run Count Field -->
+  <mat-form-field class="small" fxFlex="25" appearance="outline" floatLabel="always">
+    <mat-label> Run Count </mat-label>
+    <input matInput type="number"
+           [(ngModel)]="testRunConfig.run_count"
+           required
+           min=0
+           #run_count="ngModel">
+    <mat-error *ngIf="run_count.invalid && run_count.touched">Run count is required</mat-error>
+  </mat-form-field>
+
+  <!-- Max Retry Field -->
+  <mat-form-field class="small" fxFlex="25" appearance="outline" floatLabel="always">
+    <mat-label> Max Retry </mat-label>
+    <input matInput type="number"
+           [(ngModel)]="testRunConfig.max_retry_on_test_failures"
+           required
+           min=0
+           #max_retry="ngModel">
+    <mat-error *ngIf="max_retry.invalid && max_retry.touched">Max retry is required</mat-error>
+  </mat-form-field>
+
+  <!-- Queue Timeout(Seconds) Field -->
+  <mat-form-field fxFlex="45" appearance="outline" floatLabel="always">
+    <mat-label> Queue Timeout(Seconds) </mat-label>
+    <input matInput type="number"
+           [(ngModel)]="testRunConfig.queue_timeout_seconds"
+           required
+           min=0
+           #queue_timeout="ngModel">
+    <mat-error *ngIf="queue_timeout.invalid && queue_timeout.touched">Queue timeout is required</mat-error>
+  </mat-form-field>
+</div>
+
+<!-- Command line -->
+<mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+  <mat-label>Command</mat-label>
+  <span class="prefix">{{testMap[testId] ? testMap[testId].command : ''}}&nbsp;</span>
+  <input matInput type="text" placeholder=" "
+         [(ngModel)]="testRunConfig.extra_args" [disabled]="isRerun">
+  <!-- TODO: replace with a test suite specific instruction link. -->
+  <mat-hint>Find supported CTS parameters from
+    <a href="https://source.android.com/compatibility/cts/run#ctsv2_reference"
+       target="_blank" aria-label="Find supported CTS parameters from here">
+        here</a>.
+  </mat-hint>
+</mat-form-field>
+
+<!-- Retry command line -->
+<mat-form-field appearance="outline" floatLabel="always" fxLayout="column"
+                *ngIf="isRerun || testRunConfig?.max_retry_on_test_failures > 0">
+  <mat-label>Retry Command</mat-label>
+  <span class="prefix">{{testMap[testId] ? testMap[testId].retry_command_line : ''}}&nbsp;</span>
+  <input matInput type="text" [(ngModel)]="testRunConfig.retry_extra_args" placeholder=" ">
+</mat-form-field>
+
+<!-- Previous run information -->
+<div class="rerun" *ngIf="enableRerun">
+  <!-- Rerun type -->
+  <mat-form-field class="type" appearance="outline" floatLabel="always">
+    <mat-label>Previous Test Run</mat-label>
+    <mat-select [(value)]="isRemoteRerun" (selectionChange)="updateRerunContext()">
+      <mat-option [value]="false">Local</mat-option>
+      <mat-option [value]="true">Remote</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <!-- Local rerun -->
+  <mat-form-field class="local" appearance="outline" floatLabel="always" fxLayout="column" fxFlex
+                  *ngIf="!isRemoteRerun">
+    <mat-label>ID</mat-label>
+    <input matInput type="text" [(ngModel)]="prevTestRunId" (input)="updateRerunContext()">
+    <mat-hint>Set to resume a previous local test run</mat-hint>
+  </mat-form-field>
+
+  <!-- Remote rerun -->
+  <div class="remote" fxFlex *ngIf="isRemoteRerun">
+    <input type="file" #fileUploadInput
+           (change)="uploadResultsFile($event.target.files[0]); fileUploadInput.value = ''" />
+    <button mat-stroked-button color="accent" (click)="fileUploadInput.click()"
+            [disabled]="isUploading">Upload Test Results File</button>
+    <span *ngIf="!isUploading">{{testResultsFilename || 'No file selected'}}</span>
+    <mat-progress-spinner mode="determinate" [diameter]="25"
+                          *ngIf="isUploading" [value]="uploadProgress"></mat-progress-spinner>
+  </div>
+</div>

@@ -1,0 +1,145 @@
+/**
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import '../constants';
+$sidenav-collapsed-width: 62px;
+$sidenav-expanded-width: 200px;
+$nav-transition-duration: 250ms;
+
+@mixin sidenav-container-transition($duration) {
+  transition-property: width;
+  transition-duration: $duration;
+  transition-timing-function: ease-in-out;
+}
+
+@mixin sidenav-nav-list-transition($duration) {
+  transition-property: opacity;
+  transition-duration: $duration;
+  transition-timing-function: ease-in-out;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+@mixin sidenav-content-transition($duration) {
+  transition-property: margin-left;
+  transition-duration: $duration;
+  transition-timing-function: ease-in-out;
+}
+
+#toggleSidenavButton {
+  mat-icon {
+    color: $navigation;
+  }
+}
+
+#version-info {
+  display: flex;
+  flex: 1;
+  font-size: 12px;
+  justify-content: flex-end;
+  line-height: 16px;
+}
+
+:host,
+mat-sidenav-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+footer {
+  color: #787878;
+  flex: none;
+  font-size: 13px;
+  margin: 20px auto 4px;
+}
+
+footer a {
+  color: inherit;
+}
+
+main {
+  flex: 1;
+}
+
+mat-divider {
+  margin: 10px;
+}
+
+mat-icon {
+  margin-right: 6px;
+}
+
+mat-nav-list {
+  a[mat-list-item] {
+    font-size: 14px;
+    height: 40px;
+    margin: 5px 0px;
+  }
+
+  [mat-list-item].active {
+    background: $background-active;
+  }
+}
+
+mat-sidenav-container {
+  height: 100%;
+
+  mat-sidenav {
+    @include sidenav-container-transition($nav-transition-duration);
+    width: $sidenav-expanded-width;
+
+    .mat-subheader,
+    .mat-divider,
+    .mat-list-item span {
+      @include sidenav-nav-list-transition($nav-transition-duration);
+    }
+  }
+
+  .mat-sidenav-content {
+    @include sidenav-content-transition($nav-transition-duration);
+  }
+
+  &.collapsed {
+    mat-sidenav {
+      width: $sidenav-collapsed-width;
+
+      .mat-subheader,
+      .mat-divider,
+      .mat-list-item span {
+        opacity: 0;
+      }
+    }
+
+    .mat-sidenav-content {
+      margin-left: $sidenav-collapsed-width !important;
+    }
+  }
+}
+
+mat-toolbar {
+  background-color: $background-default;
+  border-bottom: 1px solid $border-menu;
+  position: sticky;
+  top: 0;
+
+  .title {
+    color: $text-header;
+    font-size: 24px;
+    padding: 0 20px;
+    text-decoration: none;
+  }
+}

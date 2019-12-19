@@ -1,0 +1,102 @@
+/**
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import 'third_party/py/multitest_transport/ui2/constants';
+
+h2 {
+  padding: 20px 20px 0;
+}
+
+h3 {
+  color: $primary;
+  font-weight: normal;
+}
+
+#build-picker-table {
+  height: 390px;
+  margin-top: 20px;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.auth-template {
+  text-align: center;
+  padding-top: 20px;
+  width: 100%;
+  button {
+    margin-top: 20px;
+  }
+}
+
+.button-group {
+  padding-top: 20px;
+}
+
+.fnmatch-template {
+  background-color: $accent-light;
+  border-radius: 12px;
+  margin-top: 20px;
+  padding: 20px;
+  width: 80%;
+
+  .fnmatch-description {
+    padding: 7px 20px 20px 30px;
+  }
+
+  .mat-icon {
+    color: $accent;
+    float: left;
+    line-height: 36px;
+  }
+}
+
+.mat-row{
+  &:hover, &.selected {
+    background-color: $accent-light;
+    cursor: pointer;
+  }
+}
+
+.not-found {
+  // height and line-height need to be same for vertical align
+  height: 300px;
+  line-height: 300px;
+  text-align: center;
+  width: 100%;
+}
+
+.url-tab-content {
+  padding: 20px;
+}
+
+.search-bar {
+  background: $background-default;
+
+  #filename {
+    margin-top: 20px;
+  }
+
+  .mat-form-field-wrapper {
+    margin: 0;
+    padding-bottom: 0;
+  }
+}
+
+.stick-top {
+  position: sticky;
+  top: 20px;
+  z-index: 100;
+}

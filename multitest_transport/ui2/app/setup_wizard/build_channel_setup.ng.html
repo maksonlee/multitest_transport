@@ -1,0 +1,40 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+
+<div class="info-text">
+  Authenticating your Google accounts below will allow this tool to automatically download files
+  from those services. If you choose not to authenticate in this step, you can still provide files
+  by manually uploading them from local storage. This tool does not upload any files to these
+  services.
+</div>
+
+<build-channel-item [buildChannel]="cloudBuildChannel" [edit]="false"
+                    (authorize)="authorize($event)" *ngIf="cloudBuildChannel">
+</build-channel-item>
+<div class="description">
+  Configurations for several test suites are stored in Google Cloud Storage. Authenticating Google
+  Cloud Storage will allow you to access those configuations, making it easy to run those test
+  suites.
+</div>
+
+<build-channel-item [buildChannel]="driveBuildChannel" [edit]="false"
+                    (authorize)="authorize($event)" *ngIf="driveBuildChannel">
+</build-channel-item>
+<div class="description">
+  Most test suite zip files are stored in Google Drive. Authenticating Google Drive here will allow
+  you to automatically download those files by providing a download link.
+</div>

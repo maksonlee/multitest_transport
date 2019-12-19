@@ -1,0 +1,105 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="page">
+  <!-- Name Field -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label> Selected File </mat-label>
+    <input matInput type="text" [ngModel]="selectedFile" disabled />
+  </mat-form-field>
+
+  <!-- upload button -->
+  <input type="file" #fileUploadInput
+         (change)="uploadFile($event.target.files[0]); fileUploadInput.value = ''" />
+  <button mat-flat-button color="accent" (click)="fileUploadInput.click()">
+    Upload File
+  </button>
+
+  <!-- TODO: Progress bar styling and add percentage info    -->
+  <!-- progress bar -->
+  <mat-progress-bar *ngIf="isUploading" mode="determinate" [value]="uploadProgress">
+  </mat-progress-bar>
+
+  <!-- recently uploaded files -->
+  <h4>Uploaded Files</h4>
+
+  <!-- Table to display the content -->
+  <mat-table
+    *ngIf="buildItems && buildItems.length; else emptyTemplate"
+    mttInfiniteScroll
+    [dataSource]="buildItems"
+    [enableInfiniteScroll]="nextPageToken && nextPageToken.length > 0"
+    [scrollThreshold]="80"
+    (scrollLoad)="loadBuildItems()"
+    aria-label="Local file store"
+  >
+    <!-- Name -->
+    <ng-container matColumnDef="name">
+      <mat-header-cell *matHeaderCellDef [fxFlex]="45">
+        Name
+      </mat-header-cell>
+      <mat-cell *matCellDef="let item" [fxFlex]="45">
+        {{ item.name }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Timestamp -->
+    <ng-container matColumnDef="timestamp">
+      <mat-header-cell *matHeaderCellDef [fxFlex]="35">
+        Timestamp
+      </mat-header-cell>
+      <mat-cell *matCellDef="let item" [fxFlex]="35">
+        {{ item.timestamp | utc | date:'MM/dd/yyyy h:mma' }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Size -->
+    <ng-container matColumnDef="size">
+      <mat-header-cell *matHeaderCellDef [fxFlex]="10">
+        Size (bytes)
+      </mat-header-cell>
+      <mat-cell *matCellDef="let item" [fxFlex]="10">
+        {{ item.is_file ? item.size : "" }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Actions -->
+    <ng-container matColumnDef="action" stickyEnd>
+      <mat-header-cell *matHeaderCellDef [fxFlex]="10"></mat-header-cell>
+      <mat-cell *matCellDef="let item" [fxFlex]="10" fxLayoutAlign="center">
+        <button mat-icon-button aria-label="Delete"
+                (click)="deleteFile(item); $event.stopPropagation()">
+          <mat-icon>delete_forever</mat-icon>
+        </button>
+      </mat-cell>
+    </ng-container>
+    <mat-header-row *matHeaderRowDef="columnsToDisplay"> </mat-header-row>
+    <mat-row *matRowDef="let row; columns: columnsToDisplay" tabindex="0"
+      (click)="onRowClick(row)"
+      (keyup.enter)="onRowClick(row)"
+      [ngClass]="{ 'selected': selection.isSelected(row)}"
+    >
+    </mat-row>
+  </mat-table>
+  <!-- No content found template -->
+  <ng-template #emptyTemplate>
+    <h3 class="not-found">
+      No File Found
+    </h3>
+  </ng-template>
+
+  <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+</div>

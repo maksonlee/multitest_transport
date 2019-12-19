@@ -1,0 +1,57 @@
+<!doctype html>
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<html lang="en">
+<head>
+  <!-- Google Analytics (https://developers.google.com/analytics/devguides/collection/gtagjs) -->
+  <script async src="https://www.googletagmanager.com/gtag/js"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  </script>
+
+  <base href="/">
+  <title>Android Test Station</title>
+  <link rel="shortcut icon" href="static/images/favicon.ico">
+  <link href="static/css/styles.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed" rel="stylesheet">
+</head>
+<body>
+<mtt></mtt>
+<script>
+  // Determine hostname (handling proxy encoded names)
+  var hostname = location.hostname;
+  // Set environment variables for typescript to use
+  window.APP_DATA = {
+    adbVersion: "{{env.ADB_VERSION}}",
+    analyticsTrackingId: "{{analytics_tracking_id}}",
+    fileBrowseUrl: "{{env.FILE_BROWSE_URL_FORMAT}}".replace("{hostname}", hostname),
+    fileOpenUrl: "{{env.FILE_OPEN_URL_FORMAT}}".replace("{hostname}", hostname),
+    fileServerRoot: "{{env.FILE_SERVER_ROOT}}",
+    fileUploadUrl: "/_ah/gcs{{env.GCS_DATA_PATH}}/local_file_store/",
+    mttVersion: "{{env.VERSION}}",
+    setupWizardCompleted: "{{private_node_config.setup_wizard_completed}}" === 'True',
+    tempUploadUrl: "/_ah/gcs{{env.GCS_TEMP_PATH}}/",
+  };
+</script>
+<script src="{{app_js}}"></script>
+</body>
+</html>

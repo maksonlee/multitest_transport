@@ -1,0 +1,50 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div *ngFor="let item of data; let i = index" fxLayout="row">
+  <!-- Name -->
+  <mat-form-field class="small" appearance="outline" floatLabel="always" fxFlex="45">
+    <mat-label> Name </mat-label>
+    <input matInput type="text" [(ngModel)]="item.name" #name="ngModel"
+           required>
+    <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
+  </mat-form-field>
+  <!-- Value Field -->
+  <mat-form-field appearance="outline" floatLabel="always" fxFlex="45">
+    <mat-label> Value </mat-label>
+    <input matInput type="text" [(ngModel)]="item.value" name="value">
+  </mat-form-field>
+  <!-- Delete Button -->
+  <button
+    type="button"
+    aria-label="Delete"
+    matTooltip="Delete"
+    class="shared-delete-button"
+    (click)="removeNameValuePair.emit(i); hasContentChanged = true"
+    mat-button>
+    <mat-icon>delete</mat-icon>
+  </button>
+</div>
+<!-- Add Button -->
+<button
+  class="add-button"
+  aria-label="Add"
+  mat-stroked-button
+  color="accent"
+  type="button"
+  (click)="addNameValuePair.emit(); hasContentChanged = true">
+    + Add
+</button>

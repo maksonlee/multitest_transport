@@ -1,0 +1,63 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-card *ngFor="let targetPreparer of targetPreparers; let i = index">
+  <h2>TF Target Preparer
+    <!-- Delete Button -->
+    <button
+      mat-button
+      color="accent"
+      type="button"
+      class="delete-button"
+      (click)="deleteTargetPreparer.emit(i); hasContentChanged = true">
+      Remove
+    </button>
+  </h2>
+
+  <!-- Class Name Field -->
+  <div fxLayout="column">
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label>Class Name</mat-label>
+      <input matInput type="text" [(ngModel)]="targetPreparer.class_name"
+        name="class_name" required #class_name="ngModel">
+      <mat-error *ngIf="class_name.invalid && class_name.touched">Class name is required</mat-error>
+    </mat-form-field>
+  </div>
+
+  <h3 *ngIf="targetPreparer.option_values">
+    Target Preparer Options
+  </h3>
+
+  <!-- Option Form -->
+  <target-preparer-option-form
+    [optionValues]="targetPreparer.option_values"
+    (addOption)="onAddOption(targetPreparer)"
+    (removeOption)="onRemoveOption(targetPreparer, $event)"
+    (optionValueChange)="onOptionValueChange(targetPreparer, $event)"
+    >
+  </target-preparer-option-form>
+</mat-card>
+
+<!-- Add button  -->
+<button
+  mat-stroked-button
+  aria-label="Add target preparer"
+  color="accent"
+  type="button"
+  id="addTargetPreparerButton"
+  (click)="addTargetPreparer.emit(); hasContentChanged = true">
+    + Add Target Preparer
+</button>

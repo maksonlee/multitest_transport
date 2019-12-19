@@ -1,0 +1,85 @@
+# Copyright 2019 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Application configuration for MTT
+
+application: auto
+version: auto
+runtime: python27
+api_version: 1
+threadsafe: true
+
+# min_idle_instances is the minimum number of instances maintained regardless
+# of the load. They may not be idle.
+instance_class: F1
+automatic_scaling:
+  min_idle_instances: 1
+
+builtins:
+- deferred: on
+
+env_variables:
+  GAE_USE_SOCKETS_HTTPLIB: "True"
+  PYTHONHTTPSVERIFY: 0
+
+handlers:
+# API
+- url: /_ah/api/.*
+  script: multitest_transport.api.server.APP
+
+# Test Scheduler
+- url: /_ah/queue/test-kicker-queue
+  script: multitest_transport.test_scheduler.test_kicker.APP
+
+- url: /_ah/queue/test-plan-kicker-queue
+  script: multitest_transport.test_scheduler.test_plan_kicker.APP
+
+- url: /_ah/queue/tfc-event-queue
+  script: multitest_transport.test_scheduler.tfc_event_handler.APP
+
+- url: /_ah/queue/test-output-uploader-queue
+  script: multitest_transport.test_scheduler.test_output_uploader.APP
+
+- url: /sidekicks/.*
+  script: multitest_transport.sidekicks.main.APP
+
+- url: /test_scheduler/.*
+  script: multitest_transport.test_scheduler.test_scheduler.APP
+
+# UI and etc
+- url: /gcs_proxy/.*
+  script: multitest_transport.gcs_proxy.APP
+
+- url: /static/(.*)
+  static_files: google3/third_party/py/multitest_transport/ui2/static/\1
+  upload: google3/third_party/py/multitest_transport/ui2/static/.*
+
+- url: /app.js
+  static_files: google3/third_party/py/multitest_transport/ui2/app.js
+  upload: google3/third_party/py/multitest_transport/ui2/app.js
+
+- url: /.*
+  script: multitest_transport.ui2.main.APP
+
+libraries:
+- name: jinja2
+  version: latest
+- name: MySQLdb
+  version: latest
+- name: pycrypto
+  version: latest
+- name: ssl
+  version: latest
+- name: webapp2
+  version: latest

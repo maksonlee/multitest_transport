@@ -1,0 +1,76 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<h2>
+  Setup Wizard
+</h2>
+<div class="info-text">
+  There are a few steps that can be completed to make using this tool easier. Any configurations
+  set here can always be changed again later by going to the Settings page.
+</div>
+
+<mat-vertical-stepper #stepper>
+  <ng-template matStepperIcon="edit">
+    <mat-icon>check</mat-icon>
+  </ng-template>
+
+  <mat-step>
+    <ng-template matStepLabel>
+      <h3>Login to Google services</h3>
+    </ng-template>
+
+    <build-channel-setup></build-channel-setup>
+
+    <div class="button-section">
+      <button mat-flat-button color="accent" class="horizontal-center"
+              matStepperNext>
+        Next Step
+      </button>
+    </div>
+  </mat-step>
+
+  <mat-step>
+    <ng-template matStepLabel>
+      <h3>Import configuration files</h3>
+    </ng-template>
+
+    <config-set-importer></config-set-importer>
+
+    <div class="button-section">
+      <button mat-flat-button color="accent" class="horizontal-center"
+              matStepperNext>
+        Next Step
+      </button>
+    </div>
+  </mat-step>
+
+  <mat-step #wifiSetup>
+    <ng-template matStepLabel>
+      <h3>Edit WiFi settings</h3>
+    </ng-template>
+
+    <!-- Using ngIf for lazy loading, since the config importing can change these values -->
+    <!-- TODO: Save data if the user jumps to a different step. -->
+    <wifi-setup *ngIf="stepper.selected == wifiSetup"></wifi-setup>
+
+    <div class="button-section">
+      <button mat-flat-button color="accent" class="horizontal-center"
+              mat-dialog-close (click)="submit()">
+        Submit
+      </button>
+    </div>
+  </mat-step>
+</mat-vertical-stepper>

@@ -1,0 +1,134 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+
+<div class="header">
+  <div class="back-button-label">Test Results</div>
+  <h1 class="subtitle">
+    <button mat-icon-button (click)="back()" #backButton id="back-button"
+      matTooltip="Return to test results page"
+      aria-label="Return to test results page">
+      <mat-icon class="back-button-icon">arrow_back</mat-icon>
+    </button>
+    Test Run {{testRunId}}
+  </h1>
+</div>
+
+<div class="page" [class.loading-mask]="isLoading">
+
+  <div class="page" *ngIf="testRun">
+
+    <!-- Run Config Display -->
+    <mat-grid-list cols="3" rowHeight="200px">
+      <mat-grid-tile>
+
+        <!-- Test Run Status -->
+        <div class="grid-tile">
+          <span class="tile-title">Status</span>
+          <div fxLayout='row'>
+            <status-button [state]="testRun.state" fxFlex></status-button>
+            <test-run-failures [state]="testRun.state"
+                               [numFailedTests]="testRun.failed_test_count"
+                               [numTotalTests]="testRun.total_test_count"
+                               fxFlex>
+            </test-run-failures>
+          </div>
+          {{testRun.state_info}}
+          <div id="action-buttons">
+            <button mat-flat-button color="accent" (click)="rerunTestRun()"
+                    *ngIf="isFinalTestRunState(testRun.state); else cancel">
+              Rerun
+            </button>
+            <ng-template #cancel>
+              <button mat-stroked-button color="accent" (click)="cancelTestRun()">
+                Cancel
+              </button>
+            </ng-template>
+
+            <a button mat-stroked-button color="accent" *ngIf="outputFilesUrl"
+               [href]="outputFilesUrl">
+              View Output Files
+            </a>
+
+            <a button mat-stroked-button color="accent" *ngIf="exportUrl"
+               [href]="exportUrl" [download]="exportUrl">
+              Export Result
+            </a>
+          </div>
+        </div>
+      </mat-grid-tile>
+
+      <!-- Config Info -->
+      <mat-grid-tile>
+        <div class="grid-tile">
+          <span class="tile-title">Configuration</span>
+          <table>
+            <tr>
+              <td>Test:</td>
+              <!-- TODO: Link to Test Edit page -->
+              <td>{{testRun.test.name}} - {{testRun.test_package_info | testPackageInfo}}</td>
+            </tr>
+            <!-- TODO: Add Test Plan name and link to page -->
+            <tr>
+              <td>Labels:</td>
+              <td>
+                <mat-chip-list [tabIndex]="-1">
+                  <mat-chip *ngFor="let label of testRun.labels">{{label}}</mat-chip>
+                </mat-chip-list>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </mat-grid-tile>
+
+      <!-- Device Info List -->
+      <mat-grid-tile *ngIf="testRun.test_devices">
+        <div class="grid-tile">
+          <span class="tile-title">Devices Tested</span>
+          <device-list class="compact" [deviceInfos]="testRun.test_devices || []"
+                       [displayedDeviceInfoColumns]="deviceInfoColumns"
+                       *ngIf="testRun.test_devices">
+          </device-list>
+        </div>
+      </mat-grid-tile>
+    </mat-grid-list>
+
+    <!-- Output Info Tabs -->
+    <mat-tab-group>
+      <mat-tab label="Jobs">
+        <test-job-tree [testRun]="testRun" [request]="request"></test-job-tree>
+      </mat-tab>
+      <mat-tab label="Logs" #console>
+        <test-run-console [disabled]="!console.isActive"
+                          [request]="request" [testRun]="testRun"></test-run-console>
+      </mat-tab>
+      <mat-tab label="Test Results">
+        <test-run-results [invocationStatus]="invocationStatus"></test-run-results>
+      </mat-tab>
+      <mat-tab label="Test Resources">
+        <test-resource-list [testRun]="testRun"></test-resource-list>
+      </mat-tab>
+      <mat-tab label="Config">
+        <test-run-tree-table [testRun]="testRun"></test-run-tree-table>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+
+  <div class="empty" *ngIf="!testRun && !isLoading">
+    Test run {{testRunId}} not found.
+  </div>
+</div>

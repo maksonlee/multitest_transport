@@ -1,0 +1,78 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-toolbar>
+  <mat-toolbar-row fxLayoutAlign="space-between center">
+    <h1>Test Suites</h1>
+    <button
+      routerLink='/tests/new'
+      mat-flat-button
+      color="accent"> Create a new test </button>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+
+<div [class.loading-mask]="isLoading">
+
+  <mat-table [dataSource]="dataSource" aria-label="Test suites">
+
+    <!-- Name -->
+    <ng-container matColumnDef="name">
+      <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
+      <mat-cell *matCellDef="let test"> {{test.name}} </mat-cell>
+    </ng-container>
+
+    <!-- Description -->
+    <ng-container matColumnDef="description">
+      <mat-header-cell *matHeaderCellDef> Description </mat-header-cell>
+      <mat-cell *matCellDef="let test"> {{test.description}} </mat-cell>
+    </ng-container>
+
+    <!-- Actions -->
+    <ng-container matColumnDef="actions" stickyEnd>
+      <mat-header-cell *matHeaderCellDef></mat-header-cell>
+      <mat-cell *matCellDef="let test" fxFlex="250px">
+        <a mat-stroked-button color="accent" [routerLink]="['/test_runs/new']" [queryParams]="{'testId': test.id}">Run test</a>
+          <!-- TODO: link to test edit page. -->
+        <a mat-button color="accent" [routerLink]="['/tests', test.id]">Edit</a>
+        <button id="menuButton"
+          aria-label="More actions"
+          matTooltip="More actions"
+          mat-icon-button
+          [matMenuTriggerFor]="menu">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <button id="copyButton" mat-menu-item
+            [routerLink]="['/tests/new', test.id]">
+            Copy
+          </button>
+          <button id="deleteButton" mat-menu-item (click)="deleteTest(test)">
+            Delete
+          </button>
+        </mat-menu>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="columnsToDisplay"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: columnsToDisplay;"></mat-row>
+  </mat-table>
+
+  <div class="empty" *ngIf="!tests.length">
+    No test suites found.
+  </div>
+</div>

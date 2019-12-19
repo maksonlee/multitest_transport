@@ -1,0 +1,47 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<!-- A default TF config -->
+<configuration description="Common TF config for cluster hosts">
+  <command_scheduler class="com.android.tradefed.cluster.ClusterCommandScheduler">
+  </command_scheduler>
+  <sandbox_factory class="com.android.tradefed.sandbox.TradefedSandboxFactory">
+  </sandbox_factory>
+  <device_monitor class="com.android.tradefed.cluster.ClusterDeviceMonitor">
+  </device_monitor>
+  <object type="cluster_client" class="com.android.tradefed.cluster.ClusterClient">
+  </object>
+  <object type="cluster_options" class="com.android.tradefed.cluster.ClusterOptions">
+    <option name="cluster" value="default"/>
+    <option name="device-monitor-interval" value="60000"/>
+    <option name="run-target-format" value="{SERIAL}" />
+    <option name="service-url" value="http://${MTT_MASTER_URL}/_ah/api/tradefed_cluster/v1/" />
+    <option name="upload-invocation-status" value="true" />
+    <option name="check-command-state" value="true" />
+  </object>
+  <option name="host_options:use-sso-client" value="false" />
+
+  <!-- device manager options -->
+  <option name="dmgr:device-recovery-interval" value="5m" />
+  <option name="dmgr:max-emulators" value="0" />
+  <option name="dmgr:max-null-devices" value="0" />
+  <option name="dmgr:max-tcp-devices" value="0" />
+  <option name="dmgr:max-gce-devices" value="0" />
+  <option name="dmgr:max-remote-devices" value="0" />
+
+  <multi_device_recovery
+      class="com.android.tradefed.device.recovery.UsbResetMultiDeviceRecovery" />
+</configuration>

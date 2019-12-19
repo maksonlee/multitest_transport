@@ -1,0 +1,64 @@
+/**
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import 'third_party/py/multitest_transport/ui2/constants';
+
+h4 {
+  font-weight: normal;
+  margin-bottom: 0;
+  padding-left: 0;
+  padding-top: 0;
+}
+
+input[type='file'] {
+  display: none;
+}
+
+mat-header-row {
+  background: $background-default;
+  border-bottom-width: 0;
+}
+
+mat-header-cell {
+  background: $background-default;
+}
+
+mat-progress-bar {
+  margin-top: 20px;
+}
+
+mat-row {
+  background: $primary-light;
+  border-bottom-width: 0;
+  border-radius: 5px;
+  margin-bottom: 10px;
+
+  &.selected, &:hover {
+    background-color: $accent-light;
+  }
+}
+
+mat-table {
+  height: 265px;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.not-found {
+  height: 265px;
+  line-height: 265px;
+  margin: 0;
+}

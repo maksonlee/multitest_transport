@@ -1,0 +1,54 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading">
+</mat-spinner>
+
+<div [class.loading-mask]="isLoading" class="page">
+
+  <h2>
+    Default Channels
+  </h2>
+
+  <ng-container *ngFor="let buildChannel of buildChannels">
+    <build-channel-item [buildChannel]="buildChannel" [edit]="true"
+                        (authorize)="authorize($event)" (deleteItem)="delete(buildChannel)"
+                        *ngIf="isDefaultBuildChannel(buildChannel)">
+    </build-channel-item>
+  </ng-container>
+
+  <div class="header-section">
+    <h2>
+      Custom Channels
+    </h2>
+    <button mat-flat-button color="accent" class="add-button" aria-label="Add new build channel"
+            [routerLink]="['/build_channels/new']">
+      + Add New Build Channel
+    </button>
+  </div>
+
+  <ng-container *ngFor="let buildChannel of buildChannels">
+    <build-channel-item [buildChannel]="buildChannel" [edit]="true"
+                        (authorize)="authorize($event)" (deleteItem)="delete(buildChannel)"
+                        *ngIf="!isDefaultBuildChannel(buildChannel)">
+    </build-channel-item>
+  </ng-container>
+
+  <div class="empty" *ngIf="!buildChannels.length">
+    No build channels found.
+  </div>
+</div>

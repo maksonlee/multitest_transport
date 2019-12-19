@@ -1,0 +1,99 @@
+/**
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Color themes taken from https://standards.google/guidelines/google-material/color/palettes.html#brand-palette
+// [Internal link, needs to be removed before open sourcing]
+// Lower numbers refer to lighter colors, higher number refer to darker colors
+
+// Colors
+$blue-100: #d2e3fc;
+$blue-300: #8ab4f8;
+$blue-500: #4285f4;
+$blue-600: #1a73e8;
+$blue-700: #1967d2;
+
+$cyan-500: #24c1e0;
+
+$green-100: #ceead6;
+$green-500: #34a853;
+
+$grey-100: #f1f3f4;
+$grey-300: #dadce0;
+$grey-500: #9aa0a6;
+$grey-700: #5f6368;
+$grey-800: #3c4043;
+$grey-900: #202124;
+
+$red-100: #fad2cf;
+$red-400: #ea4335;
+$red-700: #c5221f;
+
+$yellow-100: #feefc3;
+$yellow-400: #fcc934;
+
+$white: #fff;
+
+// Themes
+$primary-dark: $grey-900;
+$primary-more: $grey-700;
+$primary: $grey-500;
+$primary-less: $grey-300;
+$primary-light: $grey-100;
+
+$accent: $blue-500;
+$accent-dark: $blue-700;
+$accent-light: $blue-100;
+
+$danger: $red-400;
+$danger-dark: $red-700;
+$danger-background: $red-100;
+
+$progress: $cyan-500;
+$progress-background: $blue-100;
+
+$success: $green-500;
+$success-background: $green-100;
+
+$warning: $yellow-400;
+$warning-background: $yellow-100;
+
+$background-default: $white;
+$text-default: $grey-900;
+
+// Components
+$background-active: $accent-light;
+$background-button-flat: $accent-dark;
+$background-chip: $primary-less;
+$background-table-header: $primary-light;
+
+$border-button: $accent;
+$border-chip: $primary;
+$border-menu: $primary-less;
+$border-table: $primary-less;
+
+$navigation: $grey-800;
+
+$text-button: $accent-dark;
+$text-button-flat: $white;
+$text-danger: $danger;
+$text-danger-dark: $danger-dark;
+$text-header: $primary-dark;
+$text-link: $accent-dark;
+$text-menu: $accent-dark;
+$text-primary: $primary-more;
+$text-progress: $progress;
+$text-success: $success;
+$text-warning: $warning;

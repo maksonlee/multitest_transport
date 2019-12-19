@@ -1,0 +1,154 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+  <mat-label> Schedule </mat-label>
+  <mat-select [(value)]="selectedScheduleTimeType"
+              (selectionChange)="scheduleSelectChange($event)"
+              placeholder="Select"
+              required>
+    <mat-option matInput *ngFor="let option of scheduleOptions" [value]="option">
+      {{ option }}
+    </mat-option>
+  </mat-select>
+  <mat-hint>Times are based on UTC timezone</mat-hint>
+</mat-form-field>
+
+<!-- Periodic -->
+<div *ngIf="selectedScheduleTimeType === ScheduleTimeType.PERIODIC"
+     fxLayout="row"
+     fxLayoutAlign="start center"
+     fxLayoutGap="15px">
+  <mat-form-field appearance="outline" floatLabel="always" flex>
+    <mat-label>Every</mat-label>
+    <mat-select [(value)]="selectedPeriodicTimeType" (selectionChange)="getCronExpression()">
+      <mat-option *ngFor="let periodicType of periodicTimeOptions" [value]="periodicType">
+        {{ periodicType }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <ng-container [ngSwitch]="selectedPeriodicTimeType">
+    <ng-container *ngSwitchCase="PeriodicTimeType.MINUTE"></ng-container>
+
+    <ng-container *ngSwitchCase="PeriodicTimeType.HOUR">
+      <span flex>at</span>
+      <ng-container *ngTemplateOutlet="minuteDropdown"></ng-container>
+      <span flex>past the hour</span>
+    </ng-container>
+
+    <ng-container *ngSwitchCase="PeriodicTimeType.DAY">
+      <span flex>at</span>
+      <ng-container *ngTemplateOutlet="hourDropdown"></ng-container>
+      <span flex>:</span>
+      <ng-container *ngTemplateOutlet="minuteDropdown"></ng-container>
+    </ng-container>
+
+    <ng-container *ngSwitchCase="PeriodicTimeType.WEEK">
+      <ng-container *ngTemplateOutlet="weekDayDropdown"></ng-container>
+      <span flex>at</span>
+      <ng-container *ngTemplateOutlet="hourDropdown"></ng-container>
+      <span flex>:</span>
+      <ng-container *ngTemplateOutlet="minuteDropdown"></ng-container>
+    </ng-container>
+
+    <ng-container *ngSwitchCase="PeriodicTimeType.MONTH">
+      <span flex>on the</span>
+      <ng-container *ngTemplateOutlet="monthDayDropdown"></ng-container>
+      <span flex>at</span>
+      <ng-container *ngTemplateOutlet="hourDropdown"></ng-container>
+      <span flex>:</span>
+      <ng-container *ngTemplateOutlet="minuteDropdown"></ng-container>
+    </ng-container>
+
+    <ng-container *ngSwitchCase="PeriodicTimeType.YEAR">
+      <span flex>on the</span>
+      <ng-container *ngTemplateOutlet="monthDayDropdown"></ng-container>
+      <span flex>of</span>
+      <ng-container *ngTemplateOutlet="monthDropdown"></ng-container>
+      <span flex>at</span>
+      <ng-container *ngTemplateOutlet="hourDropdown"></ng-container>
+      <span flex>:</span>
+      <ng-container *ngTemplateOutlet="minuteDropdown"></ng-container>
+    </ng-container>
+  </ng-container>
+</div>
+
+<!-- Custom -->
+<div *ngIf="selectedScheduleTimeType === ScheduleTimeType.CUSTOM">
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <input matInput type="text" [(ngModel)]="cronExpression" (ngModelChange)="customInputChange($event)" />
+    <mat-hint>
+      <a href="https://en.wikipedia.org/wiki/Cron" target="_blank">Cron expression</a>
+    </mat-hint>
+  </mat-form-field>
+</div>
+
+<!-- Templates -->
+<ng-template #minuteDropdown>
+  <mat-form-field appearance="outline" floatLabel="always" flex>
+    <mat-label>Minute</mat-label>
+    <mat-select [(value)]="selectedMinute" (selectionChange)="getCronExpression()">
+      <mat-option *ngFor="let minute of minuteOptions" [value]="minute">
+        {{ minute }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+</ng-template>
+
+<ng-template #hourDropdown>
+  <mat-form-field appearance="outline" floatLabel="always" flex>
+    <mat-label>Hour</mat-label>
+    <mat-select [(value)]="selectedHour" (selectionChange)="getCronExpression()">
+      <mat-option *ngFor="let hour of hourOptions" [value]="hour">
+        {{ hour }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+</ng-template>
+
+<ng-template #weekDayDropdown>
+  <mat-form-field appearance="outline" floatLabel="always" flex>
+    <mat-label>Week Day</mat-label>
+    <mat-select [(value)]="selectedWeekDay" (selectionChange)="getCronExpression()">
+      <mat-option *ngFor="let weekDay of weekDayOptions; let i = index" [value]="i">
+        {{ weekDay }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+</ng-template>
+
+<ng-template #monthDayDropdown>
+  <mat-form-field appearance="outline" floatLabel="always" flex>
+    <mat-label>Day of Month</mat-label>
+    <mat-select [(value)]="selectedMonthDay" (selectionChange)="getCronExpression()">
+      <mat-option *ngFor="let monthDay of monthDayOptions" [value]="monthDay">
+        {{ monthDay }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+</ng-template>
+
+<ng-template #monthDropdown>
+  <mat-form-field appearance="outline" floatLabel="always" flex>
+    <mat-label>Month</mat-label>
+    <mat-select [(value)]="selectedMonth" (selectionChange)="getCronExpression()">
+      <mat-option *ngFor="let month of monthOptions; let i = index" [value]="i + 1">
+        {{ month }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+</ng-template>

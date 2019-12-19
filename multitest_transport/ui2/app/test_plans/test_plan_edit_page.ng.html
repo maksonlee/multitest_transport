@@ -1,0 +1,158 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="header">
+  <div class="back-button-label">Test plans</div>
+  <h1 class="subtitle">
+    <button mat-icon-button (click)="back()" #backButton id="back-button"
+      aria-label="Return to test plans page"
+      matTooltip="Return to test plans page">
+      <mat-icon class="back-button-icon">arrow_back</mat-icon>
+    </button>
+    {{ editMode ? "Edit Test Plan" : "Create New Test Plan" }}
+  </h1>
+</div>
+
+<!-- Stepper -->
+<mat-horizontal-stepper linear="true" #stepper
+  (selectionChange)="resetStepCompletion($event.selectedIndex, stepCompletionStatusMap, totalSteps)">
+  <ng-template matStepperIcon="edit">
+    <mat-icon>check</mat-icon>
+  </ng-template>
+  <!-- First step: Configure Test Plan -->
+  <mat-step [completed]="!!stepCompletionStatusMap[step.CONFIGURE_TEST_PLAN]">
+    <ng-template matStepLabel>Configure Test Plan</ng-template>
+    <!-- Loading Spinner -->
+    <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"> </mat-spinner>
+
+    <!-- Name field -->
+    <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+      <mat-label>Name</mat-label>
+      <input matInput type="text" [(ngModel)]="data.name" required #name="ngModel"/>
+      <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
+    </mat-form-field>
+
+    <!-- Labels Field -->
+    <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+      <mat-label> Labels </mat-label>
+      <mat-chip-list #chipList aria-label="Labels">
+        <mat-chip
+          *ngFor="let label of data.labels"
+          [selectable]="true"
+          [removable]="true"
+          (removed)="removeLabel(label)"
+        >
+          {{ label }}
+          <mat-icon matChipRemove>cancel</mat-icon>
+        </mat-chip>
+        <input
+          [matChipInputFor]="chipList"
+          [matChipInputSeparatorKeyCodes]="separatorKeyCodes"
+          [matChipInputAddOnBlur]="true"
+          (matChipInputTokenEnd)="addLabel($event)"
+        />
+      </mat-chip-list>
+    </mat-form-field>
+
+    <!-- Schedule field -->
+    <schedule-time-form
+      #scheduleTimeForm
+      [cronExpression]="data.cron_exp"
+      (cronExpressionChange)="setCronExpression($event)"
+    >
+    </schedule-time-form>
+
+    <div>
+      <button mat-flat-button (click)="goForward(stepper)" color="accent">
+        Next Step
+      </button>
+      <button mat-button (click)="back()" color="accent">Cancel</button>
+      <!-- Error messages after validation -->
+      <form-error-info [invalidInputs]="invalidInputs"></form-error-info>
+    </div>
+  </mat-step>
+
+  <!-- Second step: Set Test Run Configs -->
+  <mat-step [completed]="!!stepCompletionStatusMap[step.CONFIGURE_TEST_RUN]">
+    <ng-template matStepLabel>Add Test Suites</ng-template>
+    <test-run-config-list
+      [(data)]="data.test_run_configs"
+      [testMap]="testMap"
+      (dataChange)="updateTestResources()"
+    ></test-run-config-list>
+
+    <div>
+      <button mat-stroked-button matStepperPrevious color="accent">
+        Previous Step
+      </button>
+      <button mat-flat-button (click)="goForward(stepper)" color="accent">
+        Next Step
+      </button>
+      <button mat-button (click)="back()" color="accent">Cancel</button>
+      <form-error-info [errorMessage]="errorMessage">
+      </form-error-info>
+    </div>
+  </mat-step>
+
+  <!-- Third step: Select Device Actions -->
+  <mat-step [completed]="!!stepCompletionStatusMap[step.ADD_DEVICE_ACTIONS]">
+    <ng-template matStepLabel>Add Device Actions</ng-template>
+    <!-- Loading Spinner -->
+    <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"> </mat-spinner>
+    <device-action-picker
+      [deviceActions]="deviceActions"
+      [selectedDeviceActions]="selectedDeviceActions"
+      (selectionChange)="updateTestResources()"
+    >
+    </device-action-picker>
+
+    <div>
+      <button mat-stroked-button matStepperPrevious color="accent">
+        Previous Step
+      </button>
+      <button mat-flat-button  (click)="goForward(stepper)" color="accent">
+        Next Step
+      </button>
+      <button mat-button (click)="back()" color="accent">Cancel</button>
+    </div>
+  </mat-step>
+
+  <!-- Fourth step: Set Test Resources -->
+  <mat-step [completed]="!!stepCompletionStatusMap[step.SET_TEST_RESOURCES]">
+    <ng-template matStepLabel>Set Test Resources</ng-template>
+    <!-- Loading Spinner -->
+    <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"> </mat-spinner>
+    <test-resource-form
+      [data]="testResourceObjs"
+      [options]="testResourceTypeOptions"
+      [canAdd]="false"
+      [canDelete]="false"
+      [buildChannels]="buildChannels"
+      [testResourceClassType]="testResourceClassType.TEST_RESOURCE_OBJ"
+    >
+    </test-resource-form>
+    <div>
+      <button mat-stroked-button matStepperPrevious color="accent">
+        Previous Step
+      </button>
+      <button mat-button mat-flat-button color="accent" type="button" (click)="submit()">
+        {{ editMode ? "Update" : "Create" }}
+      </button>
+      <button mat-button (click)="back()" color="accent">Cancel</button>
+      <form-error-info [invalidInputs]="invalidInputs"></form-error-info>
+    </div>
+  </mat-step>
+</mat-horizontal-stepper>

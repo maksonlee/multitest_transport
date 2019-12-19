@@ -1,0 +1,129 @@
+/**
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import 'third_party/py/multitest_transport/ui2/constants';
+
+:host {
+  display: block;
+  margin-bottom: 20px;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, .2, 1);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0;
+}
+
+.cdk-drag-preview {
+  border-radius: 15px;
+  box-sizing: border-box;
+  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, .2),
+              0 8px 10px 1px rgba(0, 0, 0, .14),
+              0 3px 14px 2px rgba(0, 0, 0, .12);
+}
+
+.device-action-item {
+  align-items: center;
+  background: $accent-light;
+  border-radius: 8px;
+  box-sizing: border-box;
+  cursor: move;
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 8px;
+  padding: 5px;
+  width: 400px;
+  position: relative;
+}
+
+.device-action-list {
+  margin-bottom: 20px;
+}
+
+.device-action-list.cdk-drop-list-dragging .device-action-item:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, .2, 1);
+}
+
+.drag-icon {
+  color: $accent;
+  font-size: 18px; // font size need to align with height
+  height: 18px; // default is 24
+}
+
+.clear-button {
+  height: 100%;
+  line-height: 100%;
+  right: 2px;
+  position: absolute;
+
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+.drag-item {
+  display: inline-block;
+}
+
+.drag-text {
+  color: $accent;
+  display: inline-block;
+  font-size: 16px;
+}
+
+::ng-deep .device-action-menu.mat-menu-panel {
+  max-width: 320px;
+  width: 320px;
+
+  .button-wrapper {
+    padding: 10px 20px;
+  }
+
+  .checkbox-wrapper {
+    height: 300px;
+    overflow: auto
+  }
+
+  mat-checkbox {
+    background-color: white;
+    display:block;
+    margin: 0;
+
+    .mat-checkbox-layout {
+      display: block;
+      padding: 0 16px;
+    }
+
+    &:hover,
+    &.mat-checkbox-checked,
+    &.mat-checkbox-intermediate {
+      background-color: #d2e3fc;
+    }
+  }
+
+  .mat-menu-content:not(:empty),
+  .mat-menu-item {
+    padding: 0;
+  }
+
+  .mat-menu-item:first-of-type {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+  }
+}

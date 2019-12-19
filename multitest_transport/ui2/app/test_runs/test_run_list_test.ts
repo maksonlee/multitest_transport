@@ -1,0 +1,192 @@
+/**
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import {DebugElement} from '@angular/core';
+import {inject, ComponentFixture, TestBed} from '@angular/core/testing';
+import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {Router} from '@angular/router';
+import {RouterTestingModule} from '@angular/router/testing';
+import {of as observableOf} from 'rxjs';
+
+import {MttClient} from '../services/mtt_client';
+import {TestPackageInfo, TestRunState, TestRunSummary} from '../services/mtt_models';
+import {DeviceInfo} from '../services/tfc_models';
+import {DEFAULT_PAGE_SIZE} from '../shared/paginator';
+import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
+import {newMockDevice, newMockTestPackageInfo} from '../testing/test_util';
+import {toTitleCase} from '../testing/test_util';
+
+import {TestRunList} from './test_run_list';
+import {TestRunsModule} from './test_runs_module';
+import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
+
+describe('TestRunList', () => {
+
+  let testRunList: TestRunList;
+  let testRunListFixture: ComponentFixture<TestRunList>;
+  let mttClient: jasmine.SpyObj<MttClient>;
+  let testDevices: DeviceInfo[];
+  let testPackageInfo: TestPackageInfo;
+  let testRunCompleted: TestRunSummary;
+  let testRunPending: TestRunSummary;
+  let el: DebugElement;
+
+  beforeEach(() => {
+    window.localStorage.clear();
+    testDevices = [newMockDevice()];
+    testPackageInfo = newMockTestPackageInfo();
+
+    testRunCompleted = {
+      id: 'completed',
+      run_target: 'target1;target2',
+      state: TestRunState.COMPLETED,
+      test_name: 'test_name',
+      test_package_info: testPackageInfo,
+      test_devices: testDevices,
+    };
+
+    testRunPending = {
+      id: 'pending',
+      run_target: 'target1;target2',
+      state: TestRunState.PENDING,
+      test_name: 'test_name',
+      test_package_info: testPackageInfo,
+      test_devices: testDevices,
+    };
+
+    mttClient = jasmine.createSpyObj('mttClient', ['getTestRuns']);
+    mttClient.getTestRuns.and.returnValue(
+        observableOf({test_runs: [testRunCompleted, testRunPending]}));
+
+    TestBed.configureTestingModule({
+      imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
+      aotSummaries: TestRunsModuleNgSummary,
+      providers: [
+        {provide: MttClient, useValue: mttClient},
+      ],
+    });
+
+    testRunListFixture = TestBed.createComponent(TestRunList);
+    testRunListFixture.detectChanges();
+    el = testRunListFixture.debugElement;
+    testRunList = testRunListFixture.componentInstance;
+    testRunList.filters = [];
+  });
+
+  it('gets initialized', () => {
+    expect(testRunList).toBeTruthy();
+  });
+
+  it('calls the mtt client api method getTestRuns', async () => {
+    await testRunListFixture.whenStable();  // load() is called asynchronously
+    expect(mttClient.getTestRuns).toHaveBeenCalled();
+  });
+
+  it('displays the correct test run values', async () => {
+    await testRunListFixture.whenStable();  // load() is called asynchronously
+    testRunListFixture.detectChanges();
+
+    const text = getTextContent(el);
+    const device = testRunCompleted.test_devices![0];
+
+    expect(text).toContain('test_name');
+    expect(text).toContain(toTitleCase(TestRunState.COMPLETED));
+    expect(text).toContain(toTitleCase(TestRunState.PENDING));
+    expect(text).toContain(
+        `${testPackageInfo.name} ${testPackageInfo.version}`);
+
+    expect(text).toContain('target1');
+    expect(text).toContain(device.build_id!);
+    expect(text).toContain(device.product);
+  });
+
+  it('can load previous page of test runs', () => {
+    testRunList.prevPageToken = 'prev';
+    testRunList.nextPageToken = 'next';
+    testRunList.load(true);
+    expect(mttClient.getTestRuns)
+        .toHaveBeenCalledWith(
+            DEFAULT_PAGE_SIZE, 'prev', true, testRunList.filters,
+            testRunList.selectedStates);
+  });
+
+  it('can load next page of test runs', () => {
+    testRunList.prevPageToken = 'prev';
+    testRunList.nextPageToken = 'next';
+    testRunList.load(false);
+    expect(mttClient.getTestRuns)
+        .toHaveBeenCalledWith(
+            DEFAULT_PAGE_SIZE, 'next', false, testRunList.filters,
+            testRunList.selectedStates);
+  });
+
+  it('can handle page size change', () => {
+    testRunList.prevPageToken = 'prev';
+    testRunList.nextPageToken = 'next';
+    testRunList.paginator.changePageSize(20);
+    expect(mttClient.getTestRuns)
+        .toHaveBeenCalledWith(
+            20, undefined, false, testRunList.filters,
+            testRunList.selectedStates);
+  });
+
+  it('can update pagination parameters', inject([Router], (router: Router) => {
+    spyOn(router, 'navigate');
+    mttClient.getTestRuns.and.returnValue(observableOf(
+        {test_runs: [], prev_page_token: 'prev', next_page_token: 'next'}));
+
+    testRunList.load();
+    expect(testRunList.prevPageToken).toEqual('prev');
+    expect(testRunList.nextPageToken).toEqual('next');
+    expect(testRunList.paginator.hasPrevious).toBeTruthy();
+    expect(testRunList.paginator.hasNext).toBeTruthy();
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: {page: 'prev', size: null, filter: null}
+    });
+  }));
+
+  it('should hide column on view_columns dropdown menu button clicked', () => {
+    getEl(el, '#view_columns_btn').click();
+
+    const removableColumns = testRunList.columns.filter((c) => c.removable);
+    const column = removableColumns[0];
+    getEl(el, '#' + column.fieldName + '_menu_btn').click();
+    testRunListFixture.detectChanges();
+    el = testRunListFixture.debugElement;
+    expect(getEls(el, 'mat-header-cell').length)
+        .toBe(testRunList.columns.length - 2);  // Select column also not shown
+  });
+
+  it('can handle filter function', () => {
+    testRunList.filters = ['device_id'];
+    testRunList.load(false);
+    expect(mttClient.getTestRuns)
+        .toHaveBeenCalledWith(
+            testRunList.PAGE_SIZE_OPTIONS[0], undefined, false,
+            testRunList.filters, testRunList.selectedStates);
+  });
+
+  it('can update filter parameters', inject([Router], (router: Router) => {
+    spyOn(router, 'navigate');
+    mttClient.getTestRuns.and.returnValue(observableOf(
+        {test_runs: [], prev_page_token: 'prev', next_page_token: 'next'}));
+    testRunList.filters = ['device_id'];
+    testRunList.load();
+    expect(router.navigate).toHaveBeenCalledWith([], {
+      queryParams: {page: 'prev', size: null, filter: testRunList.filters}
+    });
+  }));
+});

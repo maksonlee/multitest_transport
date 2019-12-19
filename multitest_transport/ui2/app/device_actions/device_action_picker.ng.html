@@ -1,0 +1,77 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<!-- TODO: Add Index on list item -->
+<div cdkDropList class="device-action-list" (cdkDropListDropped)="drop($event)">
+    <div class="device-action-item" cdkDrag *ngFor="let item of selectedDeviceActions">
+      <mat-icon class="drag-icon">drag_indicator</mat-icon>
+      <span class="drag-text">{{item.name}}</span>
+      <button
+        aria-label="Delete"
+        matTooltip="Delete"
+        class="clear-button"
+        mat-button
+        (click)="removeItem(item); hasContentChanged = true">
+        <mat-icon class="drag-icon">clear</mat-icon>
+      </button>
+    </div>
+</div>
+
+<!-- Add Button -->
+<button
+  class="add-button"
+  mat-stroked-button
+  color="accent"
+  aria-label="Add device action"
+  [matMenuTriggerFor]="deviceActionDropdown">
+    + Add device action
+</button>
+
+<!-- Dropdown action picker -->
+<mat-menu #deviceActionDropdown="matMenu" class="device-action-menu">
+  <!-- trap focus and prevent tabs from closing the menu -->
+  <div cdkTrapFocus (keydown.tab)="$event.stopPropagation()">
+    <!-- checkboxes -->
+    <div class="checkbox-wrapper">
+      <div mat-menu-item (click)="$event.stopPropagation()" (keydown.enter)="toggleSelection()">
+        <mat-checkbox tabindex="-1" (change)="$event ? toggleSelection() : null"
+                      [checked]="selection.hasValue() && isAllSelected()"
+                      [indeterminate]="selection.hasValue() && !isAllSelected()">
+          All {{deviceActions.length}} actions
+        </mat-checkbox>
+      </div>
+      <div mat-menu-item *ngFor="let deviceAction of deviceActions"
+           (click)="$event.stopPropagation()" (keydown.enter)="selection.toggle(deviceAction)">
+        <mat-checkbox tabindex="-1"
+                      (change)="$event ? selection.toggle(deviceAction) : null"
+                      [checked]="selection.isSelected(deviceAction)">
+          {{deviceAction.name}}
+        </mat-checkbox>
+      </div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- menu buttons -->
+    <div class="button-wrapper">
+      <button mat-flat-button color="accent" (click)="selectActions()"
+          aria-label="Add device actions" [attr.aria-disabled]="selection.selected.length === 0">
+        + Add device action(s)
+      </button>
+      <button mat-button color="accent"> Cancel </button>
+    </div>
+  </div>
+</mat-menu>

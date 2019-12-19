@@ -1,0 +1,32 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+
+<div class="margin-bottom">
+  Enter your WiFi information below to allow the CTS Device Setup action to connect your devices to
+  WiFi.
+</div>
+
+<div>
+  <mat-form-field class="small" appearance="outline" fxFlex="45">
+    <mat-label> WiFi SSID </mat-label>
+    <input matInput type="text" [(ngModel)]="envVarMap['WIFI_SSID']">
+  </mat-form-field>
+  <mat-form-field class="small" appearance="outline" fxFlex="45">
+    <mat-label> WiFi PSK </mat-label>
+    <input matInput type="text" [(ngModel)]="envVarMap['WIFI_PSK']">
+  </mat-form-field>
+</div>

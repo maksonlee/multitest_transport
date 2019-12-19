@@ -1,0 +1,11 @@
+[Unit]
+Description=MTT Daemon
+
+[Service]
+Type=simple
+ExecStart=/var/lib/mtt/mtt --no_check_update daemon /var/lib/mtt/mtt_host_config.yaml
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

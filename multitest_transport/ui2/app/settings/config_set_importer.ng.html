@@ -1,0 +1,111 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+
+<div class="info-text margin-bottom">
+  Configuration files can be imported to pre-load test suites, device actions, and other settings.
+</div>
+
+<div [class.loading-mask]="isLoading" class="container">
+
+
+  <div>
+    <input type="file" #fileUploadInput
+      (change)="onFileInputChange($event.target.files[0]); fileUploadInput.value = ''" />
+    <button color="accent" mat-stroked-button (click)="fileUploadInput.click()"
+            aria-label="Upload File" class="upload-button">
+      Upload File
+    </button>
+  </div>
+
+  <ng-container *ngIf="!gcsBuildChannel || !isBuildChannelAvailable(gcsBuildChannel)">
+    <build-channel-item [buildChannel]="gcsBuildChannel" [edit]="false"
+                        (authorize)="authorize($event)" *ngIf="gcsBuildChannel">
+    </build-channel-item>
+    <div class="description">
+      Please authenticate your Google Cloud Storage account in order to access this feature. This
+      will allow you to download and import test suite configs.
+    </div>
+  </ng-container>
+
+  <mat-table [dataSource]="configs" class="selectable"
+             aria-label="Test config set list">
+    <!-- Checkbox Column -->
+    <ng-container matColumnDef="select">
+      <mat-header-cell *matHeaderCellDef fxFlex="60px">
+        <!-- Select all checkbox doesn't work well with disabled checkboxes -->
+      </mat-header-cell>
+      <mat-cell *matCellDef="let row" fxFlex="60px">
+        <mat-checkbox (click)="$event.stopPropagation()"
+                      (change)="$event ? onSelectionChange(row): null"
+                      [checked]="selection.isSelected(row)"
+                      [disabled]="row.imported && !row.update_available"
+                      [aria-label]="row.name">
+        </mat-checkbox>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Name Column -->
+    <ng-container matColumnDef="name">
+      <mat-header-cell *matHeaderCellDef fxFlex="200px"> Name </mat-header-cell>
+      <mat-cell *matCellDef="let element" fxFlex="200px">
+        <span title='{{element.description}}'>
+          {{element.name}}
+        </span>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Last Updated Column -->
+    <ng-container matColumnDef="last_update_time">
+      <mat-header-cell *matHeaderCellDef fxFlex="200px"> Last Updated </mat-header-cell>
+      <mat-cell *matCellDef="let element" fxFlex="200px"> {{element.last_update_time}} </mat-cell>
+    </ng-container>
+
+    <!-- Url Column -->
+    <ng-container matColumnDef="url">
+      <mat-header-cell *matHeaderCellDef fxFlex="240px"> Url </mat-header-cell>
+      <mat-cell *matCellDef="let element" fxFlex="240px">
+        <span title="{{element.url}}" class="url">
+          {{element.url}}
+        </span>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Status Column -->
+    <ng-container matColumnDef="status">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px"> Status </mat-header-cell>
+      <mat-cell *matCellDef="let element" fxFlex="120px">
+        <status-button class='config-set' [state]="getStatus(element)">
+        </status-button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true;"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;"
+             [class.selected]="selection.isSelected(row.device_serial)"></mat-row>
+  </mat-table>
+
+  <div class="empty" *ngIf="!configs || configs.length === 0">
+    No test suite configs found.
+  </div>
+
+  <button mat-stroked-button color='accent' class='import-button'
+          (click)="importSelectedConfigSets()">
+    Import Selected
+  </button>
+
+</div>

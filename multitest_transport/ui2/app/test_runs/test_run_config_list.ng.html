@@ -1,0 +1,93 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-card *ngFor="let config of data; let i = index">
+  <div fxLayout="row" fxLayoutGap="10px">
+    <div fxFlex="60" fxLayout="column" fxLayoutGap="10px">
+      <div fxFlex="50" fxLayout="row" fxLayoutGap="10px">
+        <div class="test-run-config-container" fxFlex="40">
+          <h5>Test</h5>
+          <div>{{ testMap[config.test_id] ? testMap[config.test_id].name : 'Unknown' }}</div>
+        </div>
+        <div class="test-run-config-container" fxFlex>
+          <h5>Extra Arguments</h5>
+          <div>{{ config.extra_args }}</div>
+        </div>
+      </div>
+      <div fxFlex="50" fxLayout="row" fxLayoutGap="10px">
+        <div class="test-run-config-container" fxFlex="20">
+          <h5>Run Count</h5>
+          <div>{{ config.run_count }}</div>
+        </div>
+        <div class="test-run-config-container" fxFlex="20">
+          <h5>Shard Count</h5>
+          <div>{{ config.shard_count }}</div>
+        </div>
+        <div class="test-run-config-container" fxFlex="20">
+          <h5>Max Retries</h5>
+          <div>{{ config.max_retry_on_test_failures }}</div>
+        </div>
+        <div class="test-run-config-container" fxFlex="40">
+          <h5>Queue Timeout (Secs)</h5>
+          <div>{{ config.queue_timeout_seconds }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-run-config-container" fxFlex="25">
+      <h5>Run Target(s)</h5>
+      <div *ngFor="let target of config.run_target.split(';')" class="test-run-config-target">
+        {{ target }}
+      </div>
+    </div>
+    <div fxFlex="15">
+      <!-- Edit test run config button -->
+      <button
+        mat-button
+        aria-label="Edit"
+        matTooltip="Edit"
+        class="test-run-config-edit-button"
+        type="button"
+        (click)="edit(i)"
+      >
+        <mat-icon> edit </mat-icon>
+      </button>
+      <!-- Delete test run config button -->
+      <button
+        mat-button
+        aria-label="Delete"
+        matTooltip="Delete"
+        type="button"
+        class="test-run-config-delete-button"
+        (click)="delete(i)"
+      >
+        <mat-icon> delete </mat-icon>
+      </button>
+    </div>
+  </div>
+</mat-card>
+
+<!-- Add new test run config button -->
+<button
+  mat-stroked-button
+  aria-label="Add test run configuration"
+  class="add-button"
+  color="accent"
+  type="button"
+  (click)="add()"
+>
+  + Add test run configuration
+</button>

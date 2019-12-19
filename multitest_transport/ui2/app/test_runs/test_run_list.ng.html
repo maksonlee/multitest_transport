@@ -1,0 +1,213 @@
+<!--
+ Copyright 2019 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+
+<mat-toolbar>
+  <mat-toolbar-row fxLayoutAlign="space-between center">
+    <h1>{{ headerTitle }}</h1>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<div [class.loading-mask]="isLoading">
+  <div class="filter">
+    <!-- TODO Add column filtering -->
+    <mat-form-field fxFlex>
+      <mat-icon matPrefix class="filter-icon">filter_list</mat-icon>
+      <mat-chip-list #chipList aria-label="Filter">
+        <mat-chip
+          *ngFor="let filter of filters"
+          [selectable]="true"
+          [removable]="true"
+          (removed)="removeFilter(filter)">
+          {{ filter }}
+          <mat-icon matChipRemove>cancel</mat-icon>
+        </mat-chip>
+        <input
+          placeholder="Filter"
+          [matChipInputFor]="chipList"
+          [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+          [matChipInputAddOnBlur]="true"
+          (matChipInputTokenEnd)="addFilter($event)"/>
+      </mat-chip-list>
+    </mat-form-field>
+
+    <mat-divider vertical></mat-divider>
+
+    <mat-form-field fxFlex="300px">
+      <mat-label>Status</mat-label>
+      <mat-select multiple [(ngModel)]="selectedStates"
+                  (selectionChange)="resetPageTokenAndReload()">
+        <mat-option *ngFor="let state of allStates" [value]="state">
+          {{state | titlecase}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-divider vertical></mat-divider>
+
+    <button mat-icon-button id="view_columns_btn"
+            aria-label="View columns"
+            matTooltip="View columns"
+            [matMenuTriggerFor]="view_column_menu">
+      <mat-icon>view_column</mat-icon>
+    </button>
+    <mat-menu #view_column_menu="matMenu">
+      <ng-container *ngFor="let column of columns; let i=index">
+        <ng-container *ngIf="column.removable">
+          <button [attr.id]="column.fieldName + '_menu_btn'"
+                  (click)="toggleDisplayColumn($event, column.show, i)" mat-menu-item>
+            <mat-icon>{{ column.show ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+            <span class="menu-item">{{ column.displayName }}</span>
+          </button>
+        </ng-container>
+      </ng-container>
+    </mat-menu>
+  </div>
+
+  <mat-table #table [dataSource]="dataSource" class="selectable"
+             (scroll)="checkTableScrolled()"
+             [class.scrolled]="isTableScrolled"
+             aria-label="Test run list">
+   <!-- Checkbox Column -->
+    <ng-container matColumnDef="select">
+      <mat-header-cell *matHeaderCellDef fxFlex="60px">
+        <mat-checkbox (change)="$event ? toggleSelected() : null"
+                      [checked]="selection.hasValue() && isAllSelected()"
+                      [indeterminate]="selection.hasValue() && !isAllSelected()">
+        </mat-checkbox>
+      </mat-header-cell>
+      <mat-cell *matCellDef="let row" fxFlex="60px">
+        <mat-checkbox (click)="$event.stopPropagation()"
+                      (change)="$event ? selection.toggle(row) : null"
+                      [checked]="selection.isSelected(row)">
+        </mat-checkbox>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Test Name -->
+    <ng-container matColumnDef="test_name">
+      <mat-header-cell *matHeaderCellDef fxFlex class="test-name-column"> Test </mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex class="test-name-column">
+        {{testRun.test_name}}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Test Package Version -->
+    <ng-container matColumnDef="test_package">
+      <mat-header-cell *matHeaderCellDef fxFlex="100px"> Test Package </mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex="100px">
+        {{testRun.test_package_info | testPackageInfo}}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Run Targets -->
+    <!-- TODO: switch to overflow list -->
+    <ng-container matColumnDef="run_target">
+      <mat-header-cell *matHeaderCellDef fxFlex="160px"> Run Targets </mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex="160px">
+        <overflow-list [data]="testRun.run_target ?
+                               testRun.run_target.split(';') : []"
+                       [overflowListType]="OverflowListType.BUTTON">
+        </overflow-list>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Device Build -->
+    <ng-container matColumnDef="device_build">
+      <mat-header-cell *matHeaderCellDef fxFlex="160px"> Device Build </mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex="160px">
+        <overflow-list [data]="testRun.test_devices | mapListField: 'build_id'"
+                       [overflowListType]="OverflowListType.BUTTON">
+        </overflow-list>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Device Product -->
+    <ng-container matColumnDef="device_product">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px"> Product </mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex="120px">
+        <overflow-list [data]="testRun.test_devices | mapListField: 'product'"
+                       [overflowListType]="OverflowListType.BUTTON">
+        </overflow-list>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Test Run Labels -->
+    <!-- TODO: add filtering -->
+    <ng-container matColumnDef="labels">
+      <mat-header-cell *matHeaderCellDef fxFlex="200px"> Labels </mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex="200px">
+        <overflow-list [data]="testRun.labels || []" [overflowListType]="OverflowListType.CHIP">
+        </overflow-list>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Test Run Created Date -->
+    <ng-container matColumnDef="create_time">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px"> Created </mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex="120px"
+                [title]="testRun.create_time | utc | date:'MM/dd/yyyy h:mma'">
+        {{testRun.create_time | utc | fromNow}}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Test Run Status -->
+    <ng-container matColumnDef="status">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px"> Status </mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex="120px">
+        <status-button [state]="testRun.state">
+        </status-button>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Test Run Failures -->
+    <ng-container matColumnDef="failures">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px"> Test Failures </mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex="150px">
+        <test-run-failures [state]="testRun.state"
+                           [numFailedTests]="testRun.failed_test_count"
+                           [numTotalTests]="testRun.total_test_count">
+        </test-run-failures>
+      </mat-cell>
+    </ng-container>
+
+    <!-- View Test Run Details Button -->
+    <ng-container matColumnDef="view" stickyEnd>
+      <mat-header-cell *matHeaderCellDef fxFlex="100px"></mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex="100px">
+        <button mat-stroked-button (click)="viewDetails(testRun.id)">
+          View
+        </button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayColumns;"
+             [class.selected]="selection.isSelected(row)"></mat-row>
+  </mat-table>
+
+  <paginator
+    [pageSizeOptions]="PAGE_SIZE_OPTIONS"
+    (sizeChange)="resetPageTokenAndReload()"
+    (previous)="load(true)"
+    (next)="load(false)"
+  ></paginator>
+
+  <div class="empty" *ngIf="!dataSource.data.length">
+    No test runs found.
+  </div>
+</div>
