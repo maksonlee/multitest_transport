@@ -30,6 +30,7 @@ DUMMY = 'DUMMY'
 
 class PartnerAndroidBuildProvider(base.BuildProvider):
   """A build provider for Partner Android Build service."""
+  name = 'Partner Android Build'
 
   def __init__(self):
     super(PartnerAndroidBuildProvider, self).__init__()
@@ -194,6 +195,3 @@ class PartnerAndroidBuildProvider(base.BuildProvider):
       url: a web url which user can click on and navigate to
     """
     raise NotImplementedError('GetWebUrl() is not implemented.')
-
-base.RegisterBuildProviderClass(
-    'Partner Android Build', PartnerAndroidBuildProvider)

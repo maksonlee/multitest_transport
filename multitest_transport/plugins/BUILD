@@ -12,6 +12,8 @@ py_library(
         "constant.py",
     ],
     deps = [
+        ":registry_lib",
+        third_party("six"),
         "//multitest_transport/util",
     ],
 )
@@ -123,6 +125,25 @@ py_library(
         ":local_file_store_lib",
         ":partner_android_build_lib",
         third_party("apiclient"),
+    ],
+)
+
+py_library(
+    name = "registry_lib",
+    srcs = [
+        "registry.py",
+    ],
+)
+
+py_appengine_test(
+    name = "registry_test",
+    srcs = [
+        "registry_test.py",
+    ],
+    deps = [
+        ":registry_lib",
+        third_party("absl/testing:absltest"),
+        third_party("six"),
     ],
 )
 

@@ -97,6 +97,7 @@ class GoogleDriveBuildProvider(base.BuildProvider):
   A MTT plugin that allows user to download Android builds from Google Drive and
   listing builds with pagination.
   """
+  name = 'Google Drive'
 
   def __init__(self):
     super(GoogleDriveBuildProvider, self).__init__(
@@ -372,6 +373,3 @@ class GoogleDriveBuildProvider(base.BuildProvider):
           offset=status.resumable_progress,
           total_size=status.total_size)
       buffer_.truncate(0)
-
-
-base.RegisterBuildProviderClass('Google Drive', GoogleDriveBuildProvider)

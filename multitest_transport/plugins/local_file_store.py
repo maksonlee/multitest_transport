@@ -35,6 +35,7 @@ _PAGE_SIZE = 25
 
 class LocalFileStoreBuildProvider(base.BuildProvider):
   """A build provider for a local file store."""
+  name = 'Local File Store'
 
   def __init__(self):
     super(LocalFileStoreBuildProvider, self).__init__(
@@ -122,5 +123,3 @@ class LocalFileStoreBuildProvider(base.BuildProvider):
       items.append(self._ToBuildItem(obj))
     next_page_token = objs[-1].filename if len(objs) == _PAGE_SIZE else None
     return (items, next_page_token)
-
-base.RegisterBuildProviderClass('Local File Store', LocalFileStoreBuildProvider)

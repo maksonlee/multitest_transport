@@ -72,6 +72,7 @@ class GCSBuildProvider(base.BuildProvider):
   A Google Cloud Storage plugin that allows user to download Android builds and
   listing builds with pagination.
   """
+  name = 'Google Cloud Storage'
 
   def __init__(self):
     super(GCSBuildProvider, self).__init__(
@@ -297,5 +298,3 @@ class GCSBuildProvider(base.BuildProvider):
         status_str = 'Uploaded %d%%.' % int(status.progress() * 100)
         logging.debug(status_str)
     logging.debug('Upload %s Completed', dst_file_path)
-
-base.RegisterBuildProviderClass('Google Cloud Storage', GCSBuildProvider)

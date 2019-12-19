@@ -19,8 +19,11 @@ import logging
 import re
 
 import enum
+import six
 
-_build_provider_class_map = {}
+from multitest_transport.plugins.registry import PluginRegistry
+
+BUILD_PROVIDER_REGISTRY = PluginRegistry()
 
 OptionDef = collections.namedtuple(
     'OptionDef', ['name', 'value_type', 'choices', 'default'])
@@ -74,7 +77,8 @@ class BuildProviderOptions(object):
       self.__dict__[name] = option_def.value_type(value)
 
 
-class BuildProvider(object):
+class BuildProvider(
+    six.with_metaclass(BUILD_PROVIDER_REGISTRY.GetMetaclass(), object)):
   """A base class for a build provider."""
 
   def __init__(self, url_patterns=None, user_upload_url=None):
@@ -243,39 +247,11 @@ class BuildProvider(object):
     return None
 
 
-def RegisterBuildProviderClass(name, cls):
-  """Registers a build provider class.
-
-  Args:
-    name: a build provider name.
-    cls: a class subclassing BuildProvider.
-  Raises:
-    ValueError: if another build provider is registered with a given name.
-  """
-  if not issubclass(cls, BuildProvider):
-    raise ValueError('%s is not a subclass of BuildProvider' % cls)
-  if name in _build_provider_class_map:
-    logging.warn('There already exists a build provider with name %s', name)
-    return
-  logging.info('Registering build provider %s: cls=%s', name, cls)
-  _build_provider_class_map[name] = cls
-
-
 def GetBuildProviderClass(name):
-  """Returns a build provider.
-
-  Args:
-    name: a build provider name.
-  Returns:
-    a BuildProvider class.
-  """
-  return _build_provider_class_map[name]
+  """Retrieves a registered build provider class by its name."""
+  return BUILD_PROVIDER_REGISTRY.GetPluginClass(name)
 
 
 def ListBuildProviderNames():
-  """Lists all build provider names.
-
-  Returns:
-    a list of build provider names.
-  """
-  return _build_provider_class_map.keys()
+  """Lists all registered build provider names."""
+  return BUILD_PROVIDER_REGISTRY.ListPluginNames()

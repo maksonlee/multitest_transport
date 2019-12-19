@@ -22,18 +22,17 @@ from multitest_transport import plugins
 from multitest_transport.plugins import base
 from multitest_transport.models import build
 
-MOCK_BUILD_PROVIDER_NAME = 'name'
+MOCK_BUILD_PROVIDER_NAME = 'mock'
 
 
 class MockBuildProvider(plugins.BuildProvider):
+  name = MOCK_BUILD_PROVIDER_NAME
 
   def __init__(self):
     super(MockBuildProvider, self).__init__(
         url_patterns=[
             build.UrlPattern(r'http://abc.def/xyz/(?P<path>.*)', '{path}')
         ])
-
-plugins.RegisterBuildProviderClass(MOCK_BUILD_PROVIDER_NAME, MockBuildProvider)
 
 
 class BuildTest(absltest.TestCase):
@@ -50,12 +49,10 @@ class BuildTest(absltest.TestCase):
 
   def testGetBuildProviderClass(self):
     cls = build.GetBuildProviderClass(MOCK_BUILD_PROVIDER_NAME)
-
     self.assertEqual(MockBuildProvider, cls)
 
   def testListBuildProviderNames(self):
     names = build.ListBuildProviderNames()
-
     self.assertIn(MOCK_BUILD_PROVIDER_NAME, names)
 
   def testBuildUrl(self):
