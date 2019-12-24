@@ -177,9 +177,8 @@ export function newMockDeviceActionList() {
 export function newMockInvocationStatus() {
   return {
     test_group_statuses: [
-      newMockTestGroupStatus('Passing Module', 3, 3, 0, true, 50),
-      newMockTestGroupStatus(
-          'Failing Module', 42, 13, 29, true, 12345, 'msg 2'),
+      newMockTestGroupStatus('Passing Module', 3, 0, true, 50),
+      newMockTestGroupStatus('Failing Module', 29, 13, true, 12345, 'msg 2'),
     ]
   };
 }
@@ -246,14 +245,13 @@ export function newMockTest(id = TEST_ID, name = TEST_NAME) {
 
 /** Creates a new mock test group status */
 export function newMockTestGroupStatus(
-    name = TEST_GROUP_STATUS_NAME, totalTestCount?: number,
-    completedTestCount?: number, failedTestCount?: number,
-    isCompleted?: boolean, elapsedTime?: number, failureMessage?: string) {
+    name = TEST_GROUP_STATUS_NAME, failedTestCount?: number,
+    passedTestCount?: number, isCompleted?: boolean, elapsedTime?: number,
+    failureMessage?: string) {
   return {
     name,
-    total_test_count: totalTestCount,
-    completed_test_count: completedTestCount,
     failed_test_count: failedTestCount,
+    passed_test_count: passedTestCount,
     is_completed: isCompleted,
     elapsed_time: elapsedTime,
     failure_message: failureMessage,
@@ -407,7 +405,7 @@ export function newMockCommand(
 
 /** Creates a new Command Attempt */
 export function newMockCommandAttempt(
-    totalTestCount?: number, failedTestCount?: number, requestId = REQUEST_ID,
+    failedTestCount?: number, passedTestCount?: number, requestId = REQUEST_ID,
     commandId = COMMAND_ID, attemptId = ATTEMPT_ID, state = COMMAND_STATE,
     startTime = DATE, endTime = DATE_FUTURE): TfcModels.CommandAttempt {
   return {
@@ -415,8 +413,8 @@ export function newMockCommandAttempt(
     command_id: commandId,
     attempt_id: attemptId,
     state,
-    total_test_count: totalTestCount,
     failed_test_count: failedTestCount,
+    passed_test_count: passedTestCount,
     start_time: startTime,
     end_time: endTime,
   };

@@ -45,7 +45,7 @@ describe('TestJobTree', () => {
 
   beforeEach(() => {
     attempt = newMockCommandAttempt();
-    attemptWithResults = newMockCommandAttempt(42, 13);
+    attemptWithResults = newMockCommandAttempt(13, 42);
     command = newMockCommand();
     request = newMockRequest([command], [attemptWithResults, attempt]);
     test = newMockTest();
@@ -82,10 +82,8 @@ describe('TestJobTree', () => {
     expect(text).toContain(attempt.attempt_id);
 
     expect(text).toContain(attemptWithResults.attempt_id);
-    expect(text).toContain(
-        (attemptWithResults.failed_test_count || -1).toString());
-    expect(text).toContain(
-        (attemptWithResults.total_test_count || -1).toString());
+    expect(text).toContain(13);
+    expect(text).toContain(42 + 13);
   });
 
   it('correctly generates a tree of requests, commands, and attempts', () => {
@@ -100,10 +98,8 @@ describe('TestJobTree', () => {
     expect(commandNode.children.length).toEqual(2);
 
     // Check result test counts
-    expect(commandNode.content[2])
-        .toContain(String(attemptWithResults.total_test_count!));
-    expect(commandNode.content[2])
-        .toContain(String(attemptWithResults.failed_test_count!));
+    expect(commandNode.content[2]).toContain(String(42 + 13));
+    expect(commandNode.content[2]).toContain('13');
 
     // Attempt node
     const attemptNode = commandNode.children[0];
@@ -111,10 +107,8 @@ describe('TestJobTree', () => {
     expect(attemptNode.children.length).toEqual(1);
 
     // Check result test counts
-    expect(attemptNode.content[2])
-        .toContain(String(attemptWithResults.total_test_count!));
-    expect(attemptNode.content[2])
-        .toContain(String(attemptWithResults.failed_test_count!));
+    expect(attemptNode.content[2]).toContain(String(42 + 13));
+    expect(attemptNode.content[2]).toContain('13');
 
     // Check start date and run time
     expect(attemptNode.content[3])

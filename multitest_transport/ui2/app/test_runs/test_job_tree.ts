@@ -100,12 +100,12 @@ export class TestJobTree implements OnInit, OnChanges {
     }
 
     // Get latest results
-    let totalTestCount = 0;
     let failedTestCount = 0;
+    let passedTestCount = 0;
     for (const attempt of attempts) {
-      if (attempt.total_test_count && attempt.failed_test_count) {
-        totalTestCount = attempt.total_test_count;
-        failedTestCount = attempt.failed_test_count;
+      if (attempt.passed_test_count && attempt.failed_test_count) {
+        failedTestCount = Number(attempt.failed_test_count);
+        passedTestCount = Number(attempt.passed_test_count);
       }
     }
 
@@ -122,7 +122,8 @@ export class TestJobTree implements OnInit, OnChanges {
     return {
       content: [
         `Job ${command.id}`, `${command.state}`,
-        `${failedTestCount}/${totalTestCount}`, `${startTime}`, `${runTime}`
+        `${failedTestCount}/${failedTestCount + passedTestCount}`,
+        `${startTime}`, `${runTime}`
       ],
       children: attemptNodes,
       level: 0,
@@ -132,8 +133,8 @@ export class TestJobTree implements OnInit, OnChanges {
 
   createAttemptNode(attempt: CommandAttempt): TreeNode {
     const failed = attempt.failed_test_count || 0;
-    const total = attempt.total_test_count || 0;
-    const results = `${failed}/${total}`;
+    const passed = attempt.passed_test_count || 0;
+    const results = `${failed}/${Number(passed) + Number(failed)}`;
     const startTime = attempt.start_time ?
         moment.utc(attempt.start_time).local().format('L, LTS') : '';
     const runTime = this.getRunTime(attempt.start_time, attempt.end_time);

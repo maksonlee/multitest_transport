@@ -116,7 +116,8 @@ def _ProcessRequestEvent(test_run_id, message):
         message.new_state, ndb_models.TestRunState.UNKNOWN)
   if not test_run.test.result_file:
     # No test results file to parse, use partial test counts
-    test_run.total_test_count = message.total_test_count
+    test_run.total_test_count = (message.failed_test_count +
+                                 message.passed_test_count)
     test_run.failed_test_count = message.failed_test_count
     test_run.failed_test_run_count = message.failed_test_run_count
   test_run.cancel_reason =\

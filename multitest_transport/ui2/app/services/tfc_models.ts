@@ -117,6 +117,7 @@ export declare interface TestGroupStatus {
   readonly total_test_count?: number;
   readonly completed_test_count?: number;
   readonly failed_test_count?: number;
+  readonly passed_test_count?: number;
   readonly is_complete?: boolean;
   readonly elapsed_time?: number;
   readonly failure_message?: string;
@@ -190,8 +191,10 @@ export declare interface CommandAttempt {
   readonly summary?: string;
   /** number of tests run */
   readonly total_test_count?: number;
-  /** number of tests failed */
+  /** number of failed tests */
   readonly failed_test_count?: number;
+  /** number of passed tests */
+  readonly passed_test_count?: number;
   /** number of modules failed */
   readonly failed_test_run_count?: number;
 }

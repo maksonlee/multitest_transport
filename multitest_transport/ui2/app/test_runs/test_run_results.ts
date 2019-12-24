@@ -73,14 +73,14 @@ export class TestRunResults implements OnInit, OnChanges {
    */
   createResultsTree(invocationStatus: InvocationStatus): TreeNode[] {
     let failedTestCount = 0;
-    let totalTestCount = 0;
+    let passedTestCount = 0;
     let elapsedTime = 0;
 
     const resultNodes: TreeNode[] = [];
     for (const testGroupStatus of invocationStatus.test_group_statuses || []) {
       // Calculate totals
       failedTestCount += Number(testGroupStatus.failed_test_count || 0);
-      totalTestCount += Number(testGroupStatus.total_test_count || 0);
+      passedTestCount += Number(testGroupStatus.passed_test_count || 0);
       elapsedTime += Number(testGroupStatus.elapsed_time || 0);
 
       // Add message node
@@ -99,7 +99,7 @@ export class TestRunResults implements OnInit, OnChanges {
           testGroupStatus.name,
           this.createTestCountsString(
               testGroupStatus.failed_test_count,
-              testGroupStatus.total_test_count),
+              testGroupStatus.passed_test_count),
           millisToDuration(testGroupStatus.elapsed_time),
         ],
         children: messageNodes,
@@ -108,7 +108,7 @@ export class TestRunResults implements OnInit, OnChanges {
     }
     return [{
       content: [
-        `Total`, this.createTestCountsString(failedTestCount, totalTestCount),
+        `Total`, this.createTestCountsString(failedTestCount, passedTestCount),
         millisToDuration(elapsedTime)
       ],
       children: resultNodes,
@@ -120,14 +120,13 @@ export class TestRunResults implements OnInit, OnChanges {
   // TODO: Add pass/fail filters
 
   /** Show PASSED if no failures, FAILED if at least one failure */
-  createTestCountsString(failed: number|undefined, total: number|undefined):
-      string {
-    if (typeof failed === 'undefined' || typeof failed === 'undefined') {
+  createTestCountsString(failed?: number, passed?: number): string {
+    if (typeof failed === 'undefined' || typeof passed === 'undefined') {
       return '';
     }
     if (Number(failed) === 0) {
-      return `PASSED (${total})`;
+      return `PASSED (${passed})`;
     }
-    return `FAILED (${failed}/${total})`;
+    return `FAILED (${failed}/${Number(failed) + Number(passed)})`;
   }
 }
