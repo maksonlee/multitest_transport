@@ -23,6 +23,7 @@ import mock
 import six
 from tradefed_cluster.configs import lab_config
 
+from multitest_transport.cli import command_util
 from multitest_transport.cli import cli
 from multitest_transport.cli import unittest_util
 
@@ -589,7 +590,8 @@ class CliTest(parameterized.TestCase):
     cli.Stop(args, self._CreateHost())
 
     self.mock_context.assert_has_calls([
-        mock.call.Run(['docker', 'stop', 'mtt']),
+        mock.call.Run(['docker', 'stop', 'mtt'],
+                      timeout=command_util._DOCKER_STOP_CMD_TIMEOUT_SEC),
         mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
         mock.call.Run(['docker', 'container', 'rm', 'mtt']),
     ])
@@ -617,8 +619,10 @@ class CliTest(parameterized.TestCase):
     cli.Stop(args, self._CreateHost())
 
     self.mock_context.assert_has_calls([
-        mock.call.Run(['docker', 'kill', '-s', 'TSTP', 'mtt']),
-        mock.call.Run(['docker', 'container', 'wait', 'mtt']),
+        mock.call.Run(['docker', 'kill', '-s', 'TSTP', 'mtt'],
+                      timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
+        mock.call.Run(['docker', 'container', 'wait', 'mtt'],
+                      timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
         mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
         mock.call.Run(['docker', 'container', 'rm', 'mtt']),
     ])
@@ -633,8 +637,10 @@ class CliTest(parameterized.TestCase):
     cli.Stop(args, self._CreateHost(graceful_shutdown=True))
 
     self.mock_context.assert_has_calls([
-        mock.call.Run(['docker', 'kill', '-s', 'TSTP', 'mtt']),
-        mock.call.Run(['docker', 'container', 'wait', 'mtt']),
+        mock.call.Run(['docker', 'kill', '-s', 'TSTP', 'mtt'],
+                      timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
+        mock.call.Run(['docker', 'container', 'wait', 'mtt'],
+                      timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
         mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
         mock.call.Run(['docker', 'container', 'rm', 'mtt']),
     ])
@@ -1037,4 +1043,3 @@ class CliParserTest(parameterized.TestCase):
 
 if __name__ == '__main__':
   absltest.main()
-

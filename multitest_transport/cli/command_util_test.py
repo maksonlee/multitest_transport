@@ -168,7 +168,7 @@ class CommandContextTest(absltest.TestCase):
     command_thread_class.return_value = command_thread
     self.remote_context.Run(['cmd'], sync=False)
     run_config = command_util.CommandRunConfig(
-        sudo=False, env=None, raise_on_failure=True)
+        sudo=False, env=None, raise_on_failure=True, timeout=None)
     command_thread_class.assert_called_once_with(
         self.remote_context, ['cmd'], run_config)
     command_thread.start.assert_called_once_with()
@@ -236,13 +236,17 @@ class CommandThreadTest(absltest.TestCase):
   def testRun(self):
     context = mock.MagicMock()
     run_config = command_util.CommandRunConfig(
-        sudo=False, env=None, raise_on_failure=True)
+        sudo=False, env=None, raise_on_failure=True, timeout=None)
     thread = command_util.CommandThread(context, ['cmd'], run_config)
     thread.run()
     context.assert_has_calls([
-        mock.call.Run(
-            ['cmd'],
-            sync=True, sudo=False, env=None, raise_on_failure=True)])
+        mock.call.Run(['cmd'],
+                      sync=True,
+                      sudo=False,
+                      env=None,
+                      raise_on_failure=True,
+                      timeout=None)
+    ])
 
 
 class LocalCommandContextTest(absltest.TestCase):
@@ -382,19 +386,25 @@ class DockerHelperTest(absltest.TestCase):
   def testStop(self):
     self._docker_helper.Stop(['c1', 'c2'])
     self._docker_context.assert_has_calls([
-        mock.call.Run(['stop', 'c1', 'c2'])])
+        mock.call.Run(['stop', 'c1', 'c2'],
+                      timeout=command_util._DOCKER_STOP_CMD_TIMEOUT_SEC)
+    ])
 
   def testKill(self):
     """Test DockerHelper.Kill."""
     self._docker_helper.Kill(['c1', 'c2'], 'SIG')
     self._docker_context.assert_has_calls([
-        mock.call.Run(['kill', '-s', 'SIG', 'c1', 'c2'])])
+        mock.call.Run(['kill', '-s', 'SIG', 'c1', 'c2'],
+                      timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC)
+    ])
 
   def testWait(self):
     """Test DockerHelper.Wait."""
     self._docker_helper.Wait(['c1', 'c2'])
     self._docker_context.assert_has_calls([
-        mock.call.Run(['container', 'wait', 'c1', 'c2'])])
+        mock.call.Run(['container', 'wait', 'c1', 'c2'],
+                      timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC)
+    ])
 
   def testInspect(self):
     self._docker_helper.Inspect('c1')

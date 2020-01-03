@@ -371,12 +371,15 @@ def _StopMttNode(args, host):
     if host.config.graceful_shutdown or args.wait:
       logger.info('Wait all tests to finish.')
       docker_helper.Kill([args.name], _TF_QUIT)
-      docker_helper.Wait([args.name])
+      res_shutdown = docker_helper.Wait([args.name])
     else:
-      docker_helper.Stop([args.name])
+      res_shutdown = docker_helper.Stop([args.name])
+    if res_shutdown.return_code != 0:
+      logger.warn('The docker container failed to shut down within given time.')
+      # TODO: implement force kill container after timeout.
   logger.info('Container %s stopped.', args.name)
-  res = docker_helper.Inspect(args.name)
-  if res.return_code != 0:
+  res_inspect = docker_helper.Inspect(args.name)
+  if res_inspect.return_code != 0:
     logger.info('No container %s.', args.name)
     return
   logger.info('Remove container %s.', args.name)

@@ -50,13 +50,16 @@ _CONTAINER_RUNNING_STATUS = 'running'
 _NO_SUCH_OBJECT_ERROR = 'No such object'
 _DEFAULT_TMPFS_SIZE_IN_BYTES = 10 * 2 ** 30  # 10G
 _DOCKER_SERVER = 'https://gcr.io'
+_DOCKER_STOP_CMD_TIMEOUT_SEC = 60 * 60
+_DOCKER_KILL_CMD_TIMEOUT_SEC = 60
+_DOCKER_WAIT_CMD_TIMEOUT_SEC = 2 * 60 * 60
 
 CommandResult = collections.namedtuple(
     'CommandResult', ['return_code', 'stdout', 'stderr'])
 
 
 CommandRunConfig = collections.namedtuple(
-    'CommandRunConfig', ['sudo', 'env', 'raise_on_failure'])
+    'CommandRunConfig', ['sudo', 'env', 'raise_on_failure', 'timeout'])
 
 
 class CommandContextClosedError(Exception):
@@ -290,8 +293,13 @@ class CommandContext(object):
       self.wrapped_context.close()
     self.wrapped_context = None
 
-  def Run(
-      self, command, sync=True, sudo=False, raise_on_failure=True, env=None):
+  def Run(self,
+          command,
+          sync=True,
+          sudo=False,
+          raise_on_failure=True,
+          env=None,
+          timeout=None):
     """Run a command in context.
 
     Args:
@@ -300,6 +308,7 @@ class CommandContext(object):
         sudo: run as sudo
         raise_on_failure: raise Exception on failure or not.
         env: additional environment variables.
+        timeout: int, the timeout to run the command, in seconds.
     Returns:
         a CommandResult
     Raises:
@@ -308,9 +317,7 @@ class CommandContext(object):
     if self._closed:
       raise CommandContextClosedError('%s is already closed' % self.host)
     run_config = CommandRunConfig(
-        sudo=sudo,
-        raise_on_failure=raise_on_failure,
-        env=env)
+        sudo=sudo, raise_on_failure=raise_on_failure, env=env, timeout=timeout)
     if not sync:
       CommandThread(self, command, run_config).start()
       return None
@@ -335,6 +342,8 @@ class CommandContext(object):
     run_kwargs['warn'] = True
     if run_config.env:
       run_kwargs['env'] = run_config.env
+    if isinstance(run_config.timeout, int):
+      run_kwargs['timeout'] = run_config.timeout
     if self._out_stream:
       run_kwargs['out_stream'] = self._out_stream
       run_kwargs['err_stream'] = self._out_stream
@@ -342,11 +351,16 @@ class CommandContext(object):
       run_kwargs['err_stream'] = self._err_stream
     command_str = u' '.join([pipes.quote(token) for token in command])
     res = None
-    if run_config.sudo:
-      res = self.wrapped_context.sudo(
-          command_str, password=self._sudo_password, **run_kwargs)
-    else:
-      res = self.wrapped_context.run(command_str, **run_kwargs)
+    try:
+      if run_config.sudo:
+        res = self.wrapped_context.sudo(
+            command_str, password=self._sudo_password, **run_kwargs)
+      else:
+        res = self.wrapped_context.run(command_str, **run_kwargs)
+    except invoke.exceptions.CommandTimedOut as err:
+      return CommandResult(
+          return_code=err.result.exited, std_out='', std_err=str(err))
+
     if run_config.raise_on_failure and res.return_code != 0:
       raise RuntimeError(
           'command returned %s: stdout=%s, stderr=%s' % (
@@ -377,6 +391,7 @@ class CommandContext(object):
     if run_config.env:
       kwargs['env'] = dict(os.environ, **run_config.env)
     start_time = time.time()
+    # TODO: apply timeout once subprocess supports in python3.
     proc = subprocess.Popen(command, **kwargs)
     stdout, stderr = proc.communicate()
     logger.debug(
@@ -626,7 +641,8 @@ class DockerHelper(object):
     Returns:
       the CommandResult
     """
-    return self._docker_context.Run(['stop'] + container_names)
+    return self._docker_context.Run(
+        ['stop'] + container_names, timeout=_DOCKER_STOP_CMD_TIMEOUT_SEC)
 
   def Kill(self, container_names, signal):
     """Send a signal to container with kill command.
@@ -637,7 +653,9 @@ class DockerHelper(object):
     Returns:
       the CommandResult
     """
-    return self._docker_context.Run(['kill', '-s', signal] + container_names)
+    return self._docker_context.Run(
+        ['kill', '-s', signal] + container_names,
+        timeout=_DOCKER_KILL_CMD_TIMEOUT_SEC)
 
   def Wait(self, container_names):
     """Wait the containers to stop.
@@ -647,7 +665,9 @@ class DockerHelper(object):
     Returns:
       the CommandResult
     """
-    return self._docker_context.Run(['container', 'wait'] + container_names)
+    return self._docker_context.Run(
+        ['container', 'wait'] + container_names,
+        timeout=_DOCKER_WAIT_CMD_TIMEOUT_SEC)
 
   def Inspect(self, resource_name, output_format=None, raise_on_failure=False):
     """Inspect the given resource (image or container).

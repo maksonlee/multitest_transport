@@ -161,6 +161,7 @@ py2and3_test(
     ],
     deps = [
         ":cli_lib",
+        ":command_util_lib",
         ":unittest_util_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
