@@ -678,6 +678,17 @@ class DockerHelper(object):
         raise_on_failure=True)
     return res.stdout.strip()
 
+  def CleanupDanglingImages(self):
+    """Clean up dangling docker images.
+
+    Returns:
+      An instance of CommandResult.
+    """
+    logging.info('Cleaning up dangling docker images...')
+    return self._docker_context.Run(
+        ['image', 'prune', '-f', '--filter', '"until=240h"'],
+        raise_on_failure=False)
+
   def IsContainerRunning(self, container_name):
     """Check if container is running or not."""
     res = self.Inspect(container_name, output_format=_CONTAINER_STATUS_FORMAT)

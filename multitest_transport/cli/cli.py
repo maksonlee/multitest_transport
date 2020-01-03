@@ -442,6 +442,7 @@ def _PullUpdate(args, host):
     logger.info('%s is already using the same image as remote, skip.',
                 args.name)
     return False
+  docker_helper.CleanupDanglingImages()
   logger.info(
       '%s != %s, should restart.',
       container_image_remote_digest, image_remote_digest)
