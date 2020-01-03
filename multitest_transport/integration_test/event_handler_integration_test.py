@@ -57,8 +57,8 @@ class EventHandlerIntegrationTest(integration_util.DockerContainerTest):
         self.task,
         'InvocationCompleted',
         data={
-            'total_test_count': 2,
             'failed_test_count': 0,
+            'passed_test_count': 2,
         })
     self.container.WaitForState(self.test_run_id, 'COMPLETED')
     # Test run will contain result information
@@ -72,8 +72,8 @@ class EventHandlerIntegrationTest(integration_util.DockerContainerTest):
         self.task,
         'InvocationCompleted',
         data={
-            'total_test_count': 2,
             'failed_test_count': 1,
+            'passed_test_count': 1,
         })
     self.container.WaitForState(self.test_run_id, 'QUEUED')  # Back to QUEUED
     # Retry attempt can be leased
