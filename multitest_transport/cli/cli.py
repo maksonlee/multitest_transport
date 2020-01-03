@@ -43,6 +43,7 @@ _MTT_PROJECT = 'android-mtt'
 _MTT_SERVER_WAIT_TIME_SECONDS = 120
 
 _MTT_LIB_DIR = '/var/lib/mtt'
+_MTT_LOG_DIR = '/var/log/mtt'
 _TMP_DIR = '/tmp'
 _KEY_FILE = os.path.join(_MTT_LIB_DIR, 'keyfile', 'key.json')
 _TMP_KEY_FILE = os.path.join(_TMP_DIR, 'keyfile', 'key.json')
@@ -161,6 +162,8 @@ def _SetupSystemdScript(args, host):
   finally:
     if tmp_folder:
       shutil.rmtree(tmp_folder)
+  # Create a log folder for MTT system daemon.
+  host.context.Run(['mkdir', '-p', _MTT_LOG_DIR])
 
 
 def _SetupMTTRuntimeIntoLibPath(args, host):
