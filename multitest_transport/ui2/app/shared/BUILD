@@ -56,6 +56,7 @@ ng_module(
         third_party_js("angular2:core"),
         third_party_js("angular2:flex-layout"),
         third_party_js("angular2:forms"),
+        third_party_js("angular2:material_autocomplete"),
         third_party_js("angular2:material_button"),
         third_party_js("angular2:material_card"),
         third_party_js("angular2:material_checkbox"),
