@@ -124,8 +124,8 @@ js_binary(
 genrule(
     name = "app",
     srcs = [
-        ":compiled.js",
         ":uncompiled-bundle.js",
+        ":compiled.js",
     ],
     outs = ["app.js"],
     cmd = "cat $(SRCS) > $@",
