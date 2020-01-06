@@ -104,13 +104,11 @@ export enum BuildChannelAuthState {
  * id: build channel id
  * name: build channel name
  * provider_name: channel provider name (e.g. google drive, local file store)
- * user_upload_url: a url to which user files can be uploaded to.
  */
 export declare interface BuildChannel {
   id: string;
   name: string;
   provider_name: string;
-  user_upload_url?: string;
   auth_state: BuildChannelAuthState;
   need_auth: boolean;
 }

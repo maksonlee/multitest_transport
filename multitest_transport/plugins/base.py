@@ -81,18 +81,16 @@ class BuildProvider(
     six.with_metaclass(BUILD_PROVIDER_REGISTRY.GetMetaclass(), object)):
   """A base class for a build provider."""
 
-  def __init__(self, url_patterns=None, user_upload_url=None):
+  def __init__(self, url_patterns=None):
     """ctor.
 
     Args:
       url_patterns: a list of support URL patterns (regex).
-      user_upload_url: a URL where a user can upload file to.
     """
     self._option_def_map = collections.OrderedDict()
     self._options = None
     self._credentials = None
     self._url_patterns = url_patterns or []
-    self._user_upload_url = user_upload_url
 
   def AddOptionDef(self, name, value_type=str, choices=None, default=None):
     """Adds a new option definition.
@@ -221,11 +219,6 @@ class BuildProvider(
   def url_patterns(self):
     """URL patterns."""
     return self._url_patterns
-
-  @property
-  def user_upload_url(self):
-    """A user upload URL."""
-    return self._user_upload_url
 
   def FindBuildItemPath(self, url):
     """Find a build item by a URL.

@@ -320,10 +320,9 @@ class BuildChannel(messages.Message):
   id = messages.StringField(1, required=True)
   name = messages.StringField(2, required=True)
   provider_name = messages.StringField(3, required=True)
-  user_upload_url = messages.StringField(4)
   auth_state = messages.EnumField(
-      ndb_models.BuildChannelAuthState, 5, required=True)
-  need_auth = messages.BooleanField(6, required=True)
+      ndb_models.BuildChannelAuthState, 4, required=True)
+  need_auth = messages.BooleanField(5, required=True)
 
 
 @Converter(build.BuildChannel, BuildChannel)
@@ -333,7 +332,6 @@ def _BuildChannelConverter(obj):
       id=str(obj.id),
       name=obj.name,
       provider_name=obj.provider_name,
-      user_upload_url=obj.user_upload_url,
       auth_state=obj.auth_state,
       need_auth=authorizable)
 

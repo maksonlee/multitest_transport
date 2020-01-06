@@ -80,7 +80,6 @@ export function newMockBuildChannel(
     id,
     name,
     provider_name: 'Local File Store',
-    user_upload_url: 'user/upload/url',
     auth_state: MttModels.BuildChannelAuthState.AUTHORIZED,
     need_auth: false,
   };

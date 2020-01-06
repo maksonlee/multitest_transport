@@ -311,11 +311,6 @@ class BuildChannel(object):
     """File URL patterns."""
     return self.provider.url_patterns
 
-  @property
-  def user_upload_url(self):
-    """A URL to which user files can be uploaded to."""
-    return self.provider.user_upload_url
-
 
 def AddBuildChannel(name, provider_name, options):
   """Adds a new build channel.

@@ -37,10 +37,6 @@ class LocalFileStoreBuildProvider(base.BuildProvider):
   """A build provider for a local file store."""
   name = 'Local File Store'
 
-  def __init__(self):
-    super(LocalFileStoreBuildProvider, self).__init__(
-        user_upload_url='gs:/' + _GCS_PATH)
-
   def _ToBuildItem(self, filestat):
     path = filestat.filename[len(_GCS_PATH):]
     if path.endswith(_GCS_PATH_DELIMITER):
