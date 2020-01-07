@@ -231,16 +231,6 @@ class BuildChannel(object):
     """
     self.provider.UploadFile(source_url, dst_file_path)
 
-  def GetWebUrl(self, upload_path):
-    """Get a web url.
-
-    Args:
-      upload_path: a path where output will reside.
-    Returns:
-      url: a web url which user can click on and navigate to.
-    """
-    return self.provider.GetWebUrl(upload_path)
-
   def Update(self, name, provider_name, options):
     """Updates a build channel.
 

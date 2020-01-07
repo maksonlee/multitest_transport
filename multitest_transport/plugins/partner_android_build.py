@@ -185,13 +185,3 @@ class PartnerAndroidBuildProvider(base.BuildProvider):
     """
 
     raise NotImplementedError('UploadFile() is not implemented.')
-
-  def GetWebUrl(self, upload_path):
-    """Get a web url.
-
-    Args:
-      upload_path: a path where output will reside.
-    Returns:
-      url: a web url which user can click on and navigate to
-    """
-    raise NotImplementedError('GetWebUrl() is not implemented.')
