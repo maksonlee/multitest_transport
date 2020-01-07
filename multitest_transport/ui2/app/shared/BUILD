@@ -75,6 +75,7 @@ ng_module(
         third_party_js("angular2:material_radio"),
         third_party_js("angular2:material_select"),
         third_party_js("angular2:material_sidenav"),
+        third_party_js("angular2:material_sort"),
         third_party_js("angular2:material_snack_bar"),
         third_party_js("angular2:material_stepper"),
         third_party_js("angular2:material_table"),
