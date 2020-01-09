@@ -440,6 +440,17 @@ class DockerHelperTest(absltest.TestCase):
             ['inspect', 'c1', '--format', '{{.Image}}'],
             raise_on_failure=True)])
 
+  def testGetProcessIdForContainer(self):
+    self._docker_context.Run.side_effect = [
+        command_util.CommandResult(0, 'acontainer_pid\n', None),
+    ]
+    self.assertEqual('acontainer_pid',
+                     self._docker_helper.GetProcessIdForContainer('c1'))
+    self._docker_context.assert_has_calls([
+        mock.call.Run(['inspect', 'c1', '--format', '{{.State.Pid}}'],
+                      raise_on_failure=True)
+    ])
+
   def testCleanupDanglingImages(self):
     self._docker_helper.CleanupDanglingImages()
     self._docker_context.assert_has_calls(

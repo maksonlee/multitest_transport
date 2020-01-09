@@ -46,6 +46,7 @@ _GCLOUD_PATHS = ['gcloud', '/google/data/ro/teams/cloud-sdk/gcloud']
 _REMOTE_IMAGE_DIGEST_FORMAT = '{{index .RepoDigests 0}}'
 _IMAGE_ID_FORMAT = '{{.Image}}'
 _CONTAINER_STATUS_FORMAT = '{{.State.Status}}'
+_CONTAINER_PID_FORMAT = '{{.State.Pid}}'
 _CONTAINER_RUNNING_STATUS = 'running'
 _NO_SUCH_OBJECT_ERROR = 'No such object'
 _DEFAULT_TMPFS_SIZE_IN_BYTES = 10 * 2 ** 30  # 10G
@@ -358,6 +359,8 @@ class CommandContext(object):
       else:
         res = self.wrapped_context.run(command_str, **run_kwargs)
     except invoke.exceptions.CommandTimedOut as err:
+      logger.warn('The command <%s> fails to execute within given time <%s s>.',
+                  command_str, run_kwargs['timeout'])
       return CommandResult(
           return_code=err.result.exited, std_out='', std_err=str(err))
 
@@ -695,6 +698,14 @@ class DockerHelper(object):
     """Get container's image id."""
     res = self.Inspect(
         container_name, output_format=_IMAGE_ID_FORMAT,
+        raise_on_failure=True)
+    return res.stdout.strip()
+
+  def GetProcessIdForContainer(self, container_name):
+    """Get container's process id."""
+    res = self.Inspect(
+        container_name,
+        output_format=_CONTAINER_PID_FORMAT,
         raise_on_failure=True)
     return res.stdout.strip()
 

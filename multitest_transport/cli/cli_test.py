@@ -659,6 +659,24 @@ class CliTest(parameterized.TestCase):
     self.mock_context.assert_has_calls([
         mock.call.Run(['systemctl', 'stop', 'mttd.service'])])
 
+  @mock.patch('__main__.cli.command_util.DockerHelper.Stop')
+  @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
+  @mock.patch.object(cli, '_ForceKillMttNode')
+  def testStop_ForceKill(self, force_kill, is_running, docker_stop):
+    is_running.return_value = True
+    self.mock_context.host = 'ahost'
+    args = self.arg_parser.parse_args(['stop'])
+    docker_stop.return_value = command_util.CommandResult(
+        1, None, 'command timed out')
+
+    cli.Stop(args, self._CreateHost())
+
+    self.mock_context.assert_has_calls([
+        mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
+        mock.call.Run(['docker', 'container', 'rm', 'mtt']),
+    ])
+    force_kill.assert_called_once()
+
   @mock.patch.object(cli, '_StartMttNode')
   @mock.patch.object(cli, '_StopMttNode')
   @mock.patch.object(cli, '_StartMttDaemon')
@@ -979,6 +997,40 @@ class CliTest(parameterized.TestCase):
     host.context.Run.return_value = cli.command_util.CommandResult(
         return_code=return_code, stdout=stdout, stderr=stderr)
     self.assertEqual(expect_active, cli._IsDaemonActive(host))
+
+  def testForceKillMttNode_withoutContainerRunning(self):
+    host = self._CreateHost()
+    docker_helper = mock.create_autospec(cli.command_util.DockerHelper)
+    docker_helper.IsContainerRunning.return_value = False
+    cli._ForceKillMttNode(host, docker_helper, 'a_container_name')
+    host.context.Run.assert_not_called()
+    docker_helper.IsContainerRunning.assert_called_with('a_container_name')
+
+  def testForceKillMttNode_withContainerRunning(self):
+    host = self._CreateHost()
+    docker_helper = mock.create_autospec(cli.command_util.DockerHelper)
+    docker_helper.IsContainerRunning.side_effect = [
+        True,
+        True,
+        False,
+    ]
+    docker_helper.GetProcessIdForContainer.return_value = 'acontainer_pid'
+    host.context.Run.side_effect = [
+        cli.command_util.CommandResult(0, 'a_parent_pid\n', None),
+        cli.command_util.CommandResult(0, None, None),
+    ]
+
+    cli._ForceKillMttNode(host, docker_helper, 'a_container_name')
+
+    docker_helper.GetProcessIdForContainer.assert_called_with(
+        'a_container_name')
+    docker_helper.IsContainerRunning.assert_called_with('a_container_name')
+    docker_helper.Wait.assert_called_with(['a_container_name'])
+    host.context.assert_has_calls([
+        mock.call.Run(['ps', '-o', 'ppid=', '-p', 'acontainer_pid'],
+                      raise_on_failure=True),
+        mock.call.Run(['kill', '-9', 'a_parent_pid'], raise_on_failure=True),
+    ])
 
 
 _ALL_START_OPTIONS = (

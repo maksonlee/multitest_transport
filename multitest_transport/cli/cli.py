@@ -375,8 +375,8 @@ def _StopMttNode(args, host):
     else:
       res_shutdown = docker_helper.Stop([args.name])
     if res_shutdown.return_code != 0:
-      logger.warn('The docker container failed to shut down within given time.')
-      # TODO: implement force kill container after timeout.
+      logger.warn('The docker container failed to shut down.')
+      _ForceKillMttNode(host, docker_helper, args.name)
   logger.info('Container %s stopped.', args.name)
   res_inspect = docker_helper.Inspect(args.name)
   if res_inspect.return_code != 0:
@@ -384,6 +384,31 @@ def _StopMttNode(args, host):
     return
   logger.info('Remove container %s.', args.name)
   docker_helper.RemoveContainers([args.name])
+
+
+def _ForceKillMttNode(host, docker_helper, container_name):
+  """Force kill MTT container and its parent process.
+
+  This method guarantees to kill a docker container, and it should be used only
+  when "docker kill/stop" does not work, or times out.
+
+  Args:
+    host: an instance of host_util.Host.
+    docker_helper: an instance of command_util.DockerHelper.
+    container_name: string, the name of docker container to kill.
+  """
+  logger.info('Force killing MTT node on host %s', host.name)
+  if not docker_helper.IsContainerRunning(container_name):
+    logger.info('The container process does not exist, skipping killing.')
+    return
+  # Step 1: Find process ID of MTT container.
+  mtt_pid = docker_helper.GetProcessIdForContainer(container_name)
+  # Step 2: Get the parent process ID of MTT(containerd-shim process ID).
+  containerd_pid = host.context.Run(['ps', '-o', 'ppid=', '-p', mtt_pid],
+                                    raise_on_failure=True).stdout.strip()
+  # Step 3: Kill the parent process of MTT and wait until it exists.
+  host.context.Run(['kill', '-9', containerd_pid], raise_on_failure=True)
+  docker_helper.Wait([container_name])
 
 
 def _StopMttDaemon(host):
