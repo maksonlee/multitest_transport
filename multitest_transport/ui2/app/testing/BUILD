@@ -25,3 +25,13 @@ ng_module(
         third_party_js("typings/jasmine"),
     ],
 )
+
+ng_module(
+    name = "angular_util",
+    srcs = ["activated_route_stub.ts"],
+    visibility = ["//multitest_transport"],
+    deps = [
+        third_party_js("angular2:router"),
+        third_party_js("rxjs"),
+    ],
+)
