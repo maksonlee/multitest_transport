@@ -16,6 +16,7 @@
 import argparse
 import logging
 import os
+import shlex
 import shutil
 import sys
 import tempfile
@@ -207,6 +208,20 @@ def Update(args, host):
   logger.info('Updated mtt on %s.', host.name)
 
 
+def RunCmd(args, host):
+  """Run command line on remote hosts.
+
+  Args:
+    args: a parsed argparse.Namespace object.
+    host: a Host.
+  """
+  logger.info('Run "%s" on %s.', args.cmd, host.name)
+  tokens = shlex.split(args.cmd)
+  res = host.context.Run(tokens, sudo=args.ask_sudo_password)
+  logger.info(res.stdout)
+  logger.info('Finished "%s" on %s.', args.cmd, host.name)
+
+
 def CreateParser():
   """Creates an argument parser.
 
@@ -240,6 +255,12 @@ def CreateParser():
       'stop', help='Stop a MTT instance on a remote host.',
       parents=[_CreateLabCommandArgParser()])
   subparser.set_defaults(func=Stop)
+
+  subparser = subparsers.add_parser(
+      'run_cmd', help='Run command line on a remote host.',
+      parents=[_CreateLabCommandArgParser()])
+  subparser.add_argument('--cmd', type=str, help='Command line to run.')
+  subparser.set_defaults(func=RunCmd)
   return parser
 
 

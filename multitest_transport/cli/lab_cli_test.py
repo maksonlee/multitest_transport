@@ -197,6 +197,18 @@ class LabCliTest(parameterized.TestCase):
         ['/tmp/mtt', 'stop'], sudo=ask_sudo_password)
     mock_setup.assert_called_once_with(args, host)
 
+  @parameterized.named_parameters(
+      ('run_cmd_with_sudo', True),
+      ('run_cmd_without_sudo', False))
+  def testRunCmd(self, ask_sudo_password):
+    args = mock.MagicMock(
+        ask_sudo_password=ask_sudo_password,
+        cmd='run a command line')
+    host = mock.MagicMock()
+    lab_cli.RunCmd(args, host)
+    host.context.Run.assert_called_once_with(
+        ['run', 'a', 'command', 'line'], sudo=ask_sudo_password)
+
   def testCreateLabCommandArgParser(self):
     parser = lab_cli._CreateLabCommandArgParser()
     args = parser.parse_args(['lab_config.yaml'])
