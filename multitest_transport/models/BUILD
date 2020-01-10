@@ -126,6 +126,7 @@ py_appengine_library(
         ":config_set_helper_lib",
         ":messages_lib",
         ":ndb_models_lib",
+        ":test_run_hook_lib",
     ],
 )
 
@@ -139,5 +140,27 @@ py_appengine_library(
         "//multitest_transport/util",
         third_party("oauth2client_4_0:oauth2client"),
         "@tradefed_cluster//tradefed_cluster:common_lib",
+    ],
+)
+
+py_appengine_library(
+    name = "test_run_hook_lib",
+    srcs = ["test_run_hook.py"],
+    deps = [
+        ":ndb_models_lib",
+        "//multitest_transport/plugins",
+        third_party("six"),
+    ],
+)
+
+py_appengine_test(
+    name = "test_run_hook_test",
+    srcs = [
+        "test_run_hook_test.py",
+    ],
+    deps = [
+        ":test_run_hook_lib",
+        third_party("absl/testing:absltest"),
+        third_party("mock"),
     ],
 )

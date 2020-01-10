@@ -229,6 +229,34 @@ class Webhook(ndb.Model):
   data = ndb.StringProperty()
 
 
+class TestRunPhase(messages.Enum):
+  """Test run phases."""
+  UNKNOWN = 0  # Invalid phase
+  BEFORE_RUN = 1  # Before run is started (but is created)
+  AFTER_ATTEMPT = 2  # After an attempt is completed (successfully or not)
+  AFTER_RUN = 3  # After run is completed (successfully or not)
+  ON_SUCCESS = 4  # After run is completed successfully (may have test failures)
+  ON_ERROR = 5  # After run fails to complete due to errors
+
+
+class TestRunHookConfig(ndb.Model):
+  """Test run hook configuration.
+
+  Attributes:
+    description: run hook description.
+    hook_name: run hook class identifier.
+    phases: phases during which hook should be triggered.
+    options: key-value pairs to use when configuring the hook.
+    tradefed_result_reporters: list of TF result reporters.
+  """
+  description = ndb.StringProperty()
+  hook_name = ndb.StringProperty(required=True)
+  phases = msgprop.EnumProperty(TestRunPhase, repeated=True)
+  options = ndb.LocalStructuredProperty(NameValuePair, repeated=True)
+  tradefed_result_reporters = ndb.LocalStructuredProperty(
+      TradefedConfigObject, repeated=True)
+
+
 class ResultReportAction(ndb.Model):
   """A result report action.
 
@@ -446,6 +474,7 @@ class TestRun(ndb.Model):
     update_time: time a test run is last updated.
     before_device_actions: device actions used during the run.
     result_report_actions: report actions used during the run.
+    hook_configs: test run hooks executed during the run.
     cancel_reason: cancellation reason
     error_reason: error reason
   """
@@ -484,6 +513,7 @@ class TestRun(ndb.Model):
       DeviceAction, repeated=True)
   result_report_actions = ndb.LocalStructuredProperty(
       ResultReportAction, repeated=True)
+  hook_configs = ndb.LocalStructuredProperty(TestRunHookConfig, repeated=True)
 
   cancel_reason = msgprop.EnumProperty(common.CancelReason)
   error_reason = ndb.StringProperty()

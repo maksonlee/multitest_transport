@@ -24,6 +24,7 @@ import six
 from multitest_transport.plugins.registry import PluginRegistry
 
 BUILD_PROVIDER_REGISTRY = PluginRegistry()
+TEST_RUN_HOOK_REGISTRY = PluginRegistry()
 
 OptionDef = collections.namedtuple(
     'OptionDef', ['name', 'value_type', 'choices', 'default'])
@@ -238,3 +239,17 @@ def GetBuildProviderClass(name):
 def ListBuildProviderNames():
   """Lists all registered build provider names."""
   return BUILD_PROVIDER_REGISTRY.ListPluginNames()
+
+
+class TestRunHook(
+    six.with_metaclass(TEST_RUN_HOOK_REGISTRY.GetMetaclass(), object)):
+  """Base class for all test run hooks."""
+
+  def Execute(self, test_run, phase):
+    """Execute the hook's action."""
+    raise NotImplementedError()
+
+
+def GetTestRunHookClass(name):
+  """Retrieve a run hook class by its name."""
+  return TEST_RUN_HOOK_REGISTRY.GetPluginClass(name)
