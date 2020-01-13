@@ -14,15 +14,22 @@
 
 """Tests for build channel provider APIs."""
 
-
-from protorpc import protojson
-
 from absl.testing import absltest
+from protorpc import protojson
 
 from multitest_transport.api import api_test_util
 from multitest_transport.api import build_channel_provider_api
-from multitest_transport.models import build
 from multitest_transport.models import messages
+from multitest_transport.plugins import base as plugins
+
+
+class MockBuildProvider(plugins.BuildProvider):
+  """Dummy build provider for testing."""
+  name = 'Mock'
+
+  def __init__(self):
+    super(MockBuildProvider, self).__init__()
+    self.AddOptionDef('mock_option')
 
 
 class BuildChannelProviderApiTest(api_test_util.TestCase):
@@ -35,25 +42,17 @@ class BuildChannelProviderApiTest(api_test_util.TestCase):
     response = self.app.get('/_ah/api/mtt/v1/build_channel_providers')
     res = protojson.decode_message(messages.BuildChannelProviderList,
                                    response.body)
-    build_channel_providers = res.build_channel_providers
-    provider_names = build.ListBuildProviderNames()
-    self.assertEqual(len(provider_names), len(build_channel_providers))
-    for build_channel_provider in build_channel_providers:
-      self.assertIn(build_channel_provider.name, provider_names)
+    # TODO: exclude superclass from registry
+    self.assertLen(res.build_channel_providers, 2)
+    provider_names = [provider.name for provider in res.build_channel_providers]
+    self.assertCountEqual(['BuildProvider', 'Mock'], provider_names)
 
   def testGet(self):
-    response = self.app.get('/_ah/api/mtt/v1/build_channel_providers/Android')
+    response = self.app.get('/_ah/api/mtt/v1/build_channel_providers/Mock')
     res = protojson.decode_message(messages.BuildChannelProvider, response.body)
-    option_defs = res.option_defs
-    self.assertEqual(0, len(option_defs))
-    self.assertEqual(res.name, 'Android')
-
-    response = self.app.get(
-        '/_ah/api/mtt/v1/build_channel_providers/Google%20Cloud%20Storage')
-    res = protojson.decode_message(messages.BuildChannelProvider, response.body)
-    option_defs = res.option_defs
-    self.assertEqual(0, len(option_defs))
-    self.assertEqual(res.name, 'Google Cloud Storage')
+    self.assertEqual(res.name, 'Mock')
+    self.assertLen(res.option_defs, 1)
+    self.assertEqual(res.option_defs[0].name, 'mock_option')
 
 
 if __name__ == '__main__':

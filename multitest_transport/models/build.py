@@ -24,11 +24,10 @@ import uuid
 from oauth2client import appengine
 from oauth2client import client
 
-from multitest_transport import plugins
+from multitest_transport.plugins import base as plugins
 from multitest_transport.models import ndb_models
 from multitest_transport.util import env
 from multitest_transport.util import errors
-from multitest_transport.plugins import base
 
 BuildItem = plugins.BuildItem  BuildItemType = plugins.BuildItemType  UrlPattern = plugins.UrlPattern  
 
@@ -188,7 +187,7 @@ class BuildChannel(object):
       page_token: an optional token for paging.
       item_type: a type of build items to list. Returns all types if None.
     Returns:
-      (a list of base.BuildItem objects, a next page token)
+      (a list of plugins.BuildItem objects, a next page token)
     """
     return self.provider.ListBuildItems(
         path=path, page_token=page_token, item_type=item_type)
@@ -199,7 +198,7 @@ class BuildChannel(object):
     Args:
       path: a build item path.
     Returns:
-      a base.BuildItem object.
+      a plugins.BuildItem object.
     """
     return self.provider.GetBuildItem(path)
 
@@ -469,7 +468,7 @@ def FindFile(build_channel_id, path, filename=None):
     # Path can be none when file are at first level into the build channel
     # e.g. mtt:///google_drive/file.txt, in this case google_drive in the
     # id, and file.txt is filename, but path is none.
-    build_item = base.BuildItem(name=None, path=None, is_file=False)
+    build_item = plugins.BuildItem(name=None, path=None, is_file=False)
   if not filename:
     return build_item
 

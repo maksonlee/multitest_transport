@@ -24,7 +24,7 @@ py_appengine_library(
     envs = PY_APPENGINE_ENVS,
     deps = [
         ":ndb_models_lib",
-        "//multitest_transport/plugins",
+        "//multitest_transport/plugins:plugin_base",
         "//multitest_transport/util",
         third_party("oauth2client_4_0:oauth2client"),
     ],
@@ -100,7 +100,7 @@ py_appengine_library(
     deps = [
         ":build_lib",
         ":ndb_models_lib",
-        "//multitest_transport/plugins",
+        "//multitest_transport/plugins:plugin_base",
     ],
 )
 
@@ -148,7 +148,7 @@ py_appengine_library(
     srcs = ["test_run_hook.py"],
     deps = [
         ":ndb_models_lib",
-        "//multitest_transport/plugins",
+        "//multitest_transport/plugins:plugin_base",
         third_party("six"),
     ],
 )

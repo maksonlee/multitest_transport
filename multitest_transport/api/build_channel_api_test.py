@@ -24,7 +24,21 @@ from multitest_transport.api import build_channel_api
 from multitest_transport.models import build
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
-from multitest_transport.plugins import base
+from multitest_transport.plugins import base as plugins
+
+
+class AndroidBuildProvider(plugins.BuildProvider):
+  """Dummy build provider for testing."""
+  name = 'Android'
+
+  def __init__(self):
+    super(AndroidBuildProvider, self).__init__()
+    self.AddOptionDef('mock_option')
+
+
+class GoogleDriverBuildProvider(plugins.BuildProvider):
+  """Dummy build provider for testing."""
+  name = 'Google Drive'
 
 
 class BuildChannelApiTest(api_test_util.TestCase):
@@ -73,8 +87,8 @@ class BuildChannelApiTest(api_test_util.TestCase):
   def testListBuildItems(self, mock_channel):
     # create dummy build items to return from channel
     build_items = [
-        base.BuildItem(name='item1', path=u'path1', is_file=True),
-        base.BuildItem(name='item2', path=u'path2', is_file=True)
+        plugins.BuildItem(name='item1', path=u'path1', is_file=True),
+        plugins.BuildItem(name='item2', path=u'path2', is_file=True)
     ]
     mock_channel.return_value = build_items, 'next_page_token'
     config = self._CreateMockBuildChannel()
@@ -108,9 +122,9 @@ class BuildChannelApiTest(api_test_util.TestCase):
     data = {
         'name': 'testName',
         'id': '',
-        'provider_name': 'Partner Android Build',
+        'provider_name': 'Android',
         'options': [{
-            'name': 'account_id',
+            'name': 'mock_option',
             'value': '123123123'
         }]
     }

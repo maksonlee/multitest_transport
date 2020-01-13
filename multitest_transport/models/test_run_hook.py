@@ -15,8 +15,8 @@
 """Run hook execution and utilities."""
 import logging
 
-from multitest_transport import plugins
 from multitest_transport.models import ndb_models
+from multitest_transport.plugins import base as plugins
 
 
 def ExecuteHooks(test_run_id, phase):

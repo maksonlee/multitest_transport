@@ -25,7 +25,7 @@ from tradefed_cluster import common
 
 from google.appengine.ext import ndb
 
-from multitest_transport import plugins
+from multitest_transport.plugins import base as plugins
 from multitest_transport.models import build
 from multitest_transport.models import ndb_models
 from multitest_transport.util import env

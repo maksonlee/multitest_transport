@@ -6,25 +6,12 @@ licenses(["notice"])
 
 
 py_library(
-    name = "base_lib",
-    srcs = [
-        "base.py",
-        "constant.py",
-    ],
-    deps = [
-        ":registry_lib",
-        third_party("six"),
-        "//multitest_transport/util",
-    ],
-)
-
-py_library(
     name = "gcs_lib",
     srcs = [
         "gcs.py",
     ],
     deps = [
-        ":base_lib",
+        ":plugin_base",
         ":stream_uploader",
         third_party("apiclient"),
     ],
@@ -49,7 +36,7 @@ py_library(
         "google_drive.py",
     ],
     deps = [
-        ":base_lib",
+        ":plugin_base",
         third_party("apiclient"),
     ],
 )
@@ -73,7 +60,7 @@ py_appengine_library(
         "local_file_store.py",
     ],
     deps = [
-        ":base_lib",
+        ":plugin_base",
     ],
 )
 
@@ -95,7 +82,7 @@ py_appengine_library(
         "partner_android_build.py",
     ],
     deps = [
-        ":base_lib",
+        ":plugin_base",
     ],
 )
 
@@ -116,15 +103,29 @@ py_library(
     name = "plugins",
     srcs = [
         "__init__.py",
-        "base.py",
     ],
     visibility = ["//multitest_transport"],
     deps = [
+        ":plugin_base",
         ":gcs_lib",
         ":google_drive_lib",
         ":local_file_store_lib",
         ":partner_android_build_lib",
         third_party("apiclient"),
+    ],
+)
+
+py_library(
+    name = "plugin_base",
+    srcs = [
+        "base.py",
+        "constant.py",
+    ],
+    visibility = ["//multitest_transport"],
+    deps = [
+        ":registry_lib",
+        third_party("six"),
+        "//multitest_transport/util",
     ],
 )
 

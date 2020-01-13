@@ -107,7 +107,6 @@ py_appengine_library(
     ],
     deps = [
         "//multitest_transport/models",
-        "//multitest_transport/plugins",
         "//multitest_transport/util",
     ],
 )

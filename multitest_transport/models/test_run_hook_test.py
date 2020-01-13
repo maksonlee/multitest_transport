@@ -18,9 +18,9 @@ import mock
 
 from google.appengine.ext import testbed
 
-from multitest_transport import plugins
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
+from multitest_transport.plugins import base as plugins
 
 
 class MockHook(plugins.TestRunHook):

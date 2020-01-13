@@ -87,6 +87,7 @@ py_appengine_binary(
         ":gcs_proxy_lib",
         "//multitest_transport/api",
         "//multitest_transport/core",
+        "//multitest_transport/plugins",
         "//multitest_transport/sidekicks",
         "//multitest_transport/test_scheduler",
         "//multitest_transport/ui2",

@@ -18,8 +18,7 @@ from absl.testing import absltest
 
 from google.appengine.ext import testbed
 
-from multitest_transport import plugins
-from multitest_transport.plugins import base
+from multitest_transport.plugins import base as plugins
 from multitest_transport.models import build
 
 MOCK_BUILD_PROVIDER_NAME = 'mock'
@@ -56,11 +55,11 @@ class BuildTest(absltest.TestCase):
     self.assertIn(MOCK_BUILD_PROVIDER_NAME, names)
 
   def testBuildUrl(self):
-    item = base.BuildItem(
+    item = plugins.BuildItem(
         name='z z z.txt', path='a/b/c/z z z.txt', is_file=True)
     encoded_url = build.BuildUrl('local_file_store', item)
     self.assertEqual(encoded_url, 'mtt:///local_file_store/a/b/c/z%20z%20z.txt')
-    item = base.BuildItem(name='d/e.txt', path='a/b/c/d/e.txt', is_file=True)
+    item = plugins.BuildItem(name='d/e.txt', path='a/b/c/d/e.txt', is_file=True)
     encoded_url = build.BuildUrl('local_file_store', item)
     self.assertEqual(encoded_url, 'mtt:///local_file_store/a/b/c/d%2Fe.txt')
 
