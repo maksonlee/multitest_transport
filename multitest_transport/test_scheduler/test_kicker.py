@@ -29,6 +29,7 @@ from google.appengine.api import taskqueue
 from google.appengine.ext import ndb
 
 from multitest_transport.models import ndb_models
+from multitest_transport.models import test_run_hook
 from multitest_transport.test_scheduler import download_util
 from multitest_transport.test_scheduler import test_run_manager
 
@@ -95,6 +96,11 @@ def CreateTestRun(labels,
     raise ValueError(
         'Cannot find some result report actions: %s -> %s' % (
             test_run_config.result_report_action_keys, result_report_actions))
+  hook_configs = [key.get() for key in test_run_config.hook_config_keys]
+  if not all(hook_configs):
+    raise ValueError(
+        'Cannot find some test run hooks: %s -> %s' % (
+            test_run_config.hook_config_keys, hook_configs))
 
   # Populate before/after webhooks.
   before_webhooks = []
@@ -151,7 +157,8 @@ def CreateTestRun(labels,
       after_webhooks=after_webhooks,
       state=ndb_models.TestRunState.PENDING,
       before_device_actions=before_device_actions,
-      result_report_actions=result_report_actions)
+      result_report_actions=result_report_actions,
+      hook_configs=hook_configs)
   test_run.put()
   test_run_id = test_run.key.id()
   logging.info('test run %s created', test_run_id)
@@ -221,6 +228,7 @@ def KickTestRun(test_run_id):
   """
   _PrepareTestResources(test_run_id)
   _InvokeBeforeWebhooks(test_run_id)
+  test_run_hook.ExecuteHooks(test_run_id, ndb_models.TestRunPhase.BEFORE_RUN)
   _CreateTFCRequest(test_run_id)
 
 
@@ -452,6 +460,16 @@ def _GetTradefedConfigObjects(test_run):
   for action in test_run.result_report_actions:
     for result_reporter in action.tradefed_result_reporters:
       logging.info(result_reporter)
+      obj = api_messages.TradefedConfigObject(
+          type=api_messages.TradefedConfigObjectType.RESULT_REPORTER,
+          class_name=result_reporter.class_name,
+          option_values=[
+              api_messages.KeyMultiValuePair(key=o.name, values=o.values)
+              for o in result_reporter.option_values
+          ])
+      objs.append(obj)
+  for hook_config in test_run.hook_configs:
+    for result_reporter in hook_config.tradefed_result_reporters:
       obj = api_messages.TradefedConfigObject(
           type=api_messages.TradefedConfigObjectType.RESULT_REPORTER,
           class_name=result_reporter.class_name,

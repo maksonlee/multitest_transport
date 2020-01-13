@@ -26,6 +26,7 @@ import webtest
 from google.appengine.ext import testbed
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
+from multitest_transport.models import test_run_hook
 from multitest_transport.test_scheduler import download_util
 from multitest_transport.test_scheduler import test_kicker
 from multitest_transport.util import analytics
@@ -417,6 +418,62 @@ class TestKickerTest(absltest.TestCase):
     self.assertEqual(
         'retry_command_line extra_args --shard-count 6',
         msg.prev_test_context.command_line)
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    self.assertEqual(mock_request.id, test_run.request_id)
+    self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
+
+  @mock.patch.object(tfc_client, 'NewRequest', autospec=True)
+  @mock.patch.object(test_run_hook, 'ExecuteHooks', autospec=True)
+  @mock.patch.object(download_util, 'DownloadResource', autospec=True)
+  def testKickTestRun_withTestRunHookConfigs(
+      self, mock_download_resource, mock_execute_hooks, mock_new_request):
+    # Create hook config with two TF result reporters
+    hook_config = ndb_models.TestRunHookConfig(
+        hook_name='foo',
+        tradefed_result_reporters=[
+            ndb_models.TradefedConfigObject(
+                class_name='com.android.foo',
+                option_values=[ndb_models.NameMultiValuePair(
+                    name='test-run-id', values=['${MTT_TEST_RUN_ID}'])]
+            ),
+            ndb_models.TradefedConfigObject(class_name='com.android.bar'),
+        ])
+    hook_config.put()
+    # Create test run with hook config
+    test_run = self._CreateMockTestRun(command='command')
+    test_run.hook_configs = [hook_config]
+    test_run.put()
+    test_run_id = test_run.key.id()
+    # Mock responses
+    mock_download_resource.return_value = 'cache_url'
+    mock_request = api_messages.RequestMessage(id='request_id')
+    mock_new_request.return_value = mock_request
+
+    test_kicker.KickTestRun(test_run_id)
+    # Resources downloaded, hooks executed, and new TFC request created
+    mock_download_resource.assert_called()
+    mock_execute_hooks.assert_called_with(
+        test_run_id, ndb_models.TestRunPhase.BEFORE_RUN)
+    mock_new_request.assert_called()
+    msg = mock_new_request.call_args[0][0]
+    self._CheckNewRequestMessage(msg, test_run, command_line='command')
+
+    # TFC request has two TF result reporters with right class names and options
+    tradefed_config_objects = msg.test_environment.tradefed_config_objects
+    self.assertLen(tradefed_config_objects, 2)
+    self.assertEqual(api_messages.TradefedConfigObjectType.RESULT_REPORTER,
+                     tradefed_config_objects[0].type)
+    self.assertEqual('com.android.foo', tradefed_config_objects[0].class_name)
+    self.assertEqual('test-run-id',
+                     tradefed_config_objects[0].option_values[0].key)
+    self.assertEqual([str(test_run_id)],
+                     tradefed_config_objects[0].option_values[0].values)
+    self.assertEqual(api_messages.TradefedConfigObjectType.RESULT_REPORTER,
+                     tradefed_config_objects[1].type)
+    self.assertEqual('com.android.bar', tradefed_config_objects[1].class_name)
+    self.assertEmpty(tradefed_config_objects[1].option_values)
+
+    # Test run now queued
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)

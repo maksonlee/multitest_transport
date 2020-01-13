@@ -292,6 +292,7 @@ class TestRunConfig(ndb.Model):
         attempting recovery
     before_device_action_keys: device actions to execute before running a test.
     result_report_action_keys: result report actions for a test.
+    hook_config_keys: test run hooks to execute during a test.
   """
   test_key = ndb.KeyProperty(kind=Test, required=True)
   cluster = ndb.StringProperty(required=True)
@@ -309,6 +310,7 @@ class TestRunConfig(ndb.Model):
       default=env.DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS)
   before_device_action_keys = ndb.KeyProperty(DeviceAction, repeated=True)
   result_report_action_keys = ndb.KeyProperty(ResultReportAction, repeated=True)
+  hook_config_keys = ndb.KeyProperty(TestRunHookConfig, repeated=True)
 
 
 class TestResourcePipe(ndb.Model):

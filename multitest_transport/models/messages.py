@@ -548,6 +548,41 @@ def _ResultReportActionMessageConverter(msg):
       after_webhooks=Convert(msg.after_webhooks, ndb_models.Webhook))
 
 
+class TestRunHookConfig(messages.Message):
+  """A test run hook config."""
+  id = messages.StringField(1)
+  description = messages.StringField(2)
+  hook_name = messages.StringField(3, required=True)
+  phases = messages.EnumField(ndb_models.TestRunPhase, 4, repeated=True)
+  options = messages.MessageField(NameValuePair, 5, repeated=True)
+  tradefed_result_reporters = messages.MessageField(
+      TradefedConfigObject, 6, repeated=True)
+
+
+@Converter(ndb_models.TestRunHookConfig, TestRunHookConfig)
+def _TestRunHookConfigConverter(obj):
+  return TestRunHookConfig(
+      id=str(obj.key.id()) if obj.key else None,
+      description=obj.description,
+      hook_name=obj.hook_name,
+      phases=obj.phases,
+      options=ConvertNameValuePairs(obj.options, NameValuePair),
+      tradefed_result_reporters=Convert(
+          obj.tradefed_result_reporters, TradefedConfigObject))
+
+
+@Converter(TestRunHookConfig, ndb_models.TestRunHookConfig)
+def _TestRunHookConfigMessageConverter(msg):
+  return ndb_models.TestRunHookConfig(
+      key=ConvertToKey(ndb_models.TestRunHookConfig, msg.id),
+      description=msg.description,
+      hook_name=msg.hook_name,
+      phases=msg.phases,
+      options=ConvertNameValuePairs(msg.options, ndb_models.NameValuePair),
+      tradefed_result_reporters=Convert(
+          msg.tradefed_result_reporters, ndb_models.TradefedConfigObject))
+
+
 class TestRunConfig(messages.Message):
   """A test run config."""
   test_id = messages.StringField(1, required=True)
@@ -565,6 +600,7 @@ class TestRunConfig(messages.Message):
       11, default=env.DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS)
   before_device_action_ids = messages.StringField(12, repeated=True)
   result_report_action_ids = messages.StringField(13, repeated=True)
+  hook_config_ids = messages.StringField(14, repeated=True)
 
 
 @Converter(ndb_models.TestRunConfig, TestRunConfig)
@@ -588,6 +624,9 @@ def _TestRunConfigConverter(obj):
       result_report_action_ids=[
           str(key.id()) for key in obj.result_report_action_keys
       ],
+      hook_config_ids=[
+          str(key.id()) for key in obj.hook_config_keys
+      ],
   )
 
 
@@ -607,6 +646,10 @@ def _TestRunConfigMessageConverter(msg):
       before_device_action_keys=[
           ConvertToKey(ndb_models.DeviceAction, device_action_id)
           for device_action_id in msg.before_device_action_ids
+      ],
+      hook_config_keys=[
+          ConvertToKey(ndb_models.TestRunHookConfig, hook_config_id)
+          for hook_config_id in msg.hook_config_ids
       ])
 
 
@@ -793,9 +836,10 @@ class TestRun(messages.Message):
   before_device_actions = messages.MessageField(DeviceAction, 21, repeated=True)
   result_report_actions = messages.MessageField(
       ResultReportAction, 22, repeated=True)
+  hook_configs = messages.MessageField(TestRunHookConfig, 23, repeated=True)
 
-  test_devices = messages.MessageField(TestDeviceInfo, 23, repeated=True)
-  test_package_info = messages.MessageField(TestPackageInfo, 24)
+  test_devices = messages.MessageField(TestDeviceInfo, 24, repeated=True)
+  test_package_info = messages.MessageField(TestPackageInfo, 25)
 
 
 @Converter(ndb_models.TestRun, TestRun)
@@ -836,6 +880,7 @@ def _TestRunConverter(obj):
       before_device_actions=Convert(obj.before_device_actions, DeviceAction),
       result_report_actions=Convert(
           obj.result_report_actions, ResultReportAction),
+      hook_configs=Convert(obj.hook_configs, TestRunHookConfig),
       test_devices=Convert(obj.test_devices, TestDeviceInfo),
       test_package_info=Convert(obj.test_package_info, TestPackageInfo)
   )

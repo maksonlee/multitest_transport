@@ -17,8 +17,6 @@ import datetime
 import json
 import logging
 
-
-
 from protorpc import protojson
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
@@ -26,7 +24,9 @@ import webapp2
 
 from google.appengine.ext import deferred
 from google.appengine.ext import ndb
+
 from multitest_transport.models import ndb_models
+from multitest_transport.models import test_run_hook
 from multitest_transport.test_scheduler import test_output_uploader
 from multitest_transport.util import analytics
 from multitest_transport.util import file_util
@@ -80,6 +80,16 @@ def _AfterTestRunHandler(test_run):
   # Invoke after webhooks
   if test_run.after_webhooks:
     deferred.defer(_InvokeWebhooks, test_run.key.id(), _transactional=True)
+
+  # Invoke after run hooks
+  if test_run.state == ndb_models.TestRunState.COMPLETED:
+    deferred.defer(test_run_hook.ExecuteHooks, test_run.key.id(),
+                   ndb_models.TestRunPhase.ON_SUCCESS, _transactional=True)
+  elif test_run.state == ndb_models.TestRunState.ERROR:
+    deferred.defer(test_run_hook.ExecuteHooks, test_run.key.id(),
+                   ndb_models.TestRunPhase.ON_ERROR, _transactional=True)
+  deferred.defer(test_run_hook.ExecuteHooks, test_run.key.id(),
+                 ndb_models.TestRunPhase.AFTER_RUN, _transactional=True)
 
   # Upload test run output
   if test_run.test_output_upload_configs:
@@ -158,6 +168,11 @@ def _ProcessCommandAttemptEvent(test_run_id, message):
     test_run.failed_test_run_count = (
         summary.modules_total - summary.modules_done)
   test_run.put()
+
+  # Invoke after attempt hooks
+  if common.IsFinalCommandState(attempt.state) and not test_run.is_finalized:
+    deferred.defer(test_run_hook.ExecuteHooks, test_run_id,
+                   ndb_models.TestRunPhase.AFTER_ATTEMPT, _transactional=True)
 
 
 def _GetTestContext(request_id):

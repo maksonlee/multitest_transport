@@ -16,8 +16,6 @@
 
 import datetime
 
-
-
 import mock
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
@@ -25,7 +23,9 @@ from tradefed_cluster import common
 from google.appengine.ext import deferred
 from google.appengine.ext import testbed
 from absl.testing import absltest
+
 from multitest_transport.models import ndb_models
+from multitest_transport.models import test_run_hook
 from multitest_transport.test_scheduler import test_output_uploader
 from multitest_transport.test_scheduler import tfc_event_handler
 from multitest_transport.util import analytics
@@ -232,6 +232,8 @@ class TfcEventHandlerTest(absltest.TestCase):
     mock_defer.assert_has_calls([
         mock.call(tfc_event_handler._InvokeWebhooks,
                   self.mock_test_run.key.id(), _transactional=True),
+        mock.call(test_run_hook.ExecuteHooks, self.mock_test_run.key.id(),
+                  ndb_models.TestRunPhase.AFTER_RUN, _transactional=True),
         mock.call(test_output_uploader.ScheduleUploadJobs,
                   self.mock_test_run.key.id(), _transactional=True),
         mock.call(tfc_event_handler._TrackTestRun,
