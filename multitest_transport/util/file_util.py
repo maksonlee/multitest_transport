@@ -239,7 +239,7 @@ class GCSFileHandle(FileHandle):
 
   def __init__(self, url):
     super(GCSFileHandle, self).__init__(url)
-    self.file_path = url[5:]
+    self.file_path = url[4:]
 
   def Info(self):
     try:

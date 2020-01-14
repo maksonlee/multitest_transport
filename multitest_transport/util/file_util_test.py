@@ -40,9 +40,9 @@ class FileUtilTest(absltest.TestCase):
 
   def testFileHandle_Get(self):
     # GCS URL
-    handle = file_util.FileHandle.Get('gs://path')
+    handle = file_util.FileHandle.Get('gs://bucket/filename')
     self.assertIsInstance(handle, file_util.GCSFileHandle)
-    self.assertEqual(handle.file_path, 'path')
+    self.assertEqual(handle.file_path, '/bucket/filename')
 
     # Browsepy URL
     handle = file_util.FileHandle.Get('file://root/path')
