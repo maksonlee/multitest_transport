@@ -111,6 +111,7 @@ py_library(
         ":google_drive_lib",
         ":local_file_store_lib",
         ":partner_android_build_lib",
+        ":web_hook_lib",
         third_party("apiclient"),
     ],
 )
@@ -165,6 +166,29 @@ py_appengine_test(
     ],
     deps = [
         ":stream_uploader",
+        third_party("absl/testing:absltest"),
+        third_party("mock"),
+    ],
+)
+
+py_appengine_library(
+    name = "web_hook_lib",
+    srcs = [
+        "web_hook.py",
+    ],
+    deps = [
+        ":plugin_base",
+    ],
+)
+
+py_appengine_test(
+    name = "web_hook_test",
+    srcs = [
+        "web_hook_test.py",
+    ],
+    deps = [
+        ":web_hook_lib",
+        "//multitest_transport/models",
         third_party("absl/testing:absltest"),
         third_party("mock"),
     ],

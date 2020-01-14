@@ -210,25 +210,6 @@ class DeviceAction(ndb.Model):
       TradefedConfigObject, repeated=True)
 
 
-class HttpMethod(messages.Enum):
-  """HTTP methods."""
-  GET = 0
-  POST = 1
-
-
-class Webhook(ndb.Model):
-  """A webhook.
-
-  Attributes:
-    url: a target URL.
-    http_method: a HTTP method.
-    data: optional POST data.
-  """
-  url = ndb.StringProperty(required=True)
-  http_method = msgprop.EnumProperty(HttpMethod, default=HttpMethod.GET)
-  data = ndb.StringProperty()
-
-
 class TestRunPhase(messages.Enum):
   """Test run phases."""
   UNKNOWN = 0  # Invalid phase
@@ -263,14 +244,10 @@ class ResultReportAction(ndb.Model):
   Attributes:
     name: a result report name.
     tradefed_result_reporters: a list of Tradefed result reporters.
-    before_webhooks: a list of webhooks to invoke before a test run.
-    after_webhooks: a list of webhooks to invoke after a test run.
   """
   name = ndb.StringProperty(required=True)
   tradefed_result_reporters = ndb.LocalStructuredProperty(
       TradefedConfigObject, repeated=True)
-  before_webhooks = ndb.LocalStructuredProperty(Webhook, repeated=True)
-  after_webhooks = ndb.LocalStructuredProperty(Webhook, repeated=True)
 
 
 class TestRunConfig(ndb.Model):
@@ -464,8 +441,6 @@ class TestRun(ndb.Model):
     output_url: a test output URL.
     prev_test_context: a previous test context object.
     next_test_context: a test context object from this test run.
-    before_webhooks: a list of Webhook objects to invoke before a test run.
-    after_webhooks: a list of Webhook objects to invoke before a test run.
     test_package_info: a test package information
     test_devices: a list of TestDeviceInfo of DUTs
     request_id: a TFC request ID.
@@ -497,8 +472,6 @@ class TestRun(ndb.Model):
   output_url = ndb.StringProperty()
   prev_test_context = ndb.LocalStructuredProperty(TestContextObj)
   next_test_context = ndb.LocalStructuredProperty(TestContextObj)
-  before_webhooks = ndb.LocalStructuredProperty(Webhook, repeated=True)
-  after_webhooks = ndb.LocalStructuredProperty(Webhook, repeated=True)
   test_package_info = ndb.StructuredProperty(TestPackageInfo)
   test_devices = ndb.StructuredProperty(TestDeviceInfo, repeated=True)
   request_id = ndb.StringProperty()

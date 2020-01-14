@@ -498,32 +498,12 @@ class DeviceActionList(messages.Message):
   next_page_token = messages.StringField(2)
 
 
-class Webhook(messages.Message):
-  """A webhook."""
-  url = messages.StringField(1, required=True)
-  http_method = messages.EnumField(ndb_models.HttpMethod, 2)
-  data = messages.StringField(3)
-
-
-@Converter(ndb_models.Webhook, Webhook)
-def _WebhookConverter(obj):
-  return Webhook(url=obj.url, http_method=obj.http_method, data=obj.data)
-
-
-@Converter(Webhook, ndb_models.Webhook)
-def _WebhookMessageConverter(msg):
-  return ndb_models.Webhook(
-      url=msg.url, http_method=msg.http_method, data=msg.data)
-
-
 class ResultReportAction(messages.Message):
   """A result report action."""
   id = messages.StringField(1)
   name = messages.StringField(2, required=True)
   tradefed_result_reporters = messages.MessageField(
       TradefedConfigObject, 3, repeated=True)
-  before_webhooks = messages.MessageField(Webhook, 4, repeated=True)
-  after_webhooks = messages.MessageField(Webhook, 5, repeated=True)
 
 
 @Converter(ndb_models.ResultReportAction, ResultReportAction)
@@ -532,9 +512,7 @@ def _ResultReportActionConverter(obj):
       id=str(obj.key.id()) if obj.key else None,
       name=obj.name,
       tradefed_result_reporters=Convert(
-          obj.tradefed_result_reporters, TradefedConfigObject),
-      before_webhooks=Convert(obj.before_webhooks, Webhook),
-      after_webhooks=Convert(obj.after_webhooks, Webhook))
+          obj.tradefed_result_reporters, TradefedConfigObject))
 
 
 @Converter(ResultReportAction, ndb_models.ResultReportAction)
@@ -543,9 +521,7 @@ def _ResultReportActionMessageConverter(msg):
       key=ConvertToKey(ndb_models.ResultReportAction, msg.id),
       name=msg.name,
       tradefed_result_reporters=Convert(
-          msg.tradefed_result_reporters, ndb_models.TradefedConfigObject),
-      before_webhooks=Convert(msg.before_webhooks, ndb_models.Webhook),
-      after_webhooks=Convert(msg.after_webhooks, ndb_models.Webhook))
+          msg.tradefed_result_reporters, ndb_models.TradefedConfigObject))
 
 
 class TestRunHookConfig(messages.Message):

@@ -39,7 +39,6 @@ from multitest_transport.util import errors
 from multitest_transport.util import file_util
 from multitest_transport.util import gcs_util
 from multitest_transport.util import tfc_client
-from multitest_transport.util import webhook_util
 
 
 TEST_KICKER_QUEUE = 'test-kicker-queue'
@@ -102,13 +101,6 @@ def CreateTestRun(labels,
         'Cannot find some test run hooks: %s -> %s' % (
             test_run_config.hook_config_keys, hook_configs))
 
-  # Populate before/after webhooks.
-  before_webhooks = []
-  after_webhooks = []
-  for action in result_report_actions:
-    before_webhooks.extend(action.before_webhooks)
-    after_webhooks.extend(action.after_webhooks)
-
   test_resource_defs = test.test_resource_defs[:]
   for device_action in before_device_actions:
     test_resource_defs += device_action.test_resource_defs
@@ -153,8 +145,6 @@ def CreateTestRun(labels,
       test_resources=test_resource_map.values(),
       test_output_upload_configs=test_output_upload_configs,
       prev_test_context=prev_test_context,
-      before_webhooks=before_webhooks,
-      after_webhooks=after_webhooks,
       state=ndb_models.TestRunState.PENDING,
       before_device_actions=before_device_actions,
       result_report_actions=result_report_actions,
@@ -227,7 +217,6 @@ def KickTestRun(test_run_id):
     test_run_id: a test run ID.
   """
   _PrepareTestResources(test_run_id)
-  _InvokeBeforeWebhooks(test_run_id)
   test_run_hook.ExecuteHooks(test_run_id, ndb_models.TestRunPhase.BEFORE_RUN)
   _CreateTFCRequest(test_run_id)
 
@@ -288,22 +277,6 @@ def _UpdateTestResource(test_run_id, resource_name, cache_url,
   if test_package_info:
     test_run.test_package_info = test_package_info
   test_run.put()
-
-
-def _InvokeBeforeWebhooks(test_run_id):
-  """Invokes before webhooks."""
-  test_run = ndb_models.TestRun.get_by_id(test_run_id)
-  if test_run.state == ndb_models.TestRunState.CANCELED:
-    logging.info(
-        'Test run %s is CANCELED; aborting _InvokeBeforeWebooks()',
-        test_run_id)
-    return
-  assert test_run.state == ndb_models.TestRunState.PENDING
-  ctx = test_run.GetContext()
-  logging.info(
-      'Invoking before web hooks for test run %s: context=%s', test_run_id, ctx)
-  for webhook in test_run.before_webhooks:
-    webhook_util.InvokeWebhook(webhook, context=ctx)
 
 
 def _CreateTFCRequest(test_run_id):

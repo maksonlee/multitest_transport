@@ -31,7 +31,6 @@ from multitest_transport.test_scheduler import test_output_uploader
 from multitest_transport.util import analytics
 from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
-from multitest_transport.util import webhook_util
 
 
 TEST_RUN_STATE_MAP = {
@@ -50,7 +49,7 @@ def _AfterTestRunHandler(test_run):
 
   After a test run is in one of the final states, MTT needs to do the following:
     Save the final test context.
-    Invoke configured webhooks.
+    Invoke configured test run hooks.
     Schedule a job to upload test output files.
     Record test run metrics.
 
@@ -76,10 +75,6 @@ def _AfterTestRunHandler(test_run):
       logging.debug(
           'Setting the next_test_context = %s', test_run.next_test_context)
   test_run.put()
-
-  # Invoke after webhooks
-  if test_run.after_webhooks:
-    deferred.defer(_InvokeWebhooks, test_run.key.id(), _transactional=True)
 
   # Invoke after run hooks
   if test_run.state == ndb_models.TestRunState.COMPLETED:
@@ -182,16 +177,6 @@ def _GetTestContext(request_id):
   if request.commands:
     return tfc_client.GetTestContext(request.id, request.commands[0].id)
   return None
-
-
-def _InvokeWebhooks(test_run_id):
-  """Invoke a test run's after webhooks."""
-  test_run = ndb_models.TestRun.get_by_id(test_run_id)
-  if not test_run:
-    return
-  ctx = test_run.GetContext()
-  for webhook in test_run.after_webhooks:
-    webhook_util.InvokeWebhook(webhook, context=ctx)
 
 
 def _TrackTestRun(test_run_id):

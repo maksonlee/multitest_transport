@@ -105,7 +105,6 @@ py_appengine_library(
         ":gcs_util_lib",
         ":noop_handler",
         ":tfc_client_lib",
-        ":webhook_util_lib",
     ],
 )
 
@@ -136,26 +135,6 @@ py_appengine_test(
     deps = [
         ":file_util_lib",
         third_party("absl/testing:absltest"),
-        third_party("mock"),
-    ],
-)
-
-py_appengine_library(
-    name = "webhook_util_lib",
-    srcs = [
-        "webhook_util.py",
-    ],
-)
-
-py_appengine_test(
-    name = "webhook_util_test",
-    srcs = [
-        "webhook_util_test.py",
-    ],
-    deps = [
-        ":webhook_util_lib",
-        third_party("absl/testing:absltest"),
-        third_party("hamcrest"),
         third_party("mock"),
     ],
 )

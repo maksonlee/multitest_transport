@@ -31,7 +31,6 @@ from multitest_transport.test_scheduler import tfc_event_handler
 from multitest_transport.util import analytics
 from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
-from multitest_transport.util import webhook_util
 
 
 class TfcEventHandlerTest(absltest.TestCase):
@@ -214,24 +213,18 @@ class TfcEventHandlerTest(absltest.TestCase):
             ndb_models.TestResourceObj(url='url', name='name')
         ])
 
-    # add a webhook to invoke
-    mock_webhook = ndb_models.Webhook(url='url')
-    self.mock_test_run.after_webhooks.append(mock_webhook)
-
     # add output upload URL
     mock_upload_config = ndb_models.TestOutputUploadConfig(url='url')
     self.mock_test_run.test_output_upload_configs = [mock_upload_config]
 
     tfc_event_handler._AfterTestRunHandler(self.mock_test_run)
 
-    # test run updated, webhooks invoked, output uploaded, and metrics tracked
+    # test run updated, run hooks invoked, output uploaded, and metrics tracked
     mock_get_request.assert_called_with(request_id)
     mock_get_test_context.assert_called_with(request_id, 'bar')
     self.assertEqual(expected_test_context,
                      self.mock_test_run.next_test_context)
     mock_defer.assert_has_calls([
-        mock.call(tfc_event_handler._InvokeWebhooks,
-                  self.mock_test_run.key.id(), _transactional=True),
         mock.call(test_run_hook.ExecuteHooks, self.mock_test_run.key.id(),
                   ndb_models.TestRunPhase.AFTER_RUN, _transactional=True),
         mock.call(test_output_uploader.ScheduleUploadJobs,
@@ -239,16 +232,6 @@ class TfcEventHandlerTest(absltest.TestCase):
         mock.call(tfc_event_handler._TrackTestRun,
                   self.mock_test_run.key.id(), _transactional=True),
     ])
-
-  @mock.patch.object(webhook_util, 'InvokeWebhook')
-  def testInvokeWebhooks(self, mock_invoke):
-    # add a webhook to invoke
-    mock_webhook = ndb_models.Webhook(url='url')
-    self.mock_test_run.after_webhooks.append(mock_webhook)
-
-    tfc_event_handler._InvokeWebhooks(self.mock_test_run.key.id())
-    mock_invoke.assert_called_with(mock_webhook,
-                                   context=self.mock_test_run.GetContext())
 
   @mock.patch.object(analytics, 'Log')
   @mock.patch.object(tfc_client, 'GetRequest')
