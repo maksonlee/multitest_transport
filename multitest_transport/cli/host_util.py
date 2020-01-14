@@ -181,13 +181,15 @@ def _SequentialExecute(func, args, hosts, exit_on_error=False):
         raise e
 
 
-def _BuildHostsWithContext(host_configs, ssh_key=None, ask_sudo_password=False):
+def _BuildHostsWithContext(host_configs, ssh_key=None, ask_sudo_password=False,
+                           sudo_user=None):
   """Create contexts for hosts.
 
   Args:
     host_configs: a list of HostConfig objects.
     ssh_key: ssh key to login the host.
     ask_sudo_password: bool, whether to ask for sudo password.
+    sudo_user: string, user to execute sudo commands.
   Returns:
     a list of Hosts
   """
@@ -197,22 +199,23 @@ def _BuildHostsWithContext(host_configs, ssh_key=None, ask_sudo_password=False):
   for host_config in host_configs:
     host = Host(host_config)
     hosts.append(host)
-    if ask_sudo_password:
+    if not sudo_password and ask_sudo_password:
       sudo_password = getpass.getpass(
           'Enter the sudo password for %s@%s:' % (
-              host_config.host_login_name, host_config.hostname))
+              sudo_user or host_config.host_login_name, host_config.hostname))
     try:
       if ssh_key:
         host.context = _BuildHostContext(
-            host_config, ssh_key=ssh_key, sudo_password=sudo_password)
+            host_config, ssh_key=ssh_key, sudo_password=sudo_password,
+            sudo_user=sudo_user)
       if not host.context:
         host.context = _BuildHostContext(
-            host_config, sudo_password=sudo_password)
+            host_config, sudo_password=sudo_password, sudo_user=sudo_user)
       if not host.context and login_password:
         host.context = _BuildHostContext(
             host_config,
             login_password=login_password,
-            sudo_password=sudo_password)
+            sudo_password=sudo_password, sudo_user=sudo_user)
       if not host.context:
         # Get new password.
         login_password = getpass.getpass(
@@ -220,7 +223,8 @@ def _BuildHostsWithContext(host_configs, ssh_key=None, ask_sudo_password=False):
                 host_config.host_login_name, host_config.hostname))
         host.context = _BuildHostContext(
             host_config, login_password=login_password,
-            sudo_password=sudo_password, raise_on_error=True)
+            sudo_password=sudo_password, sudo_user=sudo_user,
+            raise_on_error=True)
     except Exception as e:        msg = 'Can\'t login %s, skip.' % host_config.hostname
       logger.exception(msg)
       host.error = e
@@ -230,13 +234,14 @@ def _BuildHostsWithContext(host_configs, ssh_key=None, ask_sudo_password=False):
 
 def _BuildHostContext(
     host_config, raise_on_error=False, login_password=None, ssh_key=None,
-    sudo_password=None):
+    sudo_password=None, sudo_user=None):
   """Build HostContext for host config."""
+  sudo_user = sudo_user or host_config.host_login_name
   try:
     context = command_util.CommandContext(
         host_config.hostname, host_config.host_login_name,
         login_password=login_password, ssh_key=ssh_key,
-        sudo_password=sudo_password)
+        sudo_password=sudo_password, sudo_user=sudo_user)
     return context
   except command_util.AuthenticationError as e:
     logger.debug(e)
@@ -315,7 +320,8 @@ class Executor(object):
     self.hosts = _BuildHostsWithContext(
         self.host_configs,
         ssh_key=args.ssh_key,
-        ask_sudo_password=args.ask_sudo_password)
+        ask_sudo_password=args.ask_sudo_password,
+        sudo_user=args.sudo_user)
 
   def _GetLabConfigPath(self):
     """Get lab config path for the executor."""

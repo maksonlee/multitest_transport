@@ -29,11 +29,14 @@ class CommandContextTest(absltest.TestCase):
   def setUp(self):
     super(CommandContextTest, self).setUp()
     self.wrapped_context = mock.MagicMock()
+    self.remote_sudo_wrapped_context = mock.MagicMock()
     self.wrapped_context.run.return_value = mock.MagicMock(return_code=0)
-    self.wrapped_context.sudo.return_value = mock.MagicMock(return_code=0)
+    self.remote_sudo_wrapped_context.sudo.return_value = mock.MagicMock(
+        return_code=0)
     self.remote_context = command_util.CommandContext(
         'remotehost', 'remoteuser',
         wrapped_context=self.wrapped_context,
+        remote_sudo_wrapped_context=self.remote_sudo_wrapped_context,
         sudo_password='sudopwd')
 
   def testRun(self):
@@ -76,21 +79,26 @@ class CommandContextTest(absltest.TestCase):
 
   @mock.patch.object(command_util, 'fabric')
   @mock.patch.object(command_util, 'invoke')
-  def testCreateCommandContext_withSudoPwd(self, _, mock_fabric):
+  @mock.patch.object(command_util, 'paramiko')
+  def testCreateCommandContext_withSudoPwd(
+      self, unused_paramiko, unused_invoke, mock_fabric):
     fabric_config = mock.MagicMock()
     mock_fabric.Config.return_value = fabric_config
     context = command_util.CommandContext(
         'host1', 'user1', login_password=None, ssh_key=None,
-        sudo_password='sudopwd')
-    context.wrapped_context.sudo.assert_called_once()
+        sudo_password='sudopwd', sudo_user='sudo_user0')
     self.assertEqual('host1', context.host)
     self.assertEqual('user1', context.user)
     mock_fabric.Config.assert_called_once_with(
         system_ssh_path='~/.ssh/config')
-    mock_fabric.Connection.assert_called_once_with(
-        host='host1',
-        user='user1',
-        config=fabric_config)
+    mock_fabric.Connection.assert_has_calls([
+        mock.call(
+            host='host1', user='user1', config=fabric_config),
+    ])
+    mock_fabric.Connection.assert_has_calls([
+        mock.call(
+            host='host1', user='sudo_user0', config=fabric_config),
+    ])
 
   def testFindGcloud(self):
     context = command_util.CommandContext(
@@ -136,7 +144,7 @@ class CommandContextTest(absltest.TestCase):
 
   def testRun_sudo(self):
     res = self.remote_context.Run(['cmd'], sudo=True)
-    self.wrapped_context.assert_has_calls([
+    self.remote_sudo_wrapped_context.assert_has_calls([
         mock.call.sudo(
             'cmd', out_stream=mock.ANY, err_stream=mock.ANY, warn=True,
             password='sudopwd')])

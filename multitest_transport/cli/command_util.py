@@ -40,7 +40,8 @@ try:
   # Importing fabric can error out in uncatchable ways if paramiko errors out.
   import paramiko    import fabric  except ImportError:
   fabric = None
-  logging.warn('Failed to import fabric')
+  paramiko = None
+  logging.warn('Failed to import fabric or paramiko')
 
 _GCLOUD_PATHS = ['gcloud', '/google/data/ro/teams/cloud-sdk/gcloud']
 _REMOTE_IMAGE_DIGEST_FORMAT = '{{index .RepoDigests 0}}'
@@ -139,7 +140,8 @@ class CommandContext(object):
   """Wrap around invoke.Context."""
 
   def __init__(self, host=None, user=None, login_password=None,
-               wrapped_context=None, ssh_key=None, sudo_password=None):
+               wrapped_context=None, ssh_key=None, sudo_password=None,
+               sudo_user=None, remote_sudo_wrapped_context=None):
     """Create context that will be used to run command with.
 
     Args:
@@ -149,6 +151,8 @@ class CommandContext(object):
       wrapped_context: invoke context, used for test.
       ssh_key: ssh key file to use.
       sudo_password: Text or None, password to run sudo commands.
+      sudo_user: Text or None, user to run sudo commands.
+      remote_sudo_wrapped_context: invoke context, used for sudo test.
     Raises:
       FabricNotFoundError: fabric is not installed.
     """
@@ -164,6 +168,7 @@ class CommandContext(object):
     self._ssh_key = ssh_key
     self._closed = False
     self._sudo_password = sudo_password
+    self._sudo_user = sudo_user
     self._out_stream = HostCommandOutStream(
         None if self._is_local else host, 'stdout')
     # We also output stderr to DEBUG level, if the command failed and
@@ -171,6 +176,7 @@ class CommandContext(object):
     self._err_stream = HostCommandOutStream(
         None if self._is_local else host, 'stderr')
     self.wrapped_context = None
+    self.remote_sudo_wrapped_context = remote_sudo_wrapped_context
     if wrapped_context:
       self.wrapped_context = wrapped_context
       return
@@ -188,6 +194,9 @@ class CommandContext(object):
   def _CreateRemoteWrappedContext(self):
     """Create wrapped context for a remote host.
 
+    This function creates two fabric connections, one for sudo commands, another
+    for regular commands.
+
     Raises:
       AuthenticationError: failed to auth
     """
@@ -195,7 +204,6 @@ class CommandContext(object):
     # Point to a user config
     fab_config = fabric.Config(system_ssh_path='~/.ssh/config')
     connect_kwargs = {
-        'user': self._user,
         'config': fab_config
     }
     if self._ssh_key or self._login_password:
@@ -207,22 +215,29 @@ class CommandContext(object):
       if self._login_password:
         logger.debug('Use password to ssh %s@%s.', self._user, self._host)
         connect_kwargs['connect_kwargs']['password'] = self._login_password
+    regular_connect_kwargs = connect_kwargs.copy()
+    regular_connect_kwargs['user'] = self._user
     try:
       self.wrapped_context = fabric.Connection(
-          host=self._host, **connect_kwargs)
+          host=self._host, **regular_connect_kwargs)
       self.wrapped_context.open()
+      if not self.remote_sudo_wrapped_context and self._sudo_password:
+        sudo_connect_kwargs = connect_kwargs.copy()
+        sudo_connect_kwargs['user'] = self._sudo_user
+        self.remote_sudo_wrapped_context = fabric.Connection(
+            host=self._host, **sudo_connect_kwargs)
+        self._TestSudoAccess()
       logger.info('Connected to %s@%s.', self._user, self._host)
     except (paramiko.AuthenticationException, paramiko.SSHException) as e:
       logger.debug(e)
       raise AuthenticationError(e)
 
-    if self._sudo_password:
-      self._TestSudoAccess()
-
   def _TestSudoAccess(self):
+    """Test sudo access on a host."""
     logger.debug('Testing sudo access.')
     try:
-      self.wrapped_context.sudo(
+      # TODO: support sudo on no-password hosts.
+      self.remote_sudo_wrapped_context.sudo(
           'echo "Testing sudo access..."',
           hide=True,
           password=self._sudo_password)
@@ -354,7 +369,7 @@ class CommandContext(object):
     res = None
     try:
       if run_config.sudo:
-        res = self.wrapped_context.sudo(
+        res = self.remote_sudo_wrapped_context.sudo(
             command_str, password=self._sudo_password, **run_kwargs)
       else:
         res = self.wrapped_context.run(command_str, **run_kwargs)

@@ -126,4 +126,6 @@ def CreateSSHArgParser():
   parser.add_argument(
       '--ask_sudo_password', default=False,
       action='store_true', dest='ask_sudo_password')
+  parser.add_argument(
+      '--sudo_user', dest='sudo_user')
   return parser
