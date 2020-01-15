@@ -23,8 +23,10 @@ class PluginRegistry(object):
     self._plugins_by_name = {}
 
   def RegisterPlugin(self, cls):
-    """Registers a plugin class using its name (property or class name)."""
-    name = getattr(cls, 'name', cls.__name__)
+    """Registers a plugin class using its name."""
+    name = getattr(cls, 'name', None)
+    if not name:
+      return  # Ignore classes without names.
     assert name not in self._plugins_by_name, (
         'Plugin \'%s\' already registered' % name)
     logging.info('Registering plugin \'%s\' (%s)', name, cls)

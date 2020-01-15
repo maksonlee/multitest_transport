@@ -42,10 +42,9 @@ class BuildChannelProviderApiTest(api_test_util.TestCase):
     response = self.app.get('/_ah/api/mtt/v1/build_channel_providers')
     res = protojson.decode_message(messages.BuildChannelProviderList,
                                    response.body)
-    # TODO: exclude superclass from registry
-    self.assertLen(res.build_channel_providers, 2)
+    self.assertLen(res.build_channel_providers, 1)
     provider_names = [provider.name for provider in res.build_channel_providers]
-    self.assertCountEqual(['BuildProvider', 'Mock'], provider_names)
+    self.assertEqual(['Mock'], provider_names)
 
   def testGet(self):
     response = self.app.get('/_ah/api/mtt/v1/build_channel_providers/Mock')
