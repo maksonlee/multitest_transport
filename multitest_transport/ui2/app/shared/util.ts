@@ -139,13 +139,16 @@ export function distinctArray<T>(source: T[]): T[] {
  */
 export function buildApiErrorMessage(errorResponse: HttpErrorResponse) {
   // Endpoint error
-  if (errorResponse.error && errorResponse.error.error &&
-      errorResponse.error.error.errors && errorResponse.error.error.errors[0]) {
+  const error = errorResponse.error && errorResponse.error.error;
+  if (error) {
     try {
-      const o = JSON.parse(errorResponse.error.error.errors[0].message);
-      return {message: o.message, stacktrace: formatStackTrace(o.stacktrace)};
-    } catch (error) {
-      return {message: errorResponse.error.error.errors[0].message};
+      const errorObj = JSON.parse(error.message);
+      return {
+        message: errorObj['message'],
+        stacktrace: formatStackTrace(errorObj['stacktrace'])
+      };
+    } catch {
+      return {message: error.message};
     }
   }
   // If endpoint didn't raise an exception, display the general error message
