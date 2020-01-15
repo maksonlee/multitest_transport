@@ -18,8 +18,6 @@ import json
 
 from absl.testing import absltest
 
-from google.appengine.ext import ndb
-
 from multitest_transport.api import api_test_util
 from multitest_transport.api import node_config_api
 from multitest_transport.models import ndb_models
@@ -41,10 +39,6 @@ class NodeConfigApiTest(api_test_util.TestCase):
             ndb_models.NameValuePair(**obj)
             for obj in data['test_resource_default_download_urls']
         ],
-        result_report_action_keys=[
-            ndb.Key(ndb_models.ResultReportAction, id_)
-            for id_ in data['result_report_action_ids']
-        ],
         proxy_config=ndb_models.ProxyConfig(**data['proxy_config']))
     return node_config
 
@@ -58,7 +52,6 @@ class NodeConfigApiTest(api_test_util.TestCase):
             {'name': 'abc', 'value': 'file://abc'},
             {'name': 'def', 'value': 'file://def'},
         ],
-        'result_report_action_ids': ['zzz'],
         'proxy_config': {
             'http_proxy': 'http_proxy',
             'https_proxy': 'https_proxy',
@@ -84,7 +77,6 @@ class NodeConfigApiTest(api_test_util.TestCase):
             {'name': 'abc', 'value': 'file://abc'},
             {'name': 'def', 'value': 'file://def'},
         ],
-        'result_report_action_ids': ['zzz'],
         'proxy_config': {
             'http_proxy': 'http_proxy',
             'https_proxy': 'https_proxy',

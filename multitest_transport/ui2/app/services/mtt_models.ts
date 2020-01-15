@@ -288,8 +288,6 @@ export declare interface NodeConfig {
    * would be prefilled with the url if supplied here.
    */
   test_resource_default_download_urls?: NameValuePair[];
-  /** default result report actions. */
-  result_report_action_ids?: string[];
   /** proxy configuration. */
   proxy_config?: ProxyConfig;
 }
@@ -590,8 +588,6 @@ export declare interface TestRunConfig {
   output_idle_timeout_seconds?: number;
   /** List of ids for the device actions */
   before_device_action_ids?: string[];
-  /** List of ids for the reporting actions */
-  result_report_action_ids?: string[];
 }
 
 /** initialize a new test run config */
@@ -608,7 +604,6 @@ export function initTestRunConfig(): Partial<TestRunConfig> {
     queue_timeout_seconds: DEFAULT_QUEUE_TIMEOUT_SECONDS,
     output_idle_timeout_seconds: DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS,
     before_device_action_ids: [],
-    result_report_action_ids: [],
   };
 }
 

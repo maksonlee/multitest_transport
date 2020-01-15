@@ -31,31 +31,30 @@ class ConfigTest(absltest.TestCase):
     self.testbed.activate()
     self.testbed.init_all_stubs()
 
-  def CreateNodeConfig(self, env_vars=None, reporter_ids=None):
+  def CreateNodeConfig(self, env_vars=None):
     return ndb_models.NodeConfig(
         id=ndb_models.NODE_CONFIG_ID,
-        env_vars=ndb_models.NameValuePair.FromDict(env_vars or {}),
-        result_report_action_keys=[ndb.Key(ndb_models.ResultReportAction, id_)
-                                   for id_ in (reporter_ids or [])])
+        env_vars=ndb_models.NameValuePair.FromDict(env_vars or {}))
 
   def CreateBuildChannel(self, key=None, name=None, options=None):
     return ndb_models.BuildChannelConfig(
         id=key, name=name, provider_name=name,
         options=ndb_models.NameValuePair.FromDict(options or {}))
 
+  def CreateTestRunHook(self, key=None, hook_name=None, options=None):
+    return ndb_models.TestRunHookConfig(
+        id=key, hook_name=hook_name,
+        options=ndb_models.NameValuePair.FromDict(options or {}))
+
   def testEncode_nodeConfig(self):
     """Tests serializing a node config (single object)."""
-    node_config = self.CreateNodeConfig(env_vars={'variable': 'value'},
-                                        reporter_ids=['foo', 'bar'])
+    node_config = self.CreateNodeConfig(env_vars={'variable': 'value'})
 
     expected =\
 """node_config:
   env_vars:
   - name: variable
     value: value
-  result_report_action_ids:
-  - foo
-  - bar
 """
     actual = config_encoder.Encode(
         config_encoder.ConfigSet(node_config=node_config))
@@ -63,8 +62,7 @@ class ConfigTest(absltest.TestCase):
 
   def testDecode_nodeConfig(self):
     """Tests deserializing a node config (single object)."""
-    node_config = self.CreateNodeConfig(env_vars={'hello': 'world'},
-                                        reporter_ids=['foo', 'bar'])
+    node_config = self.CreateNodeConfig(env_vars={'hello': 'world'})
     expected = config_encoder.ConfigSet(node_config=node_config)
 
     string =\
@@ -72,9 +70,6 @@ class ConfigTest(absltest.TestCase):
   env_vars:
   - name: hello
     value: world
-  result_report_action_ids:
-  - foo
-  - bar
 """
     actual = config_encoder.Decode(string)
     self.assertEqual(expected, actual)
@@ -125,9 +120,10 @@ class ConfigTest(absltest.TestCase):
 
   def testEncode_multipleObjects(self):
     """Tests serializing multiple objects."""
-    node_config = self.CreateNodeConfig(reporter_ids=['test'])
     build_channel = self.CreateBuildChannel(key='foo', name='Foo',
                                             options={'option': 'value'})
+    test_run_hook = self.CreateTestRunHook(key='bar', hook_name='Web',
+                                           options={'url': 'www.google.com'})
     expected = \
 """build_channels:
 - id: foo
@@ -136,29 +132,26 @@ class ConfigTest(absltest.TestCase):
   - name: option
     value: value
   provider_name: Foo
-node_config:
-  result_report_action_ids:
-  - test
+test_run_hooks:
+- hook_name: Web
+  id: bar
+  options:
+  - name: url
+    value: www.google.com
 """
 
     config_set = config_encoder.ConfigSet(
-        node_config=node_config, build_channels=[build_channel])
+        build_channels=[build_channel], test_run_hooks=[test_run_hook])
     actual = config_encoder.Encode(config_set)
     self.assertEqual(expected, actual)
 
   def testDecode_multipleStrings(self):
     """Tests deserializing a merged configuration."""
-    node_config = self.CreateNodeConfig(reporter_ids=['test'])
     build_channel = self.CreateBuildChannel(key='foo', name='Foo',
                                             options={'option': 'value'})
-    expected = config_encoder.ConfigSet(node_config=node_config,
-                                        build_channels=[build_channel])
+    expected = config_encoder.ConfigSet(build_channels=[build_channel])
 
     strings = [
-        """node_config:
-          result_report_action_ids:
-          - test
-        """,
         """build_channels:
         - id: foo
           name: Foo
@@ -178,7 +171,7 @@ node_config:
     self.CreateBuildChannel(key='foo', name='Foo').put()
 
     # load configuration
-    node_config = self.CreateNodeConfig(reporter_ids=['test'])
+    node_config = self.CreateNodeConfig()
     build_channel = self.CreateBuildChannel(key='foo',
                                             options={'option': 'value'})
     config_set = config_encoder.ConfigSet(node_config=node_config,

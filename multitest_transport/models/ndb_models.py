@@ -238,18 +238,6 @@ class TestRunHookConfig(ndb.Model):
       TradefedConfigObject, repeated=True)
 
 
-class ResultReportAction(ndb.Model):
-  """A result report action.
-
-  Attributes:
-    name: a result report name.
-    tradefed_result_reporters: a list of Tradefed result reporters.
-  """
-  name = ndb.StringProperty(required=True)
-  tradefed_result_reporters = ndb.LocalStructuredProperty(
-      TradefedConfigObject, repeated=True)
-
-
 class TestRunConfig(ndb.Model):
   """A test run config.
 
@@ -268,7 +256,6 @@ class TestRunConfig(ndb.Model):
     output_idle_timeout_seconds: how long a test run's output can be idle before
         attempting recovery
     before_device_action_keys: device actions to execute before running a test.
-    result_report_action_keys: result report actions for a test.
     hook_config_keys: test run hooks to execute during a test.
   """
   test_key = ndb.KeyProperty(kind=Test, required=True)
@@ -286,7 +273,6 @@ class TestRunConfig(ndb.Model):
   output_idle_timeout_seconds = ndb.IntegerProperty(
       default=env.DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS)
   before_device_action_keys = ndb.KeyProperty(DeviceAction, repeated=True)
-  result_report_action_keys = ndb.KeyProperty(ResultReportAction, repeated=True)
   hook_config_keys = ndb.KeyProperty(TestRunHookConfig, repeated=True)
 
 
@@ -450,7 +436,6 @@ class TestRun(ndb.Model):
     create_time: time a test run is created.
     update_time: time a test run is last updated.
     before_device_actions: device actions used during the run.
-    result_report_actions: report actions used during the run.
     hook_configs: test run hooks executed during the run.
     cancel_reason: cancellation reason
     error_reason: error reason
@@ -483,11 +468,9 @@ class TestRun(ndb.Model):
   update_time = ndb.DateTimeProperty(auto_now_add=True)
 
   # TODO improve action versioning
-  # Snapshot of the actions executed by the run
+  # Snapshot of the actions/hooks executed by the run
   before_device_actions = ndb.LocalStructuredProperty(
       DeviceAction, repeated=True)
-  result_report_actions = ndb.LocalStructuredProperty(
-      ResultReportAction, repeated=True)
   hook_configs = ndb.LocalStructuredProperty(TestRunHookConfig, repeated=True)
 
   cancel_reason = msgprop.EnumProperty(common.CancelReason)
@@ -630,13 +613,11 @@ class NodeConfig(ndb.Model):
     env_vars: default environment vars.
     test_resource_default_download_urls: default download URLs for test
         resources.
-    result_report_action_keys: default result report actions.
     proxy_config: proxy configuration.
   """
   env_vars = ndb.LocalStructuredProperty(NameValuePair, repeated=True)
   test_resource_default_download_urls = ndb.LocalStructuredProperty(
       NameValuePair, repeated=True)
-  result_report_action_keys = ndb.KeyProperty(ResultReportAction, repeated=True)
   proxy_config = ndb.LocalStructuredProperty(ProxyConfig)
 
 

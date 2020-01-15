@@ -79,8 +79,6 @@ export class SettingForm extends FormChangeTracker implements OnInit,
               this.nodeConfig.env_vars = nodeConfigRes.env_vars || [];
               this.nodeConfig.test_resource_default_download_urls =
                   nodeConfigRes.test_resource_default_download_urls || [];
-              this.nodeConfig.result_report_action_ids =
-                  nodeConfigRes.result_report_action_ids || [];
               this.proxyConfig = nodeConfigRes.proxy_config || {};
 
               this.privateNodeConfig = privateNodeConfigRes;

@@ -56,7 +56,7 @@ class NodeConfigApi(remote.Service):
         node_config=ndb_models.GetNodeConfig(),
         build_channels=ndb_models.BuildChannelConfig.query().fetch(),
         device_actions=ndb_models.DeviceAction.query().fetch(),
-        result_report_actions=ndb_models.ResultReportAction.query().fetch(),
+        test_run_hooks=ndb_models.TestRunHookConfig.query().fetch(),
         tests=ndb_models.Test.query().fetch())
     header = '# MTT Configuration - %s - %s\n' % (
         env.HOSTNAME, datetime.datetime.now())

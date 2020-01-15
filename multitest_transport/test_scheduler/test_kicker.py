@@ -77,8 +77,6 @@ def CreateTestRun(labels,
 
   node_config = ndb_models.GetNodeConfig()
   test.env_vars.extend(node_config.env_vars)
-  test_run_config.result_report_action_keys.extend(
-      node_config.result_report_action_keys)
 
   # Store snapshot of test run's actions
   before_device_actions = [
@@ -88,13 +86,6 @@ def CreateTestRun(labels,
     raise ValueError(
         'Cannot find some device actions: %s -> %s' % (
             test_run_config.before_device_action_keys, before_device_actions))
-  result_report_actions = [
-      key.get() for key in test_run_config.result_report_action_keys
-  ]
-  if not all(result_report_actions):
-    raise ValueError(
-        'Cannot find some result report actions: %s -> %s' % (
-            test_run_config.result_report_action_keys, result_report_actions))
   hook_configs = [key.get() for key in test_run_config.hook_config_keys]
   if not all(hook_configs):
     raise ValueError(
@@ -147,7 +138,6 @@ def CreateTestRun(labels,
       prev_test_context=prev_test_context,
       state=ndb_models.TestRunState.PENDING,
       before_device_actions=before_device_actions,
-      result_report_actions=result_report_actions,
       hook_configs=hook_configs)
   test_run.put()
   test_run_id = test_run.key.id()
@@ -428,17 +418,6 @@ def _GetTradefedConfigObjects(test_run):
           option_values=[
               api_messages.KeyMultiValuePair(key=o.name, values=o.values)
               for o in target_preparer.option_values
-          ])
-      objs.append(obj)
-  for action in test_run.result_report_actions:
-    for result_reporter in action.tradefed_result_reporters:
-      logging.info(result_reporter)
-      obj = api_messages.TradefedConfigObject(
-          type=api_messages.TradefedConfigObjectType.RESULT_REPORTER,
-          class_name=result_reporter.class_name,
-          option_values=[
-              api_messages.KeyMultiValuePair(key=o.name, values=o.values)
-              for o in result_reporter.option_values
           ])
       objs.append(obj)
   for hook_config in test_run.hook_configs:

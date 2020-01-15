@@ -346,7 +346,6 @@ export function newMockTestRunConfig(testId: string) {
     queue_timeout_seconds: 100,
     sharding_mode: MttModels.TFShardingMode.RUNNER,
     before_device_action_ids: [],
-    result_report_action_ids: [],
   };
 }
 

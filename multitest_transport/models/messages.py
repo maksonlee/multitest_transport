@@ -498,32 +498,6 @@ class DeviceActionList(messages.Message):
   next_page_token = messages.StringField(2)
 
 
-class ResultReportAction(messages.Message):
-  """A result report action."""
-  id = messages.StringField(1)
-  name = messages.StringField(2, required=True)
-  tradefed_result_reporters = messages.MessageField(
-      TradefedConfigObject, 3, repeated=True)
-
-
-@Converter(ndb_models.ResultReportAction, ResultReportAction)
-def _ResultReportActionConverter(obj):
-  return ResultReportAction(
-      id=str(obj.key.id()) if obj.key else None,
-      name=obj.name,
-      tradefed_result_reporters=Convert(
-          obj.tradefed_result_reporters, TradefedConfigObject))
-
-
-@Converter(ResultReportAction, ndb_models.ResultReportAction)
-def _ResultReportActionMessageConverter(msg):
-  return ndb_models.ResultReportAction(
-      key=ConvertToKey(ndb_models.ResultReportAction, msg.id),
-      name=msg.name,
-      tradefed_result_reporters=Convert(
-          msg.tradefed_result_reporters, ndb_models.TradefedConfigObject))
-
-
 class TestRunHookConfig(messages.Message):
   """A test run hook config."""
   id = messages.StringField(1)
@@ -575,8 +549,7 @@ class TestRunConfig(messages.Message):
   output_idle_timeout_seconds = messages.IntegerField(
       11, default=env.DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS)
   before_device_action_ids = messages.StringField(12, repeated=True)
-  result_report_action_ids = messages.StringField(13, repeated=True)
-  hook_config_ids = messages.StringField(14, repeated=True)
+  hook_config_ids = messages.StringField(13, repeated=True)
 
 
 @Converter(ndb_models.TestRunConfig, TestRunConfig)
@@ -596,9 +569,6 @@ def _TestRunConfigConverter(obj):
       output_idle_timeout_seconds=obj.output_idle_timeout_seconds,
       before_device_action_ids=[
           str(key.id()) for key in obj.before_device_action_keys
-      ],
-      result_report_action_ids=[
-          str(key.id()) for key in obj.result_report_action_keys
       ],
       hook_config_ids=[
           str(key.id()) for key in obj.hook_config_keys
@@ -810,12 +780,10 @@ class TestRun(messages.Message):
   update_time = message_types.DateTimeField(20)
 
   before_device_actions = messages.MessageField(DeviceAction, 21, repeated=True)
-  result_report_actions = messages.MessageField(
-      ResultReportAction, 22, repeated=True)
-  hook_configs = messages.MessageField(TestRunHookConfig, 23, repeated=True)
+  hook_configs = messages.MessageField(TestRunHookConfig, 22, repeated=True)
 
-  test_devices = messages.MessageField(TestDeviceInfo, 24, repeated=True)
-  test_package_info = messages.MessageField(TestPackageInfo, 25)
+  test_devices = messages.MessageField(TestDeviceInfo, 23, repeated=True)
+  test_package_info = messages.MessageField(TestPackageInfo, 24)
 
 
 @Converter(ndb_models.TestRun, TestRun)
@@ -854,8 +822,6 @@ def _TestRunConverter(obj):
       create_time=_AddTimezone(obj.create_time),
       update_time=_AddTimezone(obj.update_time),
       before_device_actions=Convert(obj.before_device_actions, DeviceAction),
-      result_report_actions=Convert(
-          obj.result_report_actions, ResultReportAction),
       hook_configs=Convert(obj.hook_configs, TestRunHookConfig),
       test_devices=Convert(obj.test_devices, TestDeviceInfo),
       test_package_info=Convert(obj.test_package_info, TestPackageInfo)
@@ -1003,8 +969,7 @@ class NodeConfig(messages.Message):
   env_vars = messages.MessageField(NameValuePair, 1, repeated=True)
   test_resource_default_download_urls = messages.MessageField(
       NameValuePair, 2, repeated=True)
-  result_report_action_ids = messages.StringField(3, repeated=True)
-  proxy_config = messages.MessageField(ProxyConfig, 4)
+  proxy_config = messages.MessageField(ProxyConfig, 3)
 
 
 @Converter(ndb_models.NodeConfig, NodeConfig)
@@ -1013,9 +978,6 @@ def _NodeConfigConverter(obj):
       env_vars=ConvertNameValuePairs(obj.env_vars, NameValuePair),
       test_resource_default_download_urls=ConvertNameValuePairs(
           obj.test_resource_default_download_urls, NameValuePair),
-      result_report_action_ids=[
-          str(key.id()) for key in obj.result_report_action_keys
-      ],
       proxy_config=Convert(obj.proxy_config, ProxyConfig))
 
 
@@ -1027,10 +989,6 @@ def _NodeConfigMessageConverter(msg):
       msg.env_vars, ndb_models.NameValuePair)
   node_config.test_resource_default_download_urls = ConvertNameValuePairs(
       msg.test_resource_default_download_urls, ndb_models.NameValuePair)
-  node_config.result_report_action_keys = [
-      ConvertToKey(ndb_models.ResultReportAction, id_)
-      for id_ in msg.result_report_action_ids
-  ]
   node_config.proxy_config = Convert(msg.proxy_config, ndb_models.ProxyConfig)
   return node_config
 
