@@ -23,12 +23,14 @@ import urllib2
 import xml.etree.cElementTree as ElementTree
 import zipfile
 
+import apiclient
 import cloudstorage as gcs
 from protorpc import messages
 
 from multitest_transport.util import env
 
 DOWNLOAD_BUFFER_SIZE = 16 * 1024 * 1024
+UPLOAD_BUFFER_SIZE = 512 * 1024
 
 _DIRECTORY_DOWNLOAD_FORMAT = 'download/directory/%s.tgz'
 
@@ -446,3 +448,18 @@ def GetXtsTestResultSummary(file_handle):
       elem.clear()
   except Exception as e:      logging.error('Failed to get test result summary: %s', e)
   return None
+
+
+class FileHandleMediaUpload(apiclient.http.MediaIoBaseUpload):
+  """MediaUpload which uploads a file handle without streaming."""
+
+  def __init__(self, handle, chunksize=UPLOAD_BUFFER_SIZE, resumable=False):
+    info = handle.Info()
+    super(FileHandleMediaUpload, self).__init__(fd=handle,
+                                                mimetype=info.content_type,
+                                                chunksize=chunksize,
+                                                resumable=resumable)
+
+  def has_stream(self):
+    # Disable streaming to issue a single request per chunk.
+    return False

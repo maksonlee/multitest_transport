@@ -25,7 +25,7 @@ def Discover():
   """Import all plugin modules."""
   logging.info('Discovering plugin modules...')
   for _, name, ispkg in pkgutil.iter_modules([os.path.dirname(__file__)]):
-    if ispkg or name in ['base', 'constant', 'registry', 'stream_uploader']:
+    if ispkg or name in ['base', 'constant', 'registry']:
       continue
     name = __package__ + '.' + name
     logging.info('Importing plugin %s...', name)

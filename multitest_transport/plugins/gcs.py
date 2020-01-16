@@ -24,7 +24,6 @@ import six
 
 from multitest_transport.plugins import base
 from multitest_transport.plugins import constant
-from multitest_transport.plugins import stream_uploader
 from multitest_transport.util import env
 from multitest_transport.util import file_util
 
@@ -273,27 +272,18 @@ class GCSBuildProvider(base.BuildProvider):
     """
     client = self._GetClient()
 
-    file_info = file_util.GetFileInfo(source_url)
-    total_size = file_info.total_size
-    if not total_size:
-      logging.info('File %s is empty', source_url)
-      return
-
-    media = stream_uploader.MediaUpload(
-        url=source_url,
-        total_size=total_size,
-        mimetype=file_info.content_type,
-        chunksize=_UPLOAD_BUFFER_SIZE,
-        resumable=True)
+    file_handle = file_util.FileHandle.Get(source_url)
+    media = file_util.FileHandleMediaUpload(
+        file_handle, chunksize=_UPLOAD_BUFFER_SIZE, resumable=True)
 
     bucket, object_name = _ParsePath(dst_file_path)
     request = client.objects().insert(
         bucket=bucket,
         name=object_name,
         media_body=media)
-    response = None
-    while response is None:
-      status, response = request.next_chunk(num_retries=constant.NUM_RETRIES)
+    done = False
+    while not done:
+      status, done = request.next_chunk(num_retries=constant.NUM_RETRIES)
       if status:
         status_str = 'Uploaded %d%%.' % int(status.progress() * 100)
         logging.debug(status_str)

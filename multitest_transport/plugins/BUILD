@@ -12,7 +12,7 @@ py_library(
     ],
     deps = [
         ":plugin_base",
-        ":stream_uploader",
+        "//multitest_transport/util",
         third_party("apiclient"),
     ],
 )
@@ -146,28 +146,6 @@ py_appengine_test(
         ":registry_lib",
         third_party("absl/testing:absltest"),
         third_party("six"),
-    ],
-)
-
-py_library(
-    name = "stream_uploader",
-    srcs = [
-        "stream_uploader.py",
-    ],
-    deps = [
-        third_party("apiclient"),
-    ],
-)
-
-py_appengine_test(
-    name = "stream_uploader_test",
-    srcs = [
-        "stream_uploader_test.py",
-    ],
-    deps = [
-        ":stream_uploader",
-        third_party("absl/testing:absltest"),
-        third_party("mock"),
     ],
 )
 

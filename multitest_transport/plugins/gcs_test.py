@@ -21,7 +21,6 @@ import mock
 from multitest_transport.plugins import base
 from multitest_transport.plugins import constant
 from multitest_transport.plugins import gcs
-from multitest_transport.plugins import stream_uploader
 from multitest_transport.util import file_util
 
 
@@ -297,42 +296,34 @@ class GCSTest(absltest.TestCase):
     expected = [file_util.FileChunk(data='', offset=100, total_size=100)]
     self.assertEqual(expected, result)
 
-  @mock.patch.object(stream_uploader, 'MediaUpload')
-  @mock.patch.object(file_util, 'GetFileInfo')
+  @mock.patch.object(file_util, 'FileHandleMediaUpload')
+  @mock.patch.object(file_util.FileHandle, 'Get')
   @mock.patch.object(gcs.GCSBuildProvider, '_GetClient')
-  def testUploadFile(self,
-                     mock_get_client,
-                     mock_get_file_info,
-                     mock_media_upload):
+  def testUploadFile(
+      self, mock_get_client, mock_handle_factory, mock_media_upload_ctor):
     """Test UploadFile."""
     provider = gcs.GCSBuildProvider()
+    # Configure mock file handle
+    mock_handle = mock.MagicMock()
+    mock_handle_factory.return_value = mock_handle
+    mock_media_upload = mock.MagicMock()
+    mock_media_upload_ctor.return_value = mock_media_upload
 
-    mock_get_bucket_name = mock.MagicMock(return_value='random_bucket_name')
-    provider._GetBucketName = mock_get_bucket_name
-
-    mock_get_file_info.return_value = file_util.FileInfo(
-        total_size=100, content_type='image/jpeg', timestamp=None)
-
-    mock_media_upload.return_value = None
-
+    # Configure mock client and response (upload will be done)
     request = mock.MagicMock()
-    request.next_chunk = mock.MagicMock(return_value=(None, True))
-
+    request.next_chunk.return_value = None, True
     mock_api_client = mock.MagicMock()
     mock_api_client.objects().insert.return_value = request
     mock_get_client.return_value = mock_api_client
 
+    # Upload file and verify that media upload constructed and used properly
     provider.UploadFile('fake_url', 'bucket/test_run/error.txt')
-    mock_media_upload.assert_called_with(url='fake_url',
-                                         total_size=100,
-                                         mimetype='image/jpeg',
-                                         chunksize=gcs._UPLOAD_BUFFER_SIZE,
-                                         resumable=True)
-
+    mock_media_upload_ctor.assert_called_with(
+        mock_handle, chunksize=gcs._UPLOAD_BUFFER_SIZE, resumable=True)
     mock_api_client.objects().insert.assert_called_with(
         bucket='bucket',
         name='test_run/error.txt',
-        media_body=None)
+        media_body=mock_media_upload)
 
 
 if __name__ == '__main__':

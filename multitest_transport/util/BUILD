@@ -115,6 +115,7 @@ py_appengine_library(
     ],
     deps = [
         ":env_lib",
+        third_party("apiclient"),
         third_party("cloudstorage"),
     ],
 )

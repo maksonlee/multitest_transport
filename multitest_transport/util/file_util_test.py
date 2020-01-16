@@ -320,7 +320,7 @@ class FileUtilTest(absltest.TestCase):
     mock_file_handle = file(test_file)
     self.assertIsNone(file_util.GetTestSuiteInfo(mock_file_handle))
 
-  def testGet_GetXtsTestResultSummary(self):
+  def testGetXtsTestResultSummary(self):
     test_file = os.path.join(TEST_DATA_DIR, 'test_result.xml')
     mock_file_handle = file(test_file)
     summary = file_util.GetXtsTestResultSummary(mock_file_handle)
@@ -328,6 +328,22 @@ class FileUtilTest(absltest.TestCase):
     self.assertEqual(34, summary.failed)
     self.assertEqual(56, summary.modules_done)
     self.assertEqual(78, summary.modules_total)
+
+  def testFileHandleMediaUpload(self):
+    # Create mock file handle which delegates to a file-like object
+    test_file = file(os.path.join(TEST_DATA_DIR, 'test_result.xml'))
+    mock_file_handle = mock.MagicMock()
+    mock_file_handle.Info.return_value = file_util.FileInfo(146, 'type', None)
+    mock_file_handle.seek = test_file.seek
+    mock_file_handle.tell = test_file.tell
+    mock_file_handle.read = test_file.read
+
+    # Test that media upload can read bytes and calculate size
+    media_upload = file_util.FileHandleMediaUpload(mock_file_handle)
+    self.assertEqual(146, media_upload.size())
+    self.assertEqual('?xml', media_upload.getbytes(1, 4))
+    self.assertEqual('type', media_upload.mimetype())
+    self.assertFalse(media_upload.has_stream())
 
 
 if __name__ == '__main__':
