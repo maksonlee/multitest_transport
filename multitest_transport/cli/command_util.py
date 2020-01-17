@@ -377,7 +377,7 @@ class CommandContext(object):
       logger.warn('The command <%s> fails to execute within given time <%s s>.',
                   command_str, run_kwargs['timeout'])
       return CommandResult(
-          return_code=err.result.exited, std_out='', std_err=str(err))
+          return_code=err.result.exited, stdout='', stderr=str(err))
 
     if run_config.raise_on_failure and res.return_code != 0:
       raise RuntimeError(
