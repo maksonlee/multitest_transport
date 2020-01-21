@@ -24,7 +24,7 @@ from multitest_transport.test_scheduler import download_util
 from multitest_transport.util import file_util
 
 
-MTT_CONFIG_SET_PATH = 'android-mtt.appspot.com/prod/config_sets'
+MTT_CONFIG_SET_PATH = 'android-test-catalog/prod'
 GCS_BUILD_CHANNEL_ID = 'google_cloud_storage'
 GCS_URL = 'mtt:///%s/%s' % (GCS_BUILD_CHANNEL_ID, MTT_CONFIG_SET_PATH)
 
@@ -47,22 +47,24 @@ def GetLocalConfigSetInfos():
   return info_messages
 
 
-def ParseConfigSetInfo(local_url):
-  """Reads a config file and returns the config set info data.
+def ParseConfigSet(url):
+  """Reads a config file from a url and returns the config set info data.
 
   Args:
-    local_url: A link to the file in the local gcs storage (file:///...)
+    url: An MTT GCS built item url, e.g. mtt:///google_cloud_storage/...
   Returns:
-    A ndb_models.ConfigSetInfo object
+    A ndb_models.ConfigSet object
   """
+  local_url = download_util.DownloadResource(url)
   file_data = file_util.ReadFile(local_url, split_lines=False)
   content = file_data.lines
 
   config_set = config_encoder.Decode(content)
-  info = config_set.config_set_info
+  info = config_set.info
+  # TODO: Split HostConfigs from ConfigSets and make info required
   if info:
     info.hash = _Hash(content)
-  return info
+  return config_set
 
 
 def GetRemoteConfigSetInfos():
@@ -88,9 +90,8 @@ def GetRemoteConfigSetInfos():
       continue
 
     # Read file
-    build_item_url = '%s/%s' % (GCS_URL, build_item.name)
-    local_url = download_util.DownloadResource(build_item_url)
-    info = ParseConfigSetInfo(local_url)
+    gcs_url = '%s/%s' % (GCS_URL, build_item.name)
+    info = ParseConfigSet(gcs_url).info
     if info:
       info_message = mtt_messages.Convert(info, mtt_messages.ConfigSetInfo)
       info_message.imported = False

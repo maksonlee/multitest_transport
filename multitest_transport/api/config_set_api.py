@@ -22,6 +22,7 @@ from protorpc import remote
 import endpoints
 
 from multitest_transport.api import base
+from multitest_transport.models import config_encoder
 from multitest_transport.models import config_set_helper
 from multitest_transport.models import messages as mtt_messages
 
@@ -60,4 +61,18 @@ class ConfigSetApi(remote.Service):
 
     return mtt_messages.ConfigSetInfoList(
         config_set_infos=info_message_list)
+
+  @endpoints.method(
+      endpoints.ResourceContainer(
+          message_types.VoidMessage,
+          url=messages.StringField(1)),
+      mtt_messages.ConfigSetInfo,
+      path='/config_sets/import',
+      http_method='GET',
+      name='import')
+  def Import(self, request):
+    config_set = config_set_helper.ParseConfigSet(request.url)
+    config_encoder.Load(config_set)
+    config_set.info.put()
+    return mtt_messages.Convert(config_set.info, mtt_messages.ConfigSetInfo)
 

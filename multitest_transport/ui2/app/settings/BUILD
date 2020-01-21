@@ -57,6 +57,7 @@ ng_module(
         third_party_js("rxjs"),
         third_party_js("typings/jasmine"),
         "//multitest_transport/ui2/app/services",
+        "//multitest_transport/ui2/app/shared",
         "//multitest_transport/ui2/app/testing:jasmine_util",
         "//multitest_transport/ui2/app/testing:test_util",
     ],

@@ -17,6 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {SelectionModel} from '@angular/cdk/collections';
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {forkJoin} from 'rxjs';
 import {delay, filter, finalize, first} from 'rxjs/operators';
 
 import {AuthEventState, AuthService} from '../services/auth_service';
@@ -107,10 +108,24 @@ export class ConfigSetImporter implements OnInit {
   }
 
   importSelectedConfigSets() {
+    this.isLoading = true;
+    this.liveAnnouncer.announce('Importing config sets', 'assertive');
+
+    const configObs = [];
     for (const info of this.selection.selected) {
-      // TODO: call configsetinfo import API
-      console.log(info);
+      configObs.push(this.mttClient.importConfigSet(info.url));
     }
+    forkJoin(configObs)
+        .pipe(first())
+        .pipe(delay(100))  // Wait for updates when reloading page
+        .pipe(finalize(() => {
+          this.isLoading = false;
+          this.liveAnnouncer.announce('Loading complete', 'assertive');
+        }))
+        .subscribe(res => {
+          this.notifier.showMessage(`Configuration(s) imported`);
+          this.loadConfigSetInfos();
+        });
   }
 
   getStatus(info: ConfigSetInfo) {

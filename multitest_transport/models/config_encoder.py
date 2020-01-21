@@ -22,6 +22,8 @@ import yaml
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 
+NAMESPACE_SEPARATOR = '::'
+
 
 def Encode(config_set):
   """Serializes MTT configuration.
@@ -48,7 +50,19 @@ def Decode(str_or_list):
   for string in str_or_list:
     _MergeConfigs(data, yaml.safe_load(string))
   msg = protojson.decode_message(_ConfigSetMessage, json.dumps(data))
+
+  # If url is provided, add it as a namespace to the id to dedupe objects from
+  # different configs with the same id and identify which config set each
+  # belongs to.
+  info = msg.info
+  if info:
+    for obj in msg.tests + msg.device_actions + msg.build_channels:
+      obj.id = _AddNamespaceToId(info.url, obj.id)
   return messages.Convert(msg, ConfigSet)
+
+
+def _AddNamespaceToId(namespace, obj_id):
+  return NAMESPACE_SEPARATOR.join([namespace, obj_id])
 
 
 def Load(config_set):
@@ -131,13 +145,13 @@ class ConfigSet(object):
   """MTT configuration set object."""
 
   def __init__(self, node_config=None, build_channels=None, device_actions=None,
-               test_run_hooks=None, tests=None, config_set_info=None):
+               test_run_hooks=None, tests=None, info=None):
     self.node_config = node_config
     self.build_channels = build_channels or []
     self.device_actions = device_actions or []
     self.test_run_hooks = test_run_hooks or []
     self.tests = tests or []
-    self.config_set_info = config_set_info
+    self.info = info
     # TODO: add support for test plans
 
   def __eq__(self, other):
@@ -147,7 +161,7 @@ class ConfigSet(object):
             self.device_actions == other.device_actions and
             self.test_run_hooks == other.test_run_hooks and
             self.tests == other.tests and
-            self.config_set_info == other.config_set_info)
+            self.info == other.info)
 
   def __ne__(self, other):
     return not self.__eq__(other)
@@ -160,7 +174,7 @@ class _ConfigSetMessage(Message):
   device_actions = MessageField(messages.DeviceAction, 3, repeated=True)
   test_run_hooks = MessageField(messages.TestRunHookConfig, 4, repeated=True)
   tests = MessageField(messages.Test, 5, repeated=True)
-  config_set_info = MessageField(messages.ConfigSetInfo, 6)
+  info = MessageField(messages.ConfigSetInfo, 6)
 
 
 @messages.Converter(ConfigSet, _ConfigSetMessage)
@@ -174,8 +188,7 @@ def _ConfigSetConverter(obj):
       test_run_hooks=messages.Convert(obj.test_run_hooks,
                                       messages.TestRunHookConfig),
       tests=messages.Convert(obj.tests, messages.Test),
-      config_set_info=messages.Convert(obj.config_set_info,
-                                       messages.ConfigSetInfo))
+      info=messages.Convert(obj.info, messages.ConfigSetInfo))
 
 
 @messages.Converter(_ConfigSetMessage, ConfigSet)
@@ -189,5 +202,4 @@ def _ConfigSetMessageConverter(msg):
       test_run_hooks=messages.Convert(msg.test_run_hooks,
                                       ndb_models.TestRunHookConfig),
       tests=messages.Convert(msg.tests, ndb_models.Test),
-      config_set_info=messages.Convert(msg.config_set_info,
-                                       ndb_models.ConfigSetInfo))
+      info=messages.Convert(msg.info, ndb_models.ConfigSetInfo))

@@ -31,6 +31,9 @@ const BUILD_ITEM_NAME = 'test_build_item_name';
 const CLUSTER = 'cluster1';
 const COMMAND_ID = 'commandid456';
 const COMMAND_STATE = TfcModels.CommandState.RUNNING;
+const CONFIG_SET_URL = 'mtt://android-mtt.appspot.com/google_cloud_storage/url';
+const CONFIG_SET_NAME = 'Test Config Set';
+const CONFIG_SET_HASH = 'someconfigsethash12345';
 const DATE = new Date().toISOString();
 const DATE_FUTURE = addTime(DATE, 0, 5, 0);  // 5 minutes later
 const DEVICE_ACTION_ID = 'reset';
@@ -139,6 +142,19 @@ export function newMockBuildItemList() {
     build_items:
         [newMockBuildItem('a'), newMockBuildItem('b'), newMockBuildItem('c')],
     next_page_token: 'fake_token'
+  };
+}
+
+/** Create a mock ConfigSetInfo */
+export function newMockConfigSetInfo(
+    url = CONFIG_SET_URL, name = CONFIG_SET_NAME, hash = CONFIG_SET_HASH,
+    imported = true, updateAvailable = false) {
+  return {
+    url,
+    name,
+    hash,
+    imported,
+    update_available: updateAvailable,
   };
 }
 
