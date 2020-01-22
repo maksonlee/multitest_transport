@@ -43,6 +43,6 @@ export interface ErrorDialogData {
   styleUrls: ['./error_dialog.css'],
 })
 export class ErrorDialog {
-  panelOpenState = false;
+  showStacktrace = false;
   constructor(@Inject(MAT_DIALOG_DATA) readonly data: ErrorDialogData) {}
 }

@@ -20,22 +20,16 @@
 
 <mat-dialog-content>
   {{data.message}}
-  <p *ngIf="data.detailedError && data.detailedError.message" class="stack-trace-message">
-    Error detail: {{data.detailedError.message}}
-  </p>
+  <pre *ngIf="data.detailedError?.message">Error detail: {{data.detailedError.message}}</pre>
+
+  <div *ngIf="data.detailedError?.stacktrace" class="stacktrace">
+    <div class="stacktrace-header" (click)="showStacktrace = !showStacktrace">
+      <mat-icon>{{showStacktrace ? 'expand_more': 'chevron_right'}}</mat-icon>
+      Stacktrace
+    </div>
+    <pre *ngIf="showStacktrace">{{data.detailedError.stacktrace}}</pre>
+  </div>
 </mat-dialog-content>
-<mat-accordion *ngIf="data.detailedError && data.detailedError.stacktrace" hideToggle="true">
-  <mat-expansion-panel (opened)="panelOpenState = true"
-                       (closed)="panelOpenState = false">
-    <mat-expansion-panel-header>
-      <mat-panel-title>
-        <mat-icon>{{panelOpenState ? 'expand_more': 'chevron_right'}}</mat-icon>
-        <span class="stack-trace-title">Stacktrace</span>
-      </mat-panel-title>
-      </mat-expansion-panel-header>
-      <pre class="stack-trace-message">{{data.detailedError.stacktrace}}</pre>
-    </mat-expansion-panel>
-</mat-accordion>
 
 <mat-dialog-actions>
   <button mat-button color="accent" *ngIf="data.rejectText" mat-dialog-close>{{data.rejectText}}</button>

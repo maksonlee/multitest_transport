@@ -44,7 +44,6 @@ ng_module(
         third_party_js("angular2:forms"),
         third_party_js("angular2:material_button"),
         third_party_js("angular2:material_dialog"),
-        third_party_js("angular2:material_expansion"),
         third_party_js("angular2:material_form_field"),
         third_party_js("angular2:material_icon"),
         third_party_js("angular2:material_input"),
