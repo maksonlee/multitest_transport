@@ -22,6 +22,7 @@ import enum
 import six
 
 from multitest_transport.plugins.registry import PluginRegistry
+from multitest_transport.util import oauth2_util
 
 BUILD_PROVIDER_REGISTRY = PluginRegistry()
 TEST_RUN_HOOK_REGISTRY = PluginRegistry()
@@ -29,8 +30,7 @@ TEST_RUN_HOOK_REGISTRY = PluginRegistry()
 OptionDef = collections.namedtuple(
     'OptionDef', ['name', 'value_type', 'choices', 'default'])
 
-OAuth2Config = collections.namedtuple(
-    'OAuth2Config', ['client_id', 'client_secret', 'scopes'])
+OAuth2Config = oauth2_util.OAuth2Config
 
 BuildItem = collections.namedtuple('BuildItem', [
     'name', 'path', 'is_file', 'size', 'timestamp', 'origin_url', 'description'

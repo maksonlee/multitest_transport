@@ -73,6 +73,30 @@ py_appengine_test(
 )
 
 py_appengine_library(
+    name = "oauth2_util_lib",
+    srcs = [
+        "oauth2_util.py",
+    ],
+    deps = [
+        # TODO: switch to oauth2client_4_0
+        third_party("apiclient"),
+    ],
+)
+
+py_appengine_test(
+    name = "oauth2_util_test",
+    srcs = [
+        "oauth2_util_test.py",
+    ],
+    envs = PY_APPENGINE_ENVS,
+    use_public_sdk = 1,
+    deps = [
+        ":oauth2_util_lib",
+        third_party("absl/testing:absltest"),
+    ],
+)
+
+py_appengine_library(
     name = "tfc_client_lib",
     srcs = [
         "tfc_client.py",
@@ -104,6 +128,7 @@ py_appengine_library(
         ":file_util_lib",
         ":gcs_util_lib",
         ":noop_handler",
+        ":oauth2_util_lib",
         ":tfc_client_lib",
     ],
 )
