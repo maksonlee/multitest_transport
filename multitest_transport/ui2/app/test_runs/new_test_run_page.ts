@@ -332,10 +332,7 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
         this.selectedDeviceActions.map(action => action.id);
 
     const newTestRunRequest: mttModels.NewTestRunRequest = {
-      // TODO: Implement output upload config after sync with
-      // design
       labels: this.labels,
-      test_output_upload_configs: [],
       test_resource_pipes: this.testResourceObjs as
           mttModels.TestResourcePipe[],
       test_run_config: {...this.testRunConfig} as mttModels.TestRunConfig,

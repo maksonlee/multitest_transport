@@ -206,26 +206,6 @@ def _TestResourceDefMessageConverter(msg):
       test_resource_type=msg.test_resource_type)
 
 
-class TestOutputUploadConfig(messages.Message):
-  """An output upload config object.
-
-  Attributes::
-    url: an url consist of channel id, and upload path
-    (e.g: mtt:///c6f2d5f4-6a27-4c03-a39a-95e7bf9b52fa/upload_path)
-  """
-  url = messages.StringField(1)
-
-
-@Converter(ndb_models.TestOutputUploadConfig, TestOutputUploadConfig)
-def _TestOutputUploadConfigConverter(obj):
-  return TestOutputUploadConfig(url=obj.url)
-
-
-@Converter(TestOutputUploadConfig, ndb_models.TestOutputUploadConfig)
-def _TestOutputUploadConfigMessageConverter(msg):
-  return ndb_models.TestOutputUploadConfig(url=msg.url)
-
-
 class Test(messages.Message):
   """A test."""
   id = messages.StringField(1)
@@ -631,11 +611,9 @@ class TestPlan(messages.Message):
   test_run_configs = messages.MessageField(TestRunConfig, 5, repeated=True)
   test_resource_pipes = messages.MessageField(
       TestResourcePipe, 6, repeated=True)
-  test_output_upload_configs = messages.MessageField(
-      TestOutputUploadConfig, 7, repeated=True)
-  before_device_action_ids = messages.StringField(8, repeated=True)
-  last_run_time = message_types.DateTimeField(9)
-  next_run_time = message_types.DateTimeField(10)
+  before_device_action_ids = messages.StringField(7, repeated=True)
+  last_run_time = message_types.DateTimeField(8)
+  next_run_time = message_types.DateTimeField(9)
 
 
 @Converter(ndb_models.TestPlan, TestPlan)
@@ -650,8 +628,6 @@ def _TestPlanConverter(obj):
       cron_exp=obj.cron_exp,
       test_run_configs=Convert(obj.test_run_configs, TestRunConfig),
       test_resource_pipes=Convert(obj.test_resource_pipes, TestResourcePipe),
-      test_output_upload_configs=Convert(
-          obj.test_output_upload_configs, TestOutputUploadConfig),
       before_device_action_ids=[
           str(key.id()) for key in obj.before_device_action_keys
       ],
@@ -670,8 +646,6 @@ def _TestPlanMessageConverter(msg):
       test_run_configs=Convert(msg.test_run_configs, ndb_models.TestRunConfig),
       test_resource_pipes=Convert(
           msg.test_resource_pipes, ndb_models.TestResourcePipe),
-      test_output_upload_configs=Convert(
-          msg.test_output_upload_configs, ndb_models.TestOutputUploadConfig),
       before_device_action_keys=[
           ConvertToKey(ndb_models.DeviceAction, device_action_id)
           for device_action_id in msg.before_device_action_ids
@@ -763,27 +737,25 @@ class TestRun(messages.Message):
   test = messages.MessageField(Test, 6)
   test_run_config = messages.MessageField(TestRunConfig, 7)
   test_resources = messages.MessageField(TestResourceObj, 8, repeated=True)
-  test_output_upload_configs = messages.MessageField(
-      TestOutputUploadConfig, 9, repeated=True)
-  state = messages.EnumField(ndb_models.TestRunState, 10)
-  state_info = messages.StringField(11)
-  output_url = messages.StringField(12)
-  prev_test_context = messages.MessageField(TestContextObj, 13)
-  next_test_context = messages.MessageField(TestContextObj, 14)
+  state = messages.EnumField(ndb_models.TestRunState, 9)
+  state_info = messages.StringField(10)
+  output_url = messages.StringField(11)
+  prev_test_context = messages.MessageField(TestContextObj, 12)
+  next_test_context = messages.MessageField(TestContextObj, 13)
 
-  request_id = messages.StringField(15)
-  total_test_count = messages.IntegerField(16)
-  failed_test_count = messages.IntegerField(17)
-  failed_test_run_count = messages.IntegerField(18)
+  request_id = messages.StringField(14)
+  total_test_count = messages.IntegerField(15)
+  failed_test_count = messages.IntegerField(16)
+  failed_test_run_count = messages.IntegerField(17)
 
-  create_time = message_types.DateTimeField(19)
-  update_time = message_types.DateTimeField(20)
+  create_time = message_types.DateTimeField(18)
+  update_time = message_types.DateTimeField(19)
 
-  before_device_actions = messages.MessageField(DeviceAction, 21, repeated=True)
-  hook_configs = messages.MessageField(TestRunHookConfig, 22, repeated=True)
+  before_device_actions = messages.MessageField(DeviceAction, 20, repeated=True)
+  hook_configs = messages.MessageField(TestRunHookConfig, 21, repeated=True)
 
-  test_devices = messages.MessageField(TestDeviceInfo, 23, repeated=True)
-  test_package_info = messages.MessageField(TestPackageInfo, 24)
+  test_devices = messages.MessageField(TestDeviceInfo, 22, repeated=True)
+  test_package_info = messages.MessageField(TestPackageInfo, 23)
 
 
 @Converter(ndb_models.TestRun, TestRun)
@@ -811,8 +783,6 @@ def _TestRunConverter(obj):
       state=obj.state,
       state_info=_GetTestRunStateInfo(obj),
       output_url=file_util.GetStorageUrl(obj.output_storage, obj.output_path),
-      test_output_upload_configs=Convert(
-          obj.test_output_upload_configs, TestOutputUploadConfig),
       prev_test_context=Convert(obj.prev_test_context, TestContextObj),
       next_test_context=Convert(obj.next_test_context, TestContextObj),
       request_id=obj.request_id,
@@ -916,9 +886,7 @@ class NewTestRunRequest(messages.Message):
   test_run_config = messages.MessageField(TestRunConfig, 2)
   test_resource_pipes = messages.MessageField(
       TestResourcePipe, 3, repeated=True)
-  test_output_upload_configs = messages.MessageField(
-      TestOutputUploadConfig, 4, repeated=True)
-  rerun_context = messages.MessageField(RerunContext, 5)
+  rerun_context = messages.MessageField(RerunContext, 4)
 
 
 class TestArtifact(messages.Message):

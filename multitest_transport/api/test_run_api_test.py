@@ -271,14 +271,6 @@ class TestRunApiTest(api_test_util.TestCase):
                 'url': 'zzz_url'
             },
         ],
-        'test_output_upload_configs': [
-            {
-                'url': 'mtt:///c6f2d5f4-6a27-4/folder1/folder2'
-            },
-            {
-                'url': 'mtt:///c6f2d5f4-6a27-4/folder3/folder4'
-            },
-        ],
     }
     test_run = ndb_models.TestRun(
         test=test, labels=['label'], test_run_config=ndb_models.TestRunConfig(
@@ -303,12 +295,6 @@ class TestRunApiTest(api_test_util.TestCase):
         test_resources=[
             ndb_models.TestResourceObj(name='bar', url='bar_url'),
             ndb_models.TestResourceObj(name='zzz', url='zzz_url'),
-        ],
-        test_output_upload_configs=[
-            ndb_models.TestOutputUploadConfig(
-                url='mtt:///c6f2d5f4-6a27-4/folder1/folder2'),
-            ndb_models.TestOutputUploadConfig(
-                url='mtt:///c6f2d5f4-6a27-4/folder3/folder4'),
         ],
         rerun_context=None)
     self.assertEqual('200 OK', res.status)

@@ -219,15 +219,11 @@ class TestRunApi(remote.Service):
 
     test_resource_objs = build.FindTestResources(request.test_resource_pipes)
 
-    test_output_upload_configs = mtt_messages.Convert(
-        request.test_output_upload_configs, ndb_models.TestOutputUploadConfig)
-
     # start test run
     test_run = test_kicker.CreateTestRun(
         labels=labels,
         test_run_config=test_run_config,
         test_resources=test_resource_objs,
-        test_output_upload_configs=test_output_upload_configs,
         rerun_context=request.rerun_context)
     return mtt_messages.Convert(test_run, mtt_messages.TestRun)
 

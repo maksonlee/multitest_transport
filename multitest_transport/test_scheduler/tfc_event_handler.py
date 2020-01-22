@@ -27,7 +27,6 @@ from google.appengine.ext import ndb
 
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
-from multitest_transport.test_scheduler import test_output_uploader
 from multitest_transport.util import analytics
 from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
@@ -85,11 +84,6 @@ def _AfterTestRunHandler(test_run):
                    ndb_models.TestRunPhase.ON_ERROR, _transactional=True)
   deferred.defer(test_run_hook.ExecuteHooks, test_run.key.id(),
                  ndb_models.TestRunPhase.AFTER_RUN, _transactional=True)
-
-  # Upload test run output
-  if test_run.test_output_upload_configs:
-    deferred.defer(test_output_uploader.ScheduleUploadJobs, test_run.key.id(),
-                   _transactional=True)
 
   # Record metrics
   deferred.defer(_TrackTestRun, test_run.key.id(), _transactional=True)

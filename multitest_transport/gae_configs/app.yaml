@@ -48,9 +48,6 @@ handlers:
 - url: /_ah/queue/tfc-event-queue
   script: multitest_transport.test_scheduler.tfc_event_handler.APP
 
-- url: /_ah/queue/test-output-uploader-queue
-  script: multitest_transport.test_scheduler.test_output_uploader.APP
-
 - url: /sidekicks/.*
   script: multitest_transport.sidekicks.main.APP
 

@@ -51,7 +51,6 @@ METADATA_API_FORMAT = 'http://%s/_ah/api/mtt/v1/test_runs/%s/metadata'
 def CreateTestRun(labels,
                   test_run_config,
                   test_resources,
-                  test_output_upload_configs=None,
                   test_plan_key=None,
                   rerun_context=None):
   """Creates a test run.
@@ -60,7 +59,6 @@ def CreateTestRun(labels,
     labels: labels for the test run
     test_run_config: a ndb_models.TestRunConfig object.
     test_resources: a list of ndb_models.TestResourceObj objects.
-    test_output_upload_configs: a list of ndb_models.TestOutputUploadConfig.
     test_plan_key: a ndb_models.TestPlan key.
     rerun_context: rerun parameters containing parent ID or context filename.
   Returns:
@@ -69,8 +67,6 @@ def CreateTestRun(labels,
     ValueError: if a given test is not found in DB.
     errors.TestResourceError: if some of test resources don't have URLs.
   """
-  test_output_upload_configs = test_output_upload_configs or []
-
   test = test_run_config.test_key.get()
   if not test:
     raise ValueError('cannot find test %s' % test_run_config.test_key)
@@ -134,7 +130,6 @@ def CreateTestRun(labels,
       test=test,
       test_run_config=test_run_config,
       test_resources=test_resource_map.values(),
-      test_output_upload_configs=test_output_upload_configs,
       prev_test_context=prev_test_context,
       state=ndb_models.TestRunState.PENDING,
       before_device_actions=before_device_actions,

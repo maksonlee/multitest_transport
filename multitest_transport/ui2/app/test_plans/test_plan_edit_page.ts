@@ -227,8 +227,6 @@ export class TestPlanEditPage extends FormChangeTracker implements
     this.data.before_device_action_ids =
         testPlan.before_device_action_ids || [];
     this.data.labels = testPlan.labels || [];
-    this.data.test_output_upload_configs =
-        testPlan.test_output_upload_configs || [];
     this.data.test_resource_pipes = testPlan.test_resource_pipes || [];
 
     if (this.scheduleTimeForm) {

@@ -113,8 +113,6 @@ def KickTestPlan(test_plan_id, is_cron=False, task_name=None):
 
   test_resource_objs = build.FindTestResources(test_plan.test_resource_pipes)
 
-  test_output_upload_configs = test_plan.test_output_upload_configs
-
   # Schedule all tests
   test_runs = []
   try:
@@ -127,8 +125,7 @@ def KickTestPlan(test_plan_id, is_cron=False, task_name=None):
           labels=test_plan.labels,
           test_plan_key=test_plan.key,
           test_run_config=config,
-          test_resources=test_resource_objs,
-          test_output_upload_configs=test_output_upload_configs)
+          test_resources=test_resource_objs)
       test_runs.append(test_run)
   except Exception:
     # TODO: cancel test runs if a test plan fails to be executed.

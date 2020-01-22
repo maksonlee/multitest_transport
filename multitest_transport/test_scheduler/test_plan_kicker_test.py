@@ -92,10 +92,6 @@ class TestPlanKickerTest(absltest.TestCase):
             ndb_models.TestResourcePipe(name='res_1', url='url_1'),
             ndb_models.TestResourcePipe(name='res_2', url='url_2'),
         ],
-        test_output_upload_configs=[
-            ndb_models.TestOutputUploadConfig(url='mtt:///name/id/path'),
-            ndb_models.TestOutputUploadConfig(url='mtt:///name2/id2/path2')
-        ],
         before_device_action_keys=[plan_device_action.key])
     test_plan.put()
 
@@ -114,10 +110,6 @@ class TestPlanKickerTest(absltest.TestCase):
         test_resources=[
             ndb_models.TestResourceObj(name='res_1', url='url_1'),
             ndb_models.TestResourceObj(name='res_2', url='url_2'),
-        ],
-        test_output_upload_configs=[
-            ndb_models.TestOutputUploadConfig(url='mtt:///name/id/path'),
-            ndb_models.TestOutputUploadConfig(url='mtt:///name2/id2/path2')
         ])
     schedule_cron_kick.assert_not_called()
 
@@ -173,8 +165,7 @@ class TestPlanKickerTest(absltest.TestCase):
             ndb_models.TestResourceObj(
                 name='res_1',
                 url='mtt:///foo/bar/zzz.zip'),
-        ],
-        test_output_upload_configs=[])
+        ])
     schedule_cron_kick.assert_not_called()
 
   @mock.patch.object(test_plan_kicker, 'ScheduleCronKick', autospec=True)

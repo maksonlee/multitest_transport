@@ -270,8 +270,6 @@ export declare interface NewTestRunRequest {
   test_run_config?: TestRunConfig;
   /** A list of TestResourcePipe */
   test_resource_pipes?: TestResourcePipe[];
-  /** An output upload config object. */
-  test_output_upload_configs?: TestOutputUploadConfig[];
   /** Previous Test Run's Id */
   rerun_context?: RerunContext;
 }
@@ -427,7 +425,6 @@ export function initTestPlan(): Partial<TestPlan> {
     cron_exp: '',
     test_run_configs: [],
     test_resource_pipes: [],
-    test_output_upload_configs: [],
     before_device_action_ids: [],
   };
 }
@@ -446,15 +443,6 @@ export declare interface TestContextObj {
 export declare interface TestList {
   tests?: Test[];
   next_page_token?: string;
-}
-
-/** Config of Test output upload */
-export declare interface TestOutputUploadConfig {
-  /**
-   * an url consist of channel id, and upload path
-   * (e.g: mtt:///c6f2d5f4-6a27-4c03-a39a-95e7bf9b52fa/upload_path)
-   */
-  url: string;
 }
 
 /**
@@ -483,7 +471,6 @@ export declare interface TestPlan {
   cron_exp?: string;
   test_run_configs?: TestRunConfig[];
   test_resource_pipes?: TestResourcePipe[];
-  test_output_upload_configs?: TestOutputUploadConfig[];
   before_device_action_ids?: string[];
   last_run_time?: string;
   next_run_time?: string;

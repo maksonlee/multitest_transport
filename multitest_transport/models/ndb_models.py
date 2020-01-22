@@ -111,16 +111,6 @@ class ConfigSetInfoList(ndb.Model):
   config_set_infos = ndb.StructuredProperty(ConfigSetInfo, repeated=True)
 
 
-class TestOutputUploadConfig(ndb.Model):
-  """An output upload config object.
-
-  Attributes:
-    url: a URL consist of channel id, and upload path
-    (e.g: mtt:///c6f2d5f4-6a27-4c03-a39a-95e7bf9b52fa/upload_path)
-  """
-  url = ndb.StringProperty()
-
-
 class TestResourceType(messages.Enum):
   UNKNOWN = 0
   DEVICE_IMAGE = 1
@@ -299,7 +289,6 @@ class TestPlan(ndb.Model):
     test_run_configs: a list of test run configs.
     test_resource_pipes: a list of test resource pipes.
     before_device_action_keys: common before device actions for tests.
-    test_output_upload_configs: a list of TestOutputUploadConfig objects.
   """
   name = ndb.StringProperty(required=True)
   labels = ndb.StringProperty(repeated=True)
@@ -308,8 +297,6 @@ class TestPlan(ndb.Model):
   test_resource_pipes = ndb.LocalStructuredProperty(
       TestResourcePipe, repeated=True)
   before_device_action_keys = ndb.KeyProperty(DeviceAction, repeated=True)
-  test_output_upload_configs = ndb.StructuredProperty(
-      TestOutputUploadConfig, repeated=True)
 
 
 class TestPlanStatus(ndb.Model):
@@ -419,7 +406,6 @@ class TestRun(ndb.Model):
     test: a Test object copy made at the test run schedule time.
     test_run_config: a TestRunConfig object.
     test_resources: a list of TestResourceObj objects.
-    test_output_upload_configs: a list of TestOutputUploadConfig objects
     state: a test run state.
     is_finalized: True if post-run handlers were executed.
     output_storage: a storage to store test outputs in.
@@ -447,8 +433,6 @@ class TestRun(ndb.Model):
   test = ndb.StructuredProperty(Test)
   test_run_config = ndb.StructuredProperty(TestRunConfig)
   test_resources = ndb.StructuredProperty(TestResourceObj, repeated=True)
-  test_output_upload_configs = ndb.StructuredProperty(
-      TestOutputUploadConfig, repeated=True)
   state = msgprop.EnumProperty(TestRunState, default=TestRunState.UNKNOWN)
   is_finalized = ndb.BooleanProperty()
   output_storage = msgprop.EnumProperty(

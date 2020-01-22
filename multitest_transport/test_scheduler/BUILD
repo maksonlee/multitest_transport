@@ -101,40 +101,11 @@ py_appengine_test(
 )
 
 py_appengine_library(
-    name = "test_output_uploader_lib",
-    srcs = [
-        "test_output_uploader.py",
-    ],
-    deps = [
-        "//multitest_transport/models",
-        "//multitest_transport/util",
-    ],
-)
-
-py_appengine_test(
-    name = "test_output_uploader_test",
-    srcs = [
-        "test_output_uploader_test.py",
-    ],
-    data = [
-        "queue.yaml",
-    ],
-    envs = PY_APPENGINE_ENVS,
-    use_public_sdk = 1,
-    deps = [
-        ":test_output_uploader_lib",
-        third_party("absl/testing:absltest"),
-        third_party("mock"),
-    ],
-)
-
-py_appengine_library(
     name = "tfc_event_handler_lib",
     srcs = [
         "tfc_event_handler.py",
     ],
     deps = [
-        ":test_output_uploader_lib",
         "//multitest_transport/models",
         "//multitest_transport/util:analytics",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
