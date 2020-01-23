@@ -48,10 +48,9 @@ BUILD_ENVIRONMENT=dev
 EOF
 
 # Pex the packages (requires pip install pex==2.0.3)
-# TODO: Migrate to python3 after Jan release.
-pex --python="python2.7" -D src -r requirements.txt -m multitest_transport.cli.cli -o mtt
+pex --python="python3.7" -D src -r requirements.txt -m multitest_transport.cli.cli -o mtt
 cp mtt src/mtt_binary
-pex --python="python2.7" -D src -r requirements.txt -m multitest_transport.cli.lab_cli -o mtt_lab
+pex --python="python3.7" -D src -r requirements.txt -m multitest_transport.cli.lab_cli -o mtt_lab
 cd -
 
 # Move the output files
