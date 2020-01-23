@@ -580,7 +580,9 @@ class CliTest(parameterized.TestCase):
     setup_mttd.assert_called_with(args, host)
     setup_permanent_bin.assert_called_with(args, host)
     self.mock_context.assert_has_calls([
-        mock.call.Run(['systemctl', 'start', 'mttd.service'])])
+        mock.call.Run(['systemctl', 'enable', 'mttd.service']),
+        mock.call.Run(['systemctl', 'start', 'mttd.service']),
+    ])
 
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
   def testStop(self, is_running):
@@ -657,7 +659,9 @@ class CliTest(parameterized.TestCase):
 
     stop_mtt.assert_called_with(args, host)
     self.mock_context.assert_has_calls([
-        mock.call.Run(['systemctl', 'stop', 'mttd.service'])])
+        mock.call.Run(['systemctl', 'stop', 'mttd.service']),
+        mock.call.Run(['systemctl', 'disable', 'mttd.service']),
+    ])
 
   @mock.patch('__main__.cli.command_util.DockerHelper.Stop')
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')

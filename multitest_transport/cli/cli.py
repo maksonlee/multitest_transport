@@ -339,6 +339,10 @@ def _StartMttDaemon(args, host):
     return
   _SetupMTTRuntimeIntoLibPath(args, host)
   _SetupSystemdScript(args, host)
+  # Enable mttd.service, to make sure it can "start" on system reboot.
+  # Note: this command will not start the service immediately.
+  host.context.Run(['systemctl', 'enable', 'mttd.service'])
+  # Start mttd.service immediately.
   host.context.Run(['systemctl', 'start', 'mttd.service'])
   logger.info(('MTT daemon started on %s. '
                'It keeps MTT container up and running on the latest version.'),
@@ -421,7 +425,10 @@ def _StopMttDaemon(host):
     logger.debug('MTT daemon is not active on %s. Skip daemon stop.', host.name)
     return
   logger.info('Stopping MTT daemon on %s.', host.name)
+  # Stop mttd.service immediately.
   host.context.Run(['systemctl', 'stop', 'mttd.service'])
+  # Unregister mttd.service, so that it does not start on system reboot.
+  host.context.Run(['systemctl', 'disable', 'mttd.service'])
 
 
 def _PullUpdate(args, host):
