@@ -10,7 +10,7 @@ pytype_strict_binary(
     python_version = "PY2",
     srcs_version = "PY2AND3",
     test_lib = True,
-    visibility = ["//multitest_transport"],
+    visibility = ["//visibility:private"],
     deps = [
         ":cli_lib",
     ],
