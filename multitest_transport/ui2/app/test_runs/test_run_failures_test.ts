@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {DebugElement} from '@angular/core';
+import {DebugElement, SimpleChanges} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
@@ -77,7 +77,7 @@ describe('TestRunFailures', () => {
     testRunFailures.state = state;
     testRunFailures.numFailedTests = numFailedTests;
     testRunFailures.numTotalTests = numTotalTests;
-    testRunFailures.ngOnInit();
+    testRunFailures.ngOnChanges({} as SimpleChanges);
     testRunFailuresFixture.detectChanges();
   }
 });

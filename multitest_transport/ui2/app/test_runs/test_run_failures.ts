@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
 import {isFinalTestRunState, TestRunState} from '../services/mtt_models';
 import {assertRequiredInput} from '../shared/util';
 /**
@@ -41,7 +41,7 @@ export enum DisplayMode {
   styleUrls: ['test_run_failures.css'],
   templateUrl: './test_run_failures.ng.html',
 })
-export class TestRunFailures implements OnInit {
+export class TestRunFailures implements OnInit, OnChanges {
   @Input() state!: TestRunState;
   @Input() numFailedTests = 0;
   @Input() numTotalTests = 0;
@@ -50,6 +50,9 @@ export class TestRunFailures implements OnInit {
 
   ngOnInit() {
     assertRequiredInput(this.state, 'state', 'TestRunStatus');
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
     this.numFailedTests = Number(this.numFailedTests || 0);
     this.numTotalTests = Number(this.numTotalTests || 0);
     this.updateDisplayMode();
