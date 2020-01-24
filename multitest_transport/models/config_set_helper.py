@@ -47,26 +47,6 @@ def GetLocalConfigSetInfos():
   return info_messages
 
 
-def ParseConfigSet(url):
-  """Reads a config file from a url and returns the config set info data.
-
-  Args:
-    url: An MTT GCS built item url, e.g. mtt:///google_cloud_storage/...
-  Returns:
-    A ndb_models.ConfigSet object
-  """
-  local_url = download_util.DownloadResource(url)
-  file_data = file_util.ReadFile(local_url, split_lines=False)
-  content = file_data.lines
-
-  config_set = config_encoder.Decode(content)
-  info = config_set.info
-  # TODO: Split HostConfigs from ConfigSets and make info required
-  if info:
-    info.hash = _Hash(content)
-  return config_set
-
-
 def GetRemoteConfigSetInfos():
   """Gets a list of build items, and downloads and parses each config info.
 
@@ -91,7 +71,8 @@ def GetRemoteConfigSetInfos():
 
     # Read file
     gcs_url = '%s/%s' % (GCS_URL, build_item.name)
-    info = ParseConfigSet(gcs_url).info
+    contents = ReadRemoteFile(gcs_url)
+    info = _ParseConfigSet(contents).info
     if info:
       info_message = mtt_messages.Convert(info, mtt_messages.ConfigSetInfo)
       info_message.imported = False
@@ -128,6 +109,43 @@ def UpdateConfigSetInfos(imported_infos, remote_infos):
   for key in sorted(info_map):
     info_list.append(info_map.get(key))
   return info_list
+
+
+def Import(content):
+  config_set = _ParseConfigSet(content)
+  config_encoder.Load(config_set)
+  config_set.info.put()
+  return mtt_messages.Convert(config_set.info, mtt_messages.ConfigSetInfo)
+
+
+def ReadRemoteFile(url):
+  """Downloads a file from GCS and returns the contents.
+
+  Args:
+    url: An MTT GCS built item url, e.g. mtt:///google_cloud_storage/...
+  Returns:
+    A string of the contents of the file
+  """
+
+  local_url = download_util.DownloadResource(url)
+  file_data = file_util.ReadFile(local_url, split_lines=False)
+  return file_data.lines
+
+
+def _ParseConfigSet(content):
+  """Converts a string of data into a ConfigSet object.
+
+  Args:
+    content: a string, usually the contents of a config file
+  Returns:
+    A ndb_models.ConfigSet object
+  """
+  config_set = config_encoder.Decode(content)
+  info = config_set.info
+  # TODO: Split HostConfigs from ConfigSets and make info required
+  if info:
+    info.hash = _Hash(content)
+  return config_set
 
 
 def _Hash(content):

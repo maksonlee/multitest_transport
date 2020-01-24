@@ -30,6 +30,8 @@ from multitest_transport.models import ndb_models
 class ConfigSetApiTest(api_test_util.TestCase):
   """Unit tests for config set APIs."""
 
+  MOCK_FILE = 'info:\n- name: test_name\n  url: url/test'
+
   def setUp(self):
     super(ConfigSetApiTest, self).setUp(config_set_api.ConfigSetApi)
 
@@ -106,6 +108,15 @@ class ConfigSetApiTest(api_test_util.TestCase):
     self.assertEqual(nonimported_message, res_msg.config_set_infos[0])
     self.assertEqual(imported_message, res_msg.config_set_infos[1])
     self.assertEqual(updatable_message_old, res_msg.config_set_infos[2])
+
+  def testImport_local(self):
+    data = {
+        'content': self.MOCK_FILE,
+    }
+    res = self.app.post_json('/_ah/api/mtt/v1/config_sets/import', data)
+    msg = protojson.decode_message(messages.ConfigSetInfo, res.body)
+    self.assertEqual(msg.name, 'test_name')
+    self.assertEqual(msg.url, 'url/test')
 
 
 if __name__ == '__main__':

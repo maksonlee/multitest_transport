@@ -22,13 +22,12 @@ from protorpc import remote
 import endpoints
 
 from multitest_transport.api import base
-from multitest_transport.models import config_encoder
 from multitest_transport.models import config_set_helper
 from multitest_transport.models import messages as mtt_messages
 
 
 @base.MTT_API.api_class(resource_name='config_set',
-                        path='config_set')
+                        path='config_sets')
 class ConfigSetApi(remote.Service):
   """A handler for Config Set API."""
 
@@ -65,14 +64,21 @@ class ConfigSetApi(remote.Service):
   @endpoints.method(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
-          url=messages.StringField(1)),
+          url=messages.StringField(1),
+          content=messages.StringField(2)),
       mtt_messages.ConfigSetInfo,
-      path='/config_sets/import',
-      http_method='GET',
+      path='import',
+      http_method='POST',
       name='import')
   def Import(self, request):
-    config_set = config_set_helper.ParseConfigSet(request.url)
-    config_encoder.Load(config_set)
-    config_set.info.put()
-    return mtt_messages.Convert(config_set.info, mtt_messages.ConfigSetInfo)
+    """Downloads and reads a file from GCS and imports it.
 
+    Args:
+      request: an API request object containing either a url to a config file or
+               the contents of a config file
+    Returns:
+      a mtt_essages.ConfigSetInfo object
+    """
+    content = (config_set_helper.ReadRemoteFile(request.url) if request.url
+               else request.content)
+    return config_set_helper.Import(content)
