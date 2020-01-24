@@ -241,12 +241,27 @@ def ListBuildProviderNames():
   return BUILD_PROVIDER_REGISTRY.ListPluginNames()
 
 
+class TestRunHookContext(collections.namedtuple(
+    'TestRunHookContext', ['test_run', 'latest_attempt', 'phase'])):
+  """Named tuple representing the test run hook execution context.
+
+  Attributes:
+    test_run: test run being executed
+    latest_attempt: latest finished attempt
+    phase: current execution phase
+  """
+
+
 class TestRunHook(
     six.with_metaclass(TEST_RUN_HOOK_REGISTRY.GetMetaclass(), object)):
   """Base class for all test run hooks."""
 
-  def Execute(self, test_run, phase):
-    """Execute the hook's action."""
+  def Execute(self, context):
+    """Execute the hook's action.
+
+    Args:
+      context: test run hook execution context.
+    """
     raise NotImplementedError()
 
 

@@ -31,13 +31,13 @@ class WebHook(base.TestRunHook):
     self.http_method = http_method or 'GET'
     self.data = data
 
-  def Execute(self, test_run, phase):
+  def Execute(self, context):
     """Make HTTP request according to test run context."""
-    context = test_run.GetContext()
-    url = string.Template(self.url).safe_substitute(context)
+    test_run_context = context.test_run.GetContext()
+    url = string.Template(self.url).safe_substitute(test_run_context)
     data = None
     if self.data:
-      data = string.Template(self.data).safe_substitute(context)
+      data = string.Template(self.data).safe_substitute(test_run_context)
     hostname = modules.get_hostname('default')
     logging.info('Invoking a webhook: url=%s, method=%s, data=%s',
                  url, self.http_method, data)

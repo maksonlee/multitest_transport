@@ -161,7 +161,8 @@ def _ProcessCommandAttemptEvent(test_run_id, message):
   # Invoke after attempt hooks
   if common.IsFinalCommandState(attempt.state) and not test_run.is_finalized:
     deferred.defer(test_run_hook.ExecuteHooks, test_run_id,
-                   ndb_models.TestRunPhase.AFTER_ATTEMPT, _transactional=True)
+                   ndb_models.TestRunPhase.AFTER_ATTEMPT,
+                   attempt_id=attempt.attempt_id, _transactional=True)
 
 
 def _GetTestContext(request_id):

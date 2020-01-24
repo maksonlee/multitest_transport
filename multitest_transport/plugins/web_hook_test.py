@@ -20,6 +20,7 @@ from six.moves import urllib
 from google.appengine.ext import testbed
 
 from multitest_transport.models import ndb_models
+from multitest_transport.plugins import base as plugins
 from multitest_transport.plugins.web_hook import WebHook
 
 
@@ -47,7 +48,10 @@ class WebHookTest(absltest.TestCase):
     mock_request = mock_request_ctor.return_value
     mock_response = mock_urlopen.return_value
 
-    webhook.Execute(mock_test_run, ndb_models.TestRunPhase.BEFORE_RUN)
+    hook_context = plugins.TestRunHookContext(
+        test_run=mock_test_run, latest_attempt=None,
+        phase=ndb_models.TestRunPhase.BEFORE_RUN)
+    webhook.Execute(hook_context)
 
     mock_request_ctor.assert_called_with(
         url=webhook.url, data='foo bar zzz', headers={'X-MTT-HOST': mock.ANY})
