@@ -36,7 +36,7 @@ class GcsCleanerTest(absltest.TestCase):
     self.testbed.init_all_stubs()
     self.addCleanup(self.testbed.deactivate)
 
-  @mock.patch.object(gcs_util, 'DeleteFiles', auto_spec=True)
+  @mock.patch.object(gcs_util, 'DeleteFiles', autospec=True)
   def testCleanupTestResourceCache(self, mock_delete_files):
     test_run = ndb_models.TestRun(
         test_resources=[
@@ -63,7 +63,7 @@ class GcsCleanerTest(absltest.TestCase):
         files_to_keep=files_to_keep,
         max_file_age_seconds=gcs_cleaner.RECENT_TEST_RUN_WINDOW_DAYS * 86400)
 
-  @mock.patch.object(gcs_util, 'DeleteFiles', auto_spec=True)
+  @mock.patch.object(gcs_util, 'DeleteFiles', autospec=True)
   def testCleanupTempFiles(self, mock_delete_files):
     gcs_cleaner._CleanupTempFiles()
 
