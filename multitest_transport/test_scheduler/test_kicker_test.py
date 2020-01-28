@@ -365,7 +365,8 @@ class TestKickerTest(absltest.TestCase):
       self, mock_download_resource, mock_execute_hooks, mock_new_request):
     # Create hook config with two TF result reporters
     hook_config = ndb_models.TestRunHookConfig(
-        hook_name='foo',
+        name='Foo',
+        hook_class_name='foo',
         tradefed_result_reporters=[
             ndb_models.TradefedConfigObject(
                 class_name='com.android.foo',

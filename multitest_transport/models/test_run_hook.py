@@ -51,8 +51,25 @@ def _GetLatestAttempt(test_run, attempt_id):
 def _ExecuteHook(hook_config, hook_context):
   """Construct a hook instance and execute it."""
   try:
-    hook_cls = plugins.GetTestRunHookClass(hook_config.hook_name)
+    hook_cls = plugins.GetTestRunHookClass(hook_config.hook_class_name)
     options = ndb_models.NameValuePair.ToDict(hook_config.options)
+    if hook_config.credentials:
+      options['_credentials'] = hook_config.credentials
     hook = hook_cls(**options)
     hook.Execute(hook_context)
   except Exception as e:      logging.error('Failed to execute hook %s: %s', hook_config, e)
+
+
+def GetOAuth2Config(hook_config):
+  """Fetches a hook's OAuth2 configuration."""
+  hook_cls = plugins.GetTestRunHookClass(hook_config.hook_class_name)
+  return getattr(hook_cls, 'oauth2_config', None) if hook_cls else None
+
+
+def GetAuthorizationState(hook_config):
+  """Determines whether a hook has been authorized."""
+  if not GetOAuth2Config(hook_config):
+    return ndb_models.AuthorizationState.NOT_APPLICABLE
+  if hook_config.credentials:
+    return ndb_models.AuthorizationState.AUTHORIZED
+  return ndb_models.AuthorizationState.UNAUTHORIZED

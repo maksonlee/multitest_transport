@@ -209,7 +209,7 @@ class BuildChannelApi(remote.Service):
           message_types.VoidMessage,
           build_channel_id=messages.StringField(1, required=True),
           redirect_uri=messages.StringField(2)),
-      mtt_messages.BuildChannelAuthInfo,
+      mtt_messages.AuthorizationInfo,
       path='{build_channel_id}/get_authorize_url',
       http_method='GET',
       name='authorize_url.get')
@@ -234,7 +234,7 @@ class BuildChannelApi(remote.Service):
       raise endpoints.NotFoundException('No build channel has id: %s' %
                                         request.build_channel_id)
     auth_url = build_channel.GetAuthorizeUrl(redirect_uri)
-    return mtt_messages.BuildChannelAuthInfo(url=auth_url, is_manual=is_manual)
+    return mtt_messages.AuthorizationInfo(url=auth_url, is_manual=is_manual)
 
   @base.convert_exception
   @endpoints.method(

@@ -41,9 +41,10 @@ class ConfigTest(absltest.TestCase):
         id=key, name=name, provider_name=name,
         options=ndb_models.NameValuePair.FromDict(options or {}))
 
-  def CreateTestRunHook(self, key=None, hook_name=None, options=None):
+  def CreateTestRunHook(
+      self, key=None, name=None, hook_class_name=None, options=None):
     return ndb_models.TestRunHookConfig(
-        id=key, hook_name=hook_name,
+        id=key, name=name, hook_class_name=hook_class_name,
         options=ndb_models.NameValuePair.FromDict(options or {}))
 
   def testEncode_nodeConfig(self):
@@ -122,7 +123,8 @@ class ConfigTest(absltest.TestCase):
     """Tests serializing multiple objects."""
     build_channel = self.CreateBuildChannel(key='foo', name='Foo',
                                             options={'option': 'value'})
-    test_run_hook = self.CreateTestRunHook(key='bar', hook_name='Web',
+    test_run_hook = self.CreateTestRunHook(key='bar', name='Bar',
+                                           hook_class_name='Web',
                                            options={'url': 'www.google.com'})
     expected = \
 """build_channels:
@@ -133,8 +135,9 @@ class ConfigTest(absltest.TestCase):
     value: value
   provider_name: Foo
 test_run_hooks:
-- hook_name: Web
+- hook_class_name: Web
   id: bar
+  name: Bar
   options:
   - name: url
     value: www.google.com

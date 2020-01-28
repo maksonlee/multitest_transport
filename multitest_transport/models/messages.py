@@ -118,8 +118,8 @@ def _AddTimezone(datetime, timezone=pytz.UTC):
   if datetime:
     return datetime.replace(tzinfo=timezone)  
 
-class BuildChannelAuthInfo(messages.Message):
-  """Information when authorize a build channel.
+class AuthorizationInfo(messages.Message):
+  """OAuth2 authorization information.
 
   Attributes:
     url: an authorization url.
@@ -481,20 +481,23 @@ class DeviceActionList(messages.Message):
 class TestRunHookConfig(messages.Message):
   """A test run hook config."""
   id = messages.StringField(1)
-  description = messages.StringField(2)
-  hook_name = messages.StringField(3, required=True)
-  phases = messages.EnumField(ndb_models.TestRunPhase, 4, repeated=True)
-  options = messages.MessageField(NameValuePair, 5, repeated=True)
+  name = messages.StringField(2, required=True)
+  description = messages.StringField(3)
+  hook_class_name = messages.StringField(4, required=True)
+  phases = messages.EnumField(ndb_models.TestRunPhase, 5, repeated=True)
+  options = messages.MessageField(NameValuePair, 6, repeated=True)
   tradefed_result_reporters = messages.MessageField(
-      TradefedConfigObject, 6, repeated=True)
+      TradefedConfigObject, 7, repeated=True)
+  authorization_state = messages.EnumField(ndb_models.AuthorizationState, 8)
 
 
 @Converter(ndb_models.TestRunHookConfig, TestRunHookConfig)
 def _TestRunHookConfigConverter(obj):
   return TestRunHookConfig(
       id=str(obj.key.id()) if obj.key else None,
+      name=obj.name,
       description=obj.description,
-      hook_name=obj.hook_name,
+      hook_class_name=obj.hook_class_name,
       phases=obj.phases,
       options=ConvertNameValuePairs(obj.options, NameValuePair),
       tradefed_result_reporters=Convert(
@@ -505,12 +508,18 @@ def _TestRunHookConfigConverter(obj):
 def _TestRunHookConfigMessageConverter(msg):
   return ndb_models.TestRunHookConfig(
       key=ConvertToKey(ndb_models.TestRunHookConfig, msg.id),
+      name=msg.name,
       description=msg.description,
-      hook_name=msg.hook_name,
+      hook_class_name=msg.hook_class_name,
       phases=msg.phases,
       options=ConvertNameValuePairs(msg.options, ndb_models.NameValuePair),
       tradefed_result_reporters=Convert(
           msg.tradefed_result_reporters, ndb_models.TradefedConfigObject))
+
+
+class TestRunHookConfigList(messages.Message):
+  """A list of test run hook configurations."""
+  configs = messages.MessageField(TestRunHookConfig, 1, repeated=True)
 
 
 class TestRunConfig(messages.Message):

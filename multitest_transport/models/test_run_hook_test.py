@@ -15,6 +15,7 @@
 """Unit tests for run_hook."""
 from absl.testing import absltest
 import mock
+from oauth2client import client
 
 from tradefed_cluster.api_messages import CommandState
 from google.appengine.ext import testbed
@@ -25,8 +26,15 @@ from multitest_transport.plugins import base as plugins
 from multitest_transport.util import tfc_client
 
 
-class MockHook(plugins.TestRunHook):
-  name = 'mock'
+class SimpleHook(plugins.TestRunHook):
+  """Simple test run hook."""
+  name = 'simple'
+
+
+class OAuth2Hook(plugins.TestRunHook):
+  """Test run hook with OAuth2 configuration."""
+  name = 'oauth2'
+  oauth2_config = plugins.OAuth2Config('id', 'secret', ['scope'])
 
 
 class RunHookTest(absltest.TestCase):
@@ -42,9 +50,11 @@ class RunHookTest(absltest.TestCase):
   def testExecuteHooks(self, mock_get_latest_attempt, mock_execute_hook):
     """Tests that relevant hooks can be found and executed."""
     before_hook = ndb_models.TestRunHookConfig(
-        hook_name='mock', phases=[ndb_models.TestRunPhase.BEFORE_RUN])
+        name='Before', hook_class_name='simple',
+        phases=[ndb_models.TestRunPhase.BEFORE_RUN])
     after_hook = ndb_models.TestRunHookConfig(
-        hook_name='mock', phases=[ndb_models.TestRunPhase.AFTER_RUN])
+        name='After', hook_class_name='simple',
+        phases=[ndb_models.TestRunPhase.AFTER_RUN])
     # Create test run with two hooks and an attempt
     test_run = ndb_models.TestRun(hook_configs=[before_hook, after_hook])
     test_run.put()
@@ -96,18 +106,63 @@ class RunHookTest(absltest.TestCase):
     self.assertEqual(second_attempt,
                      test_run_hook._GetLatestAttempt(test_run, None))
 
-  @mock.patch.object(MockHook, 'Execute')
-  @mock.patch.object(MockHook, '__init__')
+  @mock.patch.object(SimpleHook, 'Execute')
+  @mock.patch.object(SimpleHook, '__init__')
   def testExecuteHook(self, mock_init, mock_execute):
     """Tests that a hook can be constructed and executed."""
     mock_init.return_value = None
     hook_context = mock.MagicMock()
+    credentials = client.Credentials()
     hook_config = ndb_models.TestRunHookConfig(
-        hook_name='mock',
-        options=[ndb_models.NameValuePair(name='ham', value='eggs')])
+        name='Test', hook_class_name='simple',
+        options=[ndb_models.NameValuePair(name='ham', value='eggs')],
+        credentials=credentials,
+    )
     test_run_hook._ExecuteHook(hook_config, hook_context)
-    mock_init.assert_called_with(ham='eggs')
+    mock_init.assert_called_with(_credentials=credentials, ham='eggs')
     mock_execute.assert_called_with(hook_context)
+
+  def testGetOAuth2Config_notFound(self):
+    """Tests that no OAuth2 config is returned if hook class not found."""
+    hook_config = ndb_models.TestRunHookConfig(
+        name='Test', hook_class_name='unknown')
+    self.assertIsNone(test_run_hook.GetOAuth2Config(hook_config))
+
+  def testGetOAuth2Config_noConfig(self):
+    """Tests that no OAuth2 config is returned if class doesn't have any."""
+    hook_config = ndb_models.TestRunHookConfig(
+        name='Test', hook_class_name='simple')
+    self.assertIsNone(test_run_hook.GetOAuth2Config(hook_config))
+
+  def testGetOAuth2Config(self):
+    """Tests that a hook's OAuth2 config can be retrieved."""
+    hook_config = ndb_models.TestRunHookConfig(
+        name='Test', hook_class_name='oauth2')
+    self.assertEqual(OAuth2Hook.oauth2_config,
+                     test_run_hook.GetOAuth2Config(hook_config))
+
+  def testGetAuthorizationState_notApplicable(self):
+    """Tests detecting hooks not requiring authorization."""
+    hook_config = ndb_models.TestRunHookConfig(
+        name='Test', hook_class_name='simple')
+    self.assertEqual(ndb_models.AuthorizationState.NOT_APPLICABLE,
+                     test_run_hook.GetAuthorizationState(hook_config))
+
+  def testGetAuthorizationState_unauthorized(self):
+    """Tests detecting hooks requiring authorization and without credentials."""
+    hook_config = ndb_models.TestRunHookConfig(
+        name='Test', hook_class_name='oauth2')
+    self.assertEqual(ndb_models.AuthorizationState.UNAUTHORIZED,
+                     test_run_hook.GetAuthorizationState(hook_config))
+
+  def testGetAuthorizationState_authorized(self):
+    """Tests detecting hooks requiring authorization and with credentials."""
+    hook_config = ndb_models.TestRunHookConfig(
+        name='Test', hook_class_name='oauth2',
+        credentials=client.Credentials(),
+    )
+    self.assertEqual(ndb_models.AuthorizationState.AUTHORIZED,
+                     test_run_hook.GetAuthorizationState(hook_config))
 
 
 if __name__ == '__main__':

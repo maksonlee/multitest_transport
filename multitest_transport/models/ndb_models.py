@@ -81,6 +81,13 @@ class NameMultiValuePair(ndb.Model):
     return d
 
 
+class AuthorizationState(messages.Enum):
+  """Authorization states."""
+  NOT_APPLICABLE = 0  # Does not require authorization
+  AUTHORIZED = 1  # Requires authorization and has credentials
+  UNAUTHORIZED = 2  # Requires authorization and no credentials found
+
+
 class BuildChannelConfig(ndb.Model):
   """A build channel config."""
   name = ndb.StringProperty(required=True)
@@ -214,18 +221,22 @@ class TestRunHookConfig(ndb.Model):
   """Test run hook configuration.
 
   Attributes:
+    name: run hook name.
     description: run hook description.
-    hook_name: run hook class identifier.
+    hook_class_name: run hook class identifier.
     phases: phases during which hook should be triggered.
     options: key-value pairs to use when configuring the hook.
     tradefed_result_reporters: list of TF result reporters.
+    credentials: stored OAuth2 credentials.
   """
+  name = ndb.StringProperty(required=True)
   description = ndb.StringProperty()
-  hook_name = ndb.StringProperty(required=True)
+  hook_class_name = ndb.StringProperty(required=True)
   phases = msgprop.EnumProperty(TestRunPhase, repeated=True)
   options = ndb.LocalStructuredProperty(NameValuePair, repeated=True)
   tradefed_result_reporters = ndb.LocalStructuredProperty(
       TradefedConfigObject, repeated=True)
+  credentials = appengine.CredentialsNDBProperty()
 
 
 class TestRunConfig(ndb.Model):

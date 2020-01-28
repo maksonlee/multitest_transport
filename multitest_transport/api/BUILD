@@ -277,3 +277,28 @@ py_appengine_test(
         third_party("mock"),
     ],
 )
+
+py_appengine_library(
+    name = "test_run_hook_api_lib",
+    srcs = [
+        "test_run_hook_api.py",
+    ],
+    deps = [
+        ":base_lib",
+        "//multitest_transport/util",
+    ],
+)
+
+py_appengine_test(
+    name = "test_run_hook_api_test",
+    srcs = [
+        "test_run_hook_api_test.py",
+    ],
+    envs = PY_APPENGINE_TEST_ENVS,
+    use_public_sdk = 1,
+    deps = [
+        ":api_test_util_lib",
+        ":test_run_hook_api_lib",
+        third_party("mock"),
+    ],
+)

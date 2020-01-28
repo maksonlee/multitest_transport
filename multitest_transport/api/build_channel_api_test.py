@@ -165,7 +165,7 @@ class BuildChannelApiTest(api_test_util.TestCase):
     response = self.app.get(
         '%s/%s/get_authorize_url?redirect_uri=http://localhost:8000/ui2' %
         (api_root, config.key.id()))
-    res = protojson.decode_message(messages.BuildChannelAuthInfo, response.body)
+    res = protojson.decode_message(messages.AuthorizationInfo, response.body)
     self.assertEqual(res.url, 'mock_url')
 
   @mock.patch.object(build, 'GetBuildChannel')
