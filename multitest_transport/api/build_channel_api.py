@@ -18,7 +18,6 @@ import collections
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
-import six.moves.urllib.parse
 
 import endpoints
 
@@ -26,11 +25,20 @@ from multitest_transport.api import base
 from multitest_transport.models import build
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
+from multitest_transport.util import oauth2_util
 
 
 @base.MTT_API.api_class(resource_name='build_channel', path='build_channels')
 class BuildChannelApi(remote.Service):
   """A handler for Build Channel API."""
+
+  def _GetBuildChannel(self, build_channel_id):
+    """Fetch a build channel by its ID or throw if not found."""
+    build_channel = build.GetBuildChannel(build_channel_id)
+    if not build_channel:
+      raise endpoints.NotFoundException(
+          'Build channel %s not found' % build_channel_id)
+    return build_channel
 
   @base.convert_exception
   @endpoints.method(
@@ -69,12 +77,8 @@ class BuildChannelApi(remote.Service):
       endpoints.NotFoundException: if a given build channel config does not
       exist.
     """
-    build_channel_config = ndb_models.BuildChannelConfig.get_by_id(
-        request.build_channel_id)
-    if not build_channel_config:
-      raise endpoints.NotFoundException('No build channel config with ID %s' %
-                                        request.build_channel_id)
-    return mtt_messages.Convert(build_channel_config,
+    build_channel = self._GetBuildChannel(request.build_channel_id)
+    return mtt_messages.Convert(build_channel.config,
                                 mtt_messages.BuildChannelConfig)
 
   @base.convert_exception
@@ -96,10 +100,7 @@ class BuildChannelApi(remote.Service):
     Raises:
       endpoints.NotFoundException: if a given build channel does not exist.
     """
-    build_channel = build.GetBuildChannel(request.build_channel_id)
-    if not build_channel:
-      raise endpoints.NotFoundException(
-          'No build channel with ID %s' % request.build_channel_id)
+    build_channel = self._GetBuildChannel(request.build_channel_id)
     build_items, next_page_token = build_channel.ListBuildItems(
         path=request.path, page_token=request.page_token)
     return mtt_messages.BuildItemList(
@@ -124,10 +125,7 @@ class BuildChannelApi(remote.Service):
     Raises:
       endpoints.NotFoundException: if a build channel/build item does not exist.
     """
-    build_channel = build.GetBuildChannel(request.build_channel_id)
-    if not build_channel:
-      raise endpoints.NotFoundException(
-          'No build channel with ID %s' % request.build_channel_id)
+    build_channel = self._GetBuildChannel(request.build_channel_id)
     build_channel.DeleteBuildItem(request.path)
     return message_types.VoidMessage()
 
@@ -182,7 +180,7 @@ class BuildChannelApi(remote.Service):
       if not pair.name:
         continue
       options[pair.name] = pair.value
-    build_channel = build.GetBuildChannel(request.id)
+    build_channel = self._GetBuildChannel(request.build_channel_id)
     build_channel_config = build_channel.Update(
         name=request.name, provider_name=request.provider_name, options=options)
     return mtt_messages.Convert(build_channel_config,
@@ -208,32 +206,17 @@ class BuildChannelApi(remote.Service):
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           build_channel_id=messages.StringField(1, required=True),
-          redirect_uri=messages.StringField(2)),
+          redirect_uri=messages.StringField(2, required=True)),
       mtt_messages.AuthorizationInfo,
       path='{build_channel_id}/get_authorize_url',
       http_method='GET',
       name='authorize_url.get')
-  def GetAuthorizeUrl(self, request):
-    """Returns a SimpleMessage containing an authorize url.
-
-    Args:
-      request: an API request object.
-
-    Returns:
-      a mtt_messages.SimpleMessage that contains the url
-    """
-    # Sample redirect_uri: http://127.0.0.1:8000/ui2/auth_return
-    redirect_uri = request.redirect_uri
-    hostname = six.moves.urllib.parse.urlparse(redirect_uri).hostname
-    is_manual = False
-    if hostname not in ('127.0.0.1', 'localhost'):
-      redirect_uri = 'urn:ietf:wg:oauth:2.0:oob'
-      is_manual = True
-    build_channel = build.GetBuildChannel(request.build_channel_id)
-    if not build_channel:
-      raise endpoints.NotFoundException('No build channel has id: %s' %
-                                        request.build_channel_id)
-    auth_url = build_channel.GetAuthorizeUrl(redirect_uri)
+  def GetAuthorizationInfo(self, request):
+    """Determine a build channel configuration's authorization information."""
+    build_channel = self._GetBuildChannel(request.build_channel_id)
+    redirect_uri, is_manual = oauth2_util.GetRedirectUri(request.redirect_uri)
+    auth_url = oauth2_util.GetOAuth2Flow(
+        build_channel.oauth2_config, redirect_uri).step1_get_authorize_url()
     return mtt_messages.AuthorizationInfo(url=auth_url, is_manual=is_manual)
 
   @base.convert_exception
@@ -241,29 +224,17 @@ class BuildChannelApi(remote.Service):
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           build_channel_id=messages.StringField(1, required=True),
-          redirect_uri=messages.StringField(2),
-          code=messages.StringField(3)),
+          redirect_uri=messages.StringField(2, required=True),
+          code=messages.StringField(3, required=True)),
       message_types.VoidMessage,
       path='{build_channel_id}/authorize',
       http_method='POST',
       name='auth_return.post')
-  def Authorize(self, request):
-    """Authorize the build channel with code information.
-
-    Args:
-      request: an API request object.
-
-    Returns:
-      a void message
-    """
-    build_channel = build.GetBuildChannel(request.build_channel_id)
-    if not build_channel:
-      raise endpoints.NotFoundException('No build channel has id: %s' %
-                                        request.build_channel_id)
-    error_message = None
-    if request.code:
-      try:
-        build_channel.Authorize(request.redirect_uri, request.code)
-      except Exception as e:          error_message = 'Failed to authorize a build channel: %s' % e
-        raise endpoints.UnauthorizedException(error_message)
+  def AuthorizeConfig(self, request):
+    """Authorize a build channel configuration with an authorization code."""
+    build_channel = self._GetBuildChannel(request.build_channel_id)
+    oauth2_config = build_channel.oauth2_config
+    build_channel.config.credentials = oauth2_util.GetOAuth2Flow(
+        oauth2_config, request.redirect_uri).step2_exchange(request.code)
+    build_channel.config.put()
     return message_types.VoidMessage()

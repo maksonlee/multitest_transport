@@ -21,9 +21,6 @@ import re
 import urllib
 import uuid
 
-from oauth2client import appengine
-from oauth2client import client
-
 from multitest_transport.plugins import base as plugins
 from multitest_transport.models import ndb_models
 from multitest_transport.util import env
@@ -149,35 +146,12 @@ class BuildChannel(object):
     self.provider = GetBuildProviderClass(config.provider_name)()
     self.provider.UpdateOptions(
         **ndb_models.NameValuePair.ToDict(self.config.options))
-    self.provider.UpdateCredentials(self._LoadCredentials())
+    # Load credentials and set authorization state
     self.oauth2_config = self.provider.GetOAuth2Config()
-
-  def _LoadCredentials(self):
-    """Loads credentials from Datastore.
-
-    Returns:
-      a oauth2client.client.Credentials object.
-    """
-    storage = appengine.StorageByKeyName(
-        ndb_models.BuildChannelConfig, self.id, 'credentials')
-    credentials = storage.get()
-    if credentials:
+    self.auth_state = ndb_models.BuildChannelAuthState.NOT_AUTHORIZED
+    if config.credentials:
       self.auth_state = ndb_models.BuildChannelAuthState.AUTHORIZED
-    return credentials
-
-  def _StoreCredentials(self, credentials):
-    """Stores credentials to Datastore.
-
-    Args:
-      credentials: a oauth2client.client.Credentials object.
-    """
-    storage = appengine.StorageByKeyName(
-        ndb_models.BuildChannelConfig, self.id, 'credentials')
-    storage.put(credentials)
-    if credentials:
-      self.auth_state = ndb_models.BuildChannelAuthState.AUTHORIZED
-    else:
-      self.auth_state = ndb_models.BuildChannelAuthState.NOT_AUTHORIZED
+      self.provider.UpdateCredentials(config.credentials)
 
   def ListBuildItems(self, path=None, page_token=None, item_type=None):
     """List build items.
@@ -248,37 +222,6 @@ class BuildChannel(object):
     self.config.put()
     self.provider = provider
     return self.config
-
-  def _GetOAuth2Flow(self, redirect_uri):
-    """Returns OAuth2 flow.
-
-    Args:
-      redirect_uri: a URI to redirect after authorization is done.
-    Returns:
-      an oauth2client.client.OAuth2Flow object.
-    Raises:
-      RuntimeError: if a provider does not use OAuth2.
-    """
-    oauth2_config = self.provider.GetOAuth2Config()
-    if not oauth2_config:
-      raise RuntimeError('no oauth2 config for provider %s' % self.provider)
-    if not hasattr(self, '_flow'):
-      # TODO: Use self.config.oauth2_config
-      self._flow = client.OAuth2WebServerFlow(
-          client_id=oauth2_config.client_id,
-          client_secret=oauth2_config.client_secret,
-          scope=oauth2_config.scopes,
-          redirect_uri=redirect_uri)
-    return self._flow
-
-  def GetAuthorizeUrl(self, redirect_uri):
-    flow = self._GetOAuth2Flow(redirect_uri)
-    return flow.step1_get_authorize_url()
-
-  def Authorize(self, redirect_uri, code):
-    flow = self._GetOAuth2Flow(redirect_uri)
-    credentials = flow.step2_exchange(code)
-    self._StoreCredentials(credentials)
 
   def FindBuildItemPath(self, url):
     return self.provider.FindBuildItemPath(url)
