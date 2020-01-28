@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Unit tests for build."""
+"""Unit tests for gcs."""
 
 from absl.testing import absltest
-import apiclient.http
+import apiclient
 import mock
 
 from multitest_transport.plugins import base
@@ -24,7 +24,7 @@ from multitest_transport.plugins import gcs
 from multitest_transport.util import file_util
 
 
-class GCSTest(absltest.TestCase):
+class GCSBuildProviderTest(absltest.TestCase):
 
   def testGetBuildItem_withPathToFile(self):
     """Test GetBuildItem with input a path to file."""
@@ -296,31 +296,30 @@ class GCSTest(absltest.TestCase):
     expected = [file_util.FileChunk(data='', offset=100, total_size=100)]
     self.assertEqual(expected, result)
 
+
+class GCSFileUploadHookTest(absltest.TestCase):
+
   @mock.patch.object(file_util, 'FileHandleMediaUpload')
   @mock.patch.object(file_util.FileHandle, 'Get')
-  @mock.patch.object(gcs.GCSBuildProvider, '_GetClient')
-  def testUploadFile(
-      self, mock_get_client, mock_handle_factory, mock_media_upload_ctor):
-    """Test UploadFile."""
-    provider = gcs.GCSBuildProvider()
+  def testUploadFile(self, mock_handle_factory, mock_media_upload_ctor):
+    """Tests uploading a file to GCS."""
+    hook = gcs.GCSFileUploadHook(file_pattern='.*')
+
     # Configure mock file handle
     mock_handle = mock.MagicMock()
     mock_handle_factory.return_value = mock_handle
+    # Configure mock media uploader
     mock_media_upload = mock.MagicMock()
     mock_media_upload_ctor.return_value = mock_media_upload
-
     # Configure mock client and response (upload will be done)
-    request = mock.MagicMock()
-    request.next_chunk.return_value = None, True
-    mock_api_client = mock.MagicMock()
-    mock_api_client.objects().insert.return_value = request
-    mock_get_client.return_value = mock_api_client
+    hook._client = mock.MagicMock()
+    hook._client.objects().insert().next_chunk.return_value = None, True
 
-    # Upload file and verify that media upload constructed and used properly
-    provider.UploadFile('fake_url', 'bucket/test_run/error.txt')
+    # Upload file and verify that client and uploader used properly
+    hook.UploadFile('fake_url', 'bucket/test_run/error.txt')
     mock_media_upload_ctor.assert_called_with(
         mock_handle, chunksize=gcs._UPLOAD_BUFFER_SIZE, resumable=True)
-    mock_api_client.objects().insert.assert_called_with(
+    hook._client.objects().insert.assert_called_with(
         bucket='bucket',
         name='test_run/error.txt',
         media_body=mock_media_upload)

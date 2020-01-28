@@ -12,18 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A MTT plugin for Google Cloud Storage."""
+"""MTT plugins for Google Cloud Storage."""
 import datetime
 import logging
-
-import apiclient.discovery
-import apiclient.errors
-import apiclient.http
+import apiclient
 import httplib2
 import six
 
 from multitest_transport.plugins import base
 from multitest_transport.plugins import constant
+from multitest_transport.plugins import file_upload_hook
 from multitest_transport.util import env
 from multitest_transport.util import file_util
 
@@ -34,6 +32,18 @@ _GCS_BUILD_API_NAME = 'storage'
 _GCS_BUILD_API_VERSION = 'v1'
 _PAGE_SIZE = 10
 _UPLOAD_BUFFER_SIZE = 1024 * 1024
+
+
+def _GetClient(credentials):
+  """Constructs a client to access the Google Cloud Storage API."""
+  http = httplib2.Http(timeout=constant.HTTP_TIMEOUT_SECONDS)
+  if credentials:
+    http = credentials.authorize(http)
+  return apiclient.discovery.build(
+      _GCS_BUILD_API_NAME,
+      _GCS_BUILD_API_VERSION,
+      http=http,
+      developerKey=env.GOOGLE_API_KEY)
 
 
 def _ParsePath(path):
@@ -79,25 +89,9 @@ class GCSBuildProvider(base.BuildProvider):
     self._client = None
 
   def _GetClient(self):
-    """Initialize client.
-
-    Returns:
-      a client which is a Google Api Client Resource object with methods
-    for interacting with the service. Returns None if client has already been
-    initialized
-    """
-    if self._client:
-      return self._client
-
-    http = httplib2.Http(timeout=constant.HTTP_TIMEOUT_SECONDS)
-    credentials = self.GetCredentials()
-    if credentials:
-      http = credentials.authorize(http)
-    self._client = apiclient.discovery.build(
-        _GCS_BUILD_API_NAME,
-        _GCS_BUILD_API_VERSION,
-        http=http,
-        developerKey=env.GOOGLE_API_KEY)
+    """Initializes a GCS client if one was not already initialized."""
+    if not self._client:
+      self._client = _GetClient(self.GetCredentials())
     return self._client
 
   def GetOAuth2Config(self):
@@ -263,28 +257,31 @@ class GCSBuildProvider(base.BuildProvider):
           total_size=status.total_size)
       buffer_.truncate(0)
 
-  def UploadFile(self, source_url, dst_file_path):
-    """Upload content from source_url to dst_file_path.
 
-    Args:
-      source_url: a url which stores file content
-      dst_file_path: a destination file path (e.g folder1/folder2/error.txt)
-    """
+class GCSFileUploadHook(file_upload_hook.AbstractFileUploadHook):
+  """Hook which uploads files to Google Cloud Storage."""
+  name = 'Google Cloud Storage File Upload'
+
+  def __init__(self, _credentials=None, **_):      super(GCSFileUploadHook, self).__init__(**_)
+    self._client = None
+    self._credentials = _credentials
+
+  def _GetClient(self):
+    """Initializes a GCS client if one was not already initialized."""
+    if not self._client:
+      self._client = _GetClient(self._credentials)
+    return self._client
+
+  def UploadFile(self, source_url, dest_file_path):
+    """Uploads a file to GCS."""
     client = self._GetClient()
-
     file_handle = file_util.FileHandle.Get(source_url)
     media = file_util.FileHandleMediaUpload(
         file_handle, chunksize=_UPLOAD_BUFFER_SIZE, resumable=True)
 
-    bucket, object_name = _ParsePath(dst_file_path)
+    bucket, object_name = _ParsePath(dest_file_path)
     request = client.objects().insert(
-        bucket=bucket,
-        name=object_name,
-        media_body=media)
+        bucket=bucket, name=object_name, media_body=media)
     done = False
     while not done:
-      status, done = request.next_chunk(num_retries=constant.NUM_RETRIES)
-      if status:
-        status_str = 'Uploaded %d%%.' % int(status.progress() * 100)
-        logging.debug(status_str)
-    logging.debug('Upload %s Completed', dst_file_path)
+      _, done = request.next_chunk(num_retries=constant.NUM_RETRIES)

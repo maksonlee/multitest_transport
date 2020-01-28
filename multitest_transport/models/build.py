@@ -195,15 +195,6 @@ class BuildChannel(object):
     """
     return self.provider.DownloadFile(path, offset=offset)
 
-  def UploadFile(self, source_url, dst_file_path):
-    """Upload content from source_url to dst_file_path.
-
-    Args:
-      source_url: a url which stores file content
-      dst_file_path: a destination file path (e.g folder1/folder2/error.txt)
-    """
-    self.provider.UploadFile(source_url, dst_file_path)
-
   def Update(self, name, provider_name, options):
     """Updates a build channel.
 

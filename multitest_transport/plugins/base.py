@@ -197,15 +197,6 @@ class BuildProvider(
     """
     raise NotImplementedError('DownloadFile() is not implemented.')
 
-  def UploadFile(self, source_url, dst_file_path):
-    """Upload content from source_url to dst_file_path.
-
-    Args:
-      source_url: a url which stores file content
-      dst_file_path: a file path (e.g folder1/folder2/error.txt)
-    """
-    raise NotImplementedError('UploadFile() is not implemented.')
-
   @property
   def url_patterns(self):
     """URL patterns."""

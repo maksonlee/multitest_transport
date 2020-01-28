@@ -35,6 +35,7 @@ py_library(
         "gcs.py",
     ],
     deps = [
+        ":file_upload_hook_lib",
         ":plugin_base",
         "//multitest_transport/util",
         third_party("apiclient"),
