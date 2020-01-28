@@ -26,7 +26,8 @@ from multitest_transport.util import file_util
 
 MTT_CONFIG_SET_PATH = 'android-test-catalog/prod'
 GCS_BUILD_CHANNEL_ID = 'google_cloud_storage'
-GCS_URL = 'mtt:///%s/%s' % (GCS_BUILD_CHANNEL_ID, MTT_CONFIG_SET_PATH)
+CONFIG_SET_URL = 'mtt:///%s/%s' % (GCS_BUILD_CHANNEL_ID, MTT_CONFIG_SET_PATH)
+CONFIG_SET_BUILD_CHANNEL_IDS = [GCS_BUILD_CHANNEL_ID]
 
 
 def GetLocalConfigSetInfos():
@@ -70,7 +71,7 @@ def GetRemoteConfigSetInfos():
       continue
 
     # Read file
-    gcs_url = '%s/%s' % (GCS_URL, build_item.name)
+    gcs_url = '%s/%s' % (CONFIG_SET_URL, build_item.name)
     contents = ReadRemoteFile(gcs_url)
     info = _ParseConfigSet(contents).info
     if info:

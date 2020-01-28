@@ -22,9 +22,16 @@ import mock
 
 from multitest_transport.api import api_test_util
 from multitest_transport.api import config_set_api
+from multitest_transport.models import build
 from multitest_transport.models import config_set_helper
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
+from multitest_transport.plugins import base as plugins
+
+
+class GCSBuildProvider(plugins.BuildProvider):
+  """Dummy build provider for testing."""
+  name = 'Google Cloud Storage'
 
 
 class ConfigSetApiTest(api_test_util.TestCase):
@@ -34,6 +41,10 @@ class ConfigSetApiTest(api_test_util.TestCase):
 
   def setUp(self):
     super(ConfigSetApiTest, self).setUp(config_set_api.ConfigSetApi)
+
+  def _CreateMockBuildChannel(self, name='google_cloud_storage',
+                              provider='Google Cloud Storage'):
+    return build.AddBuildChannel(name, provider, {})
 
   def _CreateConfigSetInfo(self, name='Test Config',
                            url='some.url/some.bucket', hash_value='123'):
@@ -66,6 +77,21 @@ class ConfigSetApiTest(api_test_util.TestCase):
     new_config = self._CreateConfigSetInfo(name=name, url=url,
                                            hash_value='98765')
     return old_config, new_config
+
+  @mock.patch.object(build, 'GetBuildChannel')
+  def testListBuildChannels(self, mock_get_build_channel):
+
+    config = ndb_models.BuildChannelConfig(id='google_cloud_storage',
+                                           name='GCS',
+                                           provider_name='Google Cloud Storage')
+    channel = build.BuildChannel(config)
+    mock_get_build_channel.return_value = channel
+
+    res = self.app.get('/_ah/api/mtt/v1/config_sets/build_channels')
+    res_msg = protojson.decode_message(messages.BuildChannelList, res.body)
+    self.assertEqual(len(res_msg.build_channels), 1)
+    self.assertEqual(res_msg.build_channels[0].id, 'google_cloud_storage')
+    self.assertEqual(res_msg.build_channels[0].name, 'GCS')
 
   def testList(self):
     imported_config = self._CreateImportedConfig()

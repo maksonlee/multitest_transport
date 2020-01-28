@@ -22,6 +22,7 @@ from protorpc import remote
 import endpoints
 
 from multitest_transport.api import base
+from multitest_transport.models import build
 from multitest_transport.models import config_set_helper
 from multitest_transport.models import messages as mtt_messages
 
@@ -30,6 +31,27 @@ from multitest_transport.models import messages as mtt_messages
                         path='config_sets')
 class ConfigSetApi(remote.Service):
   """A handler for Config Set API."""
+
+  @endpoints.method(
+      endpoints.ResourceContainer(
+          message_types.VoidMessage,),
+      mtt_messages.BuildChannelList,
+      path='build_channels', http_method='GET',
+      name='build_channels')
+  def ListBuildChannels(self, request):
+    """Returns a list of requested build channels.
+
+    Args:
+      request: an API request object.
+    Returns:
+      a mtt_messages.ConfigSetStatusList object.
+    """
+    channels = []
+    for channel_id in config_set_helper.CONFIG_SET_BUILD_CHANNEL_IDS:
+      channels.append(build.GetBuildChannel(channel_id))
+    return mtt_messages.BuildChannelList(
+        build_channels=mtt_messages.Convert(channels,
+                                            mtt_messages.BuildChannel))
 
   @endpoints.method(
       endpoints.ResourceContainer(
