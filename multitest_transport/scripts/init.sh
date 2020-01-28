@@ -36,24 +36,20 @@ then
       2>&1 > /dev/null | multilog s10485760 n10 "${MTT_MASTER_LOG_DIR}" &
 fi
 
-# Check if TF is disabled
-if [[ "${MTT_DISABLE_TF}" -ne "1" ]]
+# Construct TF global config
+TF_CONFIG_FILE=scripts/host-config.xml
+if [[ -f "${MTT_CUSTOM_TF_CONFIG_FILE}" ]]
 then
-  # Construct TF global config
-  TF_CONFIG_FILE=scripts/host-config.xml
-  if [[ -f "${MTT_CUSTOM_TF_CONFIG_FILE}" ]]
-  then
-    cp "${MTT_CUSTOM_TF_CONFIG_FILE}" "${TF_CONFIG_FILE}"
-  fi
-  sed -i s/\${MTT_MASTER_URL}/"${MTT_MASTER_URL}"/g "${TF_CONFIG_FILE}"
-
-  # Start ADB and load keys
-  export ADB_VENDOR_KEYS=$(ls -1 /root/.android/*.adb_key | paste -sd ":" -)
-  adb start-server
-
-  # Start TF
-  mkdir -p "${MTT_TEST_WORK_DIR}"
-  TF_GLOBAL_CONFIG="${TF_CONFIG_FILE}"\
-    TRADEFED_OPTS=-Djava.io.tmpdir="${MTT_TEST_WORK_DIR}"\
-    tradefed.sh
+  cp "${MTT_CUSTOM_TF_CONFIG_FILE}" "${TF_CONFIG_FILE}"
 fi
+sed -i s/\${MTT_MASTER_URL}/"${MTT_MASTER_URL}"/g "${TF_CONFIG_FILE}"
+
+# Start ADB and load keys
+export ADB_VENDOR_KEYS=$(ls -1 /root/.android/*.adb_key | paste -sd ":" -)
+adb start-server
+
+# Start TF
+mkdir -p "${MTT_TEST_WORK_DIR}"
+TF_GLOBAL_CONFIG="${TF_CONFIG_FILE}"\
+  TRADEFED_OPTS=-Djava.io.tmpdir="${MTT_TEST_WORK_DIR}"\
+  tradefed.sh

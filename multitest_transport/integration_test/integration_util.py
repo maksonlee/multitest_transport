@@ -34,14 +34,14 @@ flags.mark_flag_as_required('docker_image')
 RETRY_PARAMS = {'tries': 4, 'delay': 2, 'backoff': 2}
 
 # Constants
-CLUSTER = 'INTEGRATION_TEST'
+CLUSTER = 'default'
 
 
 class MttContainer(object):
   """Wrapper around an MTT docker container."""
 
-  def __init__(self, image):
-    self._image = image
+  def __init__(self, image=None):
+    self._image = image or FLAGS.docker_image
 
   def __enter__(self):
     """Start the MTT docker container."""
@@ -87,7 +87,7 @@ class MttContainer(object):
     exit_code, output = self._delegate.exec_run(list(args), demux=True)
     if exit_code != 0:
       raise RuntimeError(output[1])
-    return output[0]
+    return output[0].decode() if output[0] else None
 
   def DumpServerLogs(self):
     """Output the server logs for debugging."""
@@ -149,16 +149,31 @@ class MttContainer(object):
   def WaitForState(self, test_run_id, expected_state, timeout=30):
     """Wait for a test run to be in a specific state."""
     start_time = time.time()
-    state = None
-    while time.time() < start_time + timeout:
+    while True:
       state = self.GetTestRun(test_run_id)['state']
       if expected_state == state:
         return
+      if (state in ['COMPLETED', 'CANCELED', 'ERROR'] or
+          time.time() >= start_time + timeout):
+        # Unexpected final state or out of time
+        raise AssertionError('Wrong run state %s (expected %s)' %
+                             (state, expected_state))
       time.sleep(1)
-    raise AssertionError('Wrong run state %s (expected %s)' %
-                         (state, expected_state))
+
+  @retry.retry(**RETRY_PARAMS)
+  def ImportConfig(self, yaml_content):
+    data = {'value': yaml_content}
+    response = requests.post(
+        '%s/node_config/import' % self.mtt_api_url, json=data)
+    response.raise_for_status()
 
   # TFC API
+
+  @retry.retry(**RETRY_PARAMS)
+  def GetAttempts(self, request_id):
+    response = requests.get('%s/requests/%s' % (self.tfc_api_url, request_id))
+    response.raise_for_status()
+    return response.json().get('command_attempts', [])
 
   @retry.retry(**RETRY_PARAMS)
   def LeaseTasks(self, devices=None):
@@ -216,7 +231,7 @@ class DockerContainerTest(absltest.TestCase):
   @classmethod
   def GetContainer(cls):
     """Factory method to construct a container. Override to customize."""
-    return MttContainer(FLAGS.docker_image)
+    return MttContainer()
 
   @classmethod
   def setUpClass(cls):

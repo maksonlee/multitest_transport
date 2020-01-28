@@ -30,6 +30,23 @@ py_test(
     ],
 )
 
+# Run with blaze test integration_test:e2e_test --test_arg="--docker_image=<image to test>" --test_arg="--serial_number=<device to test>" --cache_test_results=no --flaky_test_attempts=3
+py_test(
+    name = "e2e_test",
+    timeout = "eternal",
+    srcs = [
+        "e2e_test.py",
+    ],
+    data = [
+        "test_data/e2e_test_config.yaml",
+    ],
+    python_version = "PY3",
+    tags = ["local"],
+    deps = [
+        ":integration_util",
+    ],
+)
+
 py_test(
     name = "event_handler_integration_test",
     srcs = [
@@ -87,6 +104,7 @@ test_suite(
 test_suite(
     name = "integration_test",
     tests = [
+        ":e2e_test",
         ":image_tests",
         "//multitest_transport/cli:integration_test",
     ],
