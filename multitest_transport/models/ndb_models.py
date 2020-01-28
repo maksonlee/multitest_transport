@@ -96,6 +96,12 @@ class BuildChannelConfig(ndb.Model):
   credentials = appengine.CredentialsNDBProperty()
 
 
+class ConfigSetStatus(messages.Enum):
+  NOT_IMPORTED = 0
+  IMPORTED = 1
+  UPDATABLE = 2
+
+
 class ConfigSetInfo(ndb.Model):
   """Metadata for a config set.
 

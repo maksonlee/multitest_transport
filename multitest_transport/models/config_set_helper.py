@@ -42,8 +42,7 @@ def GetLocalConfigSetInfos():
   info_messages = []
   for info in infos:
     info_message = mtt_messages.Convert(info, mtt_messages.ConfigSetInfo)
-    info_message.imported = True
-    info_message.update_available = False
+    info_message.status = ndb_models.ConfigSetStatus.IMPORTED
     info_messages.append(info_message)
   return info_messages
 
@@ -76,8 +75,7 @@ def GetRemoteConfigSetInfos():
     info = _ParseConfigSet(contents).info
     if info:
       info_message = mtt_messages.Convert(info, mtt_messages.ConfigSetInfo)
-      info_message.imported = False
-      info_message.update_available = False
+      info_message.status = ndb_models.ConfigSetStatus.NOT_IMPORTED
       info_messages.append(info_message)
   return info_messages
 
@@ -98,7 +96,7 @@ def UpdateConfigSetInfos(imported_infos, remote_infos):
     if existing_info:
       if existing_info.hash != info.hash:
         # Imported file is different
-        existing_info.update_available = True
+        existing_info.status = ndb_models.ConfigSetStatus.UPDATABLE
         info_map[info.url] = existing_info
       # If imported file is same, keep as imported=True and update=False
     else:

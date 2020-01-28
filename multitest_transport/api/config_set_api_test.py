@@ -50,10 +50,9 @@ class ConfigSetApiTest(api_test_util.TestCase):
                            url='some.url/some.bucket', hash_value='123'):
     return ndb_models.ConfigSetInfo(name=name, url=url, hash=hash_value)
 
-  def _CreateConfigSetInfoMessage(self, info, imported, update_available):
+  def _CreateConfigSetInfoMessage(self, info, status):
     message = messages.Convert(info, messages.ConfigSetInfo)
-    message.imported = imported
-    message.update_available = update_available
+    message.status = status
     return message
 
   def _CreateImportedConfig(self):
@@ -97,11 +96,11 @@ class ConfigSetApiTest(api_test_util.TestCase):
     imported_config = self._CreateImportedConfig()
     updatable_config_old, _ = self._CreateUpdatableConfig()
 
-    imported_message = self._CreateConfigSetInfoMessage(imported_config,
-                                                        True, False)
+    imported_message = self._CreateConfigSetInfoMessage(
+        imported_config, ndb_models.ConfigSetStatus.IMPORTED)
     # Not using include-remote, so should not detect the update
-    updatable_message = self._CreateConfigSetInfoMessage(updatable_config_old,
-                                                         True, False)
+    updatable_message = self._CreateConfigSetInfoMessage(
+        updatable_config_old, ndb_models.ConfigSetStatus.IMPORTED)
 
     res = self.app.get('/_ah/api/mtt/v1/config_sets')
     res_msg = protojson.decode_message(messages.ConfigSetInfoList, res.body)
@@ -115,14 +114,14 @@ class ConfigSetApiTest(api_test_util.TestCase):
     nonimported_config = self._CreateNonImportedConfig()
     updatable_config_old, updatable_config_new = self._CreateUpdatableConfig()
 
-    imported_message = self._CreateConfigSetInfoMessage(imported_config,
-                                                        True, False)
-    nonimported_message = self._CreateConfigSetInfoMessage(nonimported_config,
-                                                           False, False)
+    imported_message = self._CreateConfigSetInfoMessage(
+        imported_config, ndb_models.ConfigSetStatus.IMPORTED)
+    nonimported_message = self._CreateConfigSetInfoMessage(
+        nonimported_config, ndb_models.ConfigSetStatus.NOT_IMPORTED)
     updatable_message_old = self._CreateConfigSetInfoMessage(
-        updatable_config_old, True, True)
+        updatable_config_old, ndb_models.ConfigSetStatus.UPDATABLE)
     updatable_message_new = self._CreateConfigSetInfoMessage(
-        updatable_config_new, True, True)
+        updatable_config_new, ndb_models.ConfigSetStatus.UPDATABLE)
 
     mock_get_remote_config_set_infos.return_value = [imported_message,
                                                      nonimported_message,

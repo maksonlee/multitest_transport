@@ -178,6 +178,15 @@ export declare interface BuildChannelProviderList {
 }
 
 /**
+ * Import and update status of a ConfigSet
+ */
+export enum ConfigSetStatus {
+  NOT_IMPORTED = 'Not Imported',
+  IMPORTED = 'Imported',
+  UPDATABLE = 'Updatable',
+}
+
+/**
  * Metadata for an MTT configuration file
  */
 export declare interface ConfigSetInfo {
@@ -191,10 +200,8 @@ export declare interface ConfigSetInfo {
   description?: string;
   /** Last time the config set was imported */
   last_update_time?: string;
-  /** True if the config set has been imported to the current host */
-  imported: boolean;
-  /** True if there is a different config set version available from the url */
-  update_available: boolean;
+  /** Import and updatable status of the config set */
+  status: ConfigSetStatus;
 }
 
 /**

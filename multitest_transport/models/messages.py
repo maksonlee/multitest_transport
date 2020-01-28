@@ -395,8 +395,7 @@ class ConfigSetInfo(messages.Message):
   name = messages.StringField(3, required=True)
   description = messages.StringField(4)
   last_update_time = messages.StringField(5)
-  imported = messages.BooleanField(6)
-  update_available = messages.BooleanField(7)
+  status = messages.EnumField(ndb_models.ConfigSetStatus, 6)
 
 
 @Converter(ndb_models.ConfigSetInfo, ConfigSetInfo)

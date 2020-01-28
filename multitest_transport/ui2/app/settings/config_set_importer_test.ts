@@ -29,30 +29,6 @@ import {SettingsModule} from './settings_module';
 import {SettingsModuleNgSummary} from './settings_module.ngsummary';
 
 
-/** Create a mock ConfigSetInfo that has been imported */
-function newMockImportedConfigSetInfo() {
-  return testUtil.newMockConfigSetInfo(
-      'mtt:///imported/config/set/info', 'Imported Config Set', 'importedhash',
-      true, false);
-}
-
-
-/** Create a mock ConfigSetInfo that has not been imported */
-function newMockNotImportedConfigSetInfo() {
-  return testUtil.newMockConfigSetInfo(
-      'mtt:///not/imported/config/set/info', 'Not Imported Config Set',
-      'notimportedhash', false, false);
-}
-
-
-/** Create a mock ConfigSetInfo that can be updated */
-function newMockUpdatableConfigSetInfo() {
-  return testUtil.newMockConfigSetInfo(
-      'mtt:///updatable/config/set/info', 'Updatable Config Set', 'updatable',
-      true, true);
-}
-
-
 describe('ConfigSetImporter', () => {
   let configSetImporter: ConfigSetImporter;
   let configSetImporterFixture: ComponentFixture<ConfigSetImporter>;
@@ -61,21 +37,19 @@ describe('ConfigSetImporter', () => {
 
   let imported: ConfigSetInfo;
   let notImported: ConfigSetInfo;
-  let updatable: ConfigSetInfo;
 
   beforeEach(() => {
     const gcsBuildChannel = testUtil.newMockBuildChannel(
         'google_cloud_storage', 'Google Cloud Storage');
-    imported = newMockImportedConfigSetInfo();
-    notImported = newMockNotImportedConfigSetInfo();
-    updatable = newMockUpdatableConfigSetInfo();
+    imported = testUtil.newMockImportedConfigSetInfo();
+    notImported = testUtil.newMockNotImportedConfigSetInfo();
 
     mttClient = jasmine.createSpyObj(
         'mttClient', ['getBuildChannels', 'getConfigSetInfos']);
     mttClient.getBuildChannels.and.returnValue(
         observableOf({build_channels: [gcsBuildChannel]}));
     mttClient.getConfigSetInfos.and.returnValue(
-        observableOf({config_set_infos: [imported, notImported, updatable]}));
+        observableOf({config_set_infos: [imported, notImported]}));
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SettingsModule],
@@ -100,6 +74,5 @@ describe('ConfigSetImporter', () => {
     const text = getTextContent(el);
     expect(text).toContain(imported.name);
     expect(text).toContain(notImported.name);
-    expect(text).toContain(updatable.name);
   });
 });

@@ -128,16 +128,6 @@ export class ConfigSetImporter implements OnInit {
         });
   }
 
-  getStatus(info: ConfigSetInfo) {
-    if (!info.imported) {
-      return 'Not Imported';
-    }
-    if (info.update_available) {
-      return 'Updatable';
-    }
-    return 'Imported';
-  }
-
   /**
    * Triggered when import file button is clicked
    * On selecting a file, it will start to upload the file

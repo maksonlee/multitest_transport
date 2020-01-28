@@ -148,14 +148,23 @@ export function newMockBuildItemList() {
 /** Create a mock ConfigSetInfo */
 export function newMockConfigSetInfo(
     url = CONFIG_SET_URL, name = CONFIG_SET_NAME, hash = CONFIG_SET_HASH,
-    imported = true, updateAvailable = false) {
-  return {
-    url,
-    name,
-    hash,
-    imported,
-    update_available: updateAvailable,
-  };
+    status = MttModels.ConfigSetStatus.IMPORTED) {
+  return {url, name, hash, status};
+}
+
+/** Create a mock ConfigSetInfo that has been imported */
+export function newMockImportedConfigSetInfo() {
+  return newMockConfigSetInfo(
+      'mtt:///imported/config/set/info', 'Imported Config Set', 'importedhash',
+      MttModels.ConfigSetStatus.IMPORTED);
+}
+
+
+/** Create a mock ConfigSetInfo that has not been imported */
+export function newMockNotImportedConfigSetInfo() {
+  return newMockConfigSetInfo(
+      'mtt:///not/imported/config/set/info', 'Not Imported Config Set',
+      'notimportedhash', MttModels.ConfigSetStatus.NOT_IMPORTED);
 }
 
 /** Creates a new Device given serial and product */

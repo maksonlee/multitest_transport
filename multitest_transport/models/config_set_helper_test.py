@@ -39,10 +39,9 @@ class ConfigSetHelperTest(absltest.TestCase):
                            url='some.url/some.bucket', hash_value='123'):
     return ndb_models.ConfigSetInfo(name=name, url=url, hash=hash_value)
 
-  def _CreateConfigSetInfoMessage(self, info, imported, update_available):
+  def _CreateConfigSetInfoMessage(self, info, status):
     message = messages.Convert(info, messages.ConfigSetInfo)
-    message.imported = imported
-    message.update_available = update_available
+    message.status = status
     return message
 
   def _CreateImportedConfig(self):
@@ -72,16 +71,16 @@ class ConfigSetHelperTest(absltest.TestCase):
     nonimported_config = self._CreateNonImportedConfig()
     updatable_config_old, updatable_config_new = self._CreateUpdatableConfig()
 
-    imported_message = self._CreateConfigSetInfoMessage(imported_config,
-                                                        True, False)
-    nonimported_message = self._CreateConfigSetInfoMessage(nonimported_config,
-                                                           False, False)
+    imported_message = self._CreateConfigSetInfoMessage(
+        imported_config, ndb_models.ConfigSetStatus.IMPORTED)
+    nonimported_message = self._CreateConfigSetInfoMessage(
+        nonimported_config, ndb_models.ConfigSetStatus.NOT_IMPORTED)
     updatable_message_old = self._CreateConfigSetInfoMessage(
-        updatable_config_old, True, False)
+        updatable_config_old, ndb_models.ConfigSetStatus.IMPORTED)
     updatable_message_new = self._CreateConfigSetInfoMessage(
-        updatable_config_new, True, True)
+        updatable_config_new, ndb_models.ConfigSetStatus.UPDATABLE)
     updatable_message_combined = self._CreateConfigSetInfoMessage(
-        updatable_config_old, True, True)
+        updatable_config_old, ndb_models.ConfigSetStatus.UPDATABLE)
 
     imported_messages = [imported_message, updatable_message_old]
     remote_messages = [nonimported_message, updatable_message_new]
