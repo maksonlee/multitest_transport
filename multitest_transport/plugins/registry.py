@@ -27,6 +27,8 @@ class PluginRegistry(object):
     name = getattr(cls, 'name', None)
     if not name:
       return  # Ignore classes without names.
+    if cls.__name__.startswith('Abstract'):
+      return  # Ignore abstract classes.
     assert name not in self._plugins_by_name, (
         'Plugin \'%s\' already registered' % name)
     logging.info('Registering plugin \'%s\' (%s)', name, cls)

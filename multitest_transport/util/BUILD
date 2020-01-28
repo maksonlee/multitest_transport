@@ -151,6 +151,7 @@ py_appengine_test(
         "file_util_test.py",
     ],
     data = [
+        "test_data/FILES",
         "test_data/test_package.zip",
         "test_data/test_package-empty.zip",
         "test_data/test_package-invalid.zip",

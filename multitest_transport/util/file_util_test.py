@@ -219,6 +219,19 @@ class FileUtilTest(absltest.TestCase):
     self.assertEqual('file://root/base/command/attempt/file',
                      file_util.GetOutputFileUrl(test_run, attempt, 'file'))
 
+  @mock.patch.object(file_util.FileHandle, 'Get')
+  @mock.patch.object(file_util, 'GetOutputFileUrl')
+  def testGetOutputFilenames(self, mock_get_output_url, mock_handle_factory):
+    """Tests that an attempt's output filenames can retrieved."""
+    test_run = mock.MagicMock()
+    attempt = mock.MagicMock()
+    summary_file = file(os.path.join(TEST_DATA_DIR, 'FILES'))
+    mock_handle_factory.return_value = summary_file
+    # List of filenames read from 'FILES' summary file
+    filenames = file_util.GetOutputFilenames(test_run, attempt)
+    self.assertEqual(['test_result.xml', 'tool-logs/stdout.txt'], filenames)
+    mock_get_output_url.assert_called_once_with(test_run, attempt, 'FILES')
+
   @mock.patch.object(urllib2, 'urlopen')
   @mock.patch.object(tarfile, 'open')
   def testDownloadDirectory(self, mock_open, mock_urlopen):

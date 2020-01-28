@@ -40,6 +40,12 @@ class RegistryTest(absltest.TestCase):
     self.registry.RegisterPlugin(MockPlugin)
     self.assertEmpty(self.registry.ListPluginNames())  # Not registered
 
+  def testRegisterPlugin_abstract(self):
+    # Register an abstract mock plugin explicitly
+    class AbstractMockPlugin(object):        name = 'mock'
+    self.registry.RegisterPlugin(AbstractMockPlugin)
+    self.assertEmpty(self.registry.ListPluginNames())  # Not registered
+
   def testMetaclass(self):
     # Register a mock plugin using the registry metaclass
     class MockPlugin(six.with_metaclass(self.registry.GetMetaclass(), object)):        name = 'metaclass'

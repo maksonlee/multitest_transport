@@ -321,6 +321,19 @@ def GetOutputFileUrl(test_run, attempt, file_path=None):
   return GetStorageUrl(test_run.output_storage, path)
 
 
+def GetOutputFilenames(test_run, attempt):
+  """Get a list of output filenames for a completed attempt.
+
+  Args:
+    test_run: test run
+    attempt: command attempt
+  Returns:
+    list of output filenames
+  """
+  summary_url = GetOutputFileUrl(test_run, attempt, 'FILES')
+  return [line.strip() for line in FileHandle.Get(summary_url).readlines()]
+
+
 def DownloadDirectory(base_url, dir_path):
   """Download a directory as a tarball using browsepy.
 

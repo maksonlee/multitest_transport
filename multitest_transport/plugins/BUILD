@@ -6,6 +6,30 @@ licenses(["notice"])
 
 
 py_library(
+    name = "file_upload_hook_lib",
+    srcs = [
+        "file_upload_hook.py",
+    ],
+    deps = [
+        ":plugin_base",
+        "//multitest_transport/util",
+    ],
+)
+
+py_appengine_test(
+    name = "file_upload_hook_test",
+    srcs = [
+        "file_upload_hook_test.py",
+    ],
+    deps = [
+        ":file_upload_hook_lib",
+        "//multitest_transport/models",
+        third_party("absl/testing:absltest"),
+        third_party("mock"),
+    ],
+)
+
+py_library(
     name = "gcs_lib",
     srcs = [
         "gcs.py",
