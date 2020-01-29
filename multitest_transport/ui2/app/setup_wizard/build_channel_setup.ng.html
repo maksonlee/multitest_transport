@@ -22,15 +22,6 @@
   services.
 </div>
 
-<build-channel-item [buildChannel]="cloudBuildChannel" [edit]="false"
-                    (authorize)="authorize($event)" *ngIf="cloudBuildChannel">
-</build-channel-item>
-<div class="description">
-  Configurations for several test suites are stored in Google Cloud Storage. Authenticating Google
-  Cloud Storage will allow you to access those configuations, making it easy to run those test
-  suites.
-</div>
-
 <build-channel-item [buildChannel]="driveBuildChannel" [edit]="false"
                     (authorize)="authorize($event)" *ngIf="driveBuildChannel">
 </build-channel-item>

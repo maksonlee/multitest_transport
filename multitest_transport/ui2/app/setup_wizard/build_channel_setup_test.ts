@@ -82,17 +82,13 @@ describe('BuildChannelSetup', () => {
     buildChannelSetupFixture.detectChanges();
   });
 
-  it('gets initialized correctly', () => {
+  it('gets initialized and calls API', () => {
     expect(buildChannelSetup).toBeTruthy();
-  });
-
-  it('calls API correctly', () => {
     expect(mttClient.getBuildChannels).toHaveBeenCalled();
   });
 
-  it('displays only Google Drive and Google Cloud Storage', () => {
+  it('displays only Google Drive', () => {
     const text = getTextContent(el);
-    expect(text).toContain('Google Cloud Storage name');
     expect(text).toContain('Google Drive name');
     expect(text).not.toContain('Local File Storage');
   });

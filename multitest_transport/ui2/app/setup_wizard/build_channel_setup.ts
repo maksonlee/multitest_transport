@@ -31,10 +31,8 @@ import {BuildChannel} from '../services/mtt_models';
   templateUrl: './build_channel_setup.ng.html',
 })
 export class BuildChannelSetup implements OnInit {
-  GOOGLE_CLOUD_STORAGE_ID = 'google_cloud_storage';
   GOOGLE_DRIVE_ID = 'google_drive';
 
-  cloudBuildChannel!: BuildChannel;
   driveBuildChannel!: BuildChannel;
 
   constructor(
@@ -61,11 +59,10 @@ export class BuildChannelSetup implements OnInit {
     this.mtt.getBuildChannels().pipe(first()).subscribe(buildChannelList => {
       const buildChannelMap: {[key: string]: BuildChannel} = {};
       for (const buildChannel of buildChannelList.build_channels!) {
-        buildChannelMap[buildChannel.id] = buildChannel;
+        if (buildChannel.id === this.GOOGLE_DRIVE_ID) {
+          this.driveBuildChannel = buildChannel;
+        }
       }
-
-      this.cloudBuildChannel = buildChannelMap[this.GOOGLE_CLOUD_STORAGE_ID];
-      this.driveBuildChannel = buildChannelMap[this.GOOGLE_DRIVE_ID];
     });
   }
 
