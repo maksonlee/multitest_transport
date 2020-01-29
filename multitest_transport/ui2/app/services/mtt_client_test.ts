@@ -25,8 +25,13 @@ import {CommandAttempt, CommandState} from './tfc_models';
 
 describe('MttClient', () => {
   let httpClientSpy: jasmine.SpyObj<HttpClient>;
-  const appData = testUtil.newMockAppData();
   let mttClient: MttClient;
+
+  beforeEach(() => {
+    httpClientSpy = jasmine.createSpyObj<HttpClient>(
+        'HttpClient', ['get', 'post', 'put', 'delete']);
+    mttClient = new MttClient(testUtil.newMockAppData(), httpClientSpy);
+  });
 
   describe('getAuthUrl', () => {
     const mockAuthorizedInfo = {url: 'http://localhost/auth', is_manual: false};
@@ -34,8 +39,6 @@ describe('MttClient', () => {
     const REDIRECT_URI = 'http://localhost:8000/ui2/setting';
 
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['get']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(mockAuthorizedInfo));
     });
     it('calls API correctly', () => {
@@ -60,8 +63,6 @@ describe('MttClient', () => {
     const REDIRECT_URI = 'http://localhost:8000/ui2/setting';
 
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf());
     });
 
@@ -80,8 +81,6 @@ describe('MttClient', () => {
     const BUILD_ITEM_LIST = testUtil.newMockBuildItemList();
 
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(BUILD_ITEM_LIST));
     });
 
@@ -102,8 +101,6 @@ describe('MttClient', () => {
 
   describe('deleteBuildItem', () => {
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf({}));
     });
 
@@ -128,8 +125,6 @@ describe('MttClient', () => {
     const url = `${MTT_API_URL}/build_channels`;
 
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(BUILD_CHANNELS));
     });
 
@@ -151,8 +146,6 @@ describe('MttClient', () => {
     const DEVICE_ACTION_LIST = testUtil.newMockDeviceActionList();
 
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(
           observableOf({device_actions: DEVICE_ACTION_LIST}));
     });
@@ -173,8 +166,6 @@ describe('MttClient', () => {
     const DEVICE_ACTION = testUtil.newMockDeviceAction();
 
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(DEVICE_ACTION));
     });
 
@@ -194,8 +185,6 @@ describe('MttClient', () => {
     const DEVICE_ACTION = testUtil.newMockDeviceAction();
 
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf(DEVICE_ACTION));
     });
 
@@ -216,8 +205,6 @@ describe('MttClient', () => {
     const DEVICE_ACTION = testUtil.newMockDeviceAction();
 
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf(DEVICE_ACTION));
     });
 
@@ -238,8 +225,6 @@ describe('MttClient', () => {
   describe('createNewTestRunRequest', () => {
     const newtestRun = testUtil.newMockNewTestRunRequest();
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf(newtestRun));
     });
 
@@ -258,8 +243,6 @@ describe('MttClient', () => {
   describe('getNodeConfig', () => {
     const nodeConfig = testUtil.newMockNodeConfig();
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(nodeConfig));
     });
 
@@ -277,8 +260,6 @@ describe('MttClient', () => {
   describe('updateNodeConfig', () => {
     const nodeConfig = testUtil.newMockNodeConfig();
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf(nodeConfig));
     });
 
@@ -297,8 +278,6 @@ describe('MttClient', () => {
   describe('importNodeConfig', () => {
     const fileContent = 'random';
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf());
     });
 
@@ -315,8 +294,6 @@ describe('MttClient', () => {
   describe('exportNodeConfig', () => {
     const simpleMessage = {'value': '123'};
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(simpleMessage));
     });
 
@@ -335,8 +312,6 @@ describe('MttClient', () => {
   describe('getPrivateNodeConfig', () => {
     const privateNodeConfig = testUtil.newMockPrivateNodeConfig();
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(privateNodeConfig));
     });
 
@@ -354,8 +329,6 @@ describe('MttClient', () => {
   describe('updatePrivateNodeConfig', () => {
     const privateNodeConfig = testUtil.newMockPrivateNodeConfig();
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf(privateNodeConfig));
     });
 
@@ -375,8 +348,6 @@ describe('MttClient', () => {
   describe('createTest', () => {
     const TEST = testUtil.newMockTest();
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf(TEST));
     });
 
@@ -395,8 +366,6 @@ describe('MttClient', () => {
   describe('getTest', () => {
     const TEST = testUtil.newMockTest();
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['get']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(TEST));
     });
 
@@ -414,8 +383,6 @@ describe('MttClient', () => {
   describe('updateTest', () => {
     const TEST = testUtil.newMockTest();
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf(TEST));
     });
 
@@ -434,8 +401,6 @@ describe('MttClient', () => {
   describe('getTestPlan', () => {
     const TEST_PLAN = testUtil.newMockTestPlan();
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['get']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(TEST_PLAN));
     });
 
@@ -453,8 +418,6 @@ describe('MttClient', () => {
   describe('runTestPlan', () => {
     const TEST_PLAN = testUtil.newMockTestPlan();
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf(null));
     });
 
@@ -480,8 +443,6 @@ describe('MttClient', () => {
     };
 
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['get']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(TEST_PLANS));
     });
 
@@ -499,8 +460,6 @@ describe('MttClient', () => {
   describe('deleteTestPlan', () => {
     const TEST_PLAN = testUtil.newMockTestPlan();
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf(null));
     });
 
@@ -520,8 +479,6 @@ describe('MttClient', () => {
   describe('createTestPlan', () => {
     const testPlan = testUtil.newMockTestPlan();
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf(testPlan));
     });
 
@@ -540,8 +497,6 @@ describe('MttClient', () => {
   describe('updateTestPlan', () => {
     const testPlan = testUtil.newMockTestPlan();
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf(testPlan));
     });
 
@@ -562,8 +517,6 @@ describe('MttClient', () => {
     const testRun = testUtil.newMockTestRun(testUtil.newMockTest());
 
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(testRun));
     });
 
@@ -582,8 +535,6 @@ describe('MttClient', () => {
     const testRun = testUtil.newMockTestRun(testUtil.newMockTest());
 
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['post']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.post.and.returnValue(observableOf(null));
     });
 
@@ -606,8 +557,6 @@ describe('MttClient', () => {
     const offset = 3;
 
     beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
-      mttClient = new MttClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(testRunOutput));
     });
 
@@ -633,7 +582,6 @@ describe('MttClient', () => {
     let testRun: TestRun;
 
     beforeEach(() => {
-      mttClient = new MttClient(appData, {} as HttpClient);
       testRun = {output_url: 'output_url'} as TestRun;
     });
 
@@ -663,11 +611,6 @@ describe('MttClient', () => {
   });
 
   describe('getFileServerPath', () => {
-    beforeEach(() => {
-      httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
-      mttClient = new MttClient(appData, httpClientSpy);
-    });
-
     it('converts the file server paths correctly', () => {
       const fileUrl = 'file:///file/server/root/app_default_bucket/test_runs/' +
           'command_id/output/106001/attempt_id';
