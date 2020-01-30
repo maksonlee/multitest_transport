@@ -118,6 +118,10 @@ export class MttClient {
         `${MTT_API_URL}/build_channels/${id}/delete`, null, {params});
   }
 
+  getConfigSetBuildChannels(): Observable<model.BuildChannelList> {
+    return this.http.get(`${MTT_API_URL}/config_sets/build_channels`);
+  }
+
   getConfigSetInfos(includeRemote = false):
       Observable<model.ConfigSetInfoList> {
     const params = new HttpParams().set('include_remote', `${includeRemote}`);

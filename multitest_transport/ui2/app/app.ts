@@ -26,6 +26,8 @@ import {AuthReturnPage} from './auth/auth_return_page';
 import {BuildChannelEditPage} from './build_channels/build_channel_edit_page';
 import {BuildChannelList} from './build_channels/build_channel_list';
 import {BuildPicker} from './build_channels/build_picker';
+import {ConfigSetList} from './config_sets/config_set_list';
+import {ConfigSetPicker} from './config_sets/config_set_picker';
 import {DeviceActionEditPage} from './device_actions/device_action_edit_page';
 import {DeviceActionList} from './device_actions/device_action_list';
 import {DeviceListPage} from './devices/device_list_page';
@@ -62,6 +64,10 @@ export const routes: Routes = [
     canDeactivate: [UnsavedChangeGuard]
   },
   {
+    path: 'config_sets/add',
+    component: ConfigSetPicker,
+  },
+  {
     path: 'device_actions/new',
     component: DeviceActionEditPage,
     canDeactivate: [UnsavedChangeGuard]
@@ -82,6 +88,7 @@ export const routes: Routes = [
     component: SettingPage,
     children: [
       {path: 'build_channels', component: BuildChannelList},
+      {path: 'config_sets', component: ConfigSetList},
       {path: 'device_actions', component: DeviceActionList},
       {
         path: 'general',

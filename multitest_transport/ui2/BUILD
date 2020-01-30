@@ -160,6 +160,7 @@ ts_development_sources(
     deps = [
         "//multitest_transport/ui2/app:tests",
         "//multitest_transport/ui2/app/build_channels:tests",
+        "//multitest_transport/ui2/app/config_sets:tests",
         "//multitest_transport/ui2/app/device_actions:tests",
         "//multitest_transport/ui2/app/devices:tests",
         "//multitest_transport/ui2/app/services:tests",
@@ -179,6 +180,7 @@ ts_config(
         ":app_lib",
         "//multitest_transport/ui2/app:tests",
         "//multitest_transport/ui2/app/build_channels:tests",
+        "//multitest_transport/ui2/app/config_sets:tests",
         "//multitest_transport/ui2/app/device_actions:tests",
         "//multitest_transport/ui2/app/devices:tests",
         "//multitest_transport/ui2/app/services:tests",

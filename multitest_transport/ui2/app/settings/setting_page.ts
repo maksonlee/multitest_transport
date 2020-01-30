@@ -31,6 +31,7 @@ export class SettingPage implements OnInit {
 
   navLinks = [
     {path: './general', label: 'General Settings'},
+    {path: './config_sets', label: 'Config Sets'},
     {path: './build_channels', label: 'Build Channels'},
     {path: './device_actions', label: 'Device Actions'},
   ];

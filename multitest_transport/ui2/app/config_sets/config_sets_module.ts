@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Google LLC
+ * Copyright 2020 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,12 @@ import {NgModule} from '@angular/core';
 import {RouterModule} from '@angular/router';
 
 import {BuildChannelsModule} from '../build_channels/build_channels_module';
-import {ConfigSetsModule} from '../config_sets/config_sets_module';
-import {DeviceActionsModule} from '../device_actions/device_actions_module';
 import {SharedModule} from '../shared/shared_module';
 
-import {ConfigSetImporter} from './config_set_importer';
-import {SettingForm} from './setting_form';
-import {SettingPage} from './setting_page';
+import {ConfigSetList} from './config_set_list';
+import {ConfigSetPicker} from './config_set_picker';
 
-const COMPONENTS = [ConfigSetImporter, SettingPage, SettingForm];
+const COMPONENTS = [ConfigSetList, ConfigSetPicker];
 
 @NgModule({
   declarations: COMPONENTS,
@@ -37,10 +34,11 @@ const COMPONENTS = [ConfigSetImporter, SettingPage, SettingForm];
     SharedModule,
     RouterModule,
     BuildChannelsModule,
-    ConfigSetsModule,
-    DeviceActionsModule,
   ],
   exports: COMPONENTS,
+  entryComponents: [
+    ConfigSetPicker,
+  ],
 })
-export class SettingsModule {
+export class ConfigSetsModule {
 }

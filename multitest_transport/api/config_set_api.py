@@ -60,7 +60,7 @@ class ConfigSetApi(remote.Service):
       mtt_messages.ConfigSetInfoList,
       path='/config_sets', http_method='GET', name='list')
   def List(self, request):
-    """Returns a list of ConfigSetStatuses.
+    """Returns a list of ConfigSetInfos.
 
     If include_remote is false, returns only the imported infos
     If include_remote is true, downloads the available configs from the MTT GCS
@@ -69,7 +69,7 @@ class ConfigSetApi(remote.Service):
     Args:
       request: an API request object.
     Returns:
-      a mtt_messages.ConfigSetStatusList object.
+      a mtt_messages.ConfigSetInfoList object.
     """
     imported_infos = config_set_helper.GetLocalConfigSetInfos()
 

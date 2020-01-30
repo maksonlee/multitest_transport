@@ -1,0 +1,103 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+
+<div class="header">
+  <div class="back-button-label">Config Sets</div>
+  <h1 class="subtitle">
+    <button mat-icon-button (click)="back()" #backButton id="back-button"
+      matTooltip="Return to config sets page"
+      aria-label="Return to config sets page">
+      <mat-icon class="back-button-icon">arrow_back</mat-icon>
+    </button>
+    Import Config Sets</h1>
+</div>
+
+<div [class.loading-mask]="isLoading">
+
+  <!-- TODO: Allow for multiple build channels -->
+  <div *ngIf="buildChannels.length && !isBuildChannelAvailable(buildChannels[0])"
+       class="build-channel-container">
+    <div class="description">
+      Please authenticate with your Google Cloud Storage account to access this feature.
+    </div>
+    <build-channel-item [buildChannel]="buildChannels[0]" [edit]="false"
+                        (authorize)="authorize($event)" *ngIf="buildChannels[0]">
+    </build-channel-item>
+  </div>
+
+  <mat-table [dataSource]="configs" class="selectable"
+             aria-label="Test config set list">
+    <!-- Checkbox Column -->
+    <ng-container matColumnDef="select">
+      <mat-header-cell *matHeaderCellDef fxFlex="60px">
+        <!-- Select all checkbox doesn't work well with disabled checkboxes -->
+      </mat-header-cell>
+      <mat-cell *matCellDef="let row" fxFlex="60px">
+        <mat-checkbox (click)="$event.stopPropagation()"
+                      (change)="$event ? onSelectionChange(row): null"
+                      [checked]="selection.isSelected(row)"
+                      [disabled]="configSetStatus[row.status]==configSetStatus.IMPORTED"
+                      [aria-label]="row.name">
+        </mat-checkbox>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Name Column -->
+    <ng-container matColumnDef="name">
+      <mat-header-cell *matHeaderCellDef fxFlex="200px"> Name </mat-header-cell>
+      <mat-cell *matCellDef="let element" fxFlex="200px">
+        <span title='{{element.url}}'>
+          {{element.name}}
+        </span>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Description Column -->
+    <ng-container matColumnDef="description">
+      <mat-header-cell *matHeaderCellDef fxFlex> Description </mat-header-cell>
+      <mat-cell *matCellDef="let element" fxFlex>
+        <span title="{{element.description}}" class="info-description">
+          {{element.description}}
+        </span>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Status Column -->
+    <ng-container matColumnDef="status">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px"> Status </mat-header-cell>
+      <mat-cell *matCellDef="let element" fxFlex="120px">
+        <status-button class='config-set' [state]="element.status">
+        </status-button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true;"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;"
+             [class.selected]="selection.isSelected(row.device_serial)"></mat-row>
+  </mat-table>
+
+  <div class="empty" *ngIf="!configs || configs.length === 0">
+    No test suite configs found.
+  </div>
+
+  <button mat-flat-button color='accent' class='import-button'
+          (click)="addSelectedConfigSets()">
+    Import Selected
+  </button>
+
+</div>

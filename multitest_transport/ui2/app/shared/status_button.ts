@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
 import {assertRequiredInput} from '../shared/util';
 
 /**
@@ -25,10 +25,14 @@ import {assertRequiredInput} from '../shared/util';
   styleUrls: ['status_button.css'],
   templateUrl: './status_button.ng.html',
 })
-export class StatusButton implements OnInit {
+export class StatusButton implements OnInit, OnChanges {
   @Input() state!: string;
 
   ngOnInit() {
     assertRequiredInput(this.state, 'state', 'status-button');
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    this.state = this.state.replace('_', ' ');
   }
 }

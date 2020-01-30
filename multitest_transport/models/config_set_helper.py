@@ -53,9 +53,11 @@ def GetRemoteConfigSetInfos():
   Returns:
     A list of mtt_messages.ConfigSetInfo
   """
+  # TODO: Allow for multiple config set sources
   # Get build items from MTT GCS bucket
   build_channel = build.GetBuildChannel(GCS_BUILD_CHANNEL_ID)
-  if not build_channel:
+  if (not build_channel) or (build_channel.auth_state ==
+                             ndb_models.BuildChannelAuthState.NOT_AUTHORIZED):
     return []
   build_items, _ = build_channel.ListBuildItems(
       path=MTT_CONFIG_SET_PATH)

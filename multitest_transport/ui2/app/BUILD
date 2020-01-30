@@ -36,6 +36,7 @@ ng_module(
         third_party_js("angular2:router"),
         "//multitest_transport/ui2/app/auth",
         "//multitest_transport/ui2/app/build_channels",
+        "//multitest_transport/ui2/app/config_sets",
         "//multitest_transport/ui2/app/device_actions",
         "//multitest_transport/ui2/app/devices",
         "//multitest_transport/ui2/app/services",
