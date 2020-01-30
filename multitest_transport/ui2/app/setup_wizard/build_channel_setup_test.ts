@@ -18,7 +18,7 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
-import {of as observableOf} from 'rxjs';
+import {EMPTY, of as observableOf} from 'rxjs';
 
 import {AuthService} from '../services/auth_service';
 import {MttClient} from '../services/mtt_client';
@@ -62,11 +62,9 @@ describe('BuildChannelSetup', () => {
     mttClient = jasmine.createSpyObj('mttClient', ['getBuildChannels']);
     mttClient.getBuildChannels.and.returnValue(
         observableOf({build_channels: [...BUILD_CHANNELS]}));
-    authService = jasmine.createSpyObj(
-        'authService', ['getAuthProgress', 'startAuthFlow']);
-    authService.getAuthProgress.and.returnValue(
-        observableOf({type: 'progress'}));
-    authService.startAuthFlow.and.returnValue(true);
+    authService =
+        jasmine.createSpyObj('authService', ['authorizeBuildChannel']);
+    authService.authorizeBuildChannel.and.returnValue(EMPTY);
 
     TestBed.configureTestingModule({
       imports: [SetupWizardModule, NoopAnimationsModule, RouterTestingModule],
@@ -95,6 +93,6 @@ describe('BuildChannelSetup', () => {
 
   it('triggers the authorization flow', () => {
     getEl(el, '.auth-button').click();
-    expect(authService.startAuthFlow).toHaveBeenCalled();
+    expect(authService.authorizeBuildChannel).toHaveBeenCalled();
   });
 });

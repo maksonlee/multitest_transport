@@ -170,7 +170,7 @@ class BuildChannelApiTest(api_test_util.TestCase):
     mock_get_flow.return_value = oauth2_flow
     # Verify authorization info
     response = self.app.get(
-        '/_ah/api/mtt/v1/build_channels/%s/get_authorize_url?redirect_uri=%s' %
+        '/_ah/api/mtt/v1/build_channels/%s/auth?redirect_uri=%s' %
         (config.key.id(), 'redirect_uri'))
     authorization_info = protojson.decode_message(messages.AuthorizationInfo,
                                                   response.body)
@@ -180,7 +180,7 @@ class BuildChannelApiTest(api_test_util.TestCase):
   def testGetAuthorizationInfo_notFound(self):
     """Tests that an error occurs when a build channel is not found."""
     response = self.app.put_json(
-        '/_ah/api/mtt/v1/build_channels/%s/get_authorize_url?redirect_uri=%s' %
+        '/_ah/api/mtt/v1/build_channels/%s/auth?redirect_uri=%s' %
         ('unknown', 'redirect_uri'),
         expect_errors=True)
     self.assertEqual('404 Not Found', response.status)
@@ -195,7 +195,7 @@ class BuildChannelApiTest(api_test_util.TestCase):
     mock_get_flow.return_value = oauth2_flow
     # Verify that credentials were obtained and stored
     self.app.post(
-        '/_ah/api/mtt/v1/build_channels/%s/authorize?redirect_uri=%s&code=%s'
+        '/_ah/api/mtt/v1/build_channels/%s/auth_return?redirect_uri=%s&code=%s'
         % (config.key.id(), 'redirect_uri', 'code'))
     oauth2_flow.step2_exchange.assert_called_once_with('code')
     self.assertIsNotNone(config.credentials)
@@ -203,7 +203,7 @@ class BuildChannelApiTest(api_test_util.TestCase):
   def testAuthorizeConfig_notFound(self):
     """Tests that an error occurs when a build channel is not found."""
     response = self.app.post(
-        '/_ah/api/mtt/v1/build_channels/%s/authorize?redirect_uri=%s&code=%s'
+        '/_ah/api/mtt/v1/build_channels/%s/auth_return?redirect_uri=%s&code=%s'
         % ('unknown', 'redirect_uri', 'code'), expect_errors=True)
     self.assertEqual('404 Not Found', response.status)
 

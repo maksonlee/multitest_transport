@@ -15,11 +15,13 @@
  */
 
 import {Component, OnInit} from '@angular/core';
-import {delay, filter, first} from 'rxjs/operators';
+import {delay, first} from 'rxjs/operators';
 
-import {AuthEventState, AuthService} from '../services/auth_service';
+import {AuthService} from '../services/auth_service';
 import {MttClient} from '../services/mtt_client';
 import {BuildChannel} from '../services/mtt_models';
+import {Notifier} from '../services/notifier';
+import {buildApiErrorMessage} from '../shared/util';
 
 /**
  * This component allows users to authenticate their Google Drive or Google
@@ -36,22 +38,10 @@ export class BuildChannelSetup implements OnInit {
   driveBuildChannel!: BuildChannel;
 
   constructor(
-      private readonly mtt: MttClient,
+      private readonly mtt: MttClient, private readonly notifier: Notifier,
       private readonly authService: AuthService) {}
 
   ngOnInit() {
-    this.authService
-        .getAuthProgress()
-        // delay is needed for data to be populated in database
-        .pipe(filter(x => x.type === AuthEventState.COMPLETE), delay(500))
-        .subscribe(
-            res => {
-              this.load();
-            },
-            error => {
-                // TODO: Better error handling
-            });
-
     this.load();
   }
 
@@ -71,6 +61,16 @@ export class BuildChannelSetup implements OnInit {
    * @param buildChannelId A buildchannel id
    */
   authorize(buildChannelId: string) {
-    this.authService.startAuthFlow(buildChannelId);
+    this.authService.authorizeBuildChannel(buildChannelId)
+        .pipe(delay(500))  // delay for data to be persisted
+        .subscribe(
+            () => {
+              this.load();
+            },
+            error => {
+              this.notifier.showError(
+                  'Failed to authorize build channel.',
+                  buildApiErrorMessage(error));
+            });
   }
 }

@@ -21,15 +21,14 @@ import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {MatTable} from '@angular/material/table';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {ReplaySubject, Subject, Subscription} from 'rxjs';
-import {debounceTime, delay, filter, finalize, first, takeUntil} from 'rxjs/operators';
+import {debounceTime, delay, finalize, first, takeUntil} from 'rxjs/operators';
 
-import {AUTH_DELAY, AuthService} from '../services/auth_service';
-import {AuthEventState} from '../services/auth_service';
+import {AuthService} from '../services/auth_service';
 import {MttClient} from '../services/mtt_client';
 import {BuildChannel, BuildItem, isBuildChannelAvailable} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {InfiniteScrollLoadEvent} from '../shared/infinite_scroll';
-import {isFnmatchPattern, buildApiErrorMessage} from '../shared/util';
+import {buildApiErrorMessage, isFnmatchPattern} from '../shared/util';
 
 enum ProviderType {
   LOCAL_STORE = 'Local File Store',
@@ -138,25 +137,6 @@ export class BuildPicker implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    // Monitor authorization service status.
-    this.authService
-        .getAuthProgress()
-        // delay is needed for data to be populated in database
-        .pipe(
-            filter(x => x.type === AuthEventState.COMPLETE), delay(AUTH_DELAY),
-            takeUntil(this.destroy))
-        .subscribe(
-            res => {
-              if (res.type === AuthEventState.COMPLETE) {
-                // reload build channel data
-                this.loadBuildChannels();
-              }
-            },
-            error => {
-              this.notifier.showError(
-                  'Authentication error.', buildApiErrorMessage(error));
-            });
-
     this.searchBarUrlValue = this.data.searchBarUrlValue;
     this.searchBarFilenameValue = this.data.searchBarFilenameValue;
 
@@ -361,7 +341,17 @@ export class BuildPicker implements OnInit, OnDestroy {
    * @param buildChannelId A buildchannel id
    */
   authorize(buildChannelId: string) {
-    this.authService.startAuthFlow(buildChannelId);
+    this.authService.authorizeBuildChannel(buildChannelId)
+        .pipe(delay(500))  // delay for data to be persisted
+        .subscribe(
+            () => {
+              this.loadBuildChannels();
+            },
+            error => {
+              this.notifier.showError(
+                  'Failed to authorize build channel.',
+                  buildApiErrorMessage(error));
+            });
   }
 
   /**

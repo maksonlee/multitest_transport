@@ -19,7 +19,6 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
-import {AuthService} from '../services/auth_service';
 import {MttClient} from '../services/mtt_client';
 
 import {SettingPage} from './setting_page';
@@ -30,9 +29,7 @@ describe('SettingPage', () => {
   let settingPage: SettingPage;
   let settingPageFixture: ComponentFixture<SettingPage>;
   let mttClient: jasmine.SpyObj<MttClient>;
-  let authService: jasmine.SpyObj<AuthService>;
-  authService = jasmine.createSpyObj('authService', ['getAuthProgress']);
-  authService.getAuthProgress.and.returnValue(observableOf({type: 'progress'}));
+
   beforeEach(() => {
     mttClient = jasmine.createSpyObj(
         'mttClient',
@@ -47,7 +44,6 @@ describe('SettingPage', () => {
       aotSummaries: SettingsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
-        {provide: AuthService, useValue: authService},
       ],
     });
     settingPageFixture = TestBed.createComponent(SettingPage);

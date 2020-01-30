@@ -33,7 +33,7 @@ describe('MttClient', () => {
     mttClient = new MttClient(testUtil.newMockAppData(), httpClientSpy);
   });
 
-  describe('getAuthUrl', () => {
+  describe('getBuildChannelAuthorizationInfo', () => {
     const mockAuthorizedInfo = {url: 'http://localhost/auth', is_manual: false};
     const BUILD_CHANNEL_ID = 'test_id';
     const REDIRECT_URI = 'http://localhost:8000/ui2/setting';
@@ -41,23 +41,27 @@ describe('MttClient', () => {
     beforeEach(() => {
       httpClientSpy.get.and.returnValue(observableOf(mockAuthorizedInfo));
     });
+
     it('calls API correctly', () => {
-      mttClient.getAuthUrl(BUILD_CHANNEL_ID, REDIRECT_URI);
+      mttClient.getBuildChannelAuthorizationInfo(
+          BUILD_CHANNEL_ID, REDIRECT_URI);
+      const params = new HttpParams().set('redirect_uri', REDIRECT_URI);
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(
-              `/_ah/api/mtt/v1/build_channels/test_id/get_authorize_url?redirect_uri=${
-                  REDIRECT_URI}`);
+              '/_ah/api/mtt/v1/build_channels/test_id/auth', {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
+
     it('parses API response correctly', () => {
-      const observable = mttClient.getAuthUrl(BUILD_CHANNEL_ID, REDIRECT_URI);
-      observable.subscribe((response) => {
-        expect(response).toEqual(jasmine.objectContaining(mockAuthorizedInfo));
-      });
+      mttClient.getBuildChannelAuthorizationInfo(BUILD_CHANNEL_ID, REDIRECT_URI)
+          .subscribe(response => {
+            expect(response).toEqual(
+                jasmine.objectContaining(mockAuthorizedInfo));
+          });
     });
   });
 
-  describe('authCallback', () => {
+  describe('authorizeBuildChannel', () => {
     const mockCodeString = '4/123123123';
     const BUILD_CHANNEL_ID = 'test_id';
     const REDIRECT_URI = 'http://localhost:8000/ui2/setting';
@@ -67,10 +71,11 @@ describe('MttClient', () => {
     });
 
     it('calls API correctly on valid input', () => {
-      mttClient.authCallback(mockCodeString, BUILD_CHANNEL_ID, REDIRECT_URI);
+      mttClient.authorizeBuildChannel(
+          mockCodeString, BUILD_CHANNEL_ID, REDIRECT_URI);
       expect(httpClientSpy.post)
           .toHaveBeenCalledWith(
-              `/_ah/api/mtt/v1/build_channels/test_id/authorize`,
+              `/_ah/api/mtt/v1/build_channels/test_id/auth_return`,
               {'redirect_uri': REDIRECT_URI, 'code': mockCodeString},
               jasmine.any(Object));
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);

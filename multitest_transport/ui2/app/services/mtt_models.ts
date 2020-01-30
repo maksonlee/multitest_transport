@@ -40,10 +40,8 @@ export const DEFAULT_SHARD_COUNT = 0;
 /** Default cluster name */
 const DEFAULT_CLUSTER = 'default';
 
-/**
- * Information when authorize a build channel.
- */
-export declare interface BuildChannelAuthInfo {
+/** OAuth2 authorization information. */
+export declare interface AuthorizationInfo {
   /** An authorization url. */
   url: string;
   /**

@@ -16,28 +16,18 @@
 
 import {Injectable} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
-import {BehaviorSubject, Observable} from 'rxjs';
+import {EMPTY, interval, Observable} from 'rxjs';
+import {filter, finalize, first, map, switchMap} from 'rxjs/operators';
 
 import {AuthDialog} from './auth_dialog';
 import {MttClient} from './mtt_client';
-
-/**
- * Auth event constant
- */
-export enum AuthEventState {
-  IN_PROGRESS = 'in_progress',
-  COMPLETE = 'complete',
-}
-
-/** Time in ms for authentication's data to get stored in database */
-export const AUTH_DELAY = 500;
+import {AuthorizationInfo} from './mtt_models';
 
 const REDIRECT_URI = window.location.origin + '/auth_return';
-const REMOTE_REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob';
-/**
- * Authentication Client
- * A service to trigger OAuth2 flow for a build channel
- */
+const AUTH_WINDOW_NAME = 'authWindow';
+const AUTH_WINDOW_FEATURES = 'width=550,height=420,resizable,scrollbars,status';
+
+/** Manage OAuth2 authorizations for build channels. */
 @Injectable({
   providedIn: 'root',
 })
@@ -45,137 +35,85 @@ export class AuthService {
   constructor(
       private readonly dialog: MatDialog,
       private readonly mttClient: MttClient) {}
-  private readonly authProgressSubject =
-      new BehaviorSubject<AuthEvent>({type: AuthEventState.IN_PROGRESS});
-
-  getAuthProgress(): Observable<AuthEvent> {
-    return this.authProgressSubject.asObservable();
-  }
 
   /**
-   * Open a authentication dialog to get authentication code
+   * Authorizes a build channel.
+   * @param buildChannelId build channel identifier
    */
-  openRemoteAuthDialog(): Observable<string> {
-    const dialogRef =
-        this.dialog.open(AuthDialog, {width: '400px', disableClose: true});
-    return dialogRef.afterClosed();
+  authorizeBuildChannel(buildChannelId: string): Observable<void> {
+    return this.mttClient
+        .getBuildChannelAuthorizationInfo(buildChannelId, REDIRECT_URI)
+        .pipe(switchMap(authInfo => this.getAuthorizationCode(authInfo)))
+        .pipe(switchMap(code => {
+          if (!code) {
+            return EMPTY;
+          }
+          return this.mttClient.authorizeBuildChannel(
+              code, buildChannelId, REDIRECT_URI);
+        }));
   }
 
-  /**
-   * Trigger authflow
-   * @param buildChannelId A build channel id
-   */
-  startAuthFlow(buildChannelId: string) {
-    this.mttClient.getAuthUrl(buildChannelId, REDIRECT_URI)
-        .subscribe(
-            result => {
-              if (result.is_manual) {
-                this.remoteAuthFlow(result.url, buildChannelId);
-              } else {
-                this.localhostAuthFlow(result.url, buildChannelId);
-              }
-            },
-            error => {
-              // TODO: Better error handling
-              console.error(error);
-            });
+  // Opens a new authorization window or replaces an existing one.
+  private static openAuthorizationWindow(authUrl: string): Window|null {
+    return window.open(authUrl, AUTH_WINDOW_NAME, AUTH_WINDOW_FEATURES);
   }
 
-  /**
-   * Trigger remote authentication flow where user is guided to copy and paste
-   * authentication code
-   * @param oauthUrl authorized url
-   * @param buildChannelId A build channel id
-   */
-  remoteAuthFlow(oauthUrl: string, buildChannelId: string) {
-    const authWindow = window.open(
-        oauthUrl, 'authWindow',
-        'width=550,height=420,resizable,scrollbars,status');
-
-    this.openRemoteAuthDialog().subscribe(result => {
-      this.mttClient.authCallback(result, buildChannelId, REMOTE_REDIRECT_URI)
-          .subscribe(
-              res => {
-                this.authProgressSubject.next({
-                  type: AuthEventState.COMPLETE,
-                });
-              },
-              error => {
-                // TODO: Better error handling
-                console.error(error);
-              });
-      if (authWindow) {
-        authWindow.close();
-      }
-    });
-  }
-
-  /**
-   * Trigger local authentication flow where user will guided to allow
-   * MTT access Google Service via popup window
-   * @param oauthUrl An url returned by getAuthUrl
-   * @param buildChannelId The buildchannel that we are authenticating
-   */
-  localhostAuthFlow(oauthUrl: string, buildChannelId: string) {
-    let authWindowHost: string = '';
-    const authWindow = window.open(
-        oauthUrl, 'authWindow',
-        'width=550,height=420,resizable,scrollbars,status');
-    if (!authWindow) {
-      return;
+  // Ensures the authorization window is closed.
+  private static closeAuthorizationWindow(authWindow: Window|null) {
+    if (authWindow) {
+      authWindow.close();
     }
-    // Check authorization status every .5 seconds by checking whether we have
-    // closed the authorization window or not
-    const pollTimer = window.setInterval(() => {
-      if (authWindow && authWindow.closed) {
-        window.clearInterval(pollTimer);
-      }
-      try {
-        authWindowHost = authWindow.location.host;
-      } catch (e) {
-        // still in google oauth page
-      }
-      if (authWindowHost && authWindowHost === window.location.host) {
-        window.clearInterval(pollTimer);
-        if (authWindow) {
-          const code =
-              new URLSearchParams(authWindow.location.search).get('code') || '';
-          this.mttClient.authCallback(code, buildChannelId, REDIRECT_URI)
-              .subscribe(
-                  res => {
-                    this.authProgressSubject.next({
-                      type: AuthEventState.COMPLETE,
-                    });
-                  },
-                  error => {
-                    // TODO: Better error handling
-                    console.error(error);
-                  });
-          authWindow.close();
-        }
-      }
-      this.authProgressSubject.next({
-        type: AuthEventState.IN_PROGRESS,
-      });
-    }, 500);
   }
-}
 
-/**
- * Authorization event
- */
-export type AuthEvent = AuthEventComplete|AuthEventProgress;
+  // Checks if the authorization window has returned to the redirect URI.
+  private static hasAuthorizationReturned(authWindow: Window): boolean {
+    try {
+      return authWindow.location.host === window.location.host;
+    } catch {
+      return false;  // Cross-origin access blocked (not returned).
+    }
+  }
 
-/**
- * A sub event of AuthEvent, indicating that authorization have been completed
- */
-export interface AuthEventComplete {
-  type: AuthEventState.COMPLETE;
-}
+  // Fetches an authorization code using automatic or manual copy-paste flows.
+  private getAuthorizationCode(authInfo: AuthorizationInfo) {
+    if (authInfo.is_manual) {
+      return this.getManualAuthorizationCode(authInfo.url);
+    }
+    return this.getRedirectAuthorizationCode(authInfo.url);
+  }
 
-/**
- * A sub event of AuthEvent, indicaating that authorization is in progress
- */
-export interface AuthEventProgress {
-  type: AuthEventState.IN_PROGRESS;
+  // Asks the user to manually copy-paste an authorization code.
+  private getManualAuthorizationCode(authUrl: string): Observable<string|null> {
+    const authWindow = AuthService.openAuthorizationWindow(authUrl);
+    // Waits for the user to provide the authorization code.
+    return this.dialog.open(AuthDialog, {width: '400px', disableClose: true})
+        .afterClosed()
+        .pipe(finalize(() => {
+          AuthService.closeAuthorizationWindow(authWindow);
+        }));
+  }
+
+  // Fetches an authorization code automatically by monitoring the authorization
+  // window's query parameters after redirection.
+  private getRedirectAuthorizationCode(authUrl: string):
+      Observable<string|null> {
+    const authWindow = AuthService.openAuthorizationWindow(authUrl);
+    // Periodically check if the authorization window has returned to the
+    // redirect URI with an authorization code.
+    return interval(500)
+        .pipe(filter(() => {
+          if (!authWindow || authWindow.closed) {
+            return true;  // Authorization window unexpectedly closed, abort.
+          }
+          return AuthService.hasAuthorizationReturned(authWindow);
+        }))
+        .pipe(first())
+        .pipe(finalize(() => {
+          AuthService.closeAuthorizationWindow(authWindow);
+        }))
+        .pipe(map(() => {
+          return authWindow &&
+              new URLSearchParams(authWindow.location.search).get('code');
+        }));
+  }
 }

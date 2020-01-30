@@ -208,9 +208,7 @@ class BuildChannelApi(remote.Service):
           build_channel_id=messages.StringField(1, required=True),
           redirect_uri=messages.StringField(2, required=True)),
       mtt_messages.AuthorizationInfo,
-      path='{build_channel_id}/get_authorize_url',
-      http_method='GET',
-      name='authorize_url.get')
+      path='{build_channel_id}/auth', http_method='GET', name='auth')
   def GetAuthorizationInfo(self, request):
     """Determine a build channel configuration's authorization information."""
     build_channel = self._GetBuildChannel(request.build_channel_id)
@@ -227,14 +225,15 @@ class BuildChannelApi(remote.Service):
           redirect_uri=messages.StringField(2, required=True),
           code=messages.StringField(3, required=True)),
       message_types.VoidMessage,
-      path='{build_channel_id}/authorize',
+      path='{build_channel_id}/auth_return',
       http_method='POST',
-      name='auth_return.post')
+      name='auth_return')
   def AuthorizeConfig(self, request):
     """Authorize a build channel configuration with an authorization code."""
     build_channel = self._GetBuildChannel(request.build_channel_id)
+    redirect_uri, _ = oauth2_util.GetRedirectUri(request.redirect_uri)
     oauth2_config = build_channel.oauth2_config
     build_channel.config.credentials = oauth2_util.GetOAuth2Flow(
-        oauth2_config, request.redirect_uri).step2_exchange(request.code)
+        oauth2_config, redirect_uri).step2_exchange(request.code)
     build_channel.config.put()
     return message_types.VoidMessage()

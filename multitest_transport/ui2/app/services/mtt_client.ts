@@ -36,36 +36,30 @@ export class MttClient {
       private readonly http: HttpClient) {}
 
   /**
-   * The popup window will display 'MTT' wants to access your Google Account
-   * After user hit allow, it will trigger this authorization callback
-   * to finish up the authentication flow
-   * @param code: Code String (e.g. '?code=4/bgHNEBXZu6DUKbEdc30nIrp'), in
-   * remote auth case, the code won't have '?code=' prefix
-   * @param buildChannelId The buildchannel that we are authenticating
-   * @param redirectUri A redirect uri
+   * Authorizes a build channel using an authorization code.
+   * @param code: authorization code to use
+   * @param buildChannelId: build channel to authorize
+   * @param redirectUri: authorization redirect URI
    */
-  authCallback(code: string, buildChannelId: string, redirectUri: string):
-      Observable<void> {
+  authorizeBuildChannel(code: string, buildChannelId: string,
+                        redirectUri: string): Observable<void> {
     const params = new AnalyticsParams('build_channels', 'authorize');
     return this.http.post<void>(
-        `${MTT_API_URL}/build_channels/${buildChannelId}/authorize`,
+        `${MTT_API_URL}/build_channels/${buildChannelId}/auth_return`,
         {'redirect_uri': redirectUri, 'code': code}, {params});
   }
 
   /**
-   * Get authorization url
-   * @param buildChannelId A build channel id
-   * @param redirectUri A redirectUri indicating which page should window
-   * navigate to after authentication
-   * @return A Observabale of SimpleMessage which contains a url
-   * . (e.g. https://accounts.google.com/o/oauth2/auth?client_id=3389761610)
+   * Determine a build channel's authorization information.
+   * @param buildChannelId: build channel to authorize
+   * @param redirectUri: authorization redirect URI
+   * @return authorization flow and URL to use
    */
-  getAuthUrl(buildChannelId: string, redirectUri: string):
-      Observable<model.BuildChannelAuthInfo> {
-    const API_URL =
-        `${MTT_API_URL}/build_channels/${buildChannelId}/get_authorize_url`;
-    return this.http.get<model.BuildChannelAuthInfo>(
-        `${API_URL}?redirect_uri=${redirectUri}`);
+  getBuildChannelAuthorizationInfo(buildChannelId: string, redirectUri: string):
+      Observable<model.AuthorizationInfo> {
+    const params = new HttpParams().set('redirect_uri', redirectUri);
+    return this.http.get<model.AuthorizationInfo>(
+        `${MTT_API_URL}/build_channels/${buildChannelId}/auth`, {params});
   }
 
   listBuildItems(id: string, path: string, pageToken?: string):

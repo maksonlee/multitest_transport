@@ -18,9 +18,9 @@ import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {SelectionModel} from '@angular/cdk/collections';
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {forkJoin} from 'rxjs';
-import {delay, filter, finalize, first} from 'rxjs/operators';
+import {delay, finalize, first} from 'rxjs/operators';
 
-import {AuthEventState, AuthService} from '../services/auth_service';
+import {AuthService} from '../services/auth_service';
 import {MttClient} from '../services/mtt_client';
 import {BuildChannel, ConfigSetInfo, isBuildChannelAvailable} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
@@ -61,21 +61,6 @@ export class ConfigSetImporter implements OnInit {
       private readonly authService: AuthService) {}
 
   ngOnInit() {
-    // Refresh data after authentication
-    this.authService
-        .getAuthProgress()
-        // delay is needed for data to be populated in database
-        .pipe(filter(x => x.type === AuthEventState.COMPLETE), delay(500))
-        .subscribe(
-            res => {
-              this.load();
-            },
-            error => {
-              this.notifier.showError(
-                  'Failed to authenticate build channel.',
-                  buildApiErrorMessage(error));
-            });
-
     this.load();
   }
 
@@ -183,6 +168,15 @@ export class ConfigSetImporter implements OnInit {
    * @param buildChannelId A buildchannel id
    */
   authorize(buildChannelId: string) {
-    this.authService.startAuthFlow(buildChannelId);
+    this.authService.authorizeBuildChannel(buildChannelId)
+        .subscribe(
+            () => {
+              this.load();
+            },
+            error => {
+              this.notifier.showError(
+                  'Failed to authorize build channel.',
+                  buildApiErrorMessage(error));
+            });
   }
 }

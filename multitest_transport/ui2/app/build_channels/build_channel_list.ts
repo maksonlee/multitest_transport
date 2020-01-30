@@ -17,12 +17,11 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
-import {delay, filter, finalize, first, takeUntil} from 'rxjs/operators';
+import {delay, finalize, first, takeUntil} from 'rxjs/operators';
 
 import {AuthService} from '../services/auth_service';
-import {AuthEventState} from '../services/auth_service';
 import {MttClient} from '../services/mtt_client';
-import {BuildChannel, isBuildChannelAvailable, isDefaultBuildChannel} from '../services/mtt_models';
+import {BuildChannel, isDefaultBuildChannel} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {buildApiErrorMessage} from '../shared/util';
 
@@ -34,10 +33,8 @@ import {buildApiErrorMessage} from '../shared/util';
 })
 export class BuildChannelList implements OnInit, OnDestroy {
   isLoading = false;
-  isBuildChannelAvailable = isBuildChannelAvailable;
   isDefaultBuildChannel = isDefaultBuildChannel;
   buildChannels: BuildChannel[] = [];
-  columnsToDisplay = ['id', 'provider_name', 'state'];
 
   private readonly destroy = new ReplaySubject();
 
@@ -49,19 +46,6 @@ export class BuildChannelList implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.authService
-        .getAuthProgress()
-        // delay is needed for data to be populated in database
-        .pipe(filter(x => x.type === AuthEventState.COMPLETE), delay(500))
-        .subscribe(
-            res => {
-              if (res.type === AuthEventState.COMPLETE) {
-                this.load();
-              }
-            },
-            error => {
-                // TODO: Better error handling
-            });
     this.load();
   }
 
@@ -128,6 +112,16 @@ export class BuildChannelList implements OnInit, OnDestroy {
    * @param buildChannelId A buildchannel id
    */
   authorize(buildChannelId: string) {
-    this.authService.startAuthFlow(buildChannelId);
+    this.authService.authorizeBuildChannel(buildChannelId)
+        .pipe(delay(500))  // delay for data to be persisted
+        .subscribe(
+            () => {
+              this.load();
+            },
+            error => {
+              this.notifier.showError(
+                  'Failed to authorize build channel.',
+                  buildApiErrorMessage(error));
+            });
   }
 }
