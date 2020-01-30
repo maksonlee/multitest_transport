@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
-import {finalize, takeUntil} from 'rxjs/operators';
+import {delay, finalize, first, takeUntil} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
 import {ConfigSetInfo} from '../services/mtt_models';
@@ -87,7 +87,44 @@ export class ConfigSetList implements OnInit, OnDestroy {
    * @param file The selected file
    */
   onConfigSetFileUpload(file?: File) {
-    // TODO: Switch to import local config API
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    this.isLoading = true;
+    this.liveAnnouncer.announce('Importing config set', 'polite');
+
+    reader.onloadend = () => {
+      // import file contents
+      const content = reader.result as string;
+
+      if (!content) {
+        this.notifier.showError(`Failed to import file with empty content`);
+        return;
+      }
+
+      this.mttClient.importConfigSet('', content)
+          .pipe(
+              first(),
+              delay(100),  // Wait for updates
+              finalize(() => {
+                this.isLoading = false;
+              }),
+              )
+          .subscribe(
+              result => {
+                this.notifier.showMessage(`Config set imported`);
+                this.load();
+              },
+              error => {
+                this.notifier.showError(
+                    'Failed to import config set.',
+                    buildApiErrorMessage(error));
+              });
+    };
+    // read contents
+    reader.readAsText(file);
   }
 
   deleteInfo(info: ConfigSetInfo) {
