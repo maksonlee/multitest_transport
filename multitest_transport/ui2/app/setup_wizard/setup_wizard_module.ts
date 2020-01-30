@@ -26,12 +26,15 @@ import {SettingsModule} from '../settings/settings_module';
 import {SharedModule} from '../shared/shared_module';
 
 import {BuildChannelSetup} from './build_channel_setup';
+import {ConfigRestoreStep} from './config_restore_step';
 import {SetupWizardDialog} from './setup_wizard_dialog';
 import {SetupWizardStepper} from './setup_wizard_stepper';
 import {WifiSetup} from './wifi_setup';
 
-const COMPONENTS =
-    [BuildChannelSetup, SetupWizardDialog, SetupWizardStepper, WifiSetup];
+const COMPONENTS = [
+  BuildChannelSetup, ConfigRestoreStep, SetupWizardDialog, SetupWizardStepper,
+  WifiSetup
+];
 
 @NgModule({
   declarations: COMPONENTS,

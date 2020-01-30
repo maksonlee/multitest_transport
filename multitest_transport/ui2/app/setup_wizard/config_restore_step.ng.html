@@ -1,0 +1,32 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+
+<div class="info-text margin-bottom">
+  If you have a config file backed up from another MTT instance, you can upload it here to import
+  the same configs, such as test suites, devices actions, etc.
+</div>
+
+<div [class.loading-mask]="isLoading" class="container">
+  <input type="file" #fileUploadInput
+    (change)="onConfigBackupUpload($event.target.files[0]); fileUploadInput.value = ''" />
+  <button color="accent" mat-stroked-button (click)="fileUploadInput.click()"
+          aria-label="Upload File" class="upload-button">
+    <!-- TODO: Uploading a file should automatically move to the next step -->
+    Upload File
+  </button>
+</div>

@@ -44,6 +44,23 @@
 
   <mat-step>
     <ng-template matStepLabel>
+      <h3>
+        Upload a Backup Config
+      </h3>
+    </ng-template>
+
+    <config-restore-step></config-restore-step>
+
+    <div class="button-section">
+      <button mat-flat-button color="accent" class="horizontal-center"
+              matStepperNext>
+        Next Step
+      </button>
+    </div>
+  </mat-step>
+
+  <mat-step>
+    <ng-template matStepLabel>
       <h3>Import configuration files</h3>
     </ng-template>
 

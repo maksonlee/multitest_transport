@@ -12,6 +12,7 @@ ng_module(
     name = "setup_wizard",
     srcs = [
         "build_channel_setup.ts",
+        "config_restore_step.ts",
         "setup_wizard_dialog.ts",
         "setup_wizard_module.ts",
         "setup_wizard_stepper.ts",
@@ -20,6 +21,7 @@ ng_module(
     assets = [
         ":styles",
         "build_channel_setup.ng.html",
+        "config_restore_step.ng.html",
         "setup_wizard_dialog.ng.html",
         "setup_wizard_stepper.ng.html",
         "wifi_setup.ng.html",
@@ -44,6 +46,7 @@ ng_module(
     testonly = True,
     srcs = [
         "build_channel_setup_test.ts",
+        "config_restore_step_test.ts",
         "setup_wizard_dialog_test.ts",
         "setup_wizard_stepper_test.ts",
         "wifi_setup_test.ts",
@@ -51,6 +54,7 @@ ng_module(
     visibility = ["//multitest_transport"],
     deps = [
         ":setup_wizard",
+        third_party_js("angular2:cdk_a11y"),
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),
         third_party_js("angular2:platform_browser_animations"),
