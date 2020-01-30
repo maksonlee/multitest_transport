@@ -179,9 +179,9 @@ export declare interface BuildChannelProviderList {
  * Import and update status of a ConfigSet
  */
 export enum ConfigSetStatus {
-  NOT_IMPORTED = 'Not Imported',
-  IMPORTED = 'Imported',
-  UPDATABLE = 'Updatable',
+  NOT_IMPORTED = 'NOT_IMPORTED',
+  IMPORTED = 'IMPORTED',
+  UPDATABLE = 'UPDATABLE',
 }
 
 /**

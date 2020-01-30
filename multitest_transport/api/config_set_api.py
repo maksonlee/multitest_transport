@@ -25,6 +25,7 @@ from multitest_transport.api import base
 from multitest_transport.models import build
 from multitest_transport.models import config_set_helper
 from multitest_transport.models import messages as mtt_messages
+from multitest_transport.models import ndb_models
 
 
 @base.MTT_API.api_class(resource_name='config_set',
@@ -56,7 +57,9 @@ class ConfigSetApi(remote.Service):
   @endpoints.method(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
-          include_remote=messages.BooleanField(1)),
+          include_remote=messages.BooleanField(1),
+          statuses=messages.EnumField(
+              ndb_models.ConfigSetStatus, 2, repeated=True),),
       mtt_messages.ConfigSetInfoList,
       path='/config_sets', http_method='GET', name='list')
   def List(self, request):
@@ -79,6 +82,9 @@ class ConfigSetApi(remote.Service):
 
     info_message_list = config_set_helper.UpdateConfigSetInfos(imported_infos,
                                                                remote_infos)
+    if request.statuses:
+      info_message_list = [msg for msg in info_message_list
+                           if msg.status in request.statuses]
 
     return mtt_messages.ConfigSetInfoList(
         config_set_infos=info_message_list)

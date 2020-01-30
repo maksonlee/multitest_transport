@@ -122,9 +122,15 @@ export class MttClient {
     return this.http.get(`${MTT_API_URL}/config_sets/build_channels`);
   }
 
-  getConfigSetInfos(includeRemote = false):
+  getConfigSetInfos(
+      includeRemote = false, statuses: model.ConfigSetStatus[] = []):
       Observable<model.ConfigSetInfoList> {
-    const params = new HttpParams().set('include_remote', `${includeRemote}`);
+    const params = new HttpParams({
+      fromObject: {
+        'include_remote': `${includeRemote}`,
+        'statuses': statuses,
+      }
+    });
     return this.http.get<model.ConfigSetInfoList>(
         `${MTT_API_URL}/config_sets`, {params});
   }

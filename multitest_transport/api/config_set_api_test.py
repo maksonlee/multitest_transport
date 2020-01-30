@@ -134,6 +134,38 @@ class ConfigSetApiTest(api_test_util.TestCase):
     self.assertEqual(imported_message, res_msg.config_set_infos[1])
     self.assertEqual(updatable_message_old, res_msg.config_set_infos[2])
 
+  @mock.patch.object(config_set_helper, 'GetRemoteConfigSetInfos')
+  def testList_filter(self, mock_get_remote_config_set_infos):
+    imported_config = self._CreateImportedConfig()
+    nonimported_config = self._CreateNonImportedConfig()
+    updatable_config_old, updatable_config_new = self._CreateUpdatableConfig()
+
+    imported_message = self._CreateConfigSetInfoMessage(
+        imported_config, ndb_models.ConfigSetStatus.IMPORTED)
+    nonimported_message = self._CreateConfigSetInfoMessage(
+        nonimported_config, ndb_models.ConfigSetStatus.NOT_IMPORTED)
+    updatable_message_old = self._CreateConfigSetInfoMessage(
+        updatable_config_old, ndb_models.ConfigSetStatus.UPDATABLE)
+    updatable_message_new = self._CreateConfigSetInfoMessage(
+        updatable_config_new, ndb_models.ConfigSetStatus.UPDATABLE)
+
+    mock_get_remote_config_set_infos.return_value = [imported_message,
+                                                     nonimported_message,
+                                                     updatable_message_new]
+
+    args = 'include_remote=true&statuses=IMPORTED&statuses=UPDATABLE'
+    res = self.app.get('/_ah/api/mtt/v1/config_sets?%s' % args)
+    res_msg = protojson.decode_message(messages.ConfigSetInfoList, res.body)
+    self.assertEqual(len(res_msg.config_set_infos), 2)
+    self.assertEqual(imported_message, res_msg.config_set_infos[0])
+    self.assertEqual(updatable_message_old, res_msg.config_set_infos[1])
+
+    args = 'include_remote=true&statuses=NOT_IMPORTED'
+    res = self.app.get('/_ah/api/mtt/v1/config_sets?%s' % args)
+    res_msg = protojson.decode_message(messages.ConfigSetInfoList, res.body)
+    self.assertEqual(len(res_msg.config_set_infos), 1)
+    self.assertEqual(nonimported_message, res_msg.config_set_infos[0])
+
   def testImport_local(self):
     data = {
         'content': self.MOCK_FILE,
