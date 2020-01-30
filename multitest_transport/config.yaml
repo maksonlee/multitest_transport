@@ -25,41 +25,30 @@ build_channels:
   provider_name: Google Cloud Storage
 
 device_actions:
-- id: reboot
-  name: Reboot
-  tradefed_target_preparers:
-  - class_name: com.android.tradefed.targetprep.RebootTargetPreparer
-- id: flash
-  name: Flash
+- id: copy_cts_media
+  name: Copy CTS Media
+  description: >
+    Copy CTS media files to a device according to
+    https://source.android.com/compatibility/cts/setup#file-installation
   test_resource_defs:
-  - name: bootloader.img
-    test_resource_type: DEVICE_IMAGE
-  - name: radio.img
-    test_resource_type: DEVICE_IMAGE
-  - name: img.zip
-    test_resource_type: DEVICE_IMAGE
+  - name: android-cts-media-1.4.zip
+    default_download_url: https://dl.google.com/dl/android/cts/android-cts-media-1.4.zip
+    test_resource_type: UNKNOWN
   tradefed_target_preparers:
   - class_name: com.android.tradefed.targetprep.RunHostCommandTargetPreparer
     option_values:
-    - name: work-dir
-      values:
-      - ${TF_WORK_DIR}
-    - name: host-setup-command
-      values:
-      - adb -s $SERIAL reboot-bootloader
-      - fastboot -s $SERIAL flash bootloader bootloader.img
-      - fastboot -s $SERIAL flash radio radio.img
-      - fastboot -s $SERIAL reboot-bootloader
-      - fastboot -s $SERIAL -w update img.zip
-      - adb -s $SERIAL wait-for-device
-      - sleep 60  # Ensure device fully booted up
     - name: host-cmd-timeout
       values:
       - 10m
-- id: reset
-  name: Factory Reset
-  tradefed_target_preparers:
-  - class_name: com.android.tradefed.targetprep.DeviceWiper
+    - name: host-setup-command
+      values:
+      - adb -s $SERIAL shell rm -rf /sdcard/*
+      - chmod u+x copy_media.sh
+      - ./copy_media.sh all -s $SERIAL
+    - name: work-dir
+      values:
+      - ${TF_WORK_DIR}/android-cts-media-1.4
+
 - id: cts_device_setup
   name: CTS Device Setup
   description: >
@@ -108,6 +97,44 @@ device_actions:
   - class_name: com.android.tradefed.targetprep.RebootTargetPreparer
   # Remove secondary users during teardown
   - class_name: com.android.tradefed.targetprep.UserCleaner
+
+- id: flash
+  name: Flash
+  test_resource_defs:
+  - name: bootloader.img
+    test_resource_type: DEVICE_IMAGE
+  - name: radio.img
+    test_resource_type: DEVICE_IMAGE
+  - name: img.zip
+    test_resource_type: DEVICE_IMAGE
+  tradefed_target_preparers:
+  - class_name: com.android.tradefed.targetprep.RunHostCommandTargetPreparer
+    option_values:
+    - name: work-dir
+      values:
+      - ${TF_WORK_DIR}
+    - name: host-setup-command
+      values:
+      - adb -s $SERIAL reboot-bootloader
+      - fastboot -s $SERIAL flash bootloader bootloader.img
+      - fastboot -s $SERIAL flash radio radio.img
+      - fastboot -s $SERIAL reboot-bootloader
+      - fastboot -s $SERIAL -w update img.zip
+      - adb -s $SERIAL wait-for-device
+      - sleep 60  # Ensure device fully booted up
+    - name: host-cmd-timeout
+      values:
+      - 10m
+
+- id: reboot
+  name: Reboot
+  tradefed_target_preparers:
+  - class_name: com.android.tradefed.targetprep.RebootTargetPreparer
+
+- id: reset
+  name: Factory Reset
+  tradefed_target_preparers:
+  - class_name: com.android.tradefed.targetprep.DeviceWiper
 
 tests:
 - id: noop
