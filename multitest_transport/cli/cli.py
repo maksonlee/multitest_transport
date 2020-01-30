@@ -62,6 +62,8 @@ _CLI_UPDATE_URL_TEMPLATE = 'gs://android-mtt.appspot.com/%s/mtt'
 
 # Tradefed accept TSTP signal as 'quit', which will finish all running tests.
 _TF_QUIT = 'TSTP'
+# Tradefed accept TERM signal as 'terminate', which will force kill the process.
+_TF_TERM = 'TERM'
 
 PACKAGE_LOGGER_NAME = 'multitest_transport.cli'
 logger = logging.getLogger(__name__)
@@ -377,7 +379,8 @@ def _StopMttNode(args, host):
       docker_helper.Kill([args.name], _TF_QUIT)
       res_shutdown = docker_helper.Wait([args.name])
     else:
-      res_shutdown = docker_helper.Stop([args.name])
+      docker_helper.Kill([args.name], _TF_TERM)
+      res_shutdown = docker_helper.Wait([args.name])
     if res_shutdown.return_code != 0:
       logger.warn('The docker container failed to shut down.')
       _ForceKillMttNode(host, docker_helper, args.name)
