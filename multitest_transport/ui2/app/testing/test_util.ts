@@ -163,7 +163,7 @@ export function newMockImportedConfigSetInfo() {
 /** Create a mock ConfigSetInfo that has not been imported */
 export function newMockNotImportedConfigSetInfo() {
   return newMockConfigSetInfo(
-      'mtt:///not/imported/config/set/info', 'Not Imported Config Set',
+      'mtt:///not/imported/config/set/info', 'Not-imported Config Set',
       'notimportedhash', MttModels.ConfigSetStatus.NOT_IMPORTED);
 }
 

@@ -74,7 +74,9 @@ export class ConfigSetPicker implements OnInit {
             first(),
             mergeMap(res => {
               this.buildChannels = res.build_channels || [];
-              return this.mttClient.getConfigSetInfos(/*include_remote*/ true);
+              return this.mttClient.getConfigSetInfos(
+                  /*include_remote*/ true,
+                  [mttModels.ConfigSetStatus.NOT_IMPORTED]);
             }),
             finalize(() => {
               this.isLoading = false;

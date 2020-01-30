@@ -20,7 +20,7 @@ import {ReplaySubject} from 'rxjs';
 import {delay, finalize, first, takeUntil} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
-import {ConfigSetInfo} from '../services/mtt_models';
+import {ConfigSetInfo, ConfigSetStatus} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {buildApiErrorMessage} from '../shared/util';
 
@@ -33,6 +33,7 @@ import {buildApiErrorMessage} from '../shared/util';
 export class ConfigSetList implements OnInit, OnDestroy {
   isLoading = false;
   infos: ConfigSetInfo[] = [];
+  readonly ConfigSetStatus = ConfigSetStatus;
 
   private readonly destroy = new ReplaySubject();
 
@@ -62,7 +63,10 @@ export class ConfigSetList implements OnInit, OnDestroy {
     this.isLoading = true;
     this.liveAnnouncer.announce('Loading config sets', 'polite');
 
-    this.mttClient.getConfigSetInfos()
+    this.mttClient
+        .getConfigSetInfos(
+            /* includeRemote */ true,
+            [ConfigSetStatus.IMPORTED, ConfigSetStatus.UPDATABLE])
         .pipe(
             takeUntil(this.destroy),
             finalize(() => {
@@ -125,6 +129,29 @@ export class ConfigSetList implements OnInit, OnDestroy {
     };
     // read contents
     reader.readAsText(file);
+  }
+
+  updateConfigSet(info: ConfigSetInfo) {
+    this.isLoading = true;
+    this.liveAnnouncer.announce('Updating config set', 'polite');
+
+    this.mttClient.importConfigSet(info.url)
+        .pipe(
+            first(),
+            delay(100),
+            finalize(() => {
+              this.isLoading = false;
+            }),
+            )
+        .subscribe(
+            result => {
+              this.notifier.showMessage('Config set updated');
+              this.load();
+            },
+            error => {
+              this.notifier.showError(
+                  'Failed to update config set.', buildApiErrorMessage(error));
+            });
   }
 
   deleteInfo(info: ConfigSetInfo) {

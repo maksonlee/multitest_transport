@@ -35,13 +35,11 @@ describe('ConfigSetPicker', () => {
   let mttClient: jasmine.SpyObj<MttClient>;
   let el: DebugElement;
 
-  let imported: ConfigSetInfo;
   let notImported: ConfigSetInfo;
 
   beforeEach(() => {
     const gcsBuildChannel = testUtil.newMockBuildChannel(
         'google_cloud_storage', 'Google Cloud Storage');
-    imported = testUtil.newMockImportedConfigSetInfo();
     notImported = testUtil.newMockNotImportedConfigSetInfo();
 
     mttClient = jasmine.createSpyObj(
@@ -49,7 +47,7 @@ describe('ConfigSetPicker', () => {
     mttClient.getConfigSetBuildChannels.and.returnValue(
         observableOf({build_channels: [gcsBuildChannel]}));
     mttClient.getConfigSetInfos.and.returnValue(
-        observableOf({config_set_infos: [imported, notImported]}));
+        observableOf({config_set_infos: [notImported]}));
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, ConfigSetsModule],
@@ -72,7 +70,6 @@ describe('ConfigSetPicker', () => {
 
   it('lists configs', () => {
     const text = getTextContent(el);
-    expect(text).toContain(imported.name);
     expect(text).toContain(notImported.name);
   });
 });

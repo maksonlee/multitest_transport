@@ -63,10 +63,14 @@
 
     <!-- Status Column -->
     <ng-container matColumnDef="status">
-      <mat-header-cell *matHeaderCellDef fxFlex="120px"> Status </mat-header-cell>
-      <mat-cell *matCellDef="let element" fxFlex="120px">
+      <mat-header-cell *matHeaderCellDef fxFlex="240px"> Status </mat-header-cell>
+      <mat-cell *matCellDef="let element" fxFlex="240px">
         <status-button class='config-set' [state]="element.status">
         </status-button>
+        <button mat-button color='accent' class='update-button' (click)="updateConfigSet(element)"
+                *ngIf="element.status==ConfigSetStatus.UPDATABLE">
+          Update
+        </button>
       </mat-cell>
     </ng-container>
 
