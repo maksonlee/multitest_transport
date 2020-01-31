@@ -594,6 +594,8 @@ class CliTest(parameterized.TestCase):
     self.mock_context.assert_has_calls([
         mock.call.Run(['docker', 'stop', 'mtt'],
                       timeout=command_util._DOCKER_STOP_CMD_TIMEOUT_SEC),
+        mock.call.Run(['docker', 'container', 'wait', 'mtt'],
+                      timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
         mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
         mock.call.Run(['docker', 'container', 'rm', 'mtt']),
     ])
@@ -663,19 +665,21 @@ class CliTest(parameterized.TestCase):
         mock.call.Run(['systemctl', 'disable', 'mttd.service']),
     ])
 
-  @mock.patch('__main__.cli.command_util.DockerHelper.Stop')
+  @mock.patch('__main__.cli.command_util.DockerHelper.Wait')
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
   @mock.patch.object(cli, '_ForceKillMttNode')
-  def testStop_ForceKill(self, force_kill, is_running, docker_stop):
+  def testStop_ForceKill(self, force_kill, is_running, docker_wait):
     is_running.return_value = True
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop'])
-    docker_stop.return_value = command_util.CommandResult(
-        1, None, 'command timed out')
+    docker_wait.return_value = command_util.CommandResult(
+        -9, None, 'command timed out')
 
     cli.Stop(args, self._CreateHost())
 
     self.mock_context.assert_has_calls([
+        mock.call.Run(['docker', 'stop', 'mtt'],
+                      timeout=command_util._DOCKER_STOP_CMD_TIMEOUT_SEC),
         mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
         mock.call.Run(['docker', 'container', 'rm', 'mtt']),
     ])

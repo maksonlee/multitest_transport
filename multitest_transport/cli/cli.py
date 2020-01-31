@@ -377,7 +377,8 @@ def _StopMttNode(args, host):
       docker_helper.Kill([args.name], _TF_QUIT)
       res_shutdown = docker_helper.Wait([args.name])
     else:
-      res_shutdown = docker_helper.Stop([args.name])
+      docker_helper.Stop([args.name])
+      res_shutdown = docker_helper.Wait([args.name])
     if res_shutdown.return_code != 0:
       logger.warn('The docker container failed to shut down.')
       _ForceKillMttNode(host, docker_helper, args.name)
