@@ -22,6 +22,7 @@ import {MatDialogModule} from '@angular/material/dialog';
 import {Title} from '@angular/platform-browser';
 
 import {BuildChannelsModule} from '../build_channels/build_channels_module';
+import {ConfigSetsModule} from '../config_sets/config_sets_module';
 import {SettingsModule} from '../settings/settings_module';
 import {SharedModule} from '../shared/shared_module';
 
@@ -41,6 +42,7 @@ const COMPONENTS = [
   providers: [Title],
   imports: [
     BuildChannelsModule,
+    ConfigSetsModule,
     MatDialogModule,
     SettingsModule,
     SharedModule,

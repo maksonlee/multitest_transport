@@ -64,8 +64,8 @@ describe('ConfigSetList', () => {
 
   it('initializes a component', () => {
     expect(configSetList).toBeTruthy();
-    expect(getTextContent(el)).toContain('Import New Config Set');
-    expect(getTextContent(el)).toContain('Import Local Config Set');
+    expect(getTextContent(el)).toContain('Import');
+    expect(getTextContent(el)).toContain('Upload');
   });
 
   it('lists configs', () => {

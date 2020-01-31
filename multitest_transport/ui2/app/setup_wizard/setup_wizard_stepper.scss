@@ -22,3 +22,13 @@ h2, h3 {
 .button-section {
   margin-top: 20px;
 }
+
+mat-vertical-stepper ::ng-deep {
+  .mat-step-header {
+    &:hover,
+    &.cdk-program-focused,
+    .mat-ripple-element {
+      background-color: transparent;
+    }
+  }
+}

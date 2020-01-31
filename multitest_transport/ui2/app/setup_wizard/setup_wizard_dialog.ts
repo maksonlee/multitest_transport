@@ -16,7 +16,7 @@
 
 import {Component} from '@angular/core';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
-import {first} from 'rxjs/operators';
+import {first, mergeMap} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
 import {PrivateNodeConfig} from '../services/mtt_models';
@@ -43,36 +43,23 @@ export class SetupWizardDialog {
 
   submitMetrics(enableMetrics: boolean) {
     // Get current node config
-    this.mtt.getPrivateNodeConfig().pipe(first()).subscribe(
-        result => {
-          const privateNodeConfig: PrivateNodeConfig = result;
-          privateNodeConfig.metrics_enabled = enableMetrics;
-
-          // Mark setup wizard as completed
-          privateNodeConfig.setup_wizard_completed = true;
-
-          // Update node config
-          this.mtt.updatePrivateNodeConfig(privateNodeConfig)
-              .pipe(first())
-              .subscribe(
-                  result => {
-                    util.reloadPage(100);
-
-                    // TODO: Hide the rest of the setup wizard
-                    // until it is completed
-                    // this.openStepper();
-                  },
-                  error => {
-                    this.notifier.showError(
-                        'Failed to save metric collection settings.',
-                        util.buildApiErrorMessage(error));
-                  });
-        },
-        error => {
-          this.notifier.showError(
-              'Failed to load current settings.',
-              util.buildApiErrorMessage(error));
-        });
+    this.mtt.getPrivateNodeConfig()
+        .pipe(
+            first(),
+            mergeMap((config) => {
+              config.metrics_enabled = enableMetrics;
+              return this.mtt.updatePrivateNodeConfig(config);
+            }),
+            )
+        .subscribe(
+            result => {
+              this.openStepper();
+            },
+            error => {
+              this.notifier.showError(
+                  'Failed to update settings.',
+                  util.buildApiErrorMessage(error));
+            });
   }
 
   openStepper() {

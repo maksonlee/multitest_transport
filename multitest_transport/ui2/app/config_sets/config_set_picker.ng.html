@@ -16,7 +16,7 @@
 
 <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
 
-<div class="header">
+<div class="header" *ngIf="!isDialog">
   <div class="back-button-label">Config Sets</div>
   <h1 class="subtitle">
     <button mat-icon-button (click)="back()" #backButton id="back-button"

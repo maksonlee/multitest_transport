@@ -61,10 +61,10 @@ describe('SetupWizardDialog', () => {
   it('sets metric collection', () => {
     setupWizardDialog.submitMetrics(true);
     expect(mttClient.updatePrivateNodeConfig)
-        .toHaveBeenCalledWith(newMockPrivateNodeConfig(true));
+        .toHaveBeenCalledWith(newMockPrivateNodeConfig(true, false));
 
     setupWizardDialog.submitMetrics(false);
     expect(mttClient.updatePrivateNodeConfig)
-        .toHaveBeenCalledWith(newMockPrivateNodeConfig(false));
+        .toHaveBeenCalledWith(newMockPrivateNodeConfig(false, false));
   });
 });

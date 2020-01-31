@@ -40,6 +40,8 @@ export class ConfigSetPicker implements OnInit {
   configs: mttModels.ConfigSetInfo[] = [];
   buildChannels: mttModels.BuildChannel[] = [];
 
+  @Input() isDialog = false;
+
   @Input() selectedRows = [];
   selection = new SelectionModel<mttModels.ConfigSetInfo>(
       /*allow multi select*/ true, this.configs);
@@ -76,7 +78,8 @@ export class ConfigSetPicker implements OnInit {
               this.buildChannels = res.build_channels || [];
               return this.mttClient.getConfigSetInfos(
                   /*include_remote*/ true,
-                  [mttModels.ConfigSetStatus.NOT_IMPORTED]);
+                  this.isDialog ? [] :
+                                  [mttModels.ConfigSetStatus.NOT_IMPORTED]);
             }),
             finalize(() => {
               this.isLoading = false;
@@ -113,7 +116,13 @@ export class ConfigSetPicker implements OnInit {
         }))
         .subscribe(res => {
           this.notifier.showMessage(`Configuration(s) imported`);
-          this.back();
+          if (this.isDialog) {
+            // Stay in Setup Wizard stepper
+            this.load();
+          } else {
+            // When used in Settings page, go back to list page after submitting
+            this.back();
+          }
         });
   }
 

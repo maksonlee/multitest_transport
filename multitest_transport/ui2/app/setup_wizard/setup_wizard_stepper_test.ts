@@ -22,7 +22,7 @@ import {of as observableOf} from 'rxjs';
 import {MttClient} from '../services/mtt_client';
 import * as util from '../shared/util';
 import {getTextContent} from '../testing/jasmine_util';
-import {newMockBuildChannel} from '../testing/test_util';
+import {newMockBuildChannel, newMockNotImportedConfigSetInfo} from '../testing/test_util';
 
 import {SetupWizardModule} from './setup_wizard_module';
 import {SetupWizardModuleNgSummary} from './setup_wizard_module.ngsummary';
@@ -30,10 +30,10 @@ import {SetupWizardStepper} from './setup_wizard_stepper';
 
 
 describe('SetupWizardStepper', () => {
-  const BUILD_CHANNELS = [
-    newMockBuildChannel('google_drive', 'Google Drive'),
-    newMockBuildChannel('google_cloud_storage', 'Google Cloud Storage'),
-  ];
+  const DRIVE_BUILD_CHANNEL =
+      newMockBuildChannel('google_drive', 'Google Drive');
+  const CLOUD_BUILD_CHANNEL =
+      newMockBuildChannel('google_cloud_storage', 'Google Cloud Storage');
 
   let setupWizardStepper: SetupWizardStepper;
   let setupWizardStepperFixture: ComponentFixture<SetupWizardStepper>;
@@ -42,12 +42,15 @@ describe('SetupWizardStepper', () => {
 
   beforeEach(() => {
     mttClient = jasmine.createSpyObj('mttClient', [
-      'getBuildChannels', 'getConfigSetInfos', 'getPrivateNodeConfig',
-      'updatePrivateNodeConfig'
+      'getBuildChannels', 'getConfigSetBuildChannels', 'getConfigSetInfos',
+      'getPrivateNodeConfig', 'updatePrivateNodeConfig'
     ]);
-    mttClient.getBuildChannels.and.returnValue(
-        observableOf({build_channels: BUILD_CHANNELS}));
-    mttClient.getConfigSetInfos.and.returnValue(observableOf({}));
+    mttClient.getBuildChannels.and.returnValue(observableOf(
+        {build_channels: [CLOUD_BUILD_CHANNEL, DRIVE_BUILD_CHANNEL]}));
+    mttClient.getConfigSetBuildChannels.and.returnValue(
+        observableOf({build_channels: CLOUD_BUILD_CHANNEL}));
+    mttClient.getConfigSetInfos.and.returnValue(
+        observableOf({config_set_infos: [newMockNotImportedConfigSetInfo()]}));
     mttClient.getPrivateNodeConfig.and.returnValue(observableOf({}));
     mttClient.updatePrivateNodeConfig.and.returnValue(observableOf({}));
 

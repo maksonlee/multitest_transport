@@ -404,10 +404,11 @@ export function newMockTradefedConfigObjectList() {
 
 /** Creates a new PrivateNodeConfig */
 export function newMockPrivateNodeConfig(
-    metricsEnabled = true, setupWizardCompleted = true) {
+    metricsEnabled = false, setupWizardCompleted = false) {
   return {
     metrics_enabled: metricsEnabled,
-    setup_wizard_completed: setupWizardCompleted
+    // Add field only if it's true
+    ...setupWizardCompleted && {setup_wizard_completed: setupWizardCompleted},
   };
 }
 

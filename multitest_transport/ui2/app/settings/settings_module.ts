@@ -25,11 +25,10 @@ import {ConfigSetsModule} from '../config_sets/config_sets_module';
 import {DeviceActionsModule} from '../device_actions/device_actions_module';
 import {SharedModule} from '../shared/shared_module';
 
-import {ConfigSetImporter} from './config_set_importer';
 import {SettingForm} from './setting_form';
 import {SettingPage} from './setting_page';
 
-const COMPONENTS = [ConfigSetImporter, SettingPage, SettingForm];
+const COMPONENTS = [SettingPage, SettingForm];
 
 @NgModule({
   declarations: COMPONENTS,

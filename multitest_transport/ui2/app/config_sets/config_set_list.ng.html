@@ -27,14 +27,14 @@
     </div>
     <div class="import-actions">
       <button mat-flat-button color='accent' [routerLink]="['/config_sets/add']">
-        Import New Config Set
+        Import
       </button>
 
       <input type="file" #fileUploadInput
         (change)="onConfigSetFileUpload($event.target.files[0]); fileUploadInput.value = ''" />
       <button color="accent" mat-flat-button (click)="fileUploadInput.click()"
               aria-label="Upload File" class="upload-button">
-        Import Local Config Set
+        Upload
       </button>
     </div>
   </div>

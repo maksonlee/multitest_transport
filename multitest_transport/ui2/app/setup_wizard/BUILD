@@ -35,6 +35,7 @@ ng_module(
         third_party_js("angular2:platform_browser"),
         third_party_js("rxjs"),
         "//multitest_transport/ui2/app/build_channels",
+        "//multitest_transport/ui2/app/config_sets",
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/app/settings",
         "//multitest_transport/ui2/app/shared",

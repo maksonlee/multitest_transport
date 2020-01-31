@@ -61,10 +61,10 @@
 
   <mat-step>
     <ng-template matStepLabel>
-      <h3>Import configuration files</h3>
+      <h3>Import Config Sets</h3>
     </ng-template>
 
-    <config-set-importer></config-set-importer>
+    <config-set-picker [isDialog]='true'></config-set-picker>
 
     <div class="button-section">
       <button mat-flat-button color="accent" class="horizontal-center"
