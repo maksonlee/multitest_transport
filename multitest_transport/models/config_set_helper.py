@@ -15,11 +15,13 @@
 """A module to provide helper functions for the config set APIs."""
 
 import hashlib
+import logging
 
 from multitest_transport.models import build
 from multitest_transport.models import config_encoder
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
+from multitest_transport.plugins import base as plugins_base
 from multitest_transport.test_scheduler import download_util
 from multitest_transport.util import file_util
 
@@ -59,8 +61,15 @@ def GetRemoteConfigSetInfos():
   if (not build_channel) or (build_channel.auth_state ==
                              ndb_models.BuildChannelAuthState.NOT_AUTHORIZED):
     return []
-  build_items, _ = build_channel.ListBuildItems(
-      path=MTT_CONFIG_SET_PATH)
+
+  try:
+    build_items, _ = build_channel.ListBuildItems(
+        path=MTT_CONFIG_SET_PATH)
+  except plugins_base.FilePermissionError as err:
+    logging.info('No permission to access build channel %s: %s',
+                 build_channel, err)
+    return []
+
   build_item_list = [mtt_messages.BuildItem(**b.__dict__)
                      for b in build_items]
 
@@ -73,12 +82,16 @@ def GetRemoteConfigSetInfos():
 
     # Read file
     gcs_url = '%s/%s' % (CONFIG_SET_URL, build_item.name)
-    contents = ReadRemoteFile(gcs_url)
-    info = _ParseConfigSet(contents).info
-    if info:
-      info_message = mtt_messages.Convert(info, mtt_messages.ConfigSetInfo)
-      info_message.status = ndb_models.ConfigSetStatus.NOT_IMPORTED
-      info_messages.append(info_message)
+    try:
+      contents = ReadRemoteFile(gcs_url)
+      info = _ParseConfigSet(contents).info
+      if info:
+        info_message = mtt_messages.Convert(info, mtt_messages.ConfigSetInfo)
+        info_message.status = ndb_models.ConfigSetStatus.NOT_IMPORTED
+        info_messages.append(info_message)
+    except plugins_base.FilePermissionError as err:
+      logging.warning('No permission to access %s: %s', gcs_url, err)
+      continue  # Ignore files users don't have access to
   return info_messages
 
 
@@ -127,7 +140,6 @@ def ReadRemoteFile(url):
   Returns:
     A string of the contents of the file
   """
-
   local_url = download_util.DownloadResource(url)
   file_data = file_util.ReadFile(local_url, split_lines=False)
   return file_data.lines

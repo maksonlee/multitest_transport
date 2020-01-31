@@ -115,6 +115,10 @@ class GCSBuildProvider(base.BuildProvider):
       request = client.objects().get(bucket=bucket, object=object_name)
       return request.execute(num_retries=constant.NUM_RETRIES)
     except apiclient.errors.HttpError as e:
+      if e.resp.status == 403:
+        raise base.FilePermissionError(
+            'no permission to access file %s in GCS bucket %s'
+            % (object_name, bucket))
       if e.resp.status == 404:
         logging.info(e)
         return None
@@ -176,6 +180,9 @@ class GCSBuildProvider(base.BuildProvider):
           prefix=prefix,
           pageToken=page_token).execute(num_retries=constant.NUM_RETRIES)
     except apiclient.errors.HttpError as e:
+      if e.resp.status == 403:
+        raise base.FilePermissionError('no permission to access GCS bucket %s'
+                                       % bucket)
       if e.resp.status == 404:
         raise GCSBucketNotFoundError('bucket %s does not exist' % bucket)
 

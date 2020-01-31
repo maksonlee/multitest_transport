@@ -53,6 +53,11 @@ class FileNotFoundError(Exception):
   """A generic error indicating that files not found."""
 
 
+class FilePermissionError(Exception):
+  """The user does not have permission to access the file."""
+  http_status = 403
+
+
 class BuildProviderOptions(object):
   """A class to store parsed build provider options."""
 
