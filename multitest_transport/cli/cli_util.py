@@ -112,7 +112,12 @@ def CreateMultiHostCommandArgParser():
   """Create argparser for executing on multiple hosts."""
   parser = argparse.ArgumentParser(add_help=False)
   parser.add_argument(
-      '--parallel', action='store_true')
+      '--parallel',
+      dest='parallel',
+      default=False,
+      const=True,
+      nargs='?',
+      type=int)
   parser.add_argument(
       '--exit_on_error', action='store_true')
   return parser

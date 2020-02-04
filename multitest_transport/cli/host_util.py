@@ -134,8 +134,10 @@ def _ParallelExecute(func, args, hosts):
     args: parsed args to pass to the function.
     hosts: a list of Hosts
   """
-  logger.info('Parallel executing %r on %r hosts.', func.__name__, len(hosts))
-  with futures.ThreadPoolExecutor(len(hosts)) as executor:
+  max_workers = args.parallel if isinstance(args.parallel, int) else len(hosts)
+  logger.info('Parallel executing %r on %r hosts with %r parallel threads.',
+              func.__name__, len(hosts), max_workers)
+  with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
     future_to_host = {executor.submit(func, args, host): host
                       for host in hosts}
     running_futures = future_to_host.keys()
@@ -421,4 +423,3 @@ class LabExecutor(Executor):
       logger.error('There is no config for %s, will skip.',
                    host_or_cluster)
     return host_configs.values()
-

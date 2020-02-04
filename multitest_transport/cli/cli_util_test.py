@@ -17,6 +17,7 @@ import os
 import tempfile
 
 from absl.testing import absltest
+from absl.testing import parameterized
 
 from multitest_transport.cli import cli_util
 from multitest_transport.cli import unittest_util
@@ -82,6 +83,19 @@ class CliUtilTest(absltest.TestCase):
       self.assertIsNotNone(logger)
     finally:
       f.close()
+
+
+class ArgumentParserTest(parameterized.TestCase):
+
+  @parameterized.parameters(
+      ([], False),
+      (['--parallel'], True),
+      (['--parallel', '8'], 8),
+      )
+  def testParseParallelExecuteOption(self, cmd_args, expected_val):
+    arg_parser = cli_util.CreateMultiHostCommandArgParser()
+    args = arg_parser.parse_args(cmd_args)
+    self.assertEqual(expected_val, args.parallel)
 
 
 if __name__ == '__main__':

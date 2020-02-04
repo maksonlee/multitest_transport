@@ -39,6 +39,8 @@ class HostUtilTest(absltest.TestCase):
     self.host_config2 = host_util.lab_config.CreateHostConfig(
         cluster_name='cluster2', hostname='host2',
         host_login_name='user1')
+    self.host_config3 = host_util.lab_config.CreateHostConfig(
+        cluster_name='cluster3', hostname='host3', host_login_name='user1')
     self.mock_lab_config_pool = mock.MagicMock()
 
   def tearDown(self):
@@ -264,6 +266,65 @@ class HostUtilTest(absltest.TestCase):
                      executor.hosts[0].execution_state)
     self.assertEqual(host_util.HostExecutionState.ERROR,
                      executor.hosts[1].execution_state)
+
+  @mock.patch.object(host_util, '_BuildLabConfigPool')
+  def testLabExecutor_parallelWithFixedThreads(self,
+                                               mock_build_lab_config_pool):
+    """Test lab executor on multiple hosts parallel."""
+    mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
+    self.mock_lab_config_pool.GetHostConfigs.side_effect = [[
+        self.host_config1, self.host_config2, self.host_config3
+    ]]
+    args = mock.MagicMock(
+        lab_config_path='lab_config.yaml',
+        hosts_or_clusters=[],
+        parallel=2,
+        ssh_key=None,
+        func=self.mock_func,
+        ask_sudo_password=False,
+        sudo_user=None)
+
+    executor = host_util.LabExecutor(args)
+    executor.Execute()
+
+    self.mock_lab_config_pool.assert_has_calls([mock.call.GetHostConfigs()])
+    self.assertLen(executor.hosts, 3)
+    self.assertEqual('host1', executor.hosts[0].config.hostname)
+    self.assertEqual('host2', executor.hosts[1].config.hostname)
+    self.assertEqual('host3', executor.hosts[2].config.hostname)
+    self.mock_create_context.assert_has_calls([
+        mock.call(
+            'host1',
+            'user1',
+            login_password=None,
+            ssh_key=None,
+            sudo_password=None,
+            sudo_user='user1'),
+        mock.call(
+            'host2',
+            'user1',
+            login_password=None,
+            ssh_key=None,
+            sudo_password=None,
+            sudo_user='user1'),
+        mock.call(
+            'host3',
+            'user1',
+            login_password=None,
+            ssh_key=None,
+            sudo_password=None,
+            sudo_user='user1')
+    ])
+    # We don't know the order of the call since it's parallel.
+    self.mock_func.assert_has_calls([mock.call(args, executor.hosts[0])])
+    self.mock_func.assert_has_calls([mock.call(args, executor.hosts[1])])
+    self.mock_func.assert_has_calls([mock.call(args, executor.hosts[2])])
+    self.assertEqual(host_util.HostExecutionState.COMPLETED,
+                     executor.hosts[0].execution_state)
+    self.assertEqual(host_util.HostExecutionState.COMPLETED,
+                     executor.hosts[1].execution_state)
+    self.assertEqual(host_util.HostExecutionState.COMPLETED,
+                     executor.hosts[2].execution_state)
 
   @mock.patch.object(host_util, '_BuildLabConfigPool')
   @mock.patch.object(socket, 'gethostname')
