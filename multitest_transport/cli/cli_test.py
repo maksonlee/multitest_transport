@@ -592,8 +592,8 @@ class CliTest(parameterized.TestCase):
     cli.Stop(args, self._CreateHost())
 
     self.mock_context.assert_has_calls([
-        mock.call.Run(['docker', 'stop', 'mtt'],
-                      timeout=command_util._DOCKER_STOP_CMD_TIMEOUT_SEC),
+        mock.call.Run(['docker', 'kill', '-s', 'TERM', 'mtt'],
+                      timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
         mock.call.Run(['docker', 'container', 'wait', 'mtt'],
                       timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
         mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
@@ -650,6 +650,24 @@ class CliTest(parameterized.TestCase):
     ])
     is_running.assert_called_once_with('mtt')
 
+  @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
+  def testStop_noMasterUrl(self, is_running):
+    """Test Stop with kill mtt with master_url in host config."""
+    is_running.return_value = True
+    self.mock_context.host = 'ahost'
+    args = self.arg_parser.parse_args(['stop'])
+    cli.Stop(args, self._CreateHost(master_url=None))
+
+    self.mock_context.assert_has_calls([
+        mock.call.Run(['docker', 'stop', 'mtt'],
+                      timeout=command_util._DOCKER_STOP_CMD_TIMEOUT_SEC),
+        mock.call.Run(['docker', 'container', 'wait', 'mtt'],
+                      timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
+        mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
+        mock.call.Run(['docker', 'container', 'rm', 'mtt']),
+    ])
+    is_running.assert_called_once_with('mtt')
+
   @mock.patch.object(cli, '_StopMttNode')
   @mock.patch.object(cli, '_IsDaemonActive')
   def testStop_DaemonIsClosedIfActive(self, is_active, stop_mtt):
@@ -678,8 +696,8 @@ class CliTest(parameterized.TestCase):
     cli.Stop(args, self._CreateHost())
 
     self.mock_context.assert_has_calls([
-        mock.call.Run(['docker', 'stop', 'mtt'],
-                      timeout=command_util._DOCKER_STOP_CMD_TIMEOUT_SEC),
+        mock.call.Run(['docker', 'kill', '-s', 'TERM', 'mtt'],
+                      timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
         mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
         mock.call.Run(['docker', 'container', 'rm', 'mtt']),
     ])
