@@ -38,11 +38,12 @@ export class TfcClient {
   }
 
   getRequest(requestId: string): Observable<Request> {
-    return this.http.get<Request>(`${TFC_API_URL}/requests/${requestId}`);
+    return this.http.get<Request>(
+        `${TFC_API_URL}/requests/${encodeURIComponent(requestId)}`);
   }
 
   getRequestInvocationStatus(requestId: string): Observable<InvocationStatus> {
-    return this.http.get<InvocationStatus>(
-        `${TFC_API_URL}/requests/${requestId}/invocation_status`);
+    return this.http.get<InvocationStatus>(`${TFC_API_URL}/requests/${
+        encodeURIComponent(requestId)}/invocation_status`);
   }
 }

@@ -45,7 +45,8 @@ export class MttClient {
                         redirectUri: string): Observable<void> {
     const params = new AnalyticsParams('build_channels', 'authorize');
     return this.http.post<void>(
-        `${MTT_API_URL}/build_channels/${buildChannelId}/auth_return`,
+        `${MTT_API_URL}/build_channels/${
+            encodeURIComponent(buildChannelId)}/auth_return`,
         {'redirect_uri': redirectUri, 'code': code}, {params});
   }
 
@@ -59,7 +60,9 @@ export class MttClient {
       Observable<model.AuthorizationInfo> {
     const params = new HttpParams().set('redirect_uri', redirectUri);
     return this.http.get<model.AuthorizationInfo>(
-        `${MTT_API_URL}/build_channels/${buildChannelId}/auth`, {params});
+        `${MTT_API_URL}/build_channels/${
+            encodeURIComponent(buildChannelId)}/auth`,
+        {params});
   }
 
   listBuildItems(id: string, path: string, pageToken?: string):
@@ -69,14 +72,16 @@ export class MttClient {
       params = params.set('page_token', pageToken);
     }
     return this.http.get<model.BuildItemList>(
-        `${MTT_API_URL}/build_channels/${id}/build_items`, {params});
+        `${MTT_API_URL}/build_channels/${encodeURIComponent(id)}/build_items`,
+        {params});
   }
 
   deleteBuildItem(id: string, path: string) {
     const params = new AnalyticsParams('build_channels', 'delete_build_item');
     return this.http.post(
-        `${MTT_API_URL}/build_channels/${id}/build_items/delete`, {path},
-        {params});
+        `${MTT_API_URL}/build_channels/${
+            encodeURIComponent(id)}/build_items/delete`,
+        {path}, {params});
   }
 
   getBuildChannelProviders(): Observable<model.BuildChannelProviderList> {
@@ -85,7 +90,8 @@ export class MttClient {
   }
 
   getBuildChannelProvider(id: string) {
-    return this.http.get(`${MTT_API_URL}/build_channel_providers/${id}`);
+    return this.http.get(
+        `${MTT_API_URL}/build_channel_providers/${encodeURIComponent(id)}`);
   }
 
   createBuildChannel(buildChannelConfig: model.BuildChannelConfig) {
@@ -96,7 +102,7 @@ export class MttClient {
 
   getBuildChannel(id: string) {
     return this.http.get<model.BuildChannelConfig>(
-        `${MTT_API_URL}/build_channels/${id}`);
+        `${MTT_API_URL}/build_channels/${encodeURIComponent(id)}`);
   }
 
   getBuildChannels(): Observable<model.BuildChannelList> {
@@ -108,14 +114,15 @@ export class MttClient {
       buildChannelId: string, buildChannelConfig: model.BuildChannelConfig) {
     const params = new AnalyticsParams('build_channels', 'update');
     return this.http.put(
-        `${MTT_API_URL}/build_channels/${buildChannelId}`, buildChannelConfig,
-        {params});
+        `${MTT_API_URL}/build_channels/${encodeURIComponent(buildChannelId)}`,
+        buildChannelConfig, {params});
   }
 
   deleteBuildChannel(id: string) {
     const params = new AnalyticsParams('build_channels', 'delete');
     return this.http.post(
-        `${MTT_API_URL}/build_channels/${id}/delete`, null, {params});
+        `${MTT_API_URL}/build_channels/${encodeURIComponent(id)}/delete`, null,
+        {params});
   }
 
   getConfigSetBuildChannels(): Observable<model.BuildChannelList> {
@@ -142,7 +149,7 @@ export class MttClient {
 
   getDeviceAction(id: string): Observable<model.DeviceAction> {
     return this.http.get<model.DeviceAction>(
-        `${MTT_API_URL}/device_actions/${id}`);
+        `${MTT_API_URL}/device_actions/${encodeURIComponent(id)}`);
   }
 
   getDeviceActionList(): Observable<model.DeviceActionList> {
@@ -159,13 +166,15 @@ export class MttClient {
   updateDeviceAction(id: string, deviceAction: model.DeviceAction) {
     const params = new AnalyticsParams('device_actions', 'update');
     return this.http.post(
-        `${MTT_API_URL}/device_actions/${id}`, deviceAction, {params});
+        `${MTT_API_URL}/device_actions/${encodeURIComponent(id)}`, deviceAction,
+        {params});
   }
 
   deleteDeviceAction(id: string) {
     const params = new AnalyticsParams('device_actions', 'delete');
     return this.http.post(
-        `${MTT_API_URL}/device_actions/${id}/delete`, null, {params});
+        `${MTT_API_URL}/device_actions/${encodeURIComponent(id)}/delete`, null,
+        {params});
   }
 
   createNewTestRunRequest(newtestRun: model.NewTestRunRequest):
@@ -213,7 +222,8 @@ export class MttClient {
   }
 
   getTest(id: string): Observable<model.Test> {
-    return this.http.get<model.Test>(`${MTT_API_URL}/tests/${id}`);
+    return this.http.get<model.Test>(
+        `${MTT_API_URL}/tests/${encodeURIComponent(id)}`);
   }
 
   getTests(): Observable<model.TestList> {
@@ -222,12 +232,15 @@ export class MttClient {
 
   updateTest(testId: string, test: model.Test) {
     const params = new AnalyticsParams('tests', 'update');
-    return this.http.post(`${MTT_API_URL}/tests/${testId}`, test, {params});
+    return this.http.post(
+        `${MTT_API_URL}/tests/${encodeURIComponent(testId)}`, test, {params});
   }
 
   deleteTest(id: string) {
     const params = new AnalyticsParams('tests', 'delete');
-    return this.http.post(`${MTT_API_URL}/tests/${id}/delete`, null, {params});
+    return this.http.post(
+        `${MTT_API_URL}/tests/${encodeURIComponent(id)}/delete`, null,
+        {params});
   }
 
   createTestPlan(testPlan: model.TestPlan) {
@@ -239,11 +252,13 @@ export class MttClient {
   updateTestPlan(testPlanId: string, testPlan: model.TestPlan) {
     const params = new AnalyticsParams('test_plans', 'update');
     return this.http.post<model.TestPlan>(
-        `${MTT_API_URL}/test_plans/${testPlanId}`, testPlan, {params});
+        `${MTT_API_URL}/test_plans/${encodeURIComponent(testPlanId)}`, testPlan,
+        {params});
   }
 
   getTestPlan(id: string): Observable<model.TestPlan> {
-    return this.http.get<model.TestPlan>(`${MTT_API_URL}/test_plans/${id}`);
+    return this.http.get<model.TestPlan>(
+        `${MTT_API_URL}/test_plans/${encodeURIComponent(id)}`);
   }
 
   getTestPlans(): Observable<model.TestPlanList> {
@@ -253,23 +268,27 @@ export class MttClient {
   runTestPlan(id: string) {
     const params = new AnalyticsParams('test_plans', 'run');
     return this.http.post(
-        `${MTT_API_URL}/test_plans/${id}/run`, null, {params});
+        `${MTT_API_URL}/test_plans/${encodeURIComponent(id)}/run`, null,
+        {params});
   }
 
   deleteTestPlan(id: string) {
     const params = new AnalyticsParams('test_plans', 'delete');
     return this.http.post(
-        `${MTT_API_URL}/test_plans/${id}/delete`, null, {params});
+        `${MTT_API_URL}/test_plans/${encodeURIComponent(id)}/delete`, null,
+        {params});
   }
 
   getTestRun(id: string): Observable<model.TestRun> {
-    return this.http.get<model.TestRun>(`${MTT_API_URL}/test_runs/${id}`);
+    return this.http.get<model.TestRun>(
+        `${MTT_API_URL}/test_runs/${encodeURIComponent(id)}`);
   }
 
   cancelTestRun(id: string) {
     const params = new AnalyticsParams('test_runs', 'cancel');
     return this.http.post(
-        `${MTT_API_URL}/test_runs/${id}/cancel`, null, {params});
+        `${MTT_API_URL}/test_runs/${encodeURIComponent(id)}/cancel`, null,
+        {params});
   }
 
   getTestRuns(
@@ -300,7 +319,8 @@ export class MttClient {
     }
 
     return this.http.get<model.TestRunOutput>(
-        `${MTT_API_URL}/test_runs/${testRunId}/output`, {params});
+        `${MTT_API_URL}/test_runs/${encodeURIComponent(testRunId)}/output`,
+        {params});
   }
 
   /**
