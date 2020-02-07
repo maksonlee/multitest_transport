@@ -27,7 +27,10 @@ from multitest_transport.util import file_util
 
 _PATH_DELIMITER = '/'
 _EMPTY_FOLDER_CONTENT_TYPE = 'application/x-www-form-urlencoded;charset=UTF-8'
-_GCS_OAUTH2_SCOPES = ['https://www.googleapis.com/auth/devstorage.full_control']
+_GCS_OAUTH2_CONFIG = base.OAuth2Config(
+    client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
+    client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
+    scopes=['https://www.googleapis.com/auth/devstorage.full_control'])
 _GCS_BUILD_API_NAME = 'storage'
 _GCS_BUILD_API_VERSION = 'v1'
 _PAGE_SIZE = 10
@@ -96,10 +99,7 @@ class GCSBuildProvider(base.BuildProvider):
 
   def GetOAuth2Config(self):
     """Provide base with params needed for OAuth2 authentication."""
-    return base.OAuth2Config(
-        client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
-        client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
-        scopes=_GCS_OAUTH2_SCOPES)
+    return _GCS_OAUTH2_CONFIG
 
   def _GetGCSObject(self, bucket, object_name):
     """Get a Google Cloud Storage object from path.
@@ -268,6 +268,7 @@ class GCSBuildProvider(base.BuildProvider):
 class GCSFileUploadHook(file_upload_hook.AbstractFileUploadHook):
   """Hook which uploads files to Google Cloud Storage."""
   name = 'Google Cloud Storage File Upload'
+  oauth2_config = _GCS_OAUTH2_CONFIG
 
   def __init__(self, _credentials=None, **_):      super(GCSFileUploadHook, self).__init__(**_)
     self._client = None
