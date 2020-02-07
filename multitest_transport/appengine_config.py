@@ -21,6 +21,8 @@ import google3
 from tradefed_cluster import common
 from tradefed_cluster import env_config
 
+from google.appengine.api import modules
+
 from multitest_transport.models import ndb_models
 
 # Set TFC env_config.
@@ -53,5 +55,11 @@ def apply_proxy_config():
 
 
 def webapp_add_wsgi_middleware(app):
+  # Patch HTTP_HOST to a default module's hostname.
+  # GAE's GCS library constructs local API URL using HTTP_HOST variable.
+  # Thus if this variable is set to be a hostname which is unreachable from
+  # a MTT machine (e.g. a proxy hostname), all GCS operations fail.
+  # TODO: remove this once we removed local GCS dependency.
+  os.environ['HTTP_HOST'] = modules.get_hostname('default')
   apply_proxy_config()
   return app

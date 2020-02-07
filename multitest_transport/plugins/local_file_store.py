@@ -19,10 +19,8 @@ their own files to be used in test runs.
 """
 import datetime
 import logging
-import os
 
 import cloudstorage as gcs
-from google.appengine.api import modules
 from google.appengine.api import urlfetch
 
 from multitest_transport.plugins import base
@@ -65,8 +63,6 @@ class LocalFileStoreBuildProvider(base.BuildProvider):
     Returns:
       a base.BuildItem object if response is valid, otherwise, return None
     """
-    # Ensure local GCS uses right hostname, see b/141946636
-    os.environ['HTTP_HOST'] = modules.get_hostname('default')
     filename = _GCS_PATH + path
     try:
       filestat = gcs.stat(filename)
@@ -81,8 +77,6 @@ class LocalFileStoreBuildProvider(base.BuildProvider):
     Args:
       path: a build item path.
     """
-    # Ensure local GCS uses right hostname, see b/141946636
-    os.environ['HTTP_HOST'] = modules.get_hostname('default')
     filename = _GCS_PATH + path
     try:
       gcs.delete(filename)
@@ -100,8 +94,6 @@ class LocalFileStoreBuildProvider(base.BuildProvider):
     Returns:
       (a list of base.BuildItem objects, the next page token)
     """
-    # Ensure local GCS uses right hostname, see b/141946636
-    os.environ['HTTP_HOST'] = modules.get_hostname('default')
     urlfetch.set_default_fetch_deadline(env.GCS_FETCH_DEADLINE_SECONDS)
     gcs_path = _GCS_PATH + path
     if not gcs_path.endswith(_GCS_PATH_DELIMITER):
