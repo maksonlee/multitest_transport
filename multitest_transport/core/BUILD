@@ -25,21 +25,6 @@ py_appengine_library(
     ],
 )
 
-py_appengine_test(
-    name = "config_loader_test",
-    srcs = [
-        "config_loader_test.py",
-    ],
-    envs = PY_APPENGINE_TEST_ENVS,
-    use_public_sdk = 1,
-    deps = [
-        ":config_loader_lib",
-        third_party("absl/testing:absltest"),
-        third_party("mock"),
-        third_party("webtest"),
-    ],
-)
-
 py_appengine_library(
     name = "cron_kicker_lib",
     srcs = [

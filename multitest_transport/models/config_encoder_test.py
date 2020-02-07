@@ -148,27 +148,6 @@ test_run_hooks:
     actual = config_encoder.Encode(config_set)
     self.assertEqual(expected, actual)
 
-  def testDecode_multipleStrings(self):
-    """Tests deserializing a merged configuration."""
-    build_channel = self.CreateBuildChannel(key='foo', name='Foo',
-                                            options={'option': 'value'})
-    expected = config_encoder.ConfigSet(build_channels=[build_channel])
-
-    strings = [
-        """build_channels:
-        - id: foo
-          name: Foo
-          provider_name: Foo
-        """,
-        """build_channels:
-        - id: foo
-          options:
-          - name: option
-            value: value
-        """]
-    actual = config_encoder.Decode(strings)
-    self.assertEqual(expected, actual)
-
   def testLoad(self):
     # add an existing build channel
     self.CreateBuildChannel(key='foo', name='Foo').put()
@@ -192,43 +171,6 @@ test_run_hooks:
     self.assertEqual('option', stored_build_channel.options[0].name)
     self.assertEqual('value', stored_build_channel.options[0].value)
 
-  def testMergeConfigs(self):
-    """Tests merging simple configuration objects."""
-    a = {
-        'a': True,
-        'dict': {'a': 1},
-        'list': [1, 2],
-    }
-    b = {
-        'b': False,
-        'dict': {'a': 2, 'b': 1},
-        'list': [3, 4],
-    }
-
-    expected = {
-        'a': True,
-        'b': False,  # added key
-        'dict': {
-            'a': 2,  # nested value overwritten
-            'b': 1,  # added nested key
-        },
-        'list': [1, 2, 3, 4],  # concatenated
-    }
-    actual = config_encoder._MergeConfigs(a, b)
-    self.assertEqual(expected, actual)
-
-  def testMergeLists(self):
-    """Tests merging lists whose elements share IDs."""
-    a = [{'id': 1, 'val': '1'}, {'id': 2, 'val': '2'}]
-    b = [{'id': 2, 'val': '3'}, {'val': '4'}, {'id': 3, 'val': '5'}]
-
-    expected = [{'id': 1, 'val': '1'},
-                {'id': 2, 'val': '3'},  # merged entry with existing ID
-                {'val': '4'},  # added entry with no ID to merge on
-                {'id': 3, 'val': '5'}]  # added entry with new ID
-
-    actual = config_encoder._MergeConfigs(a, b)
-    self.assertEqual(expected, actual)
 
 if __name__ == '__main__':
   absltest.main()

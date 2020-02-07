@@ -178,6 +178,4 @@ config.DefineField('service_account_json_key_path',
                    prompt='The service account json key to use')
 config.DefineField('custom_adb_path',
                    prompt='Path to custom ADB tool')
-config.DefineField('config_files',
-                   prompt='Comma-separated YAML configuration files.')
 config.Load()

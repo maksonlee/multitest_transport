@@ -49,7 +49,6 @@ class CliTest(parameterized.TestCase):
     self.mock_config.docker_image = 'gcr.io/android-mtt/mtt:prod'
     self.mock_config.service_account_json_key_path = None
     self.mock_config.custom_adb_path = None
-    self.mock_config.config_files = None
     self.mock_auth_patcher = mock.patch(
         '__main__.cli.google_auth_util.CreateCredentialFromServiceAccount')
     self.mock_auth_patcher.start()
@@ -311,42 +310,6 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
             'gcr.io/android-mtt/mtt:prod']),
-        mock.call.Run(['docker', 'start', 'mtt'])])
-
-  def testStart_configFile(self):
-    self.mock_config.config_files = '/local/first.yaml,/local/second.yaml'
-    args = self.arg_parser.parse_args(['start'])
-    cli.Start(
-        args,
-        self._CreateHost(cluster_name='acluster'))
-
-    self.mock_context.assert_has_calls([
-        mock.call.Run([
-            'docker', 'create',
-            '--name', 'mtt', '-it',
-            '-v', '/etc/localtime:/etc/localtime:ro',
-            '-v', '/etc/timezone:/etc/timezone:ro',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '-v', '/run/udev/control:/run/udev/control',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--net=host',
-            '--cap-add', 'syslog',
-            '-e', 'MTT_MASTER_URL=url',
-            '-e', 'CLUSTER=acluster',
-            '-e', 'USER=user',
-            '-e', 'MTT_CONFIG_FILES=/local$first.yaml,/local$second.yaml',
-            '--mount', 'type=volume,src=mtt-data,dst=/data',
-            '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
-            '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
-            '--mount', ('type=bind,src=/var/run/docker.sock,'
-                        'dst=/var/run/docker.sock'),
-            'gcr.io/android-mtt/mtt:prod']),
-        mock.call.Run([
-            'docker',
-            'cp', '-L', '/local/first.yaml', 'mtt:/local$first.yaml']),
-        mock.call.Run([
-            'docker',
-            'cp', '-L', '/local/second.yaml', 'mtt:/local$second.yaml']),
         mock.call.Run(['docker', 'start', 'mtt'])])
 
   def testStart_argsWithContainerNameAndImageName(self):

@@ -28,8 +28,6 @@ MTT_HOSTNAME="$(hostname)"
 STORAGE_PATH="/tmp/mtt"
 BLOBSTORE_ROOT="blobstore"
 
-CONFIG_ROOT="config"
-CONFIG_FILES=""
 CONFIG_DIR="."
 
 MTT_VERSION=${MTT_VERSION:-"dev"}
@@ -47,7 +45,6 @@ while [[ $# -gt 0 ]]; do
     --port) MTT_MASTER_PORT="$2";;
     --storage_path) STORAGE_PATH="$2";;
     --config_dir) CONFIG_DIR="$2";;
-    --config_files) CONFIG_FILES="$2";;
     --use_mtime_file_watcher) FILE_WATCHER="$2";;
     --log_level) LOG_LEVEL="$2";;
     --dev_appserver_log_level) DEV_APPSERVER_LOG_LEVEL="$2";;
@@ -60,7 +57,6 @@ done
 
 # Set dependent variables
 BLOBSTORE_PATH="$STORAGE_PATH/$BLOBSTORE_ROOT"
-CONFIG_PATH="$STORAGE_PATH/$CONFIG_ROOT"
 FILE_SERVER_PORT="$((${MTT_MASTER_PORT}+5))"
 
 # Create storage and blobstore folders if they don't exist
@@ -71,16 +67,6 @@ fi
 if [[ ! -d "$BLOBSTORE_PATH" ]]; then
   echo "Blobstore path $BLOBSTORE_PATH does not exist. Creating..."
   mkdir -p "$BLOBSTORE_PATH"
-fi
-
-# Remove previous config files and add new config files
-rm -rf "$CONFIG_PATH"
-mkdir "$CONFIG_PATH"
-if [[ $CONFIG_FILES ]]; then
-  CONFIG_LIST=(${CONFIG_FILES//,/ })
-  for index in "${!CONFIG_LIST[@]}"; do
-    cp "${CONFIG_LIST[index]}" "$CONFIG_PATH/$index.yaml"
-  done
 fi
 
 # Start browsepy file server

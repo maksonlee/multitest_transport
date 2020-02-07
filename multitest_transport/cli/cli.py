@@ -283,18 +283,6 @@ def _StartMttNode(args, host):
     docker_helper.AddTmpfs(
         tmpfs_config.path, size=tmpfs_config.size, mode=tmpfs_config.mode)
 
-  if config.config.config_files:
-    # Copy config files into container and notify MTT using env variable
-    docker_files = []
-    for config_file in filter(None, config.config.config_files.split(',')):
-      config_path = os.path.abspath(config_file)
-      docker_file = '/' + config_path[1::].replace(os.path.sep, '$')
-      docker_files.append(docker_file)
-      # Copy instead of mounting to ensure MTT has access
-      # TODO: support GCS files
-      docker_helper.AddFile(config_path, docker_file)
-    docker_helper.AddEnv('MTT_CONFIG_FILES', ','.join(docker_files))
-
   custom_sdk_dir = None
   if config.config.custom_adb_path:
     # Create temp directory for custom SDK tools, will be copied over to ensure

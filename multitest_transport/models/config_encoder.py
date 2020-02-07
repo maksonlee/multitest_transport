@@ -37,18 +37,15 @@ def Encode(config_set):
   return _JsonToYaml(protojson.encode_message(msg))
 
 
-def Decode(str_or_list):
-  """Deserializes MTT configuration from multiple sources.
+def Decode(string):
+  """Deserializes MTT configuration.
 
   Args:
-    str_or_list: one or more configuration sets in YAML format
+    string: configuration set in YAML format
   Returns:
     MTT configuration set
   """
-  if not isinstance(str_or_list, list): str_or_list = [str_or_list]
-  data = {}
-  for string in str_or_list:
-    _MergeConfigs(data, yaml.safe_load(string))
+  data = yaml.safe_load(string)
   msg = protojson.decode_message(_ConfigSetMessage, json.dumps(data))
 
   # If url is provided, add it as a namespace to the id to dedupe objects from
@@ -84,40 +81,6 @@ def _JsonToYaml(string):
   """Converts a JSON string to YAML."""
   obj = json.loads(string)
   return yaml.safe_dump(obj, default_flow_style=False)
-
-
-def _MergeConfigs(a, b):
-  """Performs a deep merge on two config dicts."""
-  if isinstance(a, dict) and isinstance(b, dict):
-    # merging two dicts: recursively merge
-    for key in b:
-      a[key] = _MergeConfigs(a[key], b[key]) if key in a else b[key]
-    return a
-  if isinstance(a, list) and isinstance(b, list):
-    # merging two lists: merge elements with same ID and concatenate the rest
-    return _MergeLists(a, b)
-  # type mismatch, primitives, or None: overwrite existing
-  return b
-
-
-def _MergeLists(a, b):
-  """Perform a deep merge on two lists, merging elements with the same ID."""
-  result = []
-  elements = {}
-  for element in a + b:
-    if not isinstance(element, dict) or 'id' not in element:
-      # no ID to merge with, append element to results
-      result.append(element)
-      continue
-    id_ = element['id']
-    if id_ in elements:
-      # another element with same ID found, merge the two elements
-      elements[id_] = _MergeConfigs(elements[id_], element)
-    else:
-      # first element with this ID, append
-      elements[id_] = element
-      result.append(element)
-  return result
 
 
 def _Load(obj):

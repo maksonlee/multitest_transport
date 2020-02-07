@@ -31,7 +31,6 @@ then
   mkdir -p "${MTT_MASTER_LOG_DIR}"
   /mtt/serve.sh \
       --storage_path "${MTT_STORAGE_PATH}" \
-      --config_files "${MTT_CONFIG_FILES}" \
       --port "${MTT_MASTER_PORT}" \
       2>&1 > /dev/null | multilog s10485760 n10 "${MTT_MASTER_LOG_DIR}" &
 fi
