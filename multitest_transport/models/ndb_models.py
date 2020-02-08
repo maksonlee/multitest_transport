@@ -217,10 +217,11 @@ class TestRunPhase(messages.Enum):
   """Test run phases."""
   UNKNOWN = 0  # Invalid phase
   BEFORE_RUN = 1  # Before run is started (but is created)
-  AFTER_ATTEMPT = 2  # After an attempt is completed (successfully or not)
-  AFTER_RUN = 3  # After run is completed (successfully or not)
-  ON_SUCCESS = 4  # After run is completed successfully (may have test failures)
-  ON_ERROR = 5  # After run fails to complete due to errors
+  BEFORE_ATTEMPT = 2  # Before an attempt is created (task not sent to runner)
+  AFTER_ATTEMPT = 3  # After an attempt is completed (successfully or not)
+  AFTER_RUN = 4  # After run is completed (successfully or not)
+  ON_SUCCESS = 5  # After run is completed successfully (may have test failures)
+  ON_ERROR = 6  # After run fails to complete due to errors
 
 
 class TestRunHookConfig(ndb.Model):

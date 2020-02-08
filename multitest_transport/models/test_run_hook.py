@@ -16,20 +16,24 @@
 import logging
 
 from tradefed_cluster.common import IsFinalCommandState
+from tradefed_cluster.plugins import base as tfc_plugins
 
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base as plugins
 from multitest_transport.util import tfc_client
 
 
-def ExecuteHooks(test_run_id, phase, attempt_id=None):
+def ExecuteHooks(test_run_id, phase, attempt_id=None, task=None):
   """Execute all hooks configured for a specific phase."""
   test_run = ndb_models.TestRun.get_by_id(test_run_id)
   if not test_run:
     return
   latest_attempt = _GetLatestAttempt(test_run, attempt_id)
   hook_context = plugins.TestRunHookContext(
-      test_run=test_run, latest_attempt=latest_attempt, phase=phase)
+      test_run=test_run,
+      phase=phase,
+      latest_attempt=latest_attempt,
+      next_task=task)
   for hook_config in test_run.hook_configs:
     if phase in hook_config.phases:
       _ExecuteHook(hook_config, hook_context)
@@ -73,3 +77,34 @@ def GetAuthorizationState(hook_config):
   if hook_config.credentials:
     return ndb_models.AuthorizationState.AUTHORIZED
   return ndb_models.AuthorizationState.UNAUTHORIZED
+
+
+class TfcTaskInterceptor(tfc_plugins.Plugin):
+  """Intercepts TFC tasks before sending to runner to execute MTT run hooks."""
+
+  def OnCommandTasksLease(self, command_tasks):
+    """Executes before attempt hooks."""
+    for command_task in command_tasks:
+      # Find the relevant test run
+      test_run_key = ndb_models.TestRun.query(
+          ndb_models.TestRun.request_id == command_task.request_id).get(
+              keys_only=True)
+      if not test_run_key:
+        logging.warn('Cannot find test run for command task %s', command_task)
+        continue
+      # Invoke before attempt hooks and update command task
+      task = self.ConvertCommandTask(command_task)
+      ExecuteHooks(
+          test_run_key.id(), ndb_models.TestRunPhase.BEFORE_ATTEMPT, task=task)
+      self.UpdateCommandTask(command_task, task)
+
+  def ConvertCommandTask(self, command_task):
+    """Convert a TFC command task to a test run task."""
+    return plugins.TestRunTask(task_id=command_task.task_id,
+                               command_line=command_task.command_line,
+                               run_count=command_task.run_count,
+                               shard_count=command_task.shard_count)
+
+  def UpdateCommandTask(self, command_task, task):
+    """Apply modifications to a TFC command task."""
+    pass

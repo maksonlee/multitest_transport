@@ -49,8 +49,7 @@ class WebHookTest(absltest.TestCase):
     mock_response = mock_urlopen.return_value
 
     hook_context = plugins.TestRunHookContext(
-        test_run=mock_test_run, latest_attempt=None,
-        phase=ndb_models.TestRunPhase.BEFORE_RUN)
+        test_run=mock_test_run, phase=ndb_models.TestRunPhase.BEFORE_RUN)
     webhook.Execute(hook_context)
 
     mock_request_ctor.assert_called_with(

@@ -18,6 +18,7 @@ import mock
 from oauth2client import client
 
 from tradefed_cluster.api_messages import CommandState
+from tradefed_cluster.datastore_entities import CommandTask
 from google.appengine.ext import testbed
 
 from multitest_transport.models import ndb_models
@@ -163,6 +164,25 @@ class RunHookTest(absltest.TestCase):
     )
     self.assertEqual(ndb_models.AuthorizationState.AUTHORIZED,
                      test_run_hook.GetAuthorizationState(hook_config))
+
+  @mock.patch.object(test_run_hook.TfcTaskInterceptor, 'UpdateCommandTask')
+  @mock.patch.object(test_run_hook, 'ExecuteHooks')
+  def testTfcTaskInterceptor(self, mock_execute_hooks, mock_update_task):
+    """Tests that TFC tasks can be intercepted and passed to run hooks."""
+    test_run = ndb_models.TestRun(request_id='request_id')
+    test_run.put()
+    unknown_task = CommandTask(request_id='unknown')  # Unknown request ID
+    expected_task = CommandTask(request_id='request_id')
+
+    # Verify that the right hooks are executed and task updates applied
+    plugin = test_run_hook.TfcTaskInterceptor()
+    converted_task = plugin.ConvertCommandTask(expected_task)
+    plugin.OnCommandTasksLease([unknown_task, expected_task])
+    mock_execute_hooks.assert_called_once_with(
+        test_run.key.id(),
+        ndb_models.TestRunPhase.BEFORE_ATTEMPT,
+        task=converted_task)
+    mock_update_task.assert_called_once_with(expected_task, converted_task)
 
 
 if __name__ == '__main__':

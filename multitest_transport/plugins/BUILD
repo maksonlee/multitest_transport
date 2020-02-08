@@ -150,6 +150,7 @@ py_library(
     visibility = ["//multitest_transport"],
     deps = [
         ":registry_lib",
+        third_party("attr"),
         third_party("six"),
         "//multitest_transport/util",
     ],

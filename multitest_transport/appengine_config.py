@@ -24,10 +24,12 @@ from tradefed_cluster import env_config
 from google.appengine.api import modules
 
 from multitest_transport.models import ndb_models
+from multitest_transport.models import test_run_hook
 
 # Set TFC env_config.
 env_config.CONFIG = env_config.EnvConfig(
     device_info_snapshot_file_format='/device_info_snapshots/%s.gz',
+    plugin=test_run_hook.TfcTaskInterceptor(),
     should_send_report=True,
     use_admin_api=False,
     use_google_api=False,

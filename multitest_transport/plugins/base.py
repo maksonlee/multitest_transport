@@ -18,6 +18,7 @@ import collections
 import logging
 import re
 
+import attr
 import enum
 import six
 
@@ -237,15 +238,29 @@ def ListBuildProviderNames():
   return BUILD_PROVIDER_REGISTRY.ListPluginNames()
 
 
-class TestRunHookContext(collections.namedtuple(
-    'TestRunHookContext', ['test_run', 'latest_attempt', 'phase'])):
-  """Named tuple representing the test run hook execution context.
+@attr.s(frozen=True)
+class TestRunHookContext(object):
+  """Test run hook execution context.
 
   Attributes:
     test_run: test run being executed
-    latest_attempt: latest finished attempt
     phase: current execution phase
+    latest_attempt: optional latest finished attempt
+    next_task: optional next task to be executed
   """
+  test_run = attr.ib()
+  phase = attr.ib()
+  latest_attempt = attr.ib(default=None)
+  next_task = attr.ib(default=None)
+
+
+@attr.s
+class TestRunTask(object):
+  """Mutable test run attempt not yet sent to the runner."""
+  task_id = attr.ib()
+  command_line = attr.ib()
+  run_count = attr.ib()
+  shard_count = attr.ib()
 
 
 class TestRunHook(

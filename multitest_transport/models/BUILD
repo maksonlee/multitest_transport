@@ -149,6 +149,8 @@ py_appengine_library(
     deps = [
         ":ndb_models_lib",
         "//multitest_transport/plugins:plugin_base",
+        "@tradefed_cluster//tradefed_cluster:datastore_entities_lib",
+        "@tradefed_cluster//tradefed_cluster/plugins:base_lib",
         third_party("six"),
     ],
 )
