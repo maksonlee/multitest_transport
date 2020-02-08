@@ -17,7 +17,6 @@
 import {Component, OnInit} from '@angular/core';
 import {delay, first} from 'rxjs/operators';
 
-import {AuthService} from '../services/auth_service';
 import {MttClient} from '../services/mtt_client';
 import {BuildChannel} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
@@ -38,8 +37,7 @@ export class BuildChannelSetup implements OnInit {
   driveBuildChannel!: BuildChannel;
 
   constructor(
-      private readonly mtt: MttClient, private readonly notifier: Notifier,
-      private readonly authService: AuthService) {}
+      private readonly mtt: MttClient, private readonly notifier: Notifier) {}
 
   ngOnInit() {
     this.load();
@@ -61,7 +59,7 @@ export class BuildChannelSetup implements OnInit {
    * @param buildChannelId A buildchannel id
    */
   authorize(buildChannelId: string) {
-    this.authService.authorizeBuildChannel(buildChannelId)
+    this.mtt.authorizeBuildChannel(buildChannelId)
         .pipe(delay(500))  // delay for data to be persisted
         .subscribe(
             () => {

@@ -23,7 +23,6 @@ import {MatTabChangeEvent} from '@angular/material/tabs';
 import {ReplaySubject, Subject, Subscription} from 'rxjs';
 import {debounceTime, delay, finalize, first, takeUntil} from 'rxjs/operators';
 
-import {AuthService} from '../services/auth_service';
 import {MttClient} from '../services/mtt_client';
 import {BuildChannel, BuildItem, isBuildChannelAvailable} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
@@ -110,7 +109,6 @@ export class BuildPicker implements OnInit, OnDestroy {
       @Inject(MAT_DIALOG_DATA) public data: BuildPickerData,
       private readonly liveAnnouncer: LiveAnnouncer,
       private readonly mttClient: MttClient,
-      private readonly authService: AuthService,
       private readonly notifier: Notifier) {
     // When search updated, reload the current build list
     this.searchUpdated.asObservable()
@@ -341,7 +339,7 @@ export class BuildPicker implements OnInit, OnDestroy {
    * @param buildChannelId A buildchannel id
    */
   authorize(buildChannelId: string) {
-    this.authService.authorizeBuildChannel(buildChannelId)
+    this.mttClient.authorizeBuildChannel(buildChannelId)
         .pipe(delay(500))  // delay for data to be persisted
         .subscribe(
             () => {

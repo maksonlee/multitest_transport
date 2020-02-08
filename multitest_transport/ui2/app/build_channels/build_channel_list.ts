@@ -19,7 +19,6 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
 import {delay, finalize, first, takeUntil} from 'rxjs/operators';
 
-import {AuthService} from '../services/auth_service';
 import {MttClient} from '../services/mtt_client';
 import {BuildChannel, isDefaultBuildChannel} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
@@ -41,7 +40,6 @@ export class BuildChannelList implements OnInit, OnDestroy {
   constructor(
       private readonly mtt: MttClient,
       private readonly notifier: Notifier,
-      private readonly authService: AuthService,
       private readonly liveAnnouncer: LiveAnnouncer,
   ) {}
 
@@ -112,7 +110,7 @@ export class BuildChannelList implements OnInit, OnDestroy {
    * @param buildChannelId A buildchannel id
    */
   authorize(buildChannelId: string) {
-    this.authService.authorizeBuildChannel(buildChannelId)
+    this.mtt.authorizeBuildChannel(buildChannelId)
         .pipe(delay(500))  // delay for data to be persisted
         .subscribe(
             () => {

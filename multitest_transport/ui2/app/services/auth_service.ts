@@ -16,41 +16,35 @@
 
 import {Injectable} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
-import {EMPTY, interval, Observable} from 'rxjs';
-import {filter, finalize, first, map, switchMap} from 'rxjs/operators';
+import {interval, Observable} from 'rxjs';
+import {filter, finalize, first, map} from 'rxjs/operators';
 
 import {AuthDialog} from './auth_dialog';
-import {MttClient} from './mtt_client';
 import {AuthorizationInfo} from './mtt_models';
 
-const REDIRECT_URI = window.location.origin + '/auth_return';
+/** Authorization redirect URI. */
+export const REDIRECT_URI = window.location.origin + '/auth_return';
+
 const AUTH_WINDOW_NAME = 'authWindow';
 const AUTH_WINDOW_FEATURES = 'width=550,height=420,resizable,scrollbars,status';
 
-/** Manage OAuth2 authorizations for build channels. */
+/** Manage OAuth2 authorization codes. */
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  constructor(
-      private readonly dialog: MatDialog,
-      private readonly mttClient: MttClient) {}
+  constructor(private readonly dialog: MatDialog) {}
 
   /**
-   * Authorizes a build channel.
-   * @param buildChannelId build channel identifier
+   * Fetches an authorization code using automatic or manual copy-paste flows.
+   * @param authInfo: authorization information
+   * @return authorization code
    */
-  authorizeBuildChannel(buildChannelId: string): Observable<void> {
-    return this.mttClient
-        .getBuildChannelAuthorizationInfo(buildChannelId, REDIRECT_URI)
-        .pipe(switchMap(authInfo => this.getAuthorizationCode(authInfo)))
-        .pipe(switchMap(code => {
-          if (!code) {
-            return EMPTY;
-          }
-          return this.mttClient.authorizeBuildChannel(
-              code, buildChannelId, REDIRECT_URI);
-        }));
+  getAuthorizationCode(authInfo: AuthorizationInfo): Observable<string|null> {
+    if (authInfo.is_manual) {
+      return this.getManualAuthorizationCode(authInfo.url);
+    }
+    return this.getRedirectAuthorizationCode(authInfo.url);
   }
 
   // Opens a new authorization window or replaces an existing one.
@@ -72,14 +66,6 @@ export class AuthService {
     } catch {
       return false;  // Cross-origin access blocked (not returned).
     }
-  }
-
-  // Fetches an authorization code using automatic or manual copy-paste flows.
-  private getAuthorizationCode(authInfo: AuthorizationInfo) {
-    if (authInfo.is_manual) {
-      return this.getManualAuthorizationCode(authInfo.url);
-    }
-    return this.getRedirectAuthorizationCode(authInfo.url);
   }
 
   // Asks the user to manually copy-paste an authorization code.

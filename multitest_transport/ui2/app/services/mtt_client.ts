@@ -16,10 +16,12 @@
 
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {Inject, Injectable} from '@angular/core';
-import {Observable} from 'rxjs';
+import {EMPTY, Observable} from 'rxjs';
+import {switchMap} from 'rxjs/operators';
 
 import {AnalyticsParams} from './analytics_service';
 import {APP_DATA, AppData} from './app_data';
+import {AuthService, REDIRECT_URI} from './auth_service';
 import * as model from './mtt_models';
 import {CommandAttempt, isFinalCommandState} from './tfc_models';
 
@@ -33,32 +35,37 @@ export const MTT_API_URL = '/_ah/api/mtt/v1';
 export class MttClient {
   constructor(
       @Inject(APP_DATA) private readonly appData: AppData,
-      private readonly http: HttpClient) {}
+      private readonly http: HttpClient, private readonly auth: AuthService) {}
 
   /**
    * Authorizes a build channel using an authorization code.
-   * @param code: authorization code to use
    * @param buildChannelId: build channel to authorize
-   * @param redirectUri: authorization redirect URI
    */
-  authorizeBuildChannel(code: string, buildChannelId: string,
-                        redirectUri: string): Observable<void> {
+  authorizeBuildChannel(buildChannelId: string): Observable<void> {
+    return this.getBuildChannelAuthorizationInfo(buildChannelId)
+        .pipe(switchMap(authInfo => this.auth.getAuthorizationCode(authInfo)))
+        .pipe(switchMap(code => {
+          if (!code) {
+            return EMPTY;
+          }
+          return this.sendBuildChannelAuthorizationCode(buildChannelId, code);
+        }));
+  }
+
+  /** Sends build channel authorization code to complete flow. */
+  private sendBuildChannelAuthorizationCode(
+      buildChannelId: string, code: string): Observable<void> {
     const params = new AnalyticsParams('build_channels', 'authorize');
     return this.http.post<void>(
         `${MTT_API_URL}/build_channels/${
-            encodeURIComponent(buildChannelId)}/auth_return`,
-        {'redirect_uri': redirectUri, 'code': code}, {params});
+          encodeURIComponent(buildChannelId)}/auth_return`,
+        {'redirect_uri': REDIRECT_URI, 'code': code}, {params});
   }
 
-  /**
-   * Determine a build channel's authorization information.
-   * @param buildChannelId: build channel to authorize
-   * @param redirectUri: authorization redirect URI
-   * @return authorization flow and URL to use
-   */
-  getBuildChannelAuthorizationInfo(buildChannelId: string, redirectUri: string):
+  /** Fetches a build channel's authorization information to start flow. */
+  private getBuildChannelAuthorizationInfo(buildChannelId: string):
       Observable<model.AuthorizationInfo> {
-    const params = new HttpParams().set('redirect_uri', redirectUri);
+    const params = new HttpParams().set('redirect_uri', REDIRECT_URI);
     return this.http.get<model.AuthorizationInfo>(
         `${MTT_API_URL}/build_channels/${
             encodeURIComponent(buildChannelId)}/auth`,

@@ -19,64 +19,53 @@ import {of as observableOf} from 'rxjs';
 
 import * as testUtil from '../testing/test_util';
 
+import {AuthService, REDIRECT_URI} from './auth_service';
 import {MTT_API_URL, MttClient} from './mtt_client';
 import {BuildChannelList, TestPlanList, TestRun} from './mtt_models';
 import {CommandAttempt, CommandState} from './tfc_models';
 
 describe('MttClient', () => {
   let httpClientSpy: jasmine.SpyObj<HttpClient>;
+  let authServiceSpy: jasmine.SpyObj<AuthService>;
   let mttClient: MttClient;
 
   beforeEach(() => {
     httpClientSpy = jasmine.createSpyObj<HttpClient>(
         'HttpClient', ['get', 'post', 'put', 'delete']);
-    mttClient = new MttClient(testUtil.newMockAppData(), httpClientSpy);
-  });
-
-  describe('getBuildChannelAuthorizationInfo', () => {
-    const mockAuthorizedInfo = {url: 'http://localhost/auth', is_manual: false};
-    const BUILD_CHANNEL_ID = 'test_id';
-    const REDIRECT_URI = 'http://localhost:8000/ui2/setting';
-
-    beforeEach(() => {
-      httpClientSpy.get.and.returnValue(observableOf(mockAuthorizedInfo));
-    });
-
-    it('calls API correctly', () => {
-      mttClient.getBuildChannelAuthorizationInfo(
-          BUILD_CHANNEL_ID, REDIRECT_URI);
-      const params = new HttpParams().set('redirect_uri', REDIRECT_URI);
-      expect(httpClientSpy.get)
-          .toHaveBeenCalledWith(
-              '/_ah/api/mtt/v1/build_channels/test_id/auth', {params});
-      expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
-    });
-
-    it('parses API response correctly', () => {
-      mttClient.getBuildChannelAuthorizationInfo(BUILD_CHANNEL_ID, REDIRECT_URI)
-          .subscribe(response => {
-            expect(response).toEqual(
-                jasmine.objectContaining(mockAuthorizedInfo));
-          });
-    });
+    authServiceSpy = jasmine.createSpyObj<AuthService>(
+        'AuthService', ['getAuthorizationCode']);
+    mttClient =
+        new MttClient(testUtil.newMockAppData(), httpClientSpy, authServiceSpy);
   });
 
   describe('authorizeBuildChannel', () => {
-    const mockCodeString = '4/123123123';
-    const BUILD_CHANNEL_ID = 'test_id';
-    const REDIRECT_URI = 'http://localhost:8000/ui2/setting';
+    const AUTH_INFO = {url: 'auth_url', is_manual: false};
+    const BUILD_CHANNEL_ID = 'build_channel_id';
+    const CODE = 'code';
 
     beforeEach(() => {
+      httpClientSpy.get.and.returnValue(observableOf(AUTH_INFO));
+      authServiceSpy.getAuthorizationCode.and.returnValue(observableOf(CODE));
       httpClientSpy.post.and.returnValue(observableOf());
     });
 
-    it('calls API correctly on valid input', () => {
-      mttClient.authorizeBuildChannel(
-          mockCodeString, BUILD_CHANNEL_ID, REDIRECT_URI);
+    it('makes right sequence of API requests', () => {
+      mttClient.authorizeBuildChannel(BUILD_CHANNEL_ID).subscribe();
+      // Fetches authorization information
+      const params = new HttpParams().set('redirect_uri', REDIRECT_URI);
+      expect(httpClientSpy.get)
+          .toHaveBeenCalledWith(
+              '/_ah/api/mtt/v1/build_channels/build_channel_id/auth', {params});
+      expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
+      // Obtains authorization code from user
+      expect(authServiceSpy.getAuthorizationCode)
+          .toHaveBeenCalledWith(AUTH_INFO);
+      expect(authServiceSpy.getAuthorizationCode).toHaveBeenCalledTimes(1);
+      // Sends authorization code
       expect(httpClientSpy.post)
           .toHaveBeenCalledWith(
-              `/_ah/api/mtt/v1/build_channels/test_id/auth_return`,
-              {'redirect_uri': REDIRECT_URI, 'code': mockCodeString},
+              '/_ah/api/mtt/v1/build_channels/build_channel_id/auth_return',
+              {'redirect_uri': REDIRECT_URI, 'code': CODE},
               jasmine.any(Object));
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
     });

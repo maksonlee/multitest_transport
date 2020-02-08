@@ -20,7 +20,6 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {EMPTY, of as observableOf} from 'rxjs';
 
-import {AuthService} from '../services/auth_service';
 import {MttClient} from '../services/mtt_client';
 import {BuildChannelAuthState} from '../services/mtt_models';
 import {getEl, getTextContent} from '../testing/jasmine_util';
@@ -55,23 +54,20 @@ describe('BuildChannelSetup', () => {
   let buildChannelSetup: BuildChannelSetup;
   let buildChannelSetupFixture: ComponentFixture<BuildChannelSetup>;
   let mttClient: jasmine.SpyObj<MttClient>;
-  let authService: jasmine.SpyObj<AuthService>;
   let el: DebugElement;
 
   beforeEach(() => {
-    mttClient = jasmine.createSpyObj('mttClient', ['getBuildChannels']);
+    mttClient = jasmine.createSpyObj(
+        'mttClient', ['authorizeBuildChannel', 'getBuildChannels']);
+    mttClient.authorizeBuildChannel.and.returnValue(EMPTY);
     mttClient.getBuildChannels.and.returnValue(
         observableOf({build_channels: [...BUILD_CHANNELS]}));
-    authService =
-        jasmine.createSpyObj('authService', ['authorizeBuildChannel']);
-    authService.authorizeBuildChannel.and.returnValue(EMPTY);
 
     TestBed.configureTestingModule({
       imports: [SetupWizardModule, NoopAnimationsModule, RouterTestingModule],
       aotSummaries: SetupWizardModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
-        {provide: AuthService, useValue: authService},
       ],
     });
     buildChannelSetupFixture = TestBed.createComponent(BuildChannelSetup);
@@ -93,6 +89,6 @@ describe('BuildChannelSetup', () => {
 
   it('triggers the authorization flow', () => {
     getEl(el, '.auth-button').click();
-    expect(authService.authorizeBuildChannel).toHaveBeenCalled();
+    expect(mttClient.authorizeBuildChannel).toHaveBeenCalled();
   });
 });

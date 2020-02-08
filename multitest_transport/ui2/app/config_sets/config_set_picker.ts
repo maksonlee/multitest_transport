@@ -21,7 +21,6 @@ import {Component, Input, OnInit} from '@angular/core';
 import {forkJoin} from 'rxjs';
 import {delay, finalize, first, mergeMap} from 'rxjs/operators';
 
-import {AuthService} from '../services/auth_service';
 import {MttClient} from '../services/mtt_client';
 import * as mttModels from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
@@ -57,7 +56,6 @@ export class ConfigSetPicker implements OnInit {
   constructor(
       private readonly mttClient: MttClient,
       private readonly notifier: Notifier,
-      private readonly authService: AuthService,
       private readonly liveAnnouncer: LiveAnnouncer,
       private readonly location: Location,
   ) {}
@@ -139,7 +137,7 @@ export class ConfigSetPicker implements OnInit {
    * @param buildChannelId A buildchannel id
    */
   authorize(buildChannelId: string) {
-    this.authService.authorizeBuildChannel(buildChannelId)
+    this.mttClient.authorizeBuildChannel(buildChannelId)
         .subscribe(
             () => {
               this.load();
