@@ -143,8 +143,10 @@ export class MttClient {
   }
 
   importConfigSet(url = '', content = ''): Observable<model.ConfigSetInfo> {
+    const params = new AnalyticsParams('config_sets', 'import');
     return this.http.post<model.ConfigSetInfo>(
-        `${MTT_API_URL}/config_sets/import`, {'url': url, 'content': content});
+        `${MTT_API_URL}/config_sets/import`, {'url': url, 'content': content},
+        {params});
   }
 
   getDeviceAction(id: string): Observable<model.DeviceAction> {
