@@ -133,7 +133,7 @@ export const routes: Routes = [
   },
   {path: 'test_runs/:id', component: TestRunDetailPage},
   {path: 'auth_return', component: AuthReturnPage},
-  {path: '**', redirectTo: '/tests', pathMatch: 'full'},
+  {path: '**', redirectTo: '/test_runs', pathMatch: 'full'},
 ];
 
 /** Homepage */
