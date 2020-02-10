@@ -19,5 +19,5 @@ from tradefed_cluster import api as tfc_api
 import endpoints
 
 from multitest_transport.api import base
-from multitest_transport.api import build_channel_api  from multitest_transport.api import build_channel_provider_api  from multitest_transport.api import config_set_api  from multitest_transport.api import device_action_api  from multitest_transport.api import node_config_api  from multitest_transport.api import private_node_config_api  from multitest_transport.api import test_api  from multitest_transport.api import test_plan_api  from multitest_transport.api import test_run_api  
+from multitest_transport.api import build_channel_api  from multitest_transport.api import build_channel_provider_api  from multitest_transport.api import config_set_api  from multitest_transport.api import device_action_api  from multitest_transport.api import node_config_api  from multitest_transport.api import private_node_config_api  from multitest_transport.api import test_api  from multitest_transport.api import test_plan_api  from multitest_transport.api import test_run_api  from multitest_transport.api import test_run_hook_api  
 APP = endpoints.api_server([base.MTT_API] + tfc_api.API_HANDLERS)

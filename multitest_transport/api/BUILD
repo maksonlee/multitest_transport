@@ -199,6 +199,7 @@ py_appengine_library(
         ":test_api_lib",
         ":test_plan_api_lib",
         ":test_run_api_lib",
+        ":test_run_hook_api_lib",
         "@tradefed_cluster//tradefed_cluster:api_lib",
     ],
 )

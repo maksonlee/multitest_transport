@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
+// Property names match those in models/ndb_models.py.
+// tslint:disable:enforce-name-casing
 import {DeviceInfo} from './tfc_models';
-/**
- * Variable names are taken from mtt/models/ndb_models. We may want to look
- * into ways to convert names to lowerCamelCase to match with angular style
- * guide.
- */
 
 /** Default queue timeout seconds, used in new test plan, and new test run */
 export const DEFAULT_QUEUE_TIMEOUT_SECONDS = 24 * 60 * 60;  // one day
@@ -49,6 +46,13 @@ export declare interface AuthorizationInfo {
    * manual copy/paste flow
    */
   is_manual: boolean;
+}
+
+/** Authorization states (for build channels or test run hooks). */
+export enum AuthorizationState {
+  NOT_APPLICABLE = 'NOT_APPLICABLE',
+  AUTHORIZED = 'AUTHORIZED',
+  UNAUTHORIZED = 'UNAUTHORIZED',
 }
 
 /**
@@ -706,6 +710,33 @@ export declare interface TestRunOutput {
   lines?: string[];
   /** Line offset */
   offset: number;
+}
+
+/** Test run execution phases. */
+export enum TestRunPhase {
+  UNKNOWN = 'UNKNOWN',
+  BEFORE_RUN = 'BEFORE_RUN',
+  AFTER_ATTEMPT = 'AFTER_ATTEMPT',
+  AFTER_RUN = 'AFTER_RUN',
+  ON_SUCCESS = 'ON_SUCCESS',
+  ON_ERROR = 'ON_ERROR',
+}
+
+/** Test run hook configuration. */
+export declare interface TestRunHookConfig {
+  id: string;
+  name: string;
+  description?: string;
+  hook_class_name: string;
+  phases?: TestRunPhase[];
+  options?: NameValuePair[];
+  tradefed_result_reporters?: TradefedConfigObject[];
+  authorization_state?: AuthorizationState;
+}
+
+/** List of test run hook configuration. */
+export declare interface TestRunHookConfigList {
+  configs: TestRunHookConfig[];
 }
 
 /**

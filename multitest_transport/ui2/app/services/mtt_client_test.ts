@@ -20,8 +20,8 @@ import {of as observableOf} from 'rxjs';
 import * as testUtil from '../testing/test_util';
 
 import {AuthService, REDIRECT_URI} from './auth_service';
-import {MTT_API_URL, MttClient} from './mtt_client';
-import {BuildChannelList, TestPlanList, TestRun} from './mtt_models';
+import {MTT_API_URL, MttClient, TestRunHookClient} from './mtt_client';
+import {BuildChannelList, TestPlanList, TestRun, TestRunHookConfig} from './mtt_models';
 import {CommandAttempt, CommandState} from './tfc_models';
 
 describe('MttClient', () => {
@@ -615,3 +615,89 @@ describe('MttClient', () => {
     });
   });
 });
+
+describe('TestRunHookClient', () => {
+  let http: jasmine.SpyObj<HttpClient>;
+  let auth: jasmine.SpyObj<AuthService>;
+  let client: TestRunHookClient;
+
+  const hookConfig: TestRunHookConfig =
+      {id: 'id', name: 'name', hook_class_name: 'class_name'};
+
+  beforeEach(() => {
+    http = jasmine.createSpyObj<HttpClient>(
+        'HttpClient', ['get', 'post', 'put', 'delete']);
+    auth = jasmine.createSpyObj<AuthService>(
+        'AuthService', ['getAuthorizationCode']);
+    client = new TestRunHookClient(http, auth);
+  });
+
+  it('can list hook configurations', () => {
+    const configList = {configs: [hookConfig]};
+    http.get.and.returnValue(observableOf(configList));
+    client.list().subscribe(expectResponse(configList));
+    expect(http.get).toHaveBeenCalledWith(TestRunHookClient.PATH);
+    expect(http.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('can get hook configuration', () => {
+    http.get.and.returnValue(observableOf(hookConfig));
+    client.get('id').subscribe(expectResponse(hookConfig));
+    expect(http.get).toHaveBeenCalledWith(TestRunHookClient.PATH + '/id');
+    expect(http.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('can create hook configuration', () => {
+    http.post.and.returnValue(observableOf(hookConfig));
+    client.create(hookConfig).subscribe(expectResponse(hookConfig));
+    expect(http.post).toHaveBeenCalledWith(
+        TestRunHookClient.PATH, hookConfig, jasmine.any(Object));
+    expect(http.post).toHaveBeenCalledTimes(1);
+  });
+
+  it('can update hook configuration', () => {
+    http.put.and.returnValue(observableOf(hookConfig));
+    client.update('id', hookConfig).subscribe(expectResponse(hookConfig));
+    expect(http.put).toHaveBeenCalledWith(
+        TestRunHookClient.PATH + '/id', hookConfig, jasmine.any(Object));
+    expect(http.put).toHaveBeenCalledTimes(1);
+  });
+
+  it('can delete hook configuration', () => {
+    http.delete.and.returnValue(observableOf());
+    client.delete('id').subscribe();
+    expect(http.delete)
+        .toHaveBeenCalledWith(
+            TestRunHookClient.PATH + '/id', jasmine.any(Object));
+    expect(http.delete).toHaveBeenCalledTimes(1);
+  });
+
+  it('can authorize hook configuration', () => {
+    const authInfo = {url: 'auth_url', is_manual: false};
+    http.get.and.returnValue(observableOf(authInfo));
+    auth.getAuthorizationCode.and.returnValue(observableOf('code'));
+    http.post.and.returnValue(observableOf());
+
+    client.authorize('id').subscribe();
+    // Fetches authorization information
+    const params = new HttpParams().set('redirect_uri', REDIRECT_URI);
+    expect(http.get).toHaveBeenCalledWith(
+        TestRunHookClient.PATH + '/id/auth', {params});
+    expect(http.get).toHaveBeenCalledTimes(1);
+    // Obtains authorization code from user
+    expect(auth.getAuthorizationCode).toHaveBeenCalledWith(authInfo);
+    expect(auth.getAuthorizationCode).toHaveBeenCalledTimes(1);
+    // Sends authorization code
+    expect(http.post).toHaveBeenCalledWith(
+        TestRunHookClient.PATH + '/id/auth_return',
+        {'redirect_uri': REDIRECT_URI, 'code': 'code'}, jasmine.any(Object));
+    expect(http.post).toHaveBeenCalledTimes(1);
+  });
+});
+
+/** Convenience method to verify the response in a subscription. */
+function expectResponse<T>(expected: T): (actual: T) => void {
+  return actual => {
+    expect(actual).toEqual(expected);
+  };
+}

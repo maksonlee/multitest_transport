@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Test run hook APIs."""
 from protorpc import message_types
 from protorpc import messages
@@ -146,8 +147,9 @@ class TestRunHookApi(remote.Service):
   def AuthorizeConfig(self, request):
     """Authorize a test run hook configuration with an authorization code."""
     hook_config = self._GetHookConfig(request.hook_id)
+    redirect_uri, _ = oauth2_util.GetRedirectUri(request.redirect_uri)
     oauth2_config = test_run_hook.GetOAuth2Config(hook_config)
     hook_config.credentials = oauth2_util.GetOAuth2Flow(
-        oauth2_config, request.redirect_uri).step2_exchange(request.code)
+        oauth2_config, redirect_uri).step2_exchange(request.code)
     hook_config.put()
     return message_types.VoidMessage()
