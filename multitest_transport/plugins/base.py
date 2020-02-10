@@ -259,8 +259,7 @@ class TestRunTask(object):
   """Mutable test run attempt not yet sent to the runner."""
   task_id = attr.ib()
   command_line = attr.ib()
-  run_count = attr.ib()
-  shard_count = attr.ib()
+  device_serials = attr.ib()
 
 
 class TestRunHook(

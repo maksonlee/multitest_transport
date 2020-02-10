@@ -102,8 +102,7 @@ class TfcTaskInterceptor(tfc_plugins.Plugin):
     """Convert a TFC command task to a test run task."""
     return plugins.TestRunTask(task_id=command_task.task_id,
                                command_line=command_task.command_line,
-                               run_count=command_task.run_count,
-                               shard_count=command_task.shard_count)
+                               device_serials=list(command_task.device_serials))
 
   def UpdateCommandTask(self, command_task, task):
     """Apply modifications to a TFC command task."""

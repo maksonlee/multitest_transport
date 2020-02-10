@@ -18,7 +18,7 @@ import mock
 from oauth2client import client
 
 from tradefed_cluster.api_messages import CommandState
-from tradefed_cluster.datastore_entities import CommandTask
+from tradefed_cluster.command_task_api import CommandTask
 from google.appengine.ext import testbed
 
 from multitest_transport.models import ndb_models

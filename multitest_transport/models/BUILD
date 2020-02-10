@@ -149,7 +149,6 @@ py_appengine_library(
     deps = [
         ":ndb_models_lib",
         "//multitest_transport/plugins:plugin_base",
-        "@tradefed_cluster//tradefed_cluster:datastore_entities_lib",
         "@tradefed_cluster//tradefed_cluster/plugins:base_lib",
         third_party("six"),
     ],
@@ -162,6 +161,7 @@ py_appengine_test(
     ],
     deps = [
         ":test_run_hook_lib",
+        "@tradefed_cluster//tradefed_cluster:command_task_api_lib",
         third_party("absl/testing:absltest"),
         third_party("mock"),
     ],
