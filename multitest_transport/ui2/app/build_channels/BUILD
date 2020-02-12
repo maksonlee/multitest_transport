@@ -1,10 +1,12 @@
-load("//multitest_transport:adapter.bzl", "ng_module", "per_file_sass_binaries", "third_party_js")
+load("//multitest_transport:adapter.bzl", "karma_web_test_suite", "ng_module", "per_file_sass_binaries", "third_party_js", "ts_development_sources")
+
 
 licenses(["notice"])
 
 per_file_sass_binaries(
     name = "styles",
     srcs = glob(["*.scss"]),
+    visibility = ["//multitest_transport"],
     deps = ["//multitest_transport/ui2:constants"],
 )
 
@@ -70,3 +72,4 @@ ng_module(
         "//multitest_transport/ui2/app/testing:test_util",
     ],
 )
+

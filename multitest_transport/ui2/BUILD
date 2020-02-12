@@ -48,6 +48,7 @@ sass_binary(
     src = "styles.scss",
     include_paths = MATERIAL_SASS_INCLUDE_PATHS,
     output_name = "styles.css",
+    visibility = ["//multitest_transport"],
     deps = [
         ":constants",
     ],

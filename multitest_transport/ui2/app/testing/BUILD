@@ -3,8 +3,9 @@ load("//multitest_transport:adapter.bzl", "ng_module", "third_party_js", "ts_lib
 # A package for testing utilities
 licenses(["notice"])
 
-ts_library(
+ng_module(
     name = "test_util",
+    testonly = True,
     srcs = [
         "test_util.ts",
     ],
@@ -35,3 +36,4 @@ ng_module(
         third_party_js("rxjs"),
     ],
 )
+
