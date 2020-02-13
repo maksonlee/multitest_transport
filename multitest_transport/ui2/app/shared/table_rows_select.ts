@@ -1,0 +1,250 @@
+/**
+ * @fileoverview Directives for rows selection on a table.
+ */
+
+/**
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import {SelectionModel} from '@angular/cdk/collections';
+import {AfterContentInit, ContentChildren, Directive, EventEmitter, HostListener, Input, OnInit, Optional, Output, QueryList} from '@angular/core';
+import {assertRequiredInput} from './util';
+
+/**
+ * A directive for user to click on a checkbox to selects/deselects the
+ * selection of the table. The checkbox is usually next to a row. It should work
+ * with tableRowsSelectManager and tableRowSelect directives.
+ */
+@Directive({
+  selector: 'mat-checkbox[tableRowSelectCheckbox]',
+  exportAs: 'tableRowSelectCheckbox',
+})
+export class TableRowSelectCheckbox {
+  @Input() rowIdFieldValue = '';
+  @Input() rowIndex = -1;
+
+  get isSelected() {
+    return this.rowsSelectManager.selection.isSelected(this.rowIdFieldValue);
+  }
+
+  constructor(
+      @Optional() public rowsSelectManager: TableRowsSelectManager,
+  ) {
+    assertRequiredInput(
+        this.rowsSelectManager, 'rowsSelectManager', 'TableRowSelectCheckbox');
+  }
+
+  /** Records if the user selects the row with shift key. */
+  @HostListener('click', ['$event'])
+  recordRowSelectedEvent(event: MouseEvent) {
+    this.rowsSelectManager.recordRowSelectedEvent(event, this.rowIndex);
+  }
+
+  /**
+   * Toggles the selection and emit the selected hosts when the user clicks on
+   * the row.
+   */
+  @HostListener('change')
+  select() {
+    this.rowsSelectManager.select(this.rowIndex);
+  }
+}
+
+/**
+ * A directive for user to click on a checkbox to selects/deselects all the
+ * selection of the table. The checkbox is usually next to headers at the top.
+ * It should work with tableRowsSelectManager directive.
+ */
+@Directive({
+  selector: 'mat-checkbox[tableRowsSelectCheckbox]',
+  exportAs: 'tableRowsSelectCheckbox',
+})
+export class TableRowsSelectCheckbox {
+  get isAllRowsSelected(): boolean {
+    return this.rowsSelectManager.selection.hasValue() &&
+        this.rowsSelectManager.isAllSelected();
+  }
+
+  get isPartialRowsSelected(): boolean {
+    return this.rowsSelectManager.selection.hasValue() &&
+        !this.rowsSelectManager.isAllSelected();
+  }
+
+  constructor(
+      @Optional() public rowsSelectManager: TableRowsSelectManager,
+  ) {
+    assertRequiredInput(
+        this.rowsSelectManager, 'rowsSelectManager', 'TableRowSelectCheckbox');
+  }
+
+  /**
+   * Toggles the selection and emit the selected hosts when the user clicks on
+   * the row.
+   */
+  @HostListener('change')
+  toggleAllSelection() {
+    this.rowsSelectManager.toggleAllSelection();
+  }
+}
+
+/**
+ * A directive for user to click on a row to selects/deselects the selection
+ * of the table. It should work with tableRowsSelectManager directive.
+ */
+@Directive({
+  selector: '[tableRowSelect]',
+  exportAs: 'tableRowSelect',
+  host: {
+    '[class.selected]':
+        'rowsSelectManager.selection.isSelected(rowIdFieldValue)'
+  },
+})
+export class TableRowSelect {
+  @Input() rowIdFieldValue = '';
+  @Input() rowIndex = -1;
+
+  /** True if the user selects the row with shift key. */
+  isSelectedWithShiftKey = false;
+
+  constructor(
+      @Optional() public rowsSelectManager: TableRowsSelectManager,
+  ) {
+    assertRequiredInput(
+        this.rowsSelectManager, 'rowsSelectManager', 'TableRowSelect');
+  }
+
+  /** Records if the user selects the row with shift key. */
+  recordRowSelectedEvent(event: MouseEvent) {
+    this.isSelectedWithShiftKey = !!event.shiftKey;
+    event.stopPropagation();
+  }
+
+  /**
+   * Records if the user selects the row with shift key and toggles the
+   * selection when the user clicks on the row.
+   */
+  @HostListener('click', ['$event'])
+  select(event?: MouseEvent) {
+    if (event) {
+      this.isSelectedWithShiftKey = !!event.shiftKey;
+    }
+    this.toggleSelection();
+
+    this.isSelectedWithShiftKey = false;
+  }
+
+  /**
+   * Toggles the selection by single or range select and emit the selected
+   * rowIdFieldValues.
+   */
+  toggleSelection() {
+    // TODO:Add range select
+    this.rowsSelectManager.singleSelect(this.rowIdFieldValue);
+  }
+}
+
+/**
+ * A directive that manages rows selection, enables single and range select
+ * functionalities. It should work with tableRowSelect directive and can
+ * optionally works with tableRowsSelectCheckbox and tableRowSelectCheckbox
+ * directives.
+ */
+@Directive({
+  selector: '[tableRowsSelectManager]',
+  exportAs: 'tableRowsSelectManager',
+  host: {'class': 'selectable'},
+})
+export class TableRowsSelectManager implements OnInit, AfterContentInit {
+  @Input() initialSelection: string[] = [];
+  @Input() rowIdFieldAllValues: string[] = [];
+
+  @Output() selectionChange = new EventEmitter<string[]>();
+
+  selection = new SelectionModel<string>(true, []);
+
+  @ContentChildren(TableRowSelect) tableRowSelects!: QueryList<TableRowSelect>;
+
+  ngOnInit() {
+    this.selectSelection(this.initialSelection);
+  }
+
+  ngAfterContentInit() {
+    assertRequiredInput(
+        this.tableRowSelects, 'tableRowSelects', 'TableRowsSelectManager');
+  }
+
+  /** Records if the user selects the row with shift key. */
+  recordRowSelectedEvent(event: MouseEvent, rowIndex: number) {
+    this.tableRowSelects.find(
+                            x => x.rowIndex ===
+                                rowIndex)!.recordRowSelectedEvent(event);
+  }
+
+  /**
+   * Toggles the selection and emit the selected rows when the user clicks on
+   * the row.
+   */
+  select(rowIndex: number) {
+    this.tableRowSelects.find(x => x.rowIndex === rowIndex)!.select();
+  }
+
+  /**
+   * Selects all rows if they are not all selected; otherwise clear selection.
+   */
+  toggleAllSelection() {
+    this.isAllSelected() ? this.selection.clear() : this.selectAllSelection();
+    this.selectionChange.emit(this.selection.selected);
+  }
+
+  /**
+   * True if the number of selected elements matches the total number of rows.
+   */
+  isAllSelected(): boolean {
+    const numSelected = this.selection.selected.length;
+    const numRows = this.rowIdFieldAllValues.length;
+    return numSelected === numRows;
+  }
+
+  /** Selects all rows. */
+  selectAllSelection() {
+    this.selection.select(...this.rowIdFieldAllValues);
+    this.selectionChange.emit(this.selection.selected);
+  }
+
+  /** Selects rows. */
+  selectSelection(rowIdFieldValues: string[]) {
+    this.selection.select(...rowIdFieldValues);
+    this.selectionChange.emit(this.selection.selected);
+  }
+
+  /**
+   * Resets selected rows to ensure each selected item can be found in the
+   * dataSource.
+   */
+  resetSelection() {
+    for (const s of this.selection.selected) {
+      if (!this.rowIdFieldAllValues.find(value => value === s)) {
+        this.selection.deselect(s);
+      }
+    }
+    this.selectionChange.emit(this.selection.selected);
+  }
+
+  /** Toggles a single selection row. */
+  singleSelect(rowIdFieldValue: string) {
+    this.selection.toggle(rowIdFieldValue);
+    this.selectionChange.emit(this.selection.selected);
+  }
+}

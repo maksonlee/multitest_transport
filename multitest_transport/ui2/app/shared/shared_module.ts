@@ -60,6 +60,7 @@ import {OverflowList} from './overflow_list';
 import {Paginator} from './paginator';
 import {ScheduleTimeForm} from './schedule_time_form';
 import {StatusButton} from './status_button';
+import {TableRowSelect, TableRowSelectCheckbox, TableRowsSelectCheckbox, TableRowsSelectManager} from './table_rows_select';
 import {TestRunConfigForm} from './test_run_config_form';
 import {TreeTable} from './tree_table';
 import {UtcPipe} from './utc_pipe';
@@ -112,19 +113,31 @@ const COMPONENTS = [
   TreeTable,
 ];
 
-/** Abbreviated title of the project, used for page titles */
+const DIRECTIVES = [
+  InfiniteScroll,
+  TableRowSelect,
+  TableRowSelectCheckbox,
+  TableRowsSelectCheckbox,
+  TableRowsSelectManager,
+];
+
+const PIPES = [
+  FromNowPipe,
+  MapListFieldPipe,
+  UtcPipe,
+];
+
+/** Abbreviated title of the project, used for page titles. */
 export const APPLICATION_NAME = 'Android Test Station';
 
-/** Abbreviated title of the lab sub project, used for page titles */
+/** Abbreviated title of the lab sub project, used for page titles. */
 export const LAB_APPLICATION_NAME = `${APPLICATION_NAME} Lab`;
 
 @NgModule({
   declarations: [
     COMPONENTS,
-    FromNowPipe,
-    InfiniteScroll,
-    MapListFieldPipe,
-    UtcPipe,
+    DIRECTIVES,
+    PIPES,
   ],
   imports: [
     CommonModule,
@@ -133,11 +146,9 @@ export const LAB_APPLICATION_NAME = `${APPLICATION_NAME} Lab`;
   exports: [
     CommonModule,
     COMPONENTS,
-    FromNowPipe,
-    InfiniteScroll,
-    MapListFieldPipe,
+    DIRECTIVES,
     MATERIAL_MODULES,
-    UtcPipe,
+    PIPES,
   ],
 })
 export class SharedModule {
