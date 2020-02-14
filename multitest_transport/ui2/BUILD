@@ -154,44 +154,33 @@ py_appengine_library(
 # Testing                                                                      #
 ################################################################################
 
+TESTS = [
+    "//multitest_transport/ui2/app:tests",
+    "//multitest_transport/ui2/app/build_channels:tests",
+    "//multitest_transport/ui2/app/config_sets:tests",
+    "//multitest_transport/ui2/app/device_actions:tests",
+    "//multitest_transport/ui2/app/devices:tests",
+    "//multitest_transport/ui2/app/services:tests",
+    "//multitest_transport/ui2/app/settings:tests",
+    "//multitest_transport/ui2/app/setup_wizard:tests",
+    "//multitest_transport/ui2/app/shared:tests",
+    "//multitest_transport/ui2/app/test_plans:tests",
+    "//multitest_transport/ui2/app/test_runs:tests",
+    "//multitest_transport/ui2/app/test_run_hooks:tests",
+    "//multitest_transport/ui2/app/tests:tests_",
+]
+
 ts_development_sources(
     name = "dev_sources_for_testing",
     testonly = 1,
     runtime_deps = THIRD_PARTY_JS,
-    deps = [
-        "//multitest_transport/ui2/app:tests",
-        "//multitest_transport/ui2/app/build_channels:tests",
-        "//multitest_transport/ui2/app/config_sets:tests",
-        "//multitest_transport/ui2/app/device_actions:tests",
-        "//multitest_transport/ui2/app/devices:tests",
-        "//multitest_transport/ui2/app/services:tests",
-        "//multitest_transport/ui2/app/settings:tests",
-        "//multitest_transport/ui2/app/setup_wizard:tests",
-        "//multitest_transport/ui2/app/shared:tests",
-        "//multitest_transport/ui2/app/test_plans:tests",
-        "//multitest_transport/ui2/app/test_runs:tests",
-        "//multitest_transport/ui2/app/tests:tests_",
-    ],
+    deps = TESTS,
 )
 
 # TypeScript IDE configuration
 ts_config(
     name = "tsconfig",
-    deps = [
-        ":app_lib",
-        "//multitest_transport/ui2/app:tests",
-        "//multitest_transport/ui2/app/build_channels:tests",
-        "//multitest_transport/ui2/app/config_sets:tests",
-        "//multitest_transport/ui2/app/device_actions:tests",
-        "//multitest_transport/ui2/app/devices:tests",
-        "//multitest_transport/ui2/app/services:tests",
-        "//multitest_transport/ui2/app/settings:tests",
-        "//multitest_transport/ui2/app/setup_wizard:tests",
-        "//multitest_transport/ui2/app/shared:tests",
-        "//multitest_transport/ui2/app/test_plans:tests",
-        "//multitest_transport/ui2/app/test_runs:tests",
-        "//multitest_transport/ui2/app/tests:tests_",
-    ],
+    deps = TESTS + [":app_lib"],
 )
 
 karma_web_test_suite(

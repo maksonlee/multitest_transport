@@ -17,7 +17,7 @@
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {Inject, Injectable} from '@angular/core';
 import {EMPTY, Observable} from 'rxjs';
-import {switchMap} from 'rxjs/operators';
+import {map, switchMap} from 'rxjs/operators';
 
 import {AnalyticsParams} from './analytics_service';
 import {APP_DATA, AppData} from './app_data';
@@ -424,8 +424,9 @@ export class TestRunHookClient {
       private readonly http: HttpClient, private readonly auth: AuthService) {}
 
   /** Lists all test run hook configurations. */
-  list(): Observable<model.TestRunHookConfigList> {
-    return this.http.get<model.TestRunHookConfigList>(TestRunHookClient.PATH);
+  list(): Observable<model.TestRunHookConfig[]> {
+    return this.http.get<model.TestRunHookConfigList>(TestRunHookClient.PATH)
+        .pipe(map(result => result.configs || []));
   }
 
   /** Returns a test run hook configuration using its ID. */

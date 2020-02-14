@@ -635,7 +635,7 @@ describe('TestRunHookClient', () => {
   it('can list hook configurations', () => {
     const configList = {configs: [hookConfig]};
     http.get.and.returnValue(observableOf(configList));
-    client.list().subscribe(expectResponse(configList));
+    client.list().subscribe(expectResponse([hookConfig]));
     expect(http.get).toHaveBeenCalledWith(TestRunHookClient.PATH);
     expect(http.get).toHaveBeenCalledTimes(1);
   });

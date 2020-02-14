@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Google LLC
+ * Copyright 2020 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,34 +14,23 @@
  * limitations under the License.
  */
 
-/**
- * A module for build channels page
- */
 import {NgModule} from '@angular/core';
-import {RouterModule} from '@angular/router';
 
-import {BuildChannelsModule} from '../build_channels/build_channels_module';
-import {ConfigSetsModule} from '../config_sets/config_sets_module';
-import {DeviceActionsModule} from '../device_actions/device_actions_module';
 import {SharedModule} from '../shared/shared_module';
-import {TestRunHooksModule} from '../test_run_hooks/test_run_hooks_module';
 
-import {SettingForm} from './setting_form';
-import {SettingPage} from './setting_page';
+import {TestRunHookList} from './test_run_hook_list';
 
-const COMPONENTS = [SettingPage, SettingForm];
+const COMPONENTS = [
+  TestRunHookList,
+];
 
+/** Module for test run hook components. */
 @NgModule({
   declarations: COMPONENTS,
   imports: [
     SharedModule,
-    RouterModule,
-    BuildChannelsModule,
-    ConfigSetsModule,
-    DeviceActionsModule,
-    TestRunHooksModule,
   ],
   exports: COMPONENTS,
 })
-export class SettingsModule {
+export class TestRunHooksModule {
 }

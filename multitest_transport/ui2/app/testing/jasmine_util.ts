@@ -18,28 +18,33 @@ import {DebugElement} from '@angular/core';
 import {By} from '@angular/platform-browser';
 
 /**
- * Get an HTMLElement
+ * Find a child HTML element that matches a CSS selector or throw an exception.
  *
- * el: DebugElement which we can query from
- * attribute: an attribute string
- *
- * Sample usage: getEl(el, "#deleteButton")
+ * el: element to query from
+ * selector: CSS selector
  */
-export function getEl(el: DebugElement, attribute: string): HTMLElement {
-  return el.query(By.css(attribute)).nativeElement as HTMLElement;
+export function getEl(el: DebugElement, selector: string): HTMLElement {
+  return el.query(By.css(selector)).nativeElement as HTMLElement;
 }
 
 /**
- * Get a list of HTMLElement
+ * Find all child HTML elements that match a CSS selector.
  *
- * el: DebugElement which we can query from
- * attribute: an attribute string
- *
- * Sample usage: getEls(el, "mat-row")
+ * el: element to query from
+ * selector: CSS selector
  */
-export function getEls(el: DebugElement, attribute: string): HTMLElement[] {
-  return el.queryAll(By.css(attribute))
-      .map(e => e.nativeElement as HTMLElement);
+export function getEls(el: DebugElement, selector: string): HTMLElement[] {
+  return el.queryAll(By.css(selector)).map(e => e.nativeElement as HTMLElement);
+}
+
+/**
+ * Check whether any child HTML element matches a CSS selector.
+ *
+ * el: element to query from
+ * selector: CSS selector
+ */
+export function hasEl(el: DebugElement, selector: string): boolean {
+  return getEls(el, selector).length > 0;
 }
 
 /**
