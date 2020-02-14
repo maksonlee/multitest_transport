@@ -199,6 +199,21 @@ class TestRunHookApiTest(api_test_util.TestCase):
         % ('unknown', 'redirect_uri', 'code'), expect_errors=True)
     self.assertEqual('404 Not Found', response.status)
 
+  def testUnauthorizeConfig(self):
+    """Tests that a hook configuration can be unauthorized."""
+    hook_config_id = str(self.hook_configs[2].key.id())  # authorized
+    # Verify that credentials were removed
+    self.app.delete(
+        '/_ah/api/mtt/v1/test_run_hooks/configs/%s/auth' % hook_config_id)
+    self.assertIsNone(self.hook_configs[2].credentials)
+
+  def testUnauthorizeConfig_notFound(self):
+    """Tests that an error occurs when a hook config is not found."""
+    response = self.app.delete(
+        '/_ah/api/mtt/v1/test_run_hooks/configs/%s/auth' % 'unknown',
+        expect_errors=True)
+    self.assertEqual('404 Not Found', response.status)
+
 
 if __name__ == '__main__':
   absltest.main()

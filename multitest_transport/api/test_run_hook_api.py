@@ -123,7 +123,7 @@ class TestRunHookApi(remote.Service):
           hook_id=messages.StringField(1, required=True),
           redirect_uri=messages.StringField(2, required=True)),
       mtt_messages.AuthorizationInfo,
-      path='configs/{hook_id}/auth', http_method='GET', name='auth')
+      path='configs/{hook_id}/auth', http_method='GET', name='get_auth_info')
   def GetAuthorizationInfo(self, request):
     """Determine a hook configuration's authorization information."""
     hook_config = self._GetHookConfig(request.hook_id)
@@ -143,7 +143,7 @@ class TestRunHookApi(remote.Service):
       message_types.VoidMessage,
       path='configs/{hook_id}/auth_return',
       http_method='POST',
-      name='auth_return')
+      name='authorize')
   def AuthorizeConfig(self, request):
     """Authorize a test run hook configuration with an authorization code."""
     hook_config = self._GetHookConfig(request.hook_id)
@@ -151,5 +151,21 @@ class TestRunHookApi(remote.Service):
     oauth2_config = test_run_hook.GetOAuth2Config(hook_config)
     hook_config.credentials = oauth2_util.GetOAuth2Flow(
         oauth2_config, redirect_uri).step2_exchange(request.code)
+    hook_config.put()
+    return message_types.VoidMessage()
+
+  @base.convert_exception
+  @endpoints.method(
+      endpoints.ResourceContainer(
+          message_types.VoidMessage,
+          hook_id=messages.StringField(1, required=True)),
+      message_types.VoidMessage,
+      path='configs/{hook_id}/auth',
+      http_method='DELETE',
+      name='unauthorize')
+  def UnauthorizeConfig(self, request):
+    """Revokes a test run hook configuration's authorization."""
+    hook_config = self._GetHookConfig(request.hook_id)
+    hook_config.credentials = None
     hook_config.put()
     return message_types.VoidMessage()
