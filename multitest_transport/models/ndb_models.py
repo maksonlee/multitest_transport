@@ -441,6 +441,7 @@ class TestRun(ndb.Model):
     update_time: time a test run is last updated.
     before_device_actions: device actions used during the run.
     hook_configs: test run hooks executed during the run.
+    hook_data: additional data used by hooks
     cancel_reason: cancellation reason
     error_reason: error reason
   """
@@ -474,6 +475,7 @@ class TestRun(ndb.Model):
   before_device_actions = ndb.LocalStructuredProperty(
       DeviceAction, repeated=True)
   hook_configs = ndb.LocalStructuredProperty(TestRunHookConfig, repeated=True)
+  hook_data = ndb.JsonProperty(default={})
 
   cancel_reason = msgprop.EnumProperty(common.CancelReason)
   error_reason = ndb.StringProperty()
