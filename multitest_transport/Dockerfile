@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -y \
         git \
         iputils-ping \
         libc++-dev \
+        python-pip \
         python3-pip \
         usbutils \
         unzip \
@@ -47,19 +48,20 @@ RUN pip3 install browsepy
 
 # Installing dependencies for VTS
 # Reference: https://cs.android.com/android/platform/superproject/+/master:test/vts/script/setup.sh
-RUN pip install virtualenv==16.7.9
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y \
         python-dev \
         python-protobuf \
         protobuf-compiler \
         python-setuptools \
-        python-pip \
+        # python-pip \
         # python3-pip \
-        python-virtualenv \
+        # python-virtualenv \
         build-essential \
         python-tk \
         libjpeg-dev \
         libtiff-dev
+# Pin the virtualenv version to use a one with a proven compatibility with VTS.
+RUN pip install virtualenv==16.7.9
 
 # Install JDK9 from AOSP (https://android.googlesource.com/platform/prebuilts/jdk/jdk9.git/+/375786699dcb340ab2d08de7f5d13dba6637f221)
 RUN mkdir -p /jdk/jdk9 && \
