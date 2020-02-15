@@ -18,13 +18,45 @@ import {QueryList} from '@angular/core';
 import {TableRowSelect, TableRowSelectCheckbox, TableRowsSelectCheckbox, TableRowsSelectManager} from './table_rows_select';
 
 describe('TableRowsSelect', () => {
+  let tableRowsSelectManager: TableRowsSelectManager;
+
+  beforeEach(() => {
+    tableRowsSelectManager = new TableRowsSelectManager();
+    spyOn(tableRowsSelectManager.selectionChange, 'emit');
+  });
+
+  it('selects correctly when calls selectSelection', () => {
+    const expectedSelection = ['host2', 'host3', 'host4', 'host7'];
+
+    tableRowsSelectManager.selectSelection(expectedSelection);
+
+    expect(tableRowsSelectManager.selection.selected)
+        .toEqual(expectedSelection);
+    expect(tableRowsSelectManager.selectionChange.emit)
+        .toHaveBeenCalledWith(expectedSelection);
+  });
+
+  it(`deselects items which don't exist in rowIdFieldAllValues correctly when 
+     calls resetSelection`,
+     () => {
+       const expectedSelection = ['host7'];
+       tableRowsSelectManager.selection.select(
+           'host2', 'host3', 'host4', 'host7');
+       tableRowsSelectManager.rowIdFieldAllValues = ['host5', 'host6', 'host7'];
+
+       tableRowsSelectManager.resetSelection();
+
+       expect(tableRowsSelectManager.selection.selected)
+           .toEqual(expectedSelection);
+       expect(tableRowsSelectManager.selectionChange.emit)
+           .toHaveBeenCalledWith(expectedSelection);
+     });
+
   describe('TableRowSelect directive', () => {
     let tableRowSelect: TableRowSelect;
-    let tableRowsSelectManager: TableRowsSelectManager;
     let evt: MouseEvent;
 
     beforeEach(() => {
-      tableRowsSelectManager = new TableRowsSelectManager();
       tableRowSelect = new TableRowSelect(tableRowsSelectManager);
       evt = document.createEvent('MouseEvents');
     });
@@ -35,7 +67,6 @@ describe('TableRowsSelect', () => {
           ['host1', 'host2', 'host3', 'host4', 'host5', 'host6', 'host7'];
       tableRowSelect.rowIndex = 0;
       tableRowSelect.rowIdFieldValue = 'host1';
-      spyOn(tableRowsSelectManager.selectionChange, 'emit');
       evt.initMouseEvent(
           'click', true, true, window, 0, 0, 0, 0, 0, false, false, false,
           false, 0, null);
@@ -55,14 +86,57 @@ describe('TableRowsSelect', () => {
       expect(tableRowsSelectManager.selectionChange.emit)
           .toHaveBeenCalledTimes(2);
     });
+
+    it('adds items by range in selection correctly', () => {
+      const expectedSelection = ['host2', 'host3', 'host4', 'host5', 'host6'];
+      tableRowsSelectManager.rowIdFieldAllValues =
+          ['host1', 'host2', 'host3', 'host4', 'host5', 'host6', 'host7'];
+      tableRowsSelectManager.prevClickedRowIndex = 1;
+      tableRowsSelectManager.selection.select('host2');
+
+      tableRowSelect.rowIndex = 5;
+      tableRowSelect.rowIdFieldValue =
+          tableRowsSelectManager.rowIdFieldAllValues[tableRowSelect.rowIndex];
+      evt.initMouseEvent(
+          'click', true, true, window, 0, 0, 0, 0, 0, false, false, true, false,
+          0, null);
+
+      tableRowSelect.select(evt);
+
+      expect(tableRowsSelectManager.selection.selected)
+          .toEqual(expectedSelection);
+      expect(tableRowsSelectManager.selectionChange.emit)
+          .toHaveBeenCalledTimes(1);
+    });
+
+    it('removes items by range in selection correctly', () => {
+      const expectedSelection = ['host2', 'host3'];
+      tableRowsSelectManager.rowIdFieldAllValues =
+          ['host1', 'host2', 'host3', 'host4', 'host5', 'host6', 'host7'];
+      tableRowsSelectManager.prevClickedRowIndex = 5;
+      tableRowsSelectManager.selection.select(
+          'host2', 'host3', 'host4', 'host5', 'host6');
+
+      tableRowSelect.rowIndex = 3;
+      tableRowSelect.rowIdFieldValue =
+          tableRowsSelectManager.rowIdFieldAllValues[tableRowSelect.rowIndex];
+      evt.initMouseEvent(
+          'click', true, true, window, 0, 0, 0, 0, 0, false, false, true, false,
+          0, null);
+
+      tableRowSelect.select(evt);
+
+      expect(tableRowsSelectManager.selection.selected)
+          .toEqual(expectedSelection);
+      expect(tableRowsSelectManager.selectionChange.emit)
+          .toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('TableRowsSelectCheckbox directive', () => {
     let tableRowsSelectCheckbox: TableRowsSelectCheckbox;
-    let tableRowsSelectManager: TableRowsSelectManager;
 
     beforeEach(() => {
-      tableRowsSelectManager = new TableRowsSelectManager();
       tableRowsSelectCheckbox =
           new TableRowsSelectCheckbox(tableRowsSelectManager);
     });
@@ -72,7 +146,6 @@ describe('TableRowsSelect', () => {
           ['host1', 'host2', 'host3', 'host4', 'host5', 'host6', 'host7'];
       tableRowsSelectManager.rowIdFieldAllValues =
           ['host1', 'host2', 'host3', 'host4', 'host5', 'host6', 'host7'];
-      spyOn(tableRowsSelectManager.selectionChange, 'emit');
 
       tableRowsSelectCheckbox.toggleAllSelection();
 
@@ -88,7 +161,6 @@ describe('TableRowsSelect', () => {
           ['host1', 'host2', 'host3', 'host4', 'host5', 'host6', 'host7'];
       tableRowsSelectManager.selection.select(
           'host1', 'host2', 'host3', 'host4', 'host5', 'host6', 'host7');
-      spyOn(tableRowsSelectManager.selectionChange, 'emit');
 
       tableRowsSelectCheckbox.toggleAllSelection();
 
@@ -101,12 +173,10 @@ describe('TableRowsSelect', () => {
 
   describe('TableRowSelectCheckbox directive', () => {
     let tableRowSelectCheckbox: TableRowSelectCheckbox;
-    let tableRowsSelectManager: TableRowsSelectManager;
 
     let evt: MouseEvent;
 
     beforeEach(() => {
-      tableRowsSelectManager = new TableRowsSelectManager();
       const tableRowSelects: TableRowSelect[] = [];
       for (let i = 0; i < 7; i++) {
         tableRowSelects.push(new TableRowSelect(tableRowsSelectManager));
@@ -127,7 +197,6 @@ describe('TableRowsSelect', () => {
           ['host1', 'host2', 'host3', 'host4', 'host5', 'host6', 'host7'];
       tableRowSelectCheckbox.rowIndex = 0;
       tableRowSelectCheckbox.rowIdFieldValue = 'host1';
-      spyOn(tableRowsSelectManager.selectionChange, 'emit');
       evt.initMouseEvent(
           'click', true, true, window, 0, 0, 0, 0, 0, false, false, false,
           false, 0, null);

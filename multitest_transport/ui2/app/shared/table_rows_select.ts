@@ -142,6 +142,7 @@ export class TableRowSelect {
     }
     this.toggleSelection();
 
+    this.rowsSelectManager.prevClickedRowIndex = this.rowIndex;
     this.isSelectedWithShiftKey = false;
   }
 
@@ -150,8 +151,12 @@ export class TableRowSelect {
    * rowIdFieldValues.
    */
   toggleSelection() {
-    // TODO:Add range select
-    this.rowsSelectManager.singleSelect(this.rowIdFieldValue);
+    if (this.isSelectedWithShiftKey &&
+        this.rowsSelectManager.prevClickedRowIndex >= 0) {
+      this.rowsSelectManager.rangeSelect(this.rowIdFieldValue, this.rowIndex);
+    } else {
+      this.rowsSelectManager.singleSelect(this.rowIdFieldValue);
+    }
   }
 }
 
@@ -171,6 +176,9 @@ export class TableRowsSelectManager implements OnInit, AfterContentInit {
   @Input() rowIdFieldAllValues: string[] = [];
 
   @Output() selectionChange = new EventEmitter<string[]>();
+
+  /** The index of a row that was clicked last time. */
+  prevClickedRowIndex = -1;
 
   selection = new SelectionModel<string>(true, []);
 
@@ -246,5 +254,36 @@ export class TableRowsSelectManager implements OnInit, AfterContentInit {
   singleSelect(rowIdFieldValue: string) {
     this.selection.toggle(rowIdFieldValue);
     this.selectionChange.emit(this.selection.selected);
+  }
+
+  /**
+   * Toggles the selection values by range. It's used when the user click the
+   * row or checkbox with shift key to do range select.
+   */
+  rangeSelect(rowIdFieldValue: string, rowIndex: number) {
+    const {rangeRowStart, rangeRowEnd} = this.getRowRangeIndex(rowIndex);
+
+    // Decides to select or unselect the hosts by range. If the target row is
+    // checked already,then the target action will be unselect, and vice versa.
+    const isAddSelection = !this.selection.isSelected(rowIdFieldValue);
+    const targetRowKeys =
+        this.rowIdFieldAllValues.slice(rangeRowStart, rangeRowEnd + 1);
+
+    if (isAddSelection) {
+      this.selection.select(...targetRowKeys);
+    } else {
+      this.selection.deselect(...targetRowKeys);
+    }
+
+    this.selectionChange.emit(this.selection.selected);
+  }
+
+  /** Calculates and gets the indexes of range. */
+  getRowRangeIndex(rowIndex: number):
+      {rangeRowStart: number, rangeRowEnd: number} {
+    return {
+      rangeRowStart: Math.min(rowIndex, this.prevClickedRowIndex),
+      rangeRowEnd: Math.max(rowIndex, this.prevClickedRowIndex)
+    };
   }
 }
