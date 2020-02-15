@@ -200,6 +200,10 @@ export class TableRowsSelectManager implements OnInit, AfterContentInit {
                                 rowIndex)!.recordRowSelectedEvent(event);
   }
 
+  resetPrevClickedRowIndex() {
+    this.prevClickedRowIndex = -1;
+  }
+
   /**
    * Toggles the selection and emit the selected rows when the user clicks on
    * the row.
@@ -247,6 +251,8 @@ export class TableRowsSelectManager implements OnInit, AfterContentInit {
         this.selection.deselect(s);
       }
     }
+
+    this.resetPrevClickedRowIndex();
     this.selectionChange.emit(this.selection.selected);
   }
 
