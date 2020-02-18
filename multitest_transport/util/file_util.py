@@ -18,7 +18,6 @@ import cStringIO
 import datetime
 import logging
 import os
-import tarfile
 import urllib2
 import xml.etree.cElementTree as ElementTree
 import zipfile
@@ -31,8 +30,6 @@ from multitest_transport.util import env
 
 DOWNLOAD_BUFFER_SIZE = 16 * 1024 * 1024
 UPLOAD_BUFFER_SIZE = 512 * 1024
-
-_DIRECTORY_DOWNLOAD_FORMAT = 'download/directory/%s.tgz'
 
 FileInfo = collections.namedtuple('FileInfo',
                                   ['total_size', 'content_type', 'timestamp'])
@@ -332,25 +329,6 @@ def GetOutputFilenames(test_run, attempt):
   """
   summary_url = GetOutputFileUrl(test_run, attempt, 'FILES')
   return [line.strip() for line in FileHandle.Get(summary_url).readlines()]
-
-
-def DownloadDirectory(base_url, dir_path):
-  """Download a directory as a tarball using browsepy.
-
-  Args:
-    base_url: browsepy file server URL
-    dir_path: directory path relative to the browsepy storage root
-  Returns:
-    tarball containing directory contents or None if directory not found
-  """
-  url = base_url + _DIRECTORY_DOWNLOAD_FORMAT % dir_path
-  try:
-    content = urllib2.urlopen(url).read()
-  except urllib2.HTTPError as e:
-    if e.code == 404:
-      return None
-    raise e
-  return tarfile.open(mode='r:gz', fileobj=cStringIO.StringIO(content))
 
 
 def ReadFile(file_url, offset=0, length=None, split_lines=True):

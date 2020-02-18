@@ -16,7 +16,6 @@
 import datetime
 import io
 import os
-import tarfile
 import urllib2
 
 from absl.testing import absltest
@@ -231,23 +230,6 @@ class FileUtilTest(absltest.TestCase):
     filenames = file_util.GetOutputFilenames(test_run, attempt)
     self.assertEqual(['test_result.xml', 'tool-logs/stdout.txt'], filenames)
     mock_get_output_url.assert_called_once_with(test_run, attempt, 'FILES')
-
-  @mock.patch.object(urllib2, 'urlopen')
-  @mock.patch.object(tarfile, 'open')
-  def testDownloadDirectory(self, mock_open, mock_urlopen):
-    fake_dir = mock.MagicMock()
-    fake_dir.read.return_value = 'content'
-    mock_urlopen.return_value = fake_dir
-
-    fake_tar = mock.MagicMock()
-    mock_open.return_value = fake_tar
-
-    self.assertEqual(fake_tar, file_util.DownloadDirectory('url', 'path'))
-
-  @mock.patch.object(urllib2, 'urlopen')
-  def testDownloadDirectory_notFound(self, mock_urlopen):
-    mock_urlopen.side_effect = urllib2.HTTPError(None, 404, None, None, None)
-    self.assertIsNone(file_util.DownloadDirectory('url', 'path'))
 
   @mock.patch.object(file_util.FileHandle, 'Get')
   def testTailFile(self, mock_handler_factory):
