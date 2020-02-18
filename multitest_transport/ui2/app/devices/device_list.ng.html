@@ -74,7 +74,7 @@
     <ng-container matColumnDef="state">
       <mat-header-cell *matHeaderCellDef> State </mat-header-cell>
       <mat-cell *matCellDef="let element">
-        <status-button [state]="element.state"></status-button>
+        <status-button [state]="element.state || 'unknown'"></status-button>
       </mat-cell>
     </ng-container>
 
