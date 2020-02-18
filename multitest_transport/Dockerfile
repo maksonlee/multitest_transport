@@ -44,7 +44,11 @@ RUN apt-get update && apt-get install -y \
         unzip \
         wget \
         zip
-RUN pip3 install browsepy
+RUN pip3 install browsepy \
+        absl-py \
+        attrs \
+        cachetools \
+        flask
 
 # Installing dependencies for VTS
 # Reference: https://cs.android.com/android/platform/superproject/+/master:test/vts/script/setup.sh

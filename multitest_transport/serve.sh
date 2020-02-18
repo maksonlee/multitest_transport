@@ -58,6 +58,7 @@ done
 # Set dependent variables
 BLOBSTORE_PATH="$STORAGE_PATH/$BLOBSTORE_ROOT"
 FILE_SERVER_PORT="$((${MTT_MASTER_PORT}+5))"
+FILE_SERVER_PORT2="$((${MTT_MASTER_PORT}+6))"
 
 # Create storage and blobstore folders if they don't exist
 if [[ ! -d "$STORAGE_PATH" ]]; then
@@ -74,6 +75,12 @@ exec browsepy \
     --directory="$STORAGE_PATH" \
     "$MTT_HOST" \
     "$FILE_SERVER_PORT" \
+    &
+
+# Start local file server
+exec python3 "$SCRIPT_DIR/file_server/file_server.py" \
+    --root_path="$STORAGE_PATH" \
+    --port="$FILE_SERVER_PORT2" \
     &
 
 # Start appengine server
@@ -101,6 +108,7 @@ exec dev_appserver.py \
     --env_var MTT_FILE_SERVER_URL="http://$MTT_HOSTNAME:$FILE_SERVER_PORT/" \
     --env_var "MTT_FILE_BROWSE_URL_FORMAT=http://{hostname}:$FILE_SERVER_PORT/browse/" \
     --env_var "MTT_FILE_OPEN_URL_FORMAT=http://{hostname}:$FILE_SERVER_PORT/open/" \
+    --env_var MTT_FILE_SERVER_URL2="http://$MTT_HOSTNAME:$FILE_SERVER_PORT2/" \
     --env_var MTT_GOOGLE_API_KEY="$GOOGLE_API_KEY" \
     --env_var MTT_GOOGLE_OAUTH2_CLIENT_ID="$GOOGLE_OAUTH2_CLIENT_ID" \
     --env_var MTT_GOOGLE_OAUTH2_CLIENT_SECRET="$GOOGLE_OAUTH2_CLIENT_SECRET" \

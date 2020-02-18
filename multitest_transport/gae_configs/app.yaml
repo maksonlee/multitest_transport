@@ -58,6 +58,9 @@ handlers:
 - url: /gcs_proxy/.*
   script: multitest_transport.gcs_proxy.APP
 
+- url: /fs_proxy/.*
+  script: multitest_transport.file_server.proxy.APP
+
 - url: /static/(.*)
   static_files: google3/third_party/py/multitest_transport/ui2/static/\1
   upload: google3/third_party/py/multitest_transport/ui2/static/.*

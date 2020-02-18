@@ -82,11 +82,13 @@ py_appengine_binary(
         ":scripts",
         "//multitest_transport:serve.sh",
         "//multitest_transport/ui2:static_files",
+        "//multitest_transport/file_server:file_server_lib",
     ],
     deps = [
         ":gcs_proxy_lib",
         "//multitest_transport/api",
         "//multitest_transport/core",
+        "//multitest_transport/file_server:proxy_lib",
         "//multitest_transport/plugins",
         "//multitest_transport/sidekicks",
         "//multitest_transport/test_scheduler",
