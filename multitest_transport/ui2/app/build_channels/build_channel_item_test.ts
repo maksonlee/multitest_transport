@@ -92,7 +92,7 @@ describe('BuildChannelItem', () => {
     it('should display correct aria-label', () => {
       const authButton = getEl(el, '.auth-button');
       expect(authButton).toBeTruthy();
-      expect(authButton.getAttribute('aria-label')).toBe('Authenticate');
+      expect(authButton.getAttribute('aria-label')).toBe('Authorize');
     });
   });
 });

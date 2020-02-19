@@ -21,7 +21,7 @@
   </h3>
 
   <div>
-    <status-button
+    <status-button [style.visibility]="buildChannel.need_auth ? 'visible' : 'hidden'"
         [state]='isBuildChannelAvailable(buildChannel) ? "Authorized" : "Unauthorized"'>
     </status-button>
 
@@ -29,11 +29,10 @@
       <!-- TODO: Add logout option -->
       <button mat-button color='accent' *ngIf="!isBuildChannelAvailable(buildChannel)"
             (click)="authorize.emit(buildChannel.id)"
-            aria-label="Authenticate"
+            aria-label="Authorize"
             class="auth-button">
-        Authenticate
+        Authorize
       </button>
-
       <button *ngIf="edit"
         class="edit-button"
         aria-label="Edit"
@@ -42,7 +41,6 @@
         [routerLink]="['/build_channels', buildChannel.id]">
           <mat-icon>edit</mat-icon>
       </button>
-
       <button *ngIf="!isDefault"
         class="delete-button"
         aria-label="Delete"
