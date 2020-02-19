@@ -141,7 +141,7 @@ class TestRunHookApi(remote.Service):
           redirect_uri=messages.StringField(2, required=True),
           code=messages.StringField(3, required=True)),
       message_types.VoidMessage,
-      path='configs/{hook_id}/auth_return',
+      path='configs/{hook_id}/auth',
       http_method='POST',
       name='authorize')
   def AuthorizeConfig(self, request):
@@ -164,7 +164,7 @@ class TestRunHookApi(remote.Service):
       http_method='DELETE',
       name='unauthorize')
   def UnauthorizeConfig(self, request):
-    """Revokes a test run hook configuration's authorization."""
+    """Revoke a test run hook configuration's authorization."""
     hook_config = self._GetHookConfig(request.hook_id)
     hook_config.credentials = None
     hook_config.put()

@@ -465,6 +465,13 @@ export class TestRunHookClient {
             code => code ? this.sendAuthorizationCode(id, code) : EMPTY));
   }
 
+  /** Revokes a test run hook configuration's authorization. */
+  unauthorize(id: string): Observable<void> {
+    const params = new AnalyticsParams('test_run_hooks', 'unauthorize');
+    return this.http.delete<void>(
+        `${TestRunHookClient.PATH}/${encodeURIComponent(id)}/auth`, {params});
+  }
+
   // Fetches authorization information to start authorization flow.
   private getAuthorizationInfo(id: string):
       Observable<model.AuthorizationInfo> {
@@ -477,7 +484,7 @@ export class TestRunHookClient {
   private sendAuthorizationCode(id: string, code: string): Observable<void> {
     const params = new AnalyticsParams('test_run_hooks', 'authorize');
     return this.http.post<void>(
-        `${TestRunHookClient.PATH}/${encodeURIComponent(id)}/auth_return`,
+        `${TestRunHookClient.PATH}/${encodeURIComponent(id)}/auth`,
         {'redirect_uri': REDIRECT_URI, 'code': code}, {params});
   }
 }

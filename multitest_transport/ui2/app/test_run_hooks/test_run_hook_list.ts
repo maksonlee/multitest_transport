@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
-import {finalize, takeUntil} from 'rxjs/operators';
+import {delay, finalize, takeUntil} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
 import {TestRunHookConfig} from '../services/mtt_models';
@@ -75,6 +75,7 @@ export class TestRunHookList implements OnInit, OnDestroy {
   /** Authorize a test run hook configuration and reload. */
   authorize(hookConfig: TestRunHookConfig) {
     this.mtt.testRunHooks.authorize(hookConfig.id)
+        .pipe(delay(500))  // Delay for data to be persisted
         .subscribe(
             () => {
               this.load();
@@ -82,6 +83,21 @@ export class TestRunHookList implements OnInit, OnDestroy {
             error => {
               this.notifier.showError(
                   'Failed to authorize test run hook.',
+                  buildApiErrorMessage(error));
+            });
+  }
+
+  /** Revoke a test run hook's authorization and reload. */
+  revokeAuthorization(hookConfig: TestRunHookConfig) {
+    this.mtt.testRunHooks.unauthorize(hookConfig.id)
+        .pipe(delay(500))  // Delay for data to be persisted
+        .subscribe(
+            () => {
+              this.load();
+            },
+            error => {
+              this.notifier.showError(
+                  'Failed to revoke test run hook authorization.',
                   buildApiErrorMessage(error));
             });
   }

@@ -42,10 +42,11 @@ describe('TestRunHookList', () => {
     liveAnnouncer =
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
     notifier = jasmine.createSpyObj('notifier', ['confirm', 'showError']);
-    hookClient =
-        jasmine.createSpyObj('hookClient', ['list', 'authorize', 'delete']);
+    hookClient = jasmine.createSpyObj(
+        'hookClient', ['list', 'authorize', 'unauthorize', 'delete']);
     hookClient.list.and.returnValue(observableOf([]));
     hookClient.authorize.and.returnValue(observableOf(null));
+    hookClient.unauthorize.and.returnValue(observableOf(null));
     hookClient.delete.and.returnValue(observableOf(null));
 
     TestBed.configureTestingModule({
@@ -108,6 +109,7 @@ describe('TestRunHookList', () => {
     const statusButton = getEl(element, 'mat-card status-button');
     expect(statusButton.textContent).toContain('Authorized');
     expect(hasEl(element, 'mat-card #auth-button')).toBeFalsy();
+    expect(hasEl(element, 'mat-card #revoke-button')).toBeTruthy();
   });
 
   it('can display an unauthorized hook config', () => {
@@ -115,12 +117,14 @@ describe('TestRunHookList', () => {
     const statusButton = getEl(element, 'mat-card status-button');
     expect(statusButton.textContent).toContain('Unauthorized');
     expect(hasEl(element, 'mat-card #auth-button')).toBeTruthy();
+    expect(hasEl(element, 'mat-card #revoke-button')).toBeFalsy();
   });
 
   it('can display a hook config without authorization', () => {
     reload([{authorization_state: AuthorizationState.NOT_APPLICABLE}]);
     expect(hasEl(element, 'mat-card status-button')).toBeFalsy();
     expect(hasEl(element, 'mat-card #auth-button')).toBeFalsy();
+    expect(hasEl(element, 'mat-card #revoke-button')).toBeFalsy();
   });
 
   it('can authorize a hook config', () => {
@@ -138,6 +142,22 @@ describe('TestRunHookList', () => {
       {id: 'hook_id', authorization_state: AuthorizationState.UNAUTHORIZED}
     ]);
     getEl(element, 'mat-card #auth-button').click();
+    expect(notifier.showError).toHaveBeenCalled();
+  });
+
+  it('can revoke a hook config authorization', () => {
+    reload(
+        [{id: 'hook_id', authorization_state: AuthorizationState.AUTHORIZED}]);
+    getEl(element, 'mat-card #revoke-button').click();
+    expect(hookClient.unauthorize).toHaveBeenCalledWith('hook_id');
+    expect(notifier.showError).not.toHaveBeenCalled();
+  });
+
+  it('can handle errors when revoking a hook config authorization', () => {
+    hookClient.unauthorize.and.returnValue(throwError('unauthorize failed'));
+    reload(
+        [{id: 'hook_id', authorization_state: AuthorizationState.AUTHORIZED}]);
+    getEl(element, 'mat-card #revoke-button').click();
     expect(notifier.showError).toHaveBeenCalled();
   });
 

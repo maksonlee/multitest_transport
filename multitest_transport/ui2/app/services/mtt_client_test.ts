@@ -689,9 +689,18 @@ describe('TestRunHookClient', () => {
     expect(auth.getAuthorizationCode).toHaveBeenCalledTimes(1);
     // Sends authorization code
     expect(http.post).toHaveBeenCalledWith(
-        TestRunHookClient.PATH + '/id/auth_return',
+        TestRunHookClient.PATH + '/id/auth',
         {'redirect_uri': REDIRECT_URI, 'code': 'code'}, jasmine.any(Object));
     expect(http.post).toHaveBeenCalledTimes(1);
+  });
+
+  it('can revoke hook configuration authorization', () => {
+    http.delete.and.returnValue(observableOf());
+    client.unauthorize('id').subscribe();
+    expect(http.delete)
+        .toHaveBeenCalledWith(
+            TestRunHookClient.PATH + '/id/auth', jasmine.any(Object));
+    expect(http.delete).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -26,12 +26,20 @@
             [state]='hookConfig.authorization_state'></status-button>
       </span>
       <button id="auth-button"
-          mat-button
+          mat-stroked-button
           aria-label="Authorize"
           color='accent'
           *ngIf="hookConfig.authorization_state == 'UNAUTHORIZED'"
           (click)="authorize(hookConfig)">
         Authorize
+      </button>
+      <button id="revoke-button"
+          mat-stroked-button
+          aria-label="Revoke Authorization"
+          color='accent'
+          *ngIf="hookConfig.authorization_state == 'AUTHORIZED'"
+          (click)="revokeAuthorization(hookConfig)">
+        Revoke Authorization
       </button>
       <button id="edit-button"
           mat-icon-button

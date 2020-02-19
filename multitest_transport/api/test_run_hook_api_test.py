@@ -187,7 +187,7 @@ class TestRunHookApiTest(api_test_util.TestCase):
     mock_get_flow.return_value = oauth2_flow
     # Verify that credentials were obtained and stored
     self.app.post(
-        '/_ah/api/mtt/v1/test_run_hooks/configs/%s/auth_return?redirect_uri=%s&code=%s'
+        '/_ah/api/mtt/v1/test_run_hooks/configs/%s/auth?redirect_uri=%s&code=%s'
         % (hook_config_id, 'redirect_uri', 'code'))
     oauth2_flow.step2_exchange.assert_called_once_with('code')
     self.assertIsNotNone(self.hook_configs[1].credentials)
@@ -195,7 +195,7 @@ class TestRunHookApiTest(api_test_util.TestCase):
   def testAuthorizeConfig_notFound(self):
     """Tests that an error occurs when a hook config is not found."""
     response = self.app.post(
-        '/_ah/api/mtt/v1/test_run_hooks/configs/%s/auth_return?redirect_uri=%s&code=%s'
+        '/_ah/api/mtt/v1/test_run_hooks/configs/%s/auth?redirect_uri=%s&code=%s'
         % ('unknown', 'redirect_uri', 'code'), expect_errors=True)
     self.assertEqual('404 Not Found', response.status)
 
