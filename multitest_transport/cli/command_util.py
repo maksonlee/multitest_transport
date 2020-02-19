@@ -221,7 +221,8 @@ class CommandContext(object):
       self.wrapped_context = fabric.Connection(
           host=self._host, **regular_connect_kwargs)
       self.wrapped_context.open()
-      if not self.remote_sudo_wrapped_context and self._sudo_password:
+      if (not self.remote_sudo_wrapped_context
+          and self._sudo_password is not None):
         sudo_connect_kwargs = connect_kwargs.copy()
         sudo_connect_kwargs['user'] = self._sudo_user
         self.remote_sudo_wrapped_context = fabric.Connection(
@@ -236,7 +237,6 @@ class CommandContext(object):
     """Test sudo access on a host."""
     logger.debug('Testing sudo access.')
     try:
-      # TODO: support sudo on no-password hosts.
       self.remote_sudo_wrapped_context.sudo(
           'echo "Testing sudo access..."',
           hide=True,
