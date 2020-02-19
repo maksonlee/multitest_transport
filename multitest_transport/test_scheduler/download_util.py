@@ -60,6 +60,9 @@ def DownloadResource(url):
   Returns:
     a GCS download URL.
   """
+  if url.startswith('file://'):
+    return url  # Skip downloading local files
+
   logging.info('Downloading resource %s', url)
   downloader, src_path, dst_path, timestamp = _CreateDownloadContext(url)
 
