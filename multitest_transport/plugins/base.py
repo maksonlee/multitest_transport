@@ -257,9 +257,10 @@ class TestRunHookContext(object):
 @attr.s
 class TestRunTask(object):
   """Mutable test run attempt not yet sent to the runner."""
-  task_id = attr.ib()
-  command_line = attr.ib()
-  device_serials = attr.ib()
+  task_id = attr.ib()  # task ID
+  command_line = attr.ib()  # command line to execute
+  device_serials = attr.ib()  # list of device serials
+  extra_options = attr.ib()  # dict of extra options to pass to runner
 
 
 class TestRunHook(
