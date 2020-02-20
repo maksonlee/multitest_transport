@@ -37,10 +37,6 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
   @classmethod
   def setUpClass(cls):
     super(E2eIntegrationTest, cls).setUpClass()
-    # Pre-download the CTS test package (accessible via file server).
-    cls.container.Exec('curl', '-o', '/data/cts.zip',
-                       CTS_DOWNLOAD_URL % FLAGS.architecture)
-    cls.cts_download_url = cls.container.file_server_url + '/open/cts.zip'
     # Import additional configurations for end-to-end testing.
     config_file = os.path.join(TEST_DATA_DIR, 'e2e_test_config.yaml')
     with open(config_file) as f:
@@ -113,16 +109,18 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
         'Executing e2e_log_action on device ' + FLAGS.serial_number, host_log)
 
   def testRunCtsModule(self):
-    """Tests executing a CTS module (download package, handle results)."""
+    """Tests executing a CTS module (use test package, handle results)."""
+    self.container.Exec('curl', '-o', '/data/cts.zip',
+                        CTS_DOWNLOAD_URL % FLAGS.architecture)
     test_run_id = self.container.ScheduleTestRun(
         FLAGS.serial_number,
         test_id='android.cts.10_0.arm',
         extra_args='-m Gesture',  # arbitrary small module
         test_resource_pipes=[{
             'name': 'android-cts.zip',
-            'url': self.cts_download_url,
+            'url': 'file:///data/cts.zip',
         }])['id']
-    self.container.WaitForState(test_run_id, 'COMPLETED', timeout=12 * 60)
+    self.container.WaitForState(test_run_id, 'COMPLETED', timeout=3 * 60)
     # Verify that the tests were executed
     test_run = self.container.GetTestRun(test_run_id)
     self.assertGreater(int(test_run['total_test_count']), 0)
