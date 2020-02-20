@@ -119,7 +119,9 @@ export class LocalFileStore implements OnInit, OnDestroy {
     // Determine the upload URL.
     const url = (this.appData.fileUploadUrl || '') + file.name;
     const location =
-        await this.fileUploadService.startUploadProcess(url).toPromise();
+        // TODO: toPromise can return Promise<T|undefined>
+        // tslint:disable-next-line:no-unnecessary-type-assertion
+        (await this.fileUploadService.startUploadProcess(url).toPromise())!;
     // Perform upload and update progress.
     this.isUploading = true;
     noAwait(this.liveAnnouncer.announce('Uploading ' + file.name, 'polite'));

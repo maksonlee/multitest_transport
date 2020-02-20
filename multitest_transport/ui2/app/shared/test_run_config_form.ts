@@ -95,7 +95,9 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
     // Determine the upload URL.
     const url = (this.appData.tempUploadUrl || '') + file.name;
     const location =
-        await this.uploadService.startUploadProcess(url).toPromise();
+        // TODO: toPromise can return Promise<T|undefined>
+        // tslint:disable-next-line:no-unnecessary-type-assertion
+        (await this.uploadService.startUploadProcess(url).toPromise())!;
     // Perform upload and update progress.
     this.isUploading = true;
     noAwait(this.liveAnnouncer.announce('Uploading', 'polite'));
