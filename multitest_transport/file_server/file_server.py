@@ -168,7 +168,7 @@ class FileType(str, enum.Enum):
     return FileType.OTHER
 
 
-@attr.s(frozen=True, cmp=False)
+@attr.s(frozen=True, order=False)
 class FileNode(object):
   """File node information."""
   path = attr.ib()  # Relative path
