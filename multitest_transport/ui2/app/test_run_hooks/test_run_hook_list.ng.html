@@ -45,8 +45,15 @@
           mat-icon-button
           aria-label="Edit"
           matTooltip="Edit"
-          (click)="edit(hookConfig)">
+          disabled>
         <mat-icon>edit</mat-icon>
+      </button>
+      <button id="copy-button"
+          mat-icon-button
+          aria-label="Copy"
+          matTooltip="Copy"
+          disabled>
+        <mat-icon>file_copy</mat-icon>
       </button>
       <button id="delete-button"
           mat-icon-button
@@ -54,13 +61,6 @@
           matTooltip="Delete"
           (click)="delete(hookConfig)">
         <mat-icon>delete</mat-icon>
-      </button>
-      <button id="copy-button"
-          mat-icon-button
-          aria-label="Copy"
-          matTooltip="Copy"
-          (click)="copy(hookConfig)">
-        <mat-icon>file_copy</mat-icon>
       </button>
     </h2>
     <mat-card-content>
@@ -76,7 +76,7 @@
       mat-flat-button
       aria-label="Add new test run hook"
       color="accent"
-      (click)="create()">
+      disabled>
     + New test run hook
   </button>
 </div>

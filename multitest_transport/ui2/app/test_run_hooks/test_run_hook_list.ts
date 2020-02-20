@@ -107,6 +107,11 @@ export class TestRunHookList implements OnInit, OnDestroy {
     // TODO: implement test run hook editor
   }
 
+  /** Opens the test run hook editor to copy an existing hook configuration. */
+  copy(hookConfig: TestRunHookConfig) {
+    // TODO: implement test run hook editor
+  }
+
   /** Delete a test run hook configuration after confirmation. */
   delete(hookConfig: TestRunHookConfig) {
     this.notifier
@@ -134,11 +139,6 @@ export class TestRunHookList implements OnInit, OnDestroy {
                         buildApiErrorMessage(error));
                   });
         });
-  }
-
-  /** Opens the test run hook editor to copy an existing hook configuration. */
-  copy(hookConfig: TestRunHookConfig) {
-    // TODO: implement test run hook editor
   }
 
   /** Opens the test run hook editor to create a new hook configuration. */
