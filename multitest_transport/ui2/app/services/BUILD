@@ -20,6 +20,7 @@ ng_module(
         "auth_service.ts",
         "error_dialog.ts",
         "file_reader_service.ts",
+        "file_service.ts",
         "file_upload_service.ts",
         "index.ts",
         "mtt_client.ts",
@@ -58,6 +59,7 @@ ng_module(
     srcs = [
         "analytics_service_test.ts",
         "file_reader_service_test.ts",
+        "file_service_test.ts",
         "file_upload_service_test.ts",
         "mtt_client_test.ts",
         "strict_params_test.ts",
