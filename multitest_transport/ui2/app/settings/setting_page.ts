@@ -34,6 +34,7 @@ export class SettingPage implements OnInit {
     {path: './config_sets', label: 'Config Sets'},
     {path: './build_channels', label: 'Build Channels'},
     {path: './device_actions', label: 'Device Actions'},
+    {path: './test_run_hooks', label: 'Test Run Hooks'},
   ];
 
   constructor(
