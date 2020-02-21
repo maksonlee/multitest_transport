@@ -16,8 +16,7 @@
 
 import {SelectionModel} from '@angular/cdk/collections';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
-import {MatTableDataSource} from '@angular/material/table';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 
 import {DeviceAction} from '../services/mtt_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
@@ -36,14 +35,11 @@ import {assertRequiredInput} from '../shared/util';
   templateUrl: './device_action_picker.ng.html',
   providers: [{provide: FormChangeTracker, useExisting: DeviceActionPicker}]
 })
-export class DeviceActionPicker extends FormChangeTracker implements OnChanges,
-                                                                     OnInit {
+export class DeviceActionPicker extends FormChangeTracker implements OnInit {
   @Input() deviceActions!: DeviceAction[];
   @Input() selectedDeviceActions!: DeviceAction[];
   @Output() selectionChange = new EventEmitter();
 
-  columnsToDisplay = ['select', 'name'];
-  dataSource = new MatTableDataSource<DeviceAction>(this.deviceActions);
   selection =
       new SelectionModel<DeviceAction>(true, this.selectedDeviceActions);
 
@@ -53,13 +49,6 @@ export class DeviceActionPicker extends FormChangeTracker implements OnChanges,
     assertRequiredInput(
         this.selectedDeviceActions, 'selectedDeviceActions',
         'DeviceActionPicker');
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-    // load data into dropdown
-    if (changes['deviceActions']) {
-      this.dataSource.data = this.deviceActions;
-    }
   }
 
   // after dropping an dragged item, move the dragged item in place
