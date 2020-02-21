@@ -109,6 +109,7 @@
     <mat-spinner
       class="loading-spinner" color="accent" *ngIf="isLoading">
     </mat-spinner>
+    <h2>Device Actions</h2>
     <device-action-picker [class.loading-mask]="isLoading"
       [deviceActions]="deviceActions"
       [selectedDeviceActions]="selectedDeviceActions"
@@ -116,6 +117,7 @@
     >
     </device-action-picker>
 
+    <h2>Test Run Hooks</h2>
     <test-run-hook-picker [class.loading-mask]="isLoading"
                           [hookConfigs]="hookConfigs"
                           [selectedHookConfigs]="selectedHookConfigs">

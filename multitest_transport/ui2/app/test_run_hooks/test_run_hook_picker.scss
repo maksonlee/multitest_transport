@@ -51,10 +51,6 @@
   position: relative;
 }
 
-.test-run-hook-list {
-  margin-bottom: 20px;
-}
-
 .test-run-hook-list.cdk-drop-list-dragging .test-run-hook-item:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, .2, 1);
 }
