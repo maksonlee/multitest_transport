@@ -584,6 +584,8 @@ export declare interface TestRunConfig {
   output_idle_timeout_seconds?: number;
   /** List of ids for the device actions */
   before_device_action_ids?: string[];
+  /** List of test run hook config IDs */
+  hook_config_ids?: string[];
 }
 
 /** initialize a new test run config */

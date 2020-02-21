@@ -104,8 +104,8 @@
   </mat-step>
 
   <!-- Third step: Add Device Actions -->
-  <mat-step [completed]="!!stepCompletionStatusMap[step.ADD_DEVICE_ACTIONS]">
-    <ng-template matStepLabel>Add Device Actions</ng-template>
+  <mat-step [completed]="!!stepCompletionStatusMap[step.ADD_ACTIONS]">
+    <ng-template matStepLabel>Add Actions</ng-template>
     <mat-spinner
       class="loading-spinner" color="accent" *ngIf="isLoading">
     </mat-spinner>
@@ -115,6 +115,11 @@
       (selectionChange)="updateTestResources()"
     >
     </device-action-picker>
+
+    <test-run-hook-picker [class.loading-mask]="isLoading"
+                          [hookConfigs]="hookConfigs"
+                          [selectedHookConfigs]="selectedHookConfigs">
+    </test-run-hook-picker>
 
     <mat-divider></mat-divider>
 

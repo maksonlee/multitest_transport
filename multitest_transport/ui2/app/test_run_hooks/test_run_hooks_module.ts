@@ -16,12 +16,14 @@
 
 import {NgModule} from '@angular/core';
 
-import {SharedModule} from '../shared/shared_module';
+import {SharedModule} from '../shared';
 
 import {TestRunHookList} from './test_run_hook_list';
+import {TestRunHookPicker} from './test_run_hook_picker';
 
 const COMPONENTS = [
   TestRunHookList,
+  TestRunHookPicker,
 ];
 
 /** Module for test run hook components. */

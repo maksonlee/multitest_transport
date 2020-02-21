@@ -62,6 +62,7 @@ ng_module(
         "//multitest_transport/ui2/app/devices",
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/app/shared",
+        "//multitest_transport/ui2/app/test_run_hooks",
     ],
 )
 

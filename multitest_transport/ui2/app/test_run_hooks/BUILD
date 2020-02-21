@@ -12,16 +12,20 @@ ng_module(
     name = "test_run_hooks",
     srcs = [
         "test_run_hook_list.ts",
+        "test_run_hook_picker.ts",
         "test_run_hooks_module.ts",
     ],
     assets = [
         ":styles",
         "test_run_hook_list.ng.html",
+        "test_run_hook_picker.ng.html",
     ],
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular2:cdk_a11y"),
         third_party_js("angular2:core"),
+        third_party_js("angular2:cdk_collections"),
+        third_party_js("angular2:cdk_drag_drop"),
         third_party_js("rxjs"),
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/app/shared",
@@ -33,6 +37,7 @@ ng_module(
     testonly = True,
     srcs = [
         "test_run_hook_list_test.ts",
+        "test_run_hook_picker_test.ts",
     ],
     visibility = ["//multitest_transport"],
     deps = [

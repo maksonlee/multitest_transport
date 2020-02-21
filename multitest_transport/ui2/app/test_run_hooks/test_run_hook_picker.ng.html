@@ -1,0 +1,68 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<!-- List of selected test run hooks -->
+<div cdkDropList class="test-run-hook-list" (cdkDropListDropped)="moveConfig($event)">
+  <div class="test-run-hook-item" cdkDrag *ngFor="let config of selectedHookConfigs">
+    <mat-icon class="drag-icon">drag_indicator</mat-icon>
+    <span class="drag-text">{{config.name}}</span>
+    <button aria-label="Delete" matTooltip="Delete"
+            class="clear-button" mat-button
+            (click)="removeConfig(config); hasContentChanged = true">
+      <mat-icon class="drag-icon">clear</mat-icon>
+    </button>
+  </div>
+</div>
+
+<!-- Add button, opens the selection menu -->
+<button
+    class="add-button"
+    mat-stroked-button
+    color="accent"
+    aria-label="Add test run hook"
+    [matMenuTriggerFor]="testRunHookDropdown">
+  + Add test run hook
+</button>
+
+<!-- Test run hook selection menu -->
+<mat-menu #testRunHookDropdown="matMenu" class="test-run-hook-menu">
+  <!-- trap focus and prevent tabs from closing the menu -->
+  <div cdkTrapFocus (keydown.tab)="$event.stopPropagation()">
+    <!-- checkboxes -->
+    <div class="checkbox-wrapper">
+      <div mat-menu-item *ngFor="let config of hookConfigs"
+           (click)="$event.stopPropagation()" (keydown.enter)="selection.toggle(config)">
+        <mat-checkbox tabindex="-1"
+                      (change)="$event ? selection.toggle(config) : null"
+                      [checked]="selection.isSelected(config)">
+          {{config.name}}
+        </mat-checkbox>
+      </div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- menu buttons -->
+    <div class="button-wrapper">
+      <button mat-flat-button color="accent" (click)="addSelectedConfigs()"
+              aria-label="Add test run hooks"
+              [attr.aria-disabled]="selection.selected.length === 0">
+        + Add test run hook(s)
+      </button>
+      <button mat-button color="accent">Cancel</button>
+    </div>
+  </div>
+</mat-menu>
