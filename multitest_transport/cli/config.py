@@ -20,6 +20,7 @@ import collections
 import logging
 import os.path
 
+import six
 from six.moves import configparser
 
 GLOBAL_CONFIG_PATH = os.path.expanduser('~/.config/mtt/mtt.ini')
@@ -64,7 +65,7 @@ class ConfigField(object):
     s = '%s [%s]: ' % (self._prompt, value)
     while True:
       try:
-        new_value = raw_input(s)
+        new_value = six.moves.input(s)
         if not new_value:
           logging.info(
               'no new value entered; keeping the current value %s', self._value)
@@ -167,7 +168,7 @@ class Config(object):
     dirname = os.path.dirname(self._filename)
     if not os.path.exists(dirname):
       os.makedirs(dirname)
-    with open(self._filename, 'wb') as f:
+    with open(self._filename, 'w') as f:
       parser.write(f)
 
 
