@@ -728,7 +728,10 @@ def Main():
         os.execv(new_path, [new_path] + sys.argv[1:])
     except Exception as e:        logger.warn('Failed to check/update tool: %s', e)
   try:
-    args.func(args)
+    if hasattr(args, 'func'):
+      args.func(args)
+    else:
+      parser.print_usage()
   except command_util.DockerNotFoundError:
     logger.error(
         'Docker is not installed on the host. Please install Docker Engine'

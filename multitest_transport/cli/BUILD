@@ -7,7 +7,7 @@ licenses(["notice"])
 pytype_strict_binary(
     name = "cli",
     srcs = ["cli.py"],
-    python_version = "PY2",
+    python_version = "PY3",
     srcs_version = "PY2AND3",
     test_lib = True,
     visibility = ["//visibility:private"],
@@ -104,7 +104,7 @@ py_library(
 pytype_strict_binary(
     name = "lab_cli",
     srcs = ["lab_cli.py"],
-    python_version = "PY2",
+    python_version = "PY3",
     srcs_version = "PY2AND3",
     test_lib = True,
     deps = [

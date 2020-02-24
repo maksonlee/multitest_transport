@@ -276,8 +276,10 @@ def Main():
         args.command_executor_factory):
       executor = args.command_executor_factory(args)
       executor.Execute()
-    else:
+    elif hasattr(args, 'func'):
       args.func(args)
+    else:
+      parser.print_usage()
   except host_util.ExecutionError:
     # The information should already be printed.
     sys.exit(-1)
