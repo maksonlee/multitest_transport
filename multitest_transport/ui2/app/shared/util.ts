@@ -19,8 +19,6 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {ElementRef} from '@angular/core';
 import * as moment from 'moment';
 
-import {EndpointError} from '../services/mtt_models';
-
 // A custom interface for moment-duration-format.
 interface Duration extends moment.Duration {
   // tslint:disable-next-line:no-any
@@ -56,6 +54,11 @@ export function assertRequiredInput(
 /** Create a continuous number array */
 export function continuousNumberArray(length: number, prefix = 0): number[] {
   return Array.from<number>({length}).map((unused, i) => i + prefix);
+}
+
+/** Returns a deep copy of the specified value. */
+export function deepCopy<T>(value: T): T {
+  return value && JSON.parse(JSON.stringify(value)) as T;
 }
 
 const FNMATCH_PATTERN = /(\*|\?|\[.*\])/;

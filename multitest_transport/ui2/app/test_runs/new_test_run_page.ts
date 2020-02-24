@@ -349,6 +349,7 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
     // prepare test run config
     this.testRunConfig.before_device_action_ids =
         this.selectedDeviceActions.map(action => action.id);
+    // TODO: send custom options to backend
     this.testRunConfig.hook_config_ids =
         this.selectedHookConfigs.map(hookConfig => hookConfig.id);
 

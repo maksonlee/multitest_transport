@@ -17,13 +17,20 @@
 <!-- List of selected test run hooks -->
 <div cdkDropList class="test-run-hook-list" (cdkDropListDropped)="moveConfig($event)">
   <div class="test-run-hook-item" cdkDrag *ngFor="let config of selectedHookConfigs">
-    <mat-icon class="drag-icon">drag_indicator</mat-icon>
-    <span class="drag-text">{{config.name}}</span>
-    <button aria-label="Delete" matTooltip="Delete"
-            class="clear-button" mat-button
-            (click)="removeConfig(config); hasContentChanged = true">
-      <mat-icon class="drag-icon">clear</mat-icon>
-    </button>
+    <div class="test-run-hook-header" cdkDragHandle>
+      <mat-icon class="drag-icon">drag_indicator</mat-icon>
+      <span>{{config.name}}</span>
+      <button aria-label="Delete" matTooltip="Delete" class="clear-button" mat-button
+              (click)="removeConfig(config); hasContentChanged = true">
+        <mat-icon class="drag-icon">clear</mat-icon>
+      </button>
+    </div>
+    <!-- TODO: add option defs to store metadata (type, label, required) -->
+    <mat-form-field class="test-run-hook-option" appearance="outline"
+                    *ngFor="let option of config.options; let i = index">
+      <mat-label> {{option.name}} </mat-label>
+      <input matInput [(ngModel)]="config.options[i].value">
+    </mat-form-field>
   </div>
 </div>
 

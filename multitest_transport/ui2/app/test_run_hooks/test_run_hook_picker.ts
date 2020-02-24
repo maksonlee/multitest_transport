@@ -20,7 +20,7 @@ import {Component, Input, OnInit} from '@angular/core';
 
 import {TestRunHookConfig} from '../services/mtt_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
-import {assertRequiredInput} from '../shared/util';
+import {assertRequiredInput, deepCopy} from '../shared/util';
 
 /**
  * Manages a list of hook configurations, allowing users to add, remove, edit,
@@ -63,7 +63,9 @@ export class TestRunHookPicker extends FormChangeTracker implements OnInit {
 
   /** Adds all hook configs from the selection menu. */
   addSelectedConfigs() {
-    this.selectedHookConfigs.push(...this.selection.selected);
+    for (const hookConfig of this.selection.selected) {
+      this.selectedHookConfigs.push(deepCopy(hookConfig));
+    }
     this.selection.clear();
   }
 }
