@@ -141,7 +141,7 @@
     <ng-template matStepLabel>Set Test Resources</ng-template>
     <mat-spinner
       class="loading-spinner" color="accent"
-                 *ngIf="isLoading">
+                 *ngIf="isLoading || isStartingTestRun">
     </mat-spinner>
     <test-resource-form
       [class.loading-mask]="isLoading"
@@ -156,7 +156,10 @@
      <button mat-stroked-button matStepperPrevious color="accent">
         Previous Step
       </button>
-      <button mat-flat-button color="accent" (click)="startTestRun()">
+      <button [disabled]="isStartingTestRun"
+              mat-flat-button
+              color="accent"
+              (click)="startTestRun()">
         Start Test Run
       </button>
       <button mat-button (click)="back()" color="accent">Cancel</button>

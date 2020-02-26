@@ -22,7 +22,7 @@ import {MatChipInputEvent} from '@angular/material/chips';
 import {MatStepper} from '@angular/material/stepper';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 import {forkJoin, of as observableOf} from 'rxjs';
-import {first} from 'rxjs/operators';
+import {finalize, first} from 'rxjs/operators';
 
 import {TestResourceForm} from '../build_channels/test_resource_form';
 import {MttClient} from '../services/mtt_client';
@@ -85,6 +85,7 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
   buildChannels: mttModels.BuildChannel[] = [];
 
   isLoading = false;
+  isStartingTestRun = false;
 
   /** Keys used to separate labels */
   readonly separatorKeyCodes: number[] = [ENTER, COMMA];
@@ -361,8 +362,12 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
       rerun_context: this.rerunContext || {}
     };
 
+    this.isStartingTestRun = true;
     this.mttClient.createNewTestRunRequest(newTestRunRequest)
         .pipe(first())
+        .pipe(finalize(() => {
+          this.isStartingTestRun = false;
+        }))
         .subscribe(
             result => {
               super.resetForm();
