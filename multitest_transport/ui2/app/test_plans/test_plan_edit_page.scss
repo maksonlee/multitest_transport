@@ -22,8 +22,8 @@
   min-width: 800px;
 }
 
-button {
-  margin-right: 20px;
+button + button {
+  margin-left: 20px;
 }
 
 h2 {

@@ -16,8 +16,8 @@
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
-button {
-  margin-right: 20px;
+button + button {
+  margin-left: 20px;
 }
 
 h2 {
