@@ -18,7 +18,7 @@ import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 
 import {initTestRunConfig, Test, TestRunConfig} from '../services/mtt_models';
-import {assertRequiredInput} from '../shared/util';
+import {assertRequiredInput, deepCopy} from '../shared/util';
 import {TestRunConfigEditor, TestRunConfigEditorData} from './test_run_config_editor';
 
 /**
@@ -59,10 +59,13 @@ export class TestRunConfigList implements OnInit {
     // If index is given, edit that config. Otherwise add a new config.
     const editMode = typeof index !== 'undefined';
     const testRunConfig = editMode ? this.data[index!] : initTestRunConfig();
+    // Pass in a copy rather than reference to avoid data maniputlation
+    // on parent component
+    const testRunConfigCopy = deepCopy(testRunConfig);
     const testRunConfigEditorData: TestRunConfigEditorData = {
       editMode,
       testMap: this.testMap,
-      testRunConfig,
+      testRunConfig: testRunConfigCopy,
     };
 
     const dialogRef = this.matDialog.open(TestRunConfigEditor, {
