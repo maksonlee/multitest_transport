@@ -16,12 +16,13 @@
 
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {beforeEach, bootstrapTemplate, describe, it, setupModule} from 'google3/javascript/angular2/testing/catalyst';
-import {KarmaTestEnv} from '../testing/karma_env';
-import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
+
+import {SharedModule} from '../../../app/shared/shared_module';
+import {SharedModuleNgSummary} from '../../../app/shared/shared_module.ngsummary';
+import {KarmaTestEnv} from '../../../app/testing/karma_env';
 
 const SCUBA_GOLDENS_PATH =
-    'third_party/py/multitest_transport/ui2/app/shared/scuba_goldens';
+    'third_party/py/multitest_transport/ui2/scuba_tests/app/shared/scuba_goldens';
 
 describe('Status button', () => {
   const env = new KarmaTestEnv({
@@ -65,7 +66,7 @@ describe('Status button', () => {
               `<status-button class="config-set" [state]="state">
               </status-button>`,
               {state});
-          state = state.toLowerCase();
+          state = state.toLowerCase().split(' ').join('_');
           await env.verifyState(
               `status-button_config_set_${state}`, 'status-button');
         });

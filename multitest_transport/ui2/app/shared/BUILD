@@ -1,5 +1,4 @@
-load("//multitest_transport:adapter.bzl", "karma_web_test_suite", "ng_module", "per_file_sass_binaries", "third_party_js", "ts_development_sources")
-
+load("//multitest_transport:adapter.bzl", "ng_module", "per_file_sass_binaries", "third_party_js")
 
 # A package for common components
 licenses(["notice"])
@@ -133,4 +132,3 @@ ng_module(
         "//multitest_transport/ui2/app/testing:test_util",
     ],
 )
-

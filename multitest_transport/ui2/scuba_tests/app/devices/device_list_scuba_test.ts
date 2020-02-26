@@ -17,14 +17,13 @@
 import {beforeEach, bootstrapTemplate, describe, it, setupModule} from 'google3/javascript/angular2/testing/catalyst';
 import {of as observableOf} from 'rxjs';
 
-import {TfcClient} from '../services/tfc_client';
-import {KarmaTestEnv} from '../testing/karma_env';
-
-import {DevicesModule} from './devices_module';
-import {DevicesModuleNgSummary} from './devices_module.ngsummary';
+import {DevicesModule} from '../../../app/devices/devices_module';
+import {DevicesModuleNgSummary} from '../../../app/devices/devices_module.ngsummary';
+import {TfcClient} from '../../../app/services/tfc_client';
+import {KarmaTestEnv} from '../../../app/testing/karma_env';
 
 const SCUBA_GOLDENS_PATH =
-    'third_party/py/multitest_transport/ui2/app/devices/scuba_goldens';
+    'third_party/py/multitest_transport/ui2/scuba_tests/app/devices/scuba_goldens';
 
 describe('DeviceList', () => {
   const env = new KarmaTestEnv({

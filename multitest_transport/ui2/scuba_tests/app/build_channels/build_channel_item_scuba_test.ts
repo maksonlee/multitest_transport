@@ -17,14 +17,13 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {beforeEach, bootstrapTemplate, describe, it, setupModule} from 'google3/javascript/angular2/testing/catalyst';
 
-import {BuildChannelAuthState} from '../services/mtt_models';
-import {KarmaTestEnv} from '../testing/karma_env';
-
-import {BuildChannelsModule} from './build_channels_module';
-import {BuildChannelsModuleNgSummary} from './build_channels_module.ngsummary';
+import {BuildChannelsModule} from '../../../app/build_channels/build_channels_module';
+import {BuildChannelsModuleNgSummary} from '../../../app/build_channels/build_channels_module.ngsummary';
+import {BuildChannelAuthState} from '../../../app/services/mtt_models';
+import {KarmaTestEnv} from '../../../app/testing/karma_env';
 
 const SCUBA_GOLDENS_PATH =
-    'third_party/py/multitest_transport/ui2/app/build_channels/scuba_goldens';
+    'third_party/py/multitest_transport/ui2/scuba_tests/app/build_channels/scuba_goldens';
 
 describe('BuildChannelItem', () => {
   const env = new KarmaTestEnv({
