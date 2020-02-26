@@ -361,10 +361,10 @@ class TestKickerTest(absltest.TestCase):
   @mock.patch.object(tfc_client, 'NewRequest', autospec=True)
   @mock.patch.object(test_run_hook, 'ExecuteHooks', autospec=True)
   @mock.patch.object(download_util, 'DownloadResource', autospec=True)
-  def testKickTestRun_withTestRunHookConfigs(
+  def testKickTestRun_withTestRunActions(
       self, mock_download_resource, mock_execute_hooks, mock_new_request):
-    # Create hook config with two TF result reporters
-    hook_config = ndb_models.TestRunHookConfig(
+    # Create test run action with two TF result reporters
+    test_run_action = ndb_models.TestRunAction(
         name='Foo',
         hook_class_name='foo',
         tradefed_result_reporters=[
@@ -375,10 +375,10 @@ class TestKickerTest(absltest.TestCase):
             ),
             ndb_models.TradefedConfigObject(class_name='com.android.bar'),
         ])
-    hook_config.put()
-    # Create test run with hook config
+    test_run_action.put()
+    # Create test run with test run action
     test_run = self._CreateMockTestRun(command='command')
-    test_run.hook_configs = [hook_config]
+    test_run.test_run_actions = [test_run_action]
     test_run.put()
     test_run_id = test_run.key.id()
     # Mock responses

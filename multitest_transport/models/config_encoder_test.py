@@ -41,9 +41,9 @@ class ConfigTest(absltest.TestCase):
         id=key, name=name, provider_name=name,
         options=ndb_models.NameValuePair.FromDict(options or {}))
 
-  def CreateTestRunHook(
+  def CreateTestRunAction(
       self, key=None, name=None, hook_class_name=None, options=None):
-    return ndb_models.TestRunHookConfig(
+    return ndb_models.TestRunAction(
         id=key, name=name, hook_class_name=hook_class_name,
         options=ndb_models.NameValuePair.FromDict(options or {}))
 
@@ -123,9 +123,9 @@ class ConfigTest(absltest.TestCase):
     """Tests serializing multiple objects."""
     build_channel = self.CreateBuildChannel(key='foo', name='Foo',
                                             options={'option': 'value'})
-    test_run_hook = self.CreateTestRunHook(key='bar', name='Bar',
-                                           hook_class_name='Web',
-                                           options={'url': 'www.google.com'})
+    test_run_action = self.CreateTestRunAction(
+        key='bar', name='Bar', hook_class_name='Web',
+        options={'url': 'www.google.com'})
     expected = \
 """build_channels:
 - id: foo
@@ -134,7 +134,7 @@ class ConfigTest(absltest.TestCase):
   - name: option
     value: value
   provider_name: Foo
-test_run_hooks:
+test_run_actions:
 - hook_class_name: Web
   id: bar
   name: Bar
@@ -144,7 +144,7 @@ test_run_hooks:
 """
 
     config_set = config_encoder.ConfigSet(
-        build_channels=[build_channel], test_run_hooks=[test_run_hook])
+        build_channels=[build_channel], test_run_actions=[test_run_action])
     actual = config_encoder.Encode(config_set)
     self.assertEqual(expected, actual)
 

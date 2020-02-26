@@ -1,0 +1,82 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+
+<div [class.loading-mask]="isLoading" class="page">
+  <mat-card *ngFor="let action of actions" class="hover-mat-card">
+    <h2>
+      <span fxFlex>
+        {{action.name}}
+        <status-button
+            *ngIf="['AUTHORIZED', 'UNAUTHORIZED'].includes(action.authorization_state)"
+            [state]='action.authorization_state'></status-button>
+      </span>
+      <button id="auth-button"
+              mat-stroked-button
+              aria-label="Authorize"
+              color='accent'
+              *ngIf="action.authorization_state == 'UNAUTHORIZED'"
+              (click)="authorize(action)">
+        Authorize
+      </button>
+      <button id="revoke-button"
+              mat-stroked-button
+              aria-label="Revoke Authorization"
+              color='accent'
+              *ngIf="action.authorization_state == 'AUTHORIZED'"
+              (click)="revokeAuthorization(action)">
+        Revoke Authorization
+      </button>
+      <button id="edit-button"
+              mat-icon-button
+              aria-label="Edit"
+              matTooltip="Edit"
+              disabled>
+        <mat-icon>edit</mat-icon>
+      </button>
+      <button id="copy-button"
+              mat-icon-button
+              aria-label="Copy"
+              matTooltip="Copy"
+              disabled>
+        <mat-icon>file_copy</mat-icon>
+      </button>
+      <button id="delete-button"
+              mat-icon-button
+              aria-label="Delete"
+              matTooltip="Delete"
+              (click)="delete(action)">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </h2>
+    <mat-card-content>
+      {{action.description}}
+    </mat-card-content>
+  </mat-card>
+
+  <div class="empty" *ngIf="!actions.length">
+    No test run actions found.
+  </div>
+
+  <button id="create-button"
+          mat-flat-button
+          aria-label="Add new test run action"
+          color="accent"
+          disabled>
+    + New test run action
+  </button>
+</div>

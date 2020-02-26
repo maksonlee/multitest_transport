@@ -268,7 +268,7 @@ class TestRunHook(
   """Base class for all test run hooks."""
 
   def Execute(self, context):
-    """Execute the hook's action.
+    """Execute the hook.
 
     Args:
       context: test run hook execution context.

@@ -20,19 +20,19 @@ import {ReplaySubject} from 'rxjs';
 import {delay, finalize, takeUntil} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
-import {TestRunHookConfig} from '../services/mtt_models';
+import {TestRunAction} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {buildApiErrorMessage} from '../shared/util';
 
-/** Displays a list of test run hook configurations. */
+/** Displays a list of test run actions. */
 @Component({
-  selector: 'test-run-hook-list',
-  styleUrls: ['test_run_hook_list.css'],
-  templateUrl: './test_run_hook_list.ng.html',
+  selector: 'test-run-action-list',
+  styleUrls: ['test_run_action_list.css'],
+  templateUrl: './test_run_action_list.ng.html',
 })
-export class TestRunHookList implements OnInit, OnDestroy {
+export class TestRunActionList implements OnInit, OnDestroy {
   isLoading = false;
-  hookConfigs: TestRunHookConfig[] = [];
+  actions: TestRunAction[] = [];
 
   private readonly destroy = new ReplaySubject();
 
@@ -54,27 +54,28 @@ export class TestRunHookList implements OnInit, OnDestroy {
     this.liveAnnouncer.announce('Loading', 'polite');
 
     // Add short delay to allow device action changes to propagate.
-    this.mtt.testRunHooks.list()
+    this.mtt.testRunActions.list()
         .pipe(takeUntil(this.destroy))
         .pipe(finalize(() => {
           this.isLoading = false;
         }))
         .subscribe(
-            hookConfigs => {
-              this.hookConfigs = hookConfigs;
-              this.liveAnnouncer.announce('Test run hooks loaded', 'assertive');
+            actions => {
+              this.actions = actions;
+              this.liveAnnouncer.announce(
+                  'Test run actions loaded', 'assertive');
             },
             error => {
               this.notifier.showError(
-                  'Failed to load test run hooks.',
+                  'Failed to load test run actions.',
                   buildApiErrorMessage(error));
             },
         );
   }
 
-  /** Authorize a test run hook configuration and reload. */
-  authorize(hookConfig: TestRunHookConfig) {
-    this.mtt.testRunHooks.authorize(hookConfig.id)
+  /** Authorize a test run action and reload. */
+  authorize(action: TestRunAction) {
+    this.mtt.testRunActions.authorize(action.id)
         .pipe(delay(500))  // Delay for data to be persisted
         .subscribe(
             () => {
@@ -82,14 +83,14 @@ export class TestRunHookList implements OnInit, OnDestroy {
             },
             error => {
               this.notifier.showError(
-                  'Failed to authorize test run hook.',
+                  'Failed to authorize test run action.',
                   buildApiErrorMessage(error));
             });
   }
 
-  /** Revoke a test run hook's authorization and reload. */
-  revokeAuthorization(hookConfig: TestRunHookConfig) {
-    this.mtt.testRunHooks.unauthorize(hookConfig.id)
+  /** Revoke a test run action's authorization and reload. */
+  revokeAuthorization(action: TestRunAction) {
+    this.mtt.testRunActions.unauthorize(action.id)
         .pipe(delay(500))  // Delay for data to be persisted
         .subscribe(
             () => {
@@ -97,52 +98,50 @@ export class TestRunHookList implements OnInit, OnDestroy {
             },
             error => {
               this.notifier.showError(
-                  'Failed to revoke test run hook authorization.',
+                  'Failed to revoke test run action authorization.',
                   buildApiErrorMessage(error));
             });
   }
 
-  /** Opens the test run hook editor to edit an existing hook configuration. */
-  edit(hookConfig: TestRunHookConfig) {
-    // TODO: implement test run hook editor
+  /** Opens the test run action editor to edit an existing action. */
+  edit(action: TestRunAction) {
+    // TODO: implement test run action editor
   }
 
-  /** Opens the test run hook editor to copy an existing hook configuration. */
-  copy(hookConfig: TestRunHookConfig) {
-    // TODO: implement test run hook editor
+  /** Opens the test run action editor to copy an existing action. */
+  copy(action: TestRunAction) {
+    // TODO: implement test run action editor
   }
 
-  /** Delete a test run hook configuration after confirmation. */
-  delete(hookConfig: TestRunHookConfig) {
+  /** Delete a test run action after confirmation. */
+  delete(action: TestRunAction) {
     this.notifier
         .confirm(
-            `Do you really want to delete test run hook '${hookConfig.name}'?`,
-            'Delete test run hook')
+            `Do you really want to delete test run action '${action.name}'?`,
+            'Delete test run action')
         .subscribe(confirmed => {
           if (!confirmed) {
             return;
           }
-          this.mtt.testRunHooks.delete(hookConfig.id)
-              .subscribe(
-                  () => {
-                    const index = this.hookConfigs.findIndex(
-                        hc => hc.id === hookConfig.id);
-                    if (index !== -1) {
-                      this.hookConfigs.splice(index, 1);
-                    }
-                    this.notifier.showMessage(
-                        `Test run hook '${hookConfig.name}' deleted`);
-                  },
-                  error => {
-                    this.notifier.showError(
-                        `Failed to delete test run hook.`,
-                        buildApiErrorMessage(error));
-                  });
+          this.mtt.testRunActions.delete(action.id).subscribe(
+              () => {
+                const index = this.actions.findIndex(a => a.id === action.id);
+                if (index !== -1) {
+                  this.actions.splice(index, 1);
+                }
+                this.notifier.showMessage(
+                    `Test run action '${action.name}' deleted`);
+              },
+              error => {
+                this.notifier.showError(
+                    `Failed to delete test run action.`,
+                    buildApiErrorMessage(error));
+              });
         });
   }
 
-  /** Opens the test run hook editor to create a new hook configuration. */
+  /** Opens the test run action editor to create a new action. */
   create() {
-    // TODO: implement test run hook editor
+    // TODO: implement test run action editor
   }
 }

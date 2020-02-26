@@ -33,13 +33,13 @@ export const MTT_API_URL = '/_ah/api/mtt/v1';
   providedIn: 'root',
 })
 export class MttClient {
-  readonly testRunHooks: TestRunHookClient;
+  readonly testRunActions: TestRunActionClient;
 
   constructor(
       @Inject(APP_DATA) private readonly appData: AppData,
       private readonly http: HttpClient, private readonly auth: AuthService) {
     // TODO: Reorganize MttClient methods
-    this.testRunHooks = new TestRunHookClient(http, auth);
+    this.testRunActions = new TestRunActionClient(http, auth);
   }
 
   /**
@@ -415,49 +415,49 @@ export function joinPath(...paths: string[]): string {
   return tokens.join('/');
 }
 
-/** Provides access to the test run hook API. */
-export class TestRunHookClient {
-  /** Backend path which serves test run hook data. */
-  static readonly PATH = `${MTT_API_URL}/test_run_hooks/configs`;
+/** Provides access to the test run action API. */
+export class TestRunActionClient {
+  /** Backend path which serves test run action data. */
+  static readonly PATH = `${MTT_API_URL}/test_run_actions`;
 
   constructor(
       private readonly http: HttpClient, private readonly auth: AuthService) {}
 
-  /** Lists all test run hook configurations. */
-  list(): Observable<model.TestRunHookConfig[]> {
-    return this.http.get<model.TestRunHookConfigList>(TestRunHookClient.PATH)
-        .pipe(map(result => result.configs || []));
+  /** Lists all test run actions. */
+  list(): Observable<model.TestRunAction[]> {
+    return this.http.get<model.TestRunActionList>(TestRunActionClient.PATH)
+        .pipe(map(result => result.actions || []));
   }
 
-  /** Returns a test run hook configuration using its ID. */
-  get(id: string): Observable<model.TestRunHookConfig> {
-    return this.http.get<model.TestRunHookConfig>(
-        `${TestRunHookClient.PATH}/${encodeURIComponent(id)}`);
+  /** Returns a test run action using its ID. */
+  get(id: string): Observable<model.TestRunAction> {
+    return this.http.get<model.TestRunAction>(
+        `${TestRunActionClient.PATH}/${encodeURIComponent(id)}`);
   }
 
-  /** Creates a new test run hook configuration. */
-  create(data: model.TestRunHookConfig): Observable<model.TestRunHookConfig> {
-    const params = new AnalyticsParams('test_run_hooks', 'create');
-    return this.http.post<model.TestRunHookConfig>(
-        TestRunHookClient.PATH, data, {params});
+  /** Creates a new test run action. */
+  create(data: model.TestRunAction): Observable<model.TestRunAction> {
+    const params = new AnalyticsParams('test_run_actions', 'create');
+    return this.http.post<model.TestRunAction>(
+        TestRunActionClient.PATH, data, {params});
   }
 
-  /** Updates an existing test run hook configuration. */
-  update(id: string, data: model.TestRunHookConfig):
-      Observable<model.TestRunHookConfig> {
-    const params = new AnalyticsParams('test_run_hooks', 'update');
-    return this.http.put<model.TestRunHookConfig>(
-        `${TestRunHookClient.PATH}/${encodeURIComponent(id)}`, data, {params});
+  /** Updates an existing test run action. */
+  update(id: string, data: model.TestRunAction):
+      Observable<model.TestRunAction> {
+    const params = new AnalyticsParams('test_run_actions', 'update');
+    return this.http.put<model.TestRunAction>(
+        `${TestRunActionClient.PATH}/${encodeURIComponent(id)}`, data, {params});
   }
 
-  /** Deletes a test run hook configuration. */
+  /** Deletes a test run action. */
   delete(id: string): Observable<void> {
-    const params = new AnalyticsParams('test_run_hooks', 'delete');
+    const params = new AnalyticsParams('test_run_actions', 'delete');
     return this.http.delete<void>(
-        `${TestRunHookClient.PATH}/${encodeURIComponent(id)}`, {params});
+        `${TestRunActionClient.PATH}/${encodeURIComponent(id)}`, {params});
   }
 
-  /** Authorizes a test run hook configuration. */
+  /** Authorizes a test run action. */
   authorize(id: string): Observable<void> {
     return this.getAuthorizationInfo(id)
         .pipe(switchMap(authInfo => this.auth.getAuthorizationCode(authInfo)))
@@ -465,11 +465,11 @@ export class TestRunHookClient {
             code => code ? this.sendAuthorizationCode(id, code) : EMPTY));
   }
 
-  /** Revokes a test run hook configuration's authorization. */
+  /** Revokes a test run action's authorization. */
   unauthorize(id: string): Observable<void> {
-    const params = new AnalyticsParams('test_run_hooks', 'unauthorize');
+    const params = new AnalyticsParams('test_run_actions', 'unauthorize');
     return this.http.delete<void>(
-        `${TestRunHookClient.PATH}/${encodeURIComponent(id)}/auth`, {params});
+        `${TestRunActionClient.PATH}/${encodeURIComponent(id)}/auth`, {params});
   }
 
   // Fetches authorization information to start authorization flow.
@@ -477,14 +477,14 @@ export class TestRunHookClient {
       Observable<model.AuthorizationInfo> {
     const params = new HttpParams().set('redirect_uri', REDIRECT_URI);
     return this.http.get<model.AuthorizationInfo>(
-        `${TestRunHookClient.PATH}/${encodeURIComponent(id)}/auth`, {params});
+        `${TestRunActionClient.PATH}/${encodeURIComponent(id)}/auth`, {params});
   }
 
   // Sends authorization code to complete authorization flow.
   private sendAuthorizationCode(id: string, code: string): Observable<void> {
-    const params = new AnalyticsParams('test_run_hooks', 'authorize');
+    const params = new AnalyticsParams('test_run_actions', 'authorize');
     return this.http.post<void>(
-        `${TestRunHookClient.PATH}/${encodeURIComponent(id)}/auth`,
+        `${TestRunActionClient.PATH}/${encodeURIComponent(id)}/auth`,
         {'redirect_uri': REDIRECT_URI, 'code': code}, {params});
   }
 }

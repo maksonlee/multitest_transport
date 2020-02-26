@@ -82,11 +82,11 @@ def CreateTestRun(labels,
     raise ValueError(
         'Cannot find some device actions: %s -> %s' % (
             test_run_config.before_device_action_keys, before_device_actions))
-  hook_configs = [key.get() for key in test_run_config.hook_config_keys]
-  if not all(hook_configs):
+  test_run_actions = [key.get() for key in test_run_config.test_run_action_keys]
+  if not all(test_run_actions):
     raise ValueError(
-        'Cannot find some test run hooks: %s -> %s' % (
-            test_run_config.hook_config_keys, hook_configs))
+        'Cannot find some test run actions: %s -> %s' % (
+            test_run_config.test_run_action_keys, test_run_actions))
 
   test_resource_defs = test.test_resource_defs[:]
   for device_action in before_device_actions:
@@ -133,7 +133,7 @@ def CreateTestRun(labels,
       prev_test_context=prev_test_context,
       state=ndb_models.TestRunState.PENDING,
       before_device_actions=before_device_actions,
-      hook_configs=hook_configs)
+      test_run_actions=test_run_actions)
   test_run.put()
   test_run_id = test_run.key.id()
   logging.info('test run %s created', test_run_id)
@@ -415,8 +415,8 @@ def _GetTradefedConfigObjects(test_run):
               for o in target_preparer.option_values
           ])
       objs.append(obj)
-  for hook_config in test_run.hook_configs:
-    for result_reporter in hook_config.tradefed_result_reporters:
+  for action in test_run.test_run_actions:
+    for result_reporter in action.tradefed_result_reporters:
       obj = api_messages.TradefedConfigObject(
           type=api_messages.TradefedConfigObjectType.RESULT_REPORTER,
           class_name=result_reporter.class_name,

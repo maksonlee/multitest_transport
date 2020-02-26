@@ -24,7 +24,7 @@ import {BuildChannelsModule} from '../build_channels/build_channels_module';
 import {ConfigSetsModule} from '../config_sets/config_sets_module';
 import {DeviceActionsModule} from '../device_actions/device_actions_module';
 import {SharedModule} from '../shared/shared_module';
-import {TestRunHooksModule} from '../test_run_hooks/test_run_hooks_module';
+import {TestRunActionsModule} from '../test_run_actions/test_run_actions_module';
 
 import {SettingForm} from './setting_form';
 import {SettingPage} from './setting_page';
@@ -39,7 +39,7 @@ const COMPONENTS = [SettingPage, SettingForm];
     BuildChannelsModule,
     ConfigSetsModule,
     DeviceActionsModule,
-    TestRunHooksModule,
+    TestRunActionsModule,
   ],
   exports: COMPONENTS,
 })

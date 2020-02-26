@@ -23,7 +23,7 @@ import {of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services/app_data';
 import {FileUploadService} from '../services/file_upload_service';
-import {MttClient, TestRunHookClient} from '../services/mtt_client';
+import {MttClient, TestRunActionClient} from '../services/mtt_client';
 import {Test, TestRun} from '../services/mtt_models';
 import {TfcClient} from '../services/tfc_client';
 import {DeviceInfo} from '../services/tfc_models';
@@ -62,8 +62,8 @@ describe('NewTestRunPage', () => {
       ...jasmine.createSpyObj([
         'getBuildChannels', 'getDeviceActionList', 'getNodeConfig', 'getTests'
       ]),
-      testRunHooks:
-          jasmine.createSpyObj<TestRunHookClient>({list: observableOf([])}),
+      testRunActions:
+          jasmine.createSpyObj<TestRunActionClient>({list: observableOf([])}),
     } as jasmine.SpyObj<MttClient>;
 
     mttClient.getBuildChannels.and.returnValue(observableOf([]));

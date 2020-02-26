@@ -9,16 +9,16 @@ per_file_sass_binaries(
 )
 
 ng_module(
-    name = "test_run_hooks",
+    name = "test_run_actions",
     srcs = [
-        "test_run_hook_list.ts",
-        "test_run_hook_picker.ts",
-        "test_run_hooks_module.ts",
+        "test_run_action_list.ts",
+        "test_run_action_picker.ts",
+        "test_run_actions_module.ts",
     ],
     assets = [
         ":styles",
-        "test_run_hook_list.ng.html",
-        "test_run_hook_picker.ng.html",
+        "test_run_action_list.ng.html",
+        "test_run_action_picker.ng.html",
     ],
     visibility = ["//multitest_transport"],
     deps = [
@@ -36,12 +36,12 @@ ng_module(
     name = "tests",
     testonly = True,
     srcs = [
-        "test_run_hook_list_test.ts",
-        "test_run_hook_picker_test.ts",
+        "test_run_action_list_test.ts",
+        "test_run_action_picker_test.ts",
     ],
     visibility = ["//multitest_transport"],
     deps = [
-        ":test_run_hooks",
+        ":test_run_actions",
         third_party_js("angular2:cdk_a11y"),
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),

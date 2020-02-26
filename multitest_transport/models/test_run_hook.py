@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Run hook execution and utilities."""
+"""Run hook execution and utilities.
+
+Serves as an adapter between test run hooks (which define execution logic) and
+actions (which define specific execution parameters).
+"""
 import logging
 
 from tradefed_cluster import api_messages
@@ -35,9 +39,9 @@ def ExecuteHooks(test_run_id, phase, attempt_id=None, task=None):
       phase=phase,
       latest_attempt=latest_attempt,
       next_task=task)
-  for hook_config in test_run.hook_configs:
-    if phase in hook_config.phases:
-      _ExecuteHook(hook_config, hook_context)
+  for action in test_run.test_run_actions:
+    if phase in action.phases:
+      _ExecuteHook(action, hook_context)
 
 
 def _GetLatestAttempt(test_run, attempt_id):
@@ -53,29 +57,29 @@ def _GetLatestAttempt(test_run, attempt_id):
   return next((a for a in attempts if IsFinalCommandState(a.state)), None)
 
 
-def _ExecuteHook(hook_config, hook_context):
+def _ExecuteHook(action, hook_context):
   """Construct a hook instance and execute it."""
   try:
-    hook_cls = plugins.GetTestRunHookClass(hook_config.hook_class_name)
-    options = ndb_models.NameValuePair.ToDict(hook_config.options)
-    if hook_config.credentials:
-      options['_credentials'] = hook_config.credentials
+    hook_cls = plugins.GetTestRunHookClass(action.hook_class_name)
+    options = ndb_models.NameValuePair.ToDict(action.options)
+    if action.credentials:
+      options['_credentials'] = action.credentials
     hook = hook_cls(**options)
     hook.Execute(hook_context)
-  except Exception as e:      logging.error('Failed to execute hook %s: %s', hook_config, e)
+  except Exception as e:      logging.error('Failed to execute hook %s: %s', action, e)
 
 
-def GetOAuth2Config(hook_config):
+def GetOAuth2Config(action):
   """Fetches a hook's OAuth2 configuration."""
-  hook_cls = plugins.GetTestRunHookClass(hook_config.hook_class_name)
+  hook_cls = plugins.GetTestRunHookClass(action.hook_class_name)
   return getattr(hook_cls, 'oauth2_config', None) if hook_cls else None
 
 
-def GetAuthorizationState(hook_config):
+def GetAuthorizationState(action):
   """Determines whether a hook has been authorized."""
-  if not GetOAuth2Config(hook_config):
+  if not GetOAuth2Config(action):
     return ndb_models.AuthorizationState.NOT_APPLICABLE
-  if hook_config.credentials:
+  if action.credentials:
     return ndb_models.AuthorizationState.AUTHORIZED
   return ndb_models.AuthorizationState.UNAUTHORIZED
 

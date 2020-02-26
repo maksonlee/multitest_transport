@@ -43,7 +43,7 @@ import {UnsavedChangeGuard} from './shared/can_deactivate';
 import {SharedModule} from './shared/shared_module';
 import {TestPlanEditPage} from './test_plans/test_plan_edit_page';
 import {TestPlanListPage} from './test_plans/test_plan_list_page';
-import {TestRunHookList} from './test_run_hooks/test_run_hook_list';
+import {TestRunActionList} from './test_run_actions/test_run_action_list';
 import {NewTestRunPage} from './test_runs/new_test_run_page';
 import {TestRunConfigEditor} from './test_runs/test_run_config_editor';
 import {TestRunDetailPage} from './test_runs/test_run_detail_page';
@@ -91,7 +91,7 @@ export const routes: Routes = [
       {path: 'build_channels', component: BuildChannelList},
       {path: 'config_sets', component: ConfigSetList},
       {path: 'device_actions', component: DeviceActionList},
-      {path: 'test_run_hooks', component: TestRunHookList},
+      {path: 'test_run_actions', component: TestRunActionList},
       {
         path: 'general',
         component: SettingForm,

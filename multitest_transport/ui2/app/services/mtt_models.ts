@@ -48,7 +48,7 @@ export declare interface AuthorizationInfo {
   is_manual: boolean;
 }
 
-/** Authorization states (for build channels or test run hooks). */
+/** Authorization states (for build channels or test run actions). */
 export enum AuthorizationState {
   NOT_APPLICABLE = 'NOT_APPLICABLE',
   AUTHORIZED = 'AUTHORIZED',
@@ -584,8 +584,8 @@ export declare interface TestRunConfig {
   output_idle_timeout_seconds?: number;
   /** List of ids for the device actions */
   before_device_action_ids?: string[];
-  /** List of test run hook config IDs */
-  hook_config_ids?: string[];
+  /** List of test run action IDs */
+  test_run_action_ids?: string[];
 }
 
 /** initialize a new test run config */
@@ -724,8 +724,8 @@ export enum TestRunPhase {
   ON_ERROR = 'ON_ERROR',
 }
 
-/** Test run hook configuration. */
-export declare interface TestRunHookConfig {
+/** Test run action. */
+export declare interface TestRunAction {
   id: string;
   name: string;
   description?: string;
@@ -736,9 +736,9 @@ export declare interface TestRunHookConfig {
   authorization_state?: AuthorizationState;
 }
 
-/** List of test run hook configuration. */
-export declare interface TestRunHookConfigList {
-  configs: TestRunHookConfig[];
+/** List of test run actions. */
+export declare interface TestRunActionList {
+  actions: TestRunAction[];
 }
 
 /**

@@ -477,8 +477,8 @@ class DeviceActionList(messages.Message):
   next_page_token = messages.StringField(2)
 
 
-class TestRunHookConfig(messages.Message):
-  """A test run hook config."""
+class TestRunAction(messages.Message):
+  """A test run action."""
   id = messages.StringField(1)
   name = messages.StringField(2, required=True)
   description = messages.StringField(3)
@@ -490,9 +490,9 @@ class TestRunHookConfig(messages.Message):
   authorization_state = messages.EnumField(ndb_models.AuthorizationState, 8)
 
 
-@Converter(ndb_models.TestRunHookConfig, TestRunHookConfig)
-def _TestRunHookConfigConverter(obj):
-  return TestRunHookConfig(
+@Converter(ndb_models.TestRunAction, TestRunAction)
+def _TestRunActionConverter(obj):
+  return TestRunAction(
       id=str(obj.key.id()) if obj.key else None,
       name=obj.name,
       description=obj.description,
@@ -503,10 +503,10 @@ def _TestRunHookConfigConverter(obj):
           obj.tradefed_result_reporters, TradefedConfigObject))
 
 
-@Converter(TestRunHookConfig, ndb_models.TestRunHookConfig)
-def _TestRunHookConfigMessageConverter(msg):
-  return ndb_models.TestRunHookConfig(
-      key=ConvertToKey(ndb_models.TestRunHookConfig, msg.id),
+@Converter(TestRunAction, ndb_models.TestRunAction)
+def _TestRunActionMessageConverter(msg):
+  return ndb_models.TestRunAction(
+      key=ConvertToKey(ndb_models.TestRunAction, msg.id),
       name=msg.name,
       description=msg.description,
       hook_class_name=msg.hook_class_name,
@@ -516,9 +516,9 @@ def _TestRunHookConfigMessageConverter(msg):
           msg.tradefed_result_reporters, ndb_models.TradefedConfigObject))
 
 
-class TestRunHookConfigList(messages.Message):
-  """A list of test run hook configurations."""
-  configs = messages.MessageField(TestRunHookConfig, 1, repeated=True)
+class TestRunActionList(messages.Message):
+  """A list of test run actions."""
+  actions = messages.MessageField(TestRunAction, 1, repeated=True)
 
 
 class TestRunConfig(messages.Message):
@@ -537,7 +537,7 @@ class TestRunConfig(messages.Message):
   output_idle_timeout_seconds = messages.IntegerField(
       11, default=env.DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS)
   before_device_action_ids = messages.StringField(12, repeated=True)
-  hook_config_ids = messages.StringField(13, repeated=True)
+  test_run_action_ids = messages.StringField(13, repeated=True)
 
 
 @Converter(ndb_models.TestRunConfig, TestRunConfig)
@@ -558,8 +558,8 @@ def _TestRunConfigConverter(obj):
       before_device_action_ids=[
           str(key.id()) for key in obj.before_device_action_keys
       ],
-      hook_config_ids=[
-          str(key.id()) for key in obj.hook_config_keys
+      test_run_action_ids=[
+          str(key.id()) for key in obj.test_run_action_keys
       ],
   )
 
@@ -581,9 +581,9 @@ def _TestRunConfigMessageConverter(msg):
           ConvertToKey(ndb_models.DeviceAction, device_action_id)
           for device_action_id in msg.before_device_action_ids
       ],
-      hook_config_keys=[
-          ConvertToKey(ndb_models.TestRunHookConfig, hook_config_id)
-          for hook_config_id in msg.hook_config_ids
+      test_run_action_keys=[
+          ConvertToKey(ndb_models.TestRunAction, test_run_action_id)
+          for test_run_action_id in msg.test_run_action_ids
       ])
 
 
@@ -760,7 +760,7 @@ class TestRun(messages.Message):
   update_time = message_types.DateTimeField(19)
 
   before_device_actions = messages.MessageField(DeviceAction, 20, repeated=True)
-  hook_configs = messages.MessageField(TestRunHookConfig, 21, repeated=True)
+  test_run_actions = messages.MessageField(TestRunAction, 21, repeated=True)
 
   test_devices = messages.MessageField(TestDeviceInfo, 22, repeated=True)
   test_package_info = messages.MessageField(TestPackageInfo, 23)
@@ -800,7 +800,7 @@ def _TestRunConverter(obj):
       create_time=_AddTimezone(obj.create_time),
       update_time=_AddTimezone(obj.update_time),
       before_device_actions=Convert(obj.before_device_actions, DeviceAction),
-      hook_configs=Convert(obj.hook_configs, TestRunHookConfig),
+      test_run_actions=Convert(obj.test_run_actions, TestRunAction),
       test_devices=Convert(obj.test_devices, TestDeviceInfo),
       test_package_info=Convert(obj.test_package_info, TestPackageInfo)
   )

@@ -48,7 +48,7 @@ def _AfterTestRunHandler(test_run):
 
   After a test run is in one of the final states, MTT needs to do the following:
     Save the final test context.
-    Invoke configured test run hooks.
+    Invoke after run hooks.
     Schedule a job to upload test output files.
     Record test run metrics.
 

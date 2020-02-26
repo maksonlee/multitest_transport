@@ -20,91 +20,90 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {of as observableOf, throwError} from 'rxjs';
 
-import {MttClient, TestRunHookClient} from '../services/mtt_client';
-import {AuthorizationState, TestRunHookConfig} from '../services/mtt_models';
+import {MttClient, TestRunActionClient} from '../services/mtt_client';
+import {AuthorizationState, TestRunAction} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {getEl, getEls, hasEl} from '../testing/jasmine_util';
 
-import {TestRunHookList} from './test_run_hook_list';
-import {TestRunHooksModule} from './test_run_hooks_module';
-import {TestRunHooksModuleNgSummary} from './test_run_hooks_module.ngsummary';
+import {TestRunActionList} from './test_run_action_list';
+import {TestRunActionsModule} from './test_run_actions_module';
+import {TestRunActionsModuleNgSummary} from './test_run_actions_module.ngsummary';
 
-describe('TestRunHookList', () => {
+describe('TestRunActionList', () => {
   let liveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
   let notifier: jasmine.SpyObj<Notifier>;
-  let hookClient: jasmine.SpyObj<TestRunHookClient>;
+  let client: jasmine.SpyObj<TestRunActionClient>;
 
-  let fixture: ComponentFixture<TestRunHookList>;
+  let fixture: ComponentFixture<TestRunActionList>;
   let element: DebugElement;
-  let component: TestRunHookList;
+  let component: TestRunActionList;
 
   beforeEach(() => {
-    liveAnnouncer =
-        jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
-    notifier = jasmine.createSpyObj('notifier', ['confirm', 'showError']);
-    hookClient = jasmine.createSpyObj(
-        'hookClient', ['list', 'authorize', 'unauthorize', 'delete']);
-    hookClient.list.and.returnValue(observableOf([]));
-    hookClient.authorize.and.returnValue(observableOf(null));
-    hookClient.unauthorize.and.returnValue(observableOf(null));
-    hookClient.delete.and.returnValue(observableOf(null));
+    liveAnnouncer = jasmine.createSpyObj(['announce', 'clear']);
+    notifier = jasmine.createSpyObj(['confirm', 'showError']);
+    client =
+        jasmine.createSpyObj(['list', 'authorize', 'unauthorize', 'delete']);
+    client.list.and.returnValue(observableOf([]));
+    client.authorize.and.returnValue(observableOf(null));
+    client.unauthorize.and.returnValue(observableOf(null));
+    client.delete.and.returnValue(observableOf(null));
 
     TestBed.configureTestingModule({
-      imports: [TestRunHooksModule, NoopAnimationsModule],
-      aotSummaries: TestRunHooksModuleNgSummary,
+      imports: [TestRunActionsModule, NoopAnimationsModule],
+      aotSummaries: TestRunActionsModuleNgSummary,
       providers: [
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: Notifier, useValue: notifier},
-        {provide: MttClient, useValue: {testRunHooks: hookClient}},
+        {provide: MttClient, useValue: {testRunActions: client}},
       ],
     });
 
-    fixture = TestBed.createComponent(TestRunHookList);
+    fixture = TestBed.createComponent(TestRunActionList);
     fixture.detectChanges();
     element = fixture.debugElement;
     component = fixture.componentInstance;
   });
 
-  /** Convenience method to reload a new set of hook configs. */
-  function reload(configs: Array<Partial<TestRunHookConfig>>) {
-    hookClient.list.and.returnValue(observableOf(configs));
+  /** Convenience method to reload a new set of actions. */
+  function reload(configs: Array<Partial<TestRunAction>>) {
+    client.list.and.returnValue(observableOf(configs));
     component.load();
     fixture.detectChanges();
   }
 
   it('can initialize the component', () => {
     expect(component).toBeTruthy();
-    expect(hookClient.list).toHaveBeenCalled();
+    expect(client.list).toHaveBeenCalled();
     expect(notifier.showError).not.toHaveBeenCalled();
   });
 
   it('can announce loading start and end', () => {
     expect(liveAnnouncer.announce).toHaveBeenCalledWith('Loading', 'polite');
     expect(liveAnnouncer.announce)
-        .toHaveBeenCalledWith('Test run hooks loaded', 'assertive');
+        .toHaveBeenCalledWith('Test run actions loaded', 'assertive');
   });
 
-  it('can detect that no hook configs were loaded', () => {
+  it('can detect that no actions were loaded', () => {
     expect(hasEl(element, 'mat-card')).toBeFalsy();
     expect(hasEl(element, '.empty')).toBeTruthy();
   });
 
-  it('can display a list of hook configs', () => {
-    reload([{name: 'Hook #1'}, {name: 'Hook #2'}]);
+  it('can display a list of actions', () => {
+    reload([{name: 'Action #1'}, {name: 'Action #2'}]);
     const cards = getEls(element, 'mat-card');
     expect(cards.length).toBe(2);
-    expect(cards[0].textContent).toContain('Hook #1');
-    expect(cards[1].textContent).toContain('Hook #2');
+    expect(cards[0].textContent).toContain('Action #1');
+    expect(cards[1].textContent).toContain('Action #2');
     expect(hasEl(element, '.empty')).toBeFalsy();
   });
 
-  it('can handle errors when loading hook configs', () => {
-    hookClient.list.and.returnValue(throwError('loading failed'));
+  it('can handle errors when loading actions', () => {
+    client.list.and.returnValue(throwError('loading failed'));
     component.load();
     expect(notifier.showError).toHaveBeenCalled();
   });
 
-  it('can display an authorized hook config', () => {
+  it('can display an authorized action', () => {
     reload([{authorization_state: AuthorizationState.AUTHORIZED}]);
     const statusButton = getEl(element, 'mat-card status-button');
     expect(statusButton.textContent).toContain('Authorized');
@@ -112,7 +111,7 @@ describe('TestRunHookList', () => {
     expect(hasEl(element, 'mat-card #revoke-button')).toBeTruthy();
   });
 
-  it('can display an unauthorized hook config', () => {
+  it('can display an unauthorized action', () => {
     reload([{authorization_state: AuthorizationState.UNAUTHORIZED}]);
     const statusButton = getEl(element, 'mat-card status-button');
     expect(statusButton.textContent).toContain('Unauthorized');
@@ -120,67 +119,69 @@ describe('TestRunHookList', () => {
     expect(hasEl(element, 'mat-card #revoke-button')).toBeFalsy();
   });
 
-  it('can display a hook config without authorization', () => {
+  it('can display an action without authorization', () => {
     reload([{authorization_state: AuthorizationState.NOT_APPLICABLE}]);
     expect(hasEl(element, 'mat-card status-button')).toBeFalsy();
     expect(hasEl(element, 'mat-card #auth-button')).toBeFalsy();
     expect(hasEl(element, 'mat-card #revoke-button')).toBeFalsy();
   });
 
-  it('can authorize a hook config', () => {
+  it('can authorize an action', () => {
     reload([
-      {id: 'hook_id', authorization_state: AuthorizationState.UNAUTHORIZED}
+      {id: 'action_id', authorization_state: AuthorizationState.UNAUTHORIZED}
     ]);
     getEl(element, 'mat-card #auth-button').click();
-    expect(hookClient.authorize).toHaveBeenCalledWith('hook_id');
+    expect(client.authorize).toHaveBeenCalledWith('action_id');
     expect(notifier.showError).not.toHaveBeenCalled();
   });
 
-  it('can handle errors when authorizing a hook config', () => {
-    hookClient.authorize.and.returnValue(throwError('authorize failed'));
+  it('can handle errors when authorizing an action', () => {
+    client.authorize.and.returnValue(throwError('authorize failed'));
     reload([
-      {id: 'hook_id', authorization_state: AuthorizationState.UNAUTHORIZED}
+      {id: 'action_id', authorization_state: AuthorizationState.UNAUTHORIZED}
     ]);
     getEl(element, 'mat-card #auth-button').click();
     expect(notifier.showError).toHaveBeenCalled();
   });
 
-  it('can revoke a hook config authorization', () => {
-    reload(
-        [{id: 'hook_id', authorization_state: AuthorizationState.AUTHORIZED}]);
+  it('can revoke an action\'s authorization', () => {
+    reload([
+      {id: 'action_id', authorization_state: AuthorizationState.AUTHORIZED}
+    ]);
     getEl(element, 'mat-card #revoke-button').click();
-    expect(hookClient.unauthorize).toHaveBeenCalledWith('hook_id');
+    expect(client.unauthorize).toHaveBeenCalledWith('action_id');
     expect(notifier.showError).not.toHaveBeenCalled();
   });
 
-  it('can handle errors when revoking a hook config authorization', () => {
-    hookClient.unauthorize.and.returnValue(throwError('unauthorize failed'));
-    reload(
-        [{id: 'hook_id', authorization_state: AuthorizationState.AUTHORIZED}]);
+  it('can handle errors when revoking an action\'s authorization', () => {
+    client.unauthorize.and.returnValue(throwError('unauthorize failed'));
+    reload([
+      {id: 'action_id', authorization_state: AuthorizationState.AUTHORIZED}
+    ]);
     getEl(element, 'mat-card #revoke-button').click();
     expect(notifier.showError).toHaveBeenCalled();
   });
 
-  it('can delete a hook config', () => {
+  it('can delete an action', () => {
     notifier.confirm.and.returnValue(observableOf(true));  // confirm delete
-    reload([{id: 'hook_id'}]);
+    reload([{id: 'action_id'}]);
     getEl(element, 'mat-card #delete-button').click();
-    expect(hookClient.delete).toHaveBeenCalledWith('hook_id');
-    expect(component.hookConfigs).toEqual([]);  // hook config removed
+    expect(client.delete).toHaveBeenCalledWith('action_id');
+    expect(component.actions).toEqual([]);  // action removed
     expect(notifier.showError).not.toHaveBeenCalled();
   });
 
-  it('can confirm deleting a hook config', () => {
+  it('can confirm deleting an action', () => {
     notifier.confirm.and.returnValue(observableOf(false));  // cancel delete
-    reload([{id: 'hook_id'}]);
+    reload([{id: 'action_id'}]);
     getEl(element, 'mat-card #delete-button').click();
-    expect(hookClient.delete).not.toHaveBeenCalledWith('hook_id');
+    expect(client.delete).not.toHaveBeenCalledWith('action_id');
   });
 
-  it('can handle errors when deleting a hook config', () => {
-    hookClient.delete.and.returnValue(throwError('delete failed'));
-    notifier.confirm.and.returnValue(observableOf(true));    // confirm delete
-    reload([{id: 'hook_id'}]);
+  it('can handle errors when deleting an action', () => {
+    client.delete.and.returnValue(throwError('delete failed'));
+    notifier.confirm.and.returnValue(observableOf(true));  // confirm delete
+    reload([{id: 'action_id'}]);
     getEl(element, 'mat-card #delete-button').click();
     expect(notifier.showError).toHaveBeenCalled();
   });

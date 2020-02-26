@@ -26,7 +26,7 @@ import {DeviceActionsModule} from '../device_actions/device_actions_module';
 import {DevicesModule} from '../devices/devices_module';
 import {ServicesModule} from '../services/services_module';
 import {SharedModule} from '../shared/shared_module';
-import {TestRunHooksModule} from '../test_run_hooks/test_run_hooks_module';
+import {TestRunActionsModule} from '../test_run_actions/test_run_actions_module';
 
 import {NewTestRunPage} from './new_test_run_page';
 import {TestJobTree} from './test_job_tree';
@@ -66,7 +66,7 @@ const COMPONENTS = [
   declarations: COMPONENTS,
   providers: [Title],
   imports: [
-    BuildChannelsModule, DeviceActionsModule, DevicesModule, TestRunHooksModule,
+    BuildChannelsModule, DeviceActionsModule, DevicesModule, TestRunActionsModule,
     ServicesModule, SharedModule
   ],
   exports: COMPONENTS,

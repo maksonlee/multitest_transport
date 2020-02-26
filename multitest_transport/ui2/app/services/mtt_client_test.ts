@@ -20,8 +20,8 @@ import {of as observableOf} from 'rxjs';
 import * as testUtil from '../testing/test_util';
 
 import {AuthService, REDIRECT_URI} from './auth_service';
-import {MTT_API_URL, MttClient, TestRunHookClient} from './mtt_client';
-import {BuildChannelList, TestPlanList, TestRun, TestRunHookConfig} from './mtt_models';
+import {MTT_API_URL, MttClient, TestRunActionClient} from './mtt_client';
+import {BuildChannelList, TestPlanList, TestRun, TestRunAction} from './mtt_models';
 import {CommandAttempt, CommandState} from './tfc_models';
 
 describe('MttClient', () => {
@@ -616,12 +616,12 @@ describe('MttClient', () => {
   });
 });
 
-describe('TestRunHookClient', () => {
+describe('TestRunActionClient', () => {
   let http: jasmine.SpyObj<HttpClient>;
   let auth: jasmine.SpyObj<AuthService>;
-  let client: TestRunHookClient;
+  let client: TestRunActionClient;
 
-  const hookConfig: TestRunHookConfig =
+  const action: TestRunAction =
       {id: 'id', name: 'name', hook_class_name: 'class_name'};
 
   beforeEach(() => {
@@ -629,50 +629,50 @@ describe('TestRunHookClient', () => {
         'HttpClient', ['get', 'post', 'put', 'delete']);
     auth = jasmine.createSpyObj<AuthService>(
         'AuthService', ['getAuthorizationCode']);
-    client = new TestRunHookClient(http, auth);
+    client = new TestRunActionClient(http, auth);
   });
 
-  it('can list hook configurations', () => {
-    const configList = {configs: [hookConfig]};
-    http.get.and.returnValue(observableOf(configList));
-    client.list().subscribe(expectResponse([hookConfig]));
-    expect(http.get).toHaveBeenCalledWith(TestRunHookClient.PATH);
+  it('can list test run actions', () => {
+    const actionList = {actions: [action]};
+    http.get.and.returnValue(observableOf(actionList));
+    client.list().subscribe(expectResponse([action]));
+    expect(http.get).toHaveBeenCalledWith(TestRunActionClient.PATH);
     expect(http.get).toHaveBeenCalledTimes(1);
   });
 
-  it('can get hook configuration', () => {
-    http.get.and.returnValue(observableOf(hookConfig));
-    client.get('id').subscribe(expectResponse(hookConfig));
-    expect(http.get).toHaveBeenCalledWith(TestRunHookClient.PATH + '/id');
+  it('can get test run action', () => {
+    http.get.and.returnValue(observableOf(action));
+    client.get('id').subscribe(expectResponse(action));
+    expect(http.get).toHaveBeenCalledWith(TestRunActionClient.PATH + '/id');
     expect(http.get).toHaveBeenCalledTimes(1);
   });
 
-  it('can create hook configuration', () => {
-    http.post.and.returnValue(observableOf(hookConfig));
-    client.create(hookConfig).subscribe(expectResponse(hookConfig));
+  it('can create test run action', () => {
+    http.post.and.returnValue(observableOf(action));
+    client.create(action).subscribe(expectResponse(action));
     expect(http.post).toHaveBeenCalledWith(
-        TestRunHookClient.PATH, hookConfig, jasmine.any(Object));
+        TestRunActionClient.PATH, action, jasmine.any(Object));
     expect(http.post).toHaveBeenCalledTimes(1);
   });
 
-  it('can update hook configuration', () => {
-    http.put.and.returnValue(observableOf(hookConfig));
-    client.update('id', hookConfig).subscribe(expectResponse(hookConfig));
+  it('can update test run action', () => {
+    http.put.and.returnValue(observableOf(action));
+    client.update('id', action).subscribe(expectResponse(action));
     expect(http.put).toHaveBeenCalledWith(
-        TestRunHookClient.PATH + '/id', hookConfig, jasmine.any(Object));
+        TestRunActionClient.PATH + '/id', action, jasmine.any(Object));
     expect(http.put).toHaveBeenCalledTimes(1);
   });
 
-  it('can delete hook configuration', () => {
+  it('can delete test run action', () => {
     http.delete.and.returnValue(observableOf());
     client.delete('id').subscribe();
     expect(http.delete)
         .toHaveBeenCalledWith(
-            TestRunHookClient.PATH + '/id', jasmine.any(Object));
+            TestRunActionClient.PATH + '/id', jasmine.any(Object));
     expect(http.delete).toHaveBeenCalledTimes(1);
   });
 
-  it('can authorize hook configuration', () => {
+  it('can authorize test run action', () => {
     const authInfo = {url: 'auth_url', is_manual: false};
     http.get.and.returnValue(observableOf(authInfo));
     auth.getAuthorizationCode.and.returnValue(observableOf('code'));
@@ -682,24 +682,24 @@ describe('TestRunHookClient', () => {
     // Fetches authorization information
     const params = new HttpParams().set('redirect_uri', REDIRECT_URI);
     expect(http.get).toHaveBeenCalledWith(
-        TestRunHookClient.PATH + '/id/auth', {params});
+        TestRunActionClient.PATH + '/id/auth', {params});
     expect(http.get).toHaveBeenCalledTimes(1);
     // Obtains authorization code from user
     expect(auth.getAuthorizationCode).toHaveBeenCalledWith(authInfo);
     expect(auth.getAuthorizationCode).toHaveBeenCalledTimes(1);
     // Sends authorization code
     expect(http.post).toHaveBeenCalledWith(
-        TestRunHookClient.PATH + '/id/auth',
+        TestRunActionClient.PATH + '/id/auth',
         {'redirect_uri': REDIRECT_URI, 'code': 'code'}, jasmine.any(Object));
     expect(http.post).toHaveBeenCalledTimes(1);
   });
 
-  it('can revoke hook configuration authorization', () => {
+  it('can revoke test run action authorization', () => {
     http.delete.and.returnValue(observableOf());
     client.unauthorize('id').subscribe();
     expect(http.delete)
         .toHaveBeenCalledWith(
-            TestRunHookClient.PATH + '/id/auth', jasmine.any(Object));
+            TestRunActionClient.PATH + '/id/auth', jasmine.any(Object));
     expect(http.delete).toHaveBeenCalledTimes(1);
   });
 });

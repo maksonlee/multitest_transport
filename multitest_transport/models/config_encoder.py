@@ -72,7 +72,7 @@ def Load(config_set):
     _Load(config_set.node_config)
 
   objs = (config_set.build_channels + config_set.device_actions +
-          config_set.test_run_hooks + config_set.tests)
+          config_set.test_run_actions + config_set.tests)
   for obj in objs:
     _Load(obj)
 
@@ -108,11 +108,11 @@ class ConfigSet(object):
   """MTT configuration set object."""
 
   def __init__(self, node_config=None, build_channels=None, device_actions=None,
-               test_run_hooks=None, tests=None, info=None):
+               test_run_actions=None, tests=None, info=None):
     self.node_config = node_config
     self.build_channels = build_channels or []
     self.device_actions = device_actions or []
-    self.test_run_hooks = test_run_hooks or []
+    self.test_run_actions = test_run_actions or []
     self.tests = tests or []
     self.info = info
     # TODO: add support for test plans
@@ -122,7 +122,7 @@ class ConfigSet(object):
             self.node_config == other.node_config and
             self.build_channels == other.build_channels and
             self.device_actions == other.device_actions and
-            self.test_run_hooks == other.test_run_hooks and
+            self.test_run_actions == other.test_run_actions and
             self.tests == other.tests and
             self.info == other.info)
 
@@ -135,7 +135,7 @@ class _ConfigSetMessage(Message):
   node_config = MessageField(messages.NodeConfig, 1)
   build_channels = MessageField(messages.BuildChannelConfig, 2, repeated=True)
   device_actions = MessageField(messages.DeviceAction, 3, repeated=True)
-  test_run_hooks = MessageField(messages.TestRunHookConfig, 4, repeated=True)
+  test_run_actions = MessageField(messages.TestRunAction, 4, repeated=True)
   tests = MessageField(messages.Test, 5, repeated=True)
   info = MessageField(messages.ConfigSetInfo, 6)
 
@@ -148,8 +148,8 @@ def _ConfigSetConverter(obj):
                                       messages.BuildChannelConfig),
       device_actions=messages.Convert(obj.device_actions,
                                       messages.DeviceAction),
-      test_run_hooks=messages.Convert(obj.test_run_hooks,
-                                      messages.TestRunHookConfig),
+      test_run_actions=messages.Convert(obj.test_run_actions,
+                                        messages.TestRunAction),
       tests=messages.Convert(obj.tests, messages.Test),
       info=messages.Convert(obj.info, messages.ConfigSetInfo))
 
@@ -162,7 +162,7 @@ def _ConfigSetMessageConverter(msg):
                                       ndb_models.BuildChannelConfig),
       device_actions=messages.Convert(msg.device_actions,
                                       ndb_models.DeviceAction),
-      test_run_hooks=messages.Convert(msg.test_run_hooks,
-                                      ndb_models.TestRunHookConfig),
+      test_run_actions=messages.Convert(msg.test_run_actions,
+                                        ndb_models.TestRunAction),
       tests=messages.Convert(msg.tests, ndb_models.Test),
       info=messages.Convert(msg.info, ndb_models.ConfigSetInfo))

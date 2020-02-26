@@ -75,9 +75,9 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
   deviceActionMap: {[key: string]: mttModels.DeviceAction;} = {};
   selectedDeviceActions: mttModels.DeviceAction[] = [];
 
-  hookConfigs: mttModels.TestRunHookConfig[] = [];
-  hookConfigMap: {[key: string]: mttModels.TestRunHookConfig;} = {};
-  selectedHookConfigs: mttModels.TestRunHookConfig[] = [];
+  testRunActions: mttModels.TestRunAction[] = [];
+  testRunActionMap: {[key: string]: mttModels.TestRunAction;} = {};
+  selectedTestRunActions: mttModels.TestRunAction[] = [];
 
   labels: string[] = [];
   testResourceObjs: mttModels.TestResourceObj[] = [];
@@ -171,7 +171,7 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
     // Make API calls
     const testObs = this.mttClient.getTests();
     const deviceActionObs = this.mttClient.getDeviceActionList();
-    const testRunHookObs = this.mttClient.testRunHooks.list();
+    const testRunActionObs = this.mttClient.testRunActions.list();
     const nodeConfigObs = this.mttClient.getNodeConfig();
     const buildChannelObs = this.mttClient.getBuildChannels();
     const prevTestRunObs = prevTestRunId ?
@@ -187,13 +187,13 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
 
     // Get API call results
     forkJoin([
-      testObs, deviceActionObs, testRunHookObs, nodeConfigObs, buildChannelObs,
+      testObs, deviceActionObs, testRunActionObs, nodeConfigObs, buildChannelObs,
       prevTestRunObs
     ])
         .pipe(first())
         .subscribe(
             ([
-              testRes, deviceActionRes, hookConfigs, nodeConfigRes,
+              testRes, deviceActionRes, testRunActions, nodeConfigRes,
               buildChannelRes, prevTestRunRes
             ]) => {
               // Tests
@@ -213,11 +213,11 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
                 this.deviceActionMap[deviceAction.id] = deviceAction;
               }
 
-              // Test Run Hooks
-              this.hookConfigs = hookConfigs;
-              this.hookConfigMap = {};
-              for (const hookConfig of this.hookConfigs) {
-                this.hookConfigMap[hookConfig.id] = hookConfig;
+              // Test Run Actions
+              this.testRunActions = testRunActions;
+              this.testRunActionMap = {};
+              for (const action of this.testRunActions) {
+                this.testRunActionMap[action.id] = action;
               }
 
               // Node Configs
@@ -260,14 +260,14 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
 
       // Load device actions
       const deviceActionIds = this.testRunConfig.before_device_action_ids || [];
-      for (const deviceActionId of deviceActionIds) {
-        this.selectedDeviceActions.push(this.deviceActionMap[deviceActionId]);
+      for (const id of deviceActionIds) {
+        this.selectedDeviceActions.push(this.deviceActionMap[id]);
       }
 
-      // Load test run hooks
-      const hookConfigIds = this.testRunConfig.hook_config_ids || [];
-      for (const hookConfigId of hookConfigIds) {
-        this.selectedHookConfigs.push(this.hookConfigMap[hookConfigId]);
+      // Load test run actions
+      const testRunActionIds = this.testRunConfig.test_run_action_ids || [];
+      for (const id of testRunActionIds) {
+        this.selectedTestRunActions.push(this.testRunActionMap[id]);
       }
     }
 
@@ -351,8 +351,8 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
     this.testRunConfig.before_device_action_ids =
         this.selectedDeviceActions.map(action => action.id);
     // TODO: send custom options to backend
-    this.testRunConfig.hook_config_ids =
-        this.selectedHookConfigs.map(hookConfig => hookConfig.id);
+    this.testRunConfig.test_run_action_ids =
+        this.selectedTestRunActions.map(action => action.id);
 
     const newTestRunRequest: mttModels.NewTestRunRequest = {
       labels: this.labels,

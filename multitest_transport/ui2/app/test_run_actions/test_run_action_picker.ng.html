@@ -14,22 +14,22 @@
  limitations under the License.
 -->
 
-<!-- List of selected test run hooks -->
-<div cdkDropList class="test-run-hook-list" (cdkDropListDropped)="moveConfig($event)">
-  <div class="test-run-hook-item" cdkDrag *ngFor="let config of selectedHookConfigs">
-    <div class="test-run-hook-header" cdkDragHandle>
+<!-- List of selected test run actions -->
+<div cdkDropList class="test-run-action-list" (cdkDropListDropped)="move($event)">
+  <div class="test-run-action-item" cdkDrag *ngFor="let action of selectedActions">
+    <div class="test-run-action-header" cdkDragHandle>
       <mat-icon class="drag-icon">drag_indicator</mat-icon>
-      <span>{{config.name}}</span>
+      <span>{{action.name}}</span>
       <button aria-label="Delete" matTooltip="Delete" class="clear-button" mat-button
-              (click)="removeConfig(config); hasContentChanged = true">
+              (click)="remove(action); hasContentChanged = true">
         <mat-icon class="drag-icon">clear</mat-icon>
       </button>
     </div>
     <!-- TODO: add option defs to store metadata (type, label, required) -->
-    <mat-form-field class="test-run-hook-option" appearance="outline"
-                    *ngFor="let option of config.options; let i = index">
+    <mat-form-field class="test-run-action-option" appearance="outline"
+                    *ngFor="let option of action.options; let i = index">
       <mat-label> {{option.name}} </mat-label>
-      <input matInput [(ngModel)]="config.options[i].value">
+      <input matInput [(ngModel)]="action.options[i].value">
     </mat-form-field>
   </div>
 </div>
@@ -39,23 +39,23 @@
     class="add-button"
     mat-stroked-button
     color="accent"
-    aria-label="Add test run hook"
-    [matMenuTriggerFor]="testRunHookDropdown">
-  + Add test run hook
+    aria-label="Add test run action"
+    [matMenuTriggerFor]="testRunActionDropdown">
+  + Add test run action
 </button>
 
-<!-- Test run hook selection menu -->
-<mat-menu #testRunHookDropdown="matMenu" class="test-run-hook-menu">
+<!-- Test run action selection menu -->
+<mat-menu #testRunActionDropdown="matMenu" class="test-run-action-menu">
   <!-- trap focus and prevent tabs from closing the menu -->
   <div cdkTrapFocus (keydown.tab)="$event.stopPropagation()">
     <!-- checkboxes -->
     <div class="checkbox-wrapper">
-      <div mat-menu-item *ngFor="let config of hookConfigs"
-           (click)="$event.stopPropagation()" (keydown.enter)="selection.toggle(config)">
+      <div mat-menu-item *ngFor="let action of actions"
+           (click)="$event.stopPropagation()" (keydown.enter)="selection.toggle(action)">
         <mat-checkbox tabindex="-1"
-                      (change)="$event ? selection.toggle(config) : null"
-                      [checked]="selection.isSelected(config)">
-          {{config.name}}
+                      (change)="$event ? selection.toggle(action) : null"
+                      [checked]="selection.isSelected(action)">
+          {{action.name}}
         </mat-checkbox>
       </div>
     </div>
@@ -64,10 +64,10 @@
 
     <!-- menu buttons -->
     <div class="button-wrapper">
-      <button mat-flat-button color="accent" (click)="addSelectedConfigs()"
-              aria-label="Add test run hooks"
+      <button mat-flat-button color="accent" (click)="addSelected()"
+              aria-label="Add test run actions"
               [attr.aria-disabled]="selection.selected.length === 0">
-        + Add test run hook(s)
+        + Add test run action(s)
       </button>
       <button mat-button color="accent">Cancel</button>
     </div>

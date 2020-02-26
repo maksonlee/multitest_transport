@@ -38,10 +38,10 @@ class OAuth2Hook(plugins.TestRunHook):
   oauth2_config = plugins.OAuth2Config('id', 'secret', ['scope'])
 
 
-class RunHookTest(absltest.TestCase):
+class TestRunHookTest(absltest.TestCase):
 
   def setUp(self):
-    super(RunHookTest, self).setUp()
+    super(TestRunHookTest, self).setUp()
     self.testbed = testbed.Testbed()
     self.testbed.activate()
     self.testbed.init_all_stubs()
@@ -49,15 +49,16 @@ class RunHookTest(absltest.TestCase):
   @mock.patch.object(test_run_hook, '_ExecuteHook')
   @mock.patch.object(test_run_hook, '_GetLatestAttempt')
   def testExecuteHooks(self, mock_get_latest_attempt, mock_execute_hook):
-    """Tests that relevant hooks can be found and executed."""
-    before_hook = ndb_models.TestRunHookConfig(
+    """Tests that relevant actions can be found and executed."""
+    before_action = ndb_models.TestRunAction(
         name='Before', hook_class_name='simple',
         phases=[ndb_models.TestRunPhase.BEFORE_RUN])
-    after_hook = ndb_models.TestRunHookConfig(
+    after_action = ndb_models.TestRunAction(
         name='After', hook_class_name='simple',
         phases=[ndb_models.TestRunPhase.AFTER_RUN])
-    # Create test run with two hooks and an attempt
-    test_run = ndb_models.TestRun(hook_configs=[before_hook, after_hook])
+    # Create test run with two actions and an attempt
+    test_run = ndb_models.TestRun(
+        test_run_actions=[before_action, after_action])
     test_run.put()
     attempt = mock.MagicMock()
     mock_get_latest_attempt.return_value = attempt
@@ -69,7 +70,7 @@ class RunHookTest(absltest.TestCase):
     hook_context = plugins.TestRunHookContext(
         test_run=test_run, latest_attempt=attempt,
         phase=ndb_models.TestRunPhase.AFTER_RUN)
-    mock_execute_hook.assert_called_once_with(after_hook, hook_context)
+    mock_execute_hook.assert_called_once_with(after_action, hook_context)
 
   @mock.patch.object(test_run_hook, '_ExecuteHook')
   def testExecuteHooks_notFound(self, mock_execute_hook):
@@ -114,56 +115,51 @@ class RunHookTest(absltest.TestCase):
     mock_init.return_value = None
     hook_context = mock.MagicMock()
     credentials = client.Credentials()
-    hook_config = ndb_models.TestRunHookConfig(
+    action = ndb_models.TestRunAction(
         name='Test', hook_class_name='simple',
         options=[ndb_models.NameValuePair(name='ham', value='eggs')],
         credentials=credentials,
     )
-    test_run_hook._ExecuteHook(hook_config, hook_context)
+    test_run_hook._ExecuteHook(action, hook_context)
     mock_init.assert_called_with(_credentials=credentials, ham='eggs')
     mock_execute.assert_called_with(hook_context)
 
   def testGetOAuth2Config_notFound(self):
     """Tests that no OAuth2 config is returned if hook class not found."""
-    hook_config = ndb_models.TestRunHookConfig(
-        name='Test', hook_class_name='unknown')
-    self.assertIsNone(test_run_hook.GetOAuth2Config(hook_config))
+    action = ndb_models.TestRunAction(name='Test', hook_class_name='unknown')
+    self.assertIsNone(test_run_hook.GetOAuth2Config(action))
 
   def testGetOAuth2Config_noConfig(self):
     """Tests that no OAuth2 config is returned if class doesn't have any."""
-    hook_config = ndb_models.TestRunHookConfig(
-        name='Test', hook_class_name='simple')
-    self.assertIsNone(test_run_hook.GetOAuth2Config(hook_config))
+    action = ndb_models.TestRunAction(name='Test', hook_class_name='simple')
+    self.assertIsNone(test_run_hook.GetOAuth2Config(action))
 
   def testGetOAuth2Config(self):
     """Tests that a hook's OAuth2 config can be retrieved."""
-    hook_config = ndb_models.TestRunHookConfig(
-        name='Test', hook_class_name='oauth2')
+    action = ndb_models.TestRunAction(name='Test', hook_class_name='oauth2')
     self.assertEqual(OAuth2Hook.oauth2_config,
-                     test_run_hook.GetOAuth2Config(hook_config))
+                     test_run_hook.GetOAuth2Config(action))
 
   def testGetAuthorizationState_notApplicable(self):
     """Tests detecting hooks not requiring authorization."""
-    hook_config = ndb_models.TestRunHookConfig(
-        name='Test', hook_class_name='simple')
+    action = ndb_models.TestRunAction(name='Test', hook_class_name='simple')
     self.assertEqual(ndb_models.AuthorizationState.NOT_APPLICABLE,
-                     test_run_hook.GetAuthorizationState(hook_config))
+                     test_run_hook.GetAuthorizationState(action))
 
   def testGetAuthorizationState_unauthorized(self):
     """Tests detecting hooks requiring authorization and without credentials."""
-    hook_config = ndb_models.TestRunHookConfig(
-        name='Test', hook_class_name='oauth2')
+    action = ndb_models.TestRunAction(name='Test', hook_class_name='oauth2')
     self.assertEqual(ndb_models.AuthorizationState.UNAUTHORIZED,
-                     test_run_hook.GetAuthorizationState(hook_config))
+                     test_run_hook.GetAuthorizationState(action))
 
   def testGetAuthorizationState_authorized(self):
     """Tests detecting hooks requiring authorization and with credentials."""
-    hook_config = ndb_models.TestRunHookConfig(
+    action = ndb_models.TestRunAction(
         name='Test', hook_class_name='oauth2',
         credentials=client.Credentials(),
     )
     self.assertEqual(ndb_models.AuthorizationState.AUTHORIZED,
-                     test_run_hook.GetAuthorizationState(hook_config))
+                     test_run_hook.GetAuthorizationState(action))
 
   @mock.patch.object(test_run_hook.TfcTaskInterceptor, 'UpdateCommandTask')
   @mock.patch.object(test_run_hook, 'ExecuteHooks')

@@ -166,7 +166,7 @@ TESTS = [
     "//multitest_transport/ui2/app/shared:tests",
     "//multitest_transport/ui2/app/test_plans:tests",
     "//multitest_transport/ui2/app/test_runs:tests",
-    "//multitest_transport/ui2/app/test_run_hooks:tests",
+    "//multitest_transport/ui2/app/test_run_actions:tests",
     "//multitest_transport/ui2/app/tests:tests_",
 ]
 

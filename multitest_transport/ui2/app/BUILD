@@ -44,7 +44,7 @@ ng_module(
         "//multitest_transport/ui2/app/setup_wizard",
         "//multitest_transport/ui2/app/shared",
         "//multitest_transport/ui2/app/test_plans",
-        "//multitest_transport/ui2/app/test_run_hooks",
+        "//multitest_transport/ui2/app/test_run_actions",
         "//multitest_transport/ui2/app/test_runs",
         "//multitest_transport/ui2/app/tests",
     ],

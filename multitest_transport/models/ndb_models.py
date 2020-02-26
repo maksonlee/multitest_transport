@@ -224,12 +224,12 @@ class TestRunPhase(messages.Enum):
   ON_ERROR = 6  # After run fails to complete due to errors
 
 
-class TestRunHookConfig(ndb.Model):
-  """Test run hook configuration.
+class TestRunAction(ndb.Model):
+  """Test run action, describes a specific hook execution.
 
   Attributes:
-    name: run hook name.
-    description: run hook description.
+    name: action name.
+    description: action description.
     hook_class_name: run hook class identifier.
     phases: phases during which hook should be triggered.
     options: key-value pairs to use when configuring the hook.
@@ -264,7 +264,7 @@ class TestRunConfig(ndb.Model):
     output_idle_timeout_seconds: how long a test run's output can be idle before
         attempting recovery
     before_device_action_keys: device actions to execute before running a test.
-    hook_config_keys: test run hooks to execute during a test.
+    test_run_action_keys: test run actions to execute during a test.
   """
   test_key = ndb.KeyProperty(kind=Test, required=True)
   cluster = ndb.StringProperty(required=True)
@@ -281,7 +281,7 @@ class TestRunConfig(ndb.Model):
   output_idle_timeout_seconds = ndb.IntegerProperty(
       default=env.DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS)
   before_device_action_keys = ndb.KeyProperty(DeviceAction, repeated=True)
-  hook_config_keys = ndb.KeyProperty(TestRunHookConfig, repeated=True)
+  test_run_action_keys = ndb.KeyProperty(TestRunAction, repeated=True)
 
 
 class TestResourcePipe(ndb.Model):
@@ -440,7 +440,7 @@ class TestRun(ndb.Model):
     create_time: time a test run is created.
     update_time: time a test run is last updated.
     before_device_actions: device actions used during the run.
-    hook_configs: test run hooks executed during the run.
+    test_run_actions: test run actions executed during the run.
     hook_data: additional data used by hooks
     cancel_reason: cancellation reason
     error_reason: error reason
@@ -471,10 +471,10 @@ class TestRun(ndb.Model):
   update_time = ndb.DateTimeProperty(auto_now_add=True)
 
   # TODO improve action versioning
-  # Snapshot of the actions/hooks executed by the run
+  # Snapshot of the actions executed by the run
   before_device_actions = ndb.LocalStructuredProperty(
       DeviceAction, repeated=True)
-  hook_configs = ndb.LocalStructuredProperty(TestRunHookConfig, repeated=True)
+  test_run_actions = ndb.LocalStructuredProperty(TestRunAction, repeated=True)
   hook_data = ndb.JsonProperty(default={})
 
   cancel_reason = msgprop.EnumProperty(common.CancelReason)
