@@ -54,7 +54,7 @@ describe('BuildChannelEditPage scuba test', () => {
         observableOf({build_channel_providers: [...BUILD_CHANNEL_PROVIDERS]}));
     bootstrapTemplate(`<build-channel-edit-page></build-channel-edit-page>`);
     await env.verifyState(
-        `build-channel-edit-page-no-option`, 'build-channel-edit-page');
+        `build-channel-edit-page_no_option`, 'build-channel-edit-page');
   });
 
   it.async('can display a form with option', async () => {
@@ -72,6 +72,6 @@ describe('BuildChannelEditPage scuba test', () => {
         observableOf({build_channel_providers: [...BUILD_CHANNEL_PROVIDERS]}));
     bootstrapTemplate(`<build-channel-edit-page></build-channel-edit-page>`);
     await env.verifyState(
-        `build-channel-edit-page-with-option`, 'build-channel-edit-page');
+        `build-channel-edit-page_with_option`, 'build-channel-edit-page');
   });
 });

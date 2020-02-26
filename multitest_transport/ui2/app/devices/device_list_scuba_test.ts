@@ -57,7 +57,7 @@ describe('DeviceList', () => {
     tfcClient.getDeviceInfos.and.returnValue(
         observableOf({device_infos: [device]}));
     bootstrapTemplate(`<device-list></device-list>`);
-    await env.verifyState(`device-list-with-device`, 'device-list');
+    await env.verifyState(`device-list_with_device`, 'device-list');
   });
 
   it.async(
@@ -66,7 +66,6 @@ describe('DeviceList', () => {
           {
             device_serial: 'Unknown',
             battery_level: 'unknown',
-
           },
           {
             device_serial: 'Low battery',
@@ -83,12 +82,12 @@ describe('DeviceList', () => {
             observableOf({device_infos: devices}));
         bootstrapTemplate(`<device-list></device-list>`);
         await env.verifyState(
-            `device-list-devices-with-different-battery-level`, 'device-list');
+            `device-list_devices_with_different_battery_level`, 'device-list');
       });
 
   it.async('can render page with no device found', async () => {
     tfcClient.getDeviceInfos.and.returnValue(observableOf({device_infos: []}));
     bootstrapTemplate(`<device-list></device-list>`);
-    await env.verifyState(`device-list-no-device-found`, 'device-list');
+    await env.verifyState(`device-list_no_device_found`, 'device-list');
   });
 });

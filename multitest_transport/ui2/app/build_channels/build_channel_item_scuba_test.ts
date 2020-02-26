@@ -51,7 +51,7 @@ describe('BuildChannelItem', () => {
          </build-channel-item>`,
         {buildChannel: unauthorizedChannel});
     await env.verifyState(
-        `build-channel-item-not-authorized`, 'build-channel-item');
+        `build-channel-item_not_authorized`, 'build-channel-item');
   });
 
   it.async('renders authorized build channel item', async () => {
@@ -66,7 +66,7 @@ describe('BuildChannelItem', () => {
          </build-channel-item>`,
         {buildChannel: authorizedChannel});
     await env.verifyState(
-        `build-channel-item-authorized`, 'build-channel-item');
+        `build-channel-item_authorized`, 'build-channel-item');
   });
 
   it.async('renders build channel item which do not require auth', async () => {
@@ -80,6 +80,6 @@ describe('BuildChannelItem', () => {
          </build-channel-item>`,
         {buildChannel: buildchannel});
     await env.verifyState(
-        `build-channel-item-do-not-require-auth`, 'build-channel-item');
+        `build-channel-item_do_not_require_auth`, 'build-channel-item');
   });
 });
