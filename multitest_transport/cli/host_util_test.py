@@ -17,12 +17,13 @@ import getpass
 import socket
 
 from absl.testing import absltest
+from absl.testing import parameterized
 import mock
 
 from multitest_transport.cli import host_util
 
 
-class HostUtilTest(absltest.TestCase):
+class HostUtilTest(parameterized.TestCase):
   """Unit tests for host util."""
 
   def setUp(self):
@@ -680,6 +681,23 @@ class HostUtilTest(absltest.TestCase):
     f(args, host)
 
     self.assertFalse(self.mock_func.called)
+
+  @parameterized.parameters(
+      (False, 1),
+      (8, 8),
+      (-99, 1),
+      )
+  def testGetMaxWorker(self, parallel, expected_max_worker):
+    args = mock.MagicMock(parallel=parallel)
+    hosts = [host_util.Host(host_util.lab_config.CreateHostConfig())
+             for _ in range(3)]
+    self.assertEqual(expected_max_worker, host_util._GetMaxWorker(args, hosts))
+
+  def testGetMaxWorker_ParallelAllHosts(self):
+    args = mock.MagicMock(parallel=True)
+    hosts = [host_util.Host(host_util.lab_config.CreateHostConfig())
+             for _ in range(3)]
+    self.assertEqual(3, host_util._GetMaxWorker(args, hosts))
 
 
 if __name__ == '__main__':

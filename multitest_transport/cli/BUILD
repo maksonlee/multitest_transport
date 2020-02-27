@@ -216,6 +216,7 @@ py2and3_test(
     deps = [
         ":host_util_lib",
         third_party("absl/testing:absltest"),
+        third_party("absl/testing:parameterized"),
         third_party("concurrent:futures"),
         third_party("mock"),
     ],

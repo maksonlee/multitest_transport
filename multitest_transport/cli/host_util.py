@@ -126,6 +126,24 @@ def _GetHostConfig(lab_config_path, key_path=None):
           socket.gethostname(), socket.getfqdn(), lab_config_path))
 
 
+def _GetMaxWorker(args, hosts):
+  """Get max_worker for thread pool.
+
+  Args:
+    args: parsed args to pass to the function.
+    hosts: a list of Hosts
+
+  Returns:
+    An int, the number of max worker thread.
+  """
+    if args.parallel is True:
+    return len(hosts)
+  elif args.parallel is False or args.parallel < 1:
+    return 1
+    else:
+    return args.parallel
+
+
 def _ParallelExecute(func, args, hosts):
   """Execute a func on multiple contexts parallel.
 
@@ -134,7 +152,7 @@ def _ParallelExecute(func, args, hosts):
     args: parsed args to pass to the function.
     hosts: a list of Hosts
   """
-  max_workers = args.parallel if isinstance(args.parallel, int) else len(hosts)
+  max_workers = _GetMaxWorker(args, hosts)
   logger.info('Parallel executing %r on %r hosts with %r parallel threads.',
               func.__name__, len(hosts), max_workers)
   with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
