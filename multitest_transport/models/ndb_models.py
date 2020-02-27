@@ -246,6 +246,27 @@ class TestRunAction(ndb.Model):
   credentials = appengine.CredentialsNDBProperty()
 
 
+class TestRunActionRef(ndb.Model):
+  """Test run action reference, with additional overridden options.
+
+  Attributes:
+    action_key: test run action to execute.
+    options: additional key-value pairs to use when configuring the hook.
+  """
+  action_key = ndb.KeyProperty(TestRunAction, required=True)
+  options = ndb.LocalStructuredProperty(NameValuePair, repeated=True)
+
+  def ToAction(self):
+    """Converts this ref into a test run action."""
+    action = self.action_key.get()
+    if not action:
+      raise ValueError('Test run action %s not found' % self.action_key)
+    options = NameValuePair.ToDict(action.options or [])
+    options.update(NameValuePair.ToDict(self.options or []))
+    action.options = NameValuePair.FromDict(options)
+    return action
+
+
 class TestRunConfig(ndb.Model):
   """A test run config.
 
@@ -264,7 +285,7 @@ class TestRunConfig(ndb.Model):
     output_idle_timeout_seconds: how long a test run's output can be idle before
         attempting recovery
     before_device_action_keys: device actions to execute before running a test.
-    test_run_action_keys: test run actions to execute during a test.
+    test_run_action_refs: test run actions to execute during a test.
   """
   test_key = ndb.KeyProperty(kind=Test, required=True)
   cluster = ndb.StringProperty(required=True)
@@ -281,7 +302,8 @@ class TestRunConfig(ndb.Model):
   output_idle_timeout_seconds = ndb.IntegerProperty(
       default=env.DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS)
   before_device_action_keys = ndb.KeyProperty(DeviceAction, repeated=True)
-  test_run_action_keys = ndb.KeyProperty(TestRunAction, repeated=True)
+  test_run_action_refs = ndb.LocalStructuredProperty(
+      TestRunActionRef, repeated=True)
 
 
 class TestResourcePipe(ndb.Model):

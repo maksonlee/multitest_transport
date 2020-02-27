@@ -187,8 +187,8 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
 
     // Get API call results
     forkJoin([
-      testObs, deviceActionObs, testRunActionObs, nodeConfigObs, buildChannelObs,
-      prevTestRunObs
+      testObs, deviceActionObs, testRunActionObs, nodeConfigObs,
+      buildChannelObs, prevTestRunObs
     ])
         .pipe(first())
         .subscribe(
@@ -265,9 +265,12 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
       }
 
       // Load test run actions
-      const testRunActionIds = this.testRunConfig.test_run_action_ids || [];
-      for (const id of testRunActionIds) {
-        this.selectedTestRunActions.push(this.testRunActionMap[id]);
+      const testRunActionRefs = this.testRunConfig.test_run_action_refs || [];
+      for (const ref of testRunActionRefs) {
+        // TODO: handle invalid or unauthorized actions
+        const action = this.testRunActionMap[ref.action_id] || {};
+        action.options = ref.options;
+        this.selectedTestRunActions.push(action);
       }
     }
 
@@ -350,9 +353,10 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
     // prepare test run config
     this.testRunConfig.before_device_action_ids =
         this.selectedDeviceActions.map(action => action.id);
-    // TODO: send custom options to backend
-    this.testRunConfig.test_run_action_ids =
-        this.selectedTestRunActions.map(action => action.id);
+    this.testRunConfig.test_run_action_refs =
+        this.selectedTestRunActions.map(action => {
+          return {action_id: action.id, options: action.options};
+        });
 
     const newTestRunRequest: mttModels.NewTestRunRequest = {
       labels: this.labels,

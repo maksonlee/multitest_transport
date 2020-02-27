@@ -521,6 +521,26 @@ class TestRunActionList(messages.Message):
   actions = messages.MessageField(TestRunAction, 1, repeated=True)
 
 
+class TestRunActionRef(messages.Message):
+  """A test run action reference."""
+  action_id = messages.StringField(1)
+  options = messages.MessageField(NameValuePair, 2, repeated=True)
+
+
+@Converter(ndb_models.TestRunActionRef, TestRunActionRef)
+def _TestRunActionRefConverter(obj):
+  return TestRunActionRef(
+      action_id=str(obj.action_key.id()) if obj.action_key else None,
+      options=ConvertNameValuePairs(obj.options, NameValuePair))
+
+
+@Converter(TestRunActionRef, ndb_models.TestRunActionRef)
+def _TestRunActionRefMessageConverter(msg):
+  return ndb_models.TestRunActionRef(
+      action_key=ConvertToKey(ndb_models.TestRunAction, msg.action_id),
+      options=ConvertNameValuePairs(msg.options, ndb_models.NameValuePair))
+
+
 class TestRunConfig(messages.Message):
   """A test run config."""
   test_id = messages.StringField(1, required=True)
@@ -537,7 +557,8 @@ class TestRunConfig(messages.Message):
   output_idle_timeout_seconds = messages.IntegerField(
       11, default=env.DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS)
   before_device_action_ids = messages.StringField(12, repeated=True)
-  test_run_action_ids = messages.StringField(13, repeated=True)
+  test_run_action_refs = messages.MessageField(
+      TestRunActionRef, 13, repeated=True)
 
 
 @Converter(ndb_models.TestRunConfig, TestRunConfig)
@@ -558,10 +579,8 @@ def _TestRunConfigConverter(obj):
       before_device_action_ids=[
           str(key.id()) for key in obj.before_device_action_keys
       ],
-      test_run_action_ids=[
-          str(key.id()) for key in obj.test_run_action_keys
-      ],
-  )
+      test_run_action_refs=Convert(
+          obj.test_run_action_refs, TestRunActionRef))
 
 
 @Converter(TestRunConfig, ndb_models.TestRunConfig)
@@ -581,10 +600,8 @@ def _TestRunConfigMessageConverter(msg):
           ConvertToKey(ndb_models.DeviceAction, device_action_id)
           for device_action_id in msg.before_device_action_ids
       ],
-      test_run_action_keys=[
-          ConvertToKey(ndb_models.TestRunAction, test_run_action_id)
-          for test_run_action_id in msg.test_run_action_ids
-      ])
+      test_run_action_refs=Convert(
+          msg.test_run_action_refs, ndb_models.TestRunActionRef))
 
 
 class TestResourcePipe(messages.Message):

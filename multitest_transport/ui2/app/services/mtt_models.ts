@@ -584,8 +584,8 @@ export declare interface TestRunConfig {
   output_idle_timeout_seconds?: number;
   /** List of ids for the device actions */
   before_device_action_ids?: string[];
-  /** List of test run action IDs */
-  test_run_action_ids?: string[];
+  /** List of test run action refs */
+  test_run_action_refs?: TestRunActionRef[];
 }
 
 /** initialize a new test run config */
@@ -739,6 +739,12 @@ export declare interface TestRunAction {
 /** List of test run actions. */
 export declare interface TestRunActionList {
   actions: TestRunAction[];
+}
+
+/** Test run action reference. */
+export declare interface TestRunActionRef {
+  action_id: string;
+  options?: NameValuePair[];
 }
 
 /**

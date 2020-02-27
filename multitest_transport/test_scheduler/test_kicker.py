@@ -82,11 +82,9 @@ def CreateTestRun(labels,
     raise ValueError(
         'Cannot find some device actions: %s -> %s' % (
             test_run_config.before_device_action_keys, before_device_actions))
-  test_run_actions = [key.get() for key in test_run_config.test_run_action_keys]
-  if not all(test_run_actions):
-    raise ValueError(
-        'Cannot find some test run actions: %s -> %s' % (
-            test_run_config.test_run_action_keys, test_run_actions))
+  test_run_actions = [
+      ref.ToAction() for ref in test_run_config.test_run_action_refs
+  ]
 
   test_resource_defs = test.test_resource_defs[:]
   for device_action in before_device_actions:

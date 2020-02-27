@@ -139,6 +139,46 @@ class TestKickerTest(absltest.TestCase):
     data = json.loads(task.payload)
     self.assertEqual(test_run.key.id(), data['test_run_id'])
 
+  def testCreateTestRun_withTestRunActions(self):
+    """Tests that test run can be created with test run actions."""
+    test = ndb_models.Test(name='test', command='command')
+    test.put()
+    # Create a dummy action with two default options
+    action = ndb_models.TestRunAction(
+        name='Foo',
+        hook_class_name='foo',
+        options=[
+            ndb_models.NameValuePair(name='key1', value='default'),
+            ndb_models.NameValuePair(name='key2', value='default'),
+        ])
+    action.put()
+    # Create action ref with overridden and added options
+    test_run_config = ndb_models.TestRunConfig(
+        test_key=test.key,
+        test_run_action_refs=[
+            ndb_models.TestRunActionRef(
+                action_key=action.key,
+                options=[
+                    ndb_models.NameValuePair(name='key2', value='updated'),
+                    ndb_models.NameValuePair(name='key3', value='added'),
+                ],
+            )
+        ])
+
+    # Test run created with the right test run action
+    test_run = test_kicker.CreateTestRun([], test_run_config, [])
+    self.assertEqual(test_run_config, test_run.test_run_config)
+    self.assertEqual(test_run.test_run_actions, [
+        ndb_models.TestRunAction(
+            name='Foo',
+            hook_class_name='foo',
+            options=[
+                ndb_models.NameValuePair(name='key1', value='default'),
+                ndb_models.NameValuePair(name='key2', value='updated'),
+                ndb_models.NameValuePair(name='key3', value='added'),
+            ])
+    ])
+
   def _CreateMockTestRun(
       self,
       test_name='test',
