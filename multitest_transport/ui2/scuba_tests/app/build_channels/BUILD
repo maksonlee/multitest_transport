@@ -24,7 +24,7 @@ ng_module(
         "//javascript/angular2/testing/catalyst",
         "//third_party/javascript/angular2:platform_browser_dynamic_testing",
         "//multitest_transport/ui2/app/services",
-        "//multitest_transport/ui2/app/testing:karma",
+        "//multitest_transport/ui2/scuba_tests/testing:karma",
     ],
 )
 

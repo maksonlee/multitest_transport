@@ -19,7 +19,7 @@ import {beforeEach, bootstrapTemplate, describe, it, setupModule} from 'google3/
 
 import {SharedModule} from '../../../app/shared/shared_module';
 import {SharedModuleNgSummary} from '../../../app/shared/shared_module.ngsummary';
-import {KarmaTestEnv} from '../../../app/testing/karma_env';
+import {KarmaTestEnv} from '../../testing/karma_env';
 
 const SCUBA_GOLDENS_PATH =
     'third_party/py/multitest_transport/ui2/scuba_tests/app/shared/scuba_goldens';

@@ -20,7 +20,7 @@ import {beforeEach, bootstrapTemplate, describe, it, setupModule} from 'google3/
 import {BuildChannelsModule} from '../../../app/build_channels/build_channels_module';
 import {BuildChannelsModuleNgSummary} from '../../../app/build_channels/build_channels_module.ngsummary';
 import {BuildChannelAuthState} from '../../../app/services/mtt_models';
-import {KarmaTestEnv} from '../../../app/testing/karma_env';
+import {KarmaTestEnv} from '../../testing/karma_env';
 
 const SCUBA_GOLDENS_PATH =
     'third_party/py/multitest_transport/ui2/scuba_tests/app/build_channels/scuba_goldens';

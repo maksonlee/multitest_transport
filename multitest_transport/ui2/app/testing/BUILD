@@ -1,4 +1,4 @@
-load("//multitest_transport:adapter.bzl", "ng_module", "third_party_js", "ts_library")
+load("//multitest_transport:adapter.bzl", "ng_module", "third_party_js")
 
 # A package for testing utilities
 licenses(["notice"])
@@ -36,4 +36,3 @@ ng_module(
         third_party_js("rxjs"),
     ],
 )
-

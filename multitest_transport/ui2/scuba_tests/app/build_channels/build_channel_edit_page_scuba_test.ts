@@ -8,7 +8,7 @@ import {of as observableOf} from 'rxjs';
 import {BuildChannelsModule} from '../../../app/build_channels/build_channels_module';
 import {BuildChannelsModuleNgSummary} from '../../../app/build_channels/build_channels_module.ngsummary';
 import {MttClient} from '../../../app/services/mtt_client';
-import {KarmaTestEnv} from '../../../app/testing/karma_env';
+import {KarmaTestEnv} from '../../testing/karma_env';
 
 describe('BuildChannelEditPage scuba test', () => {
   const env = new KarmaTestEnv({
