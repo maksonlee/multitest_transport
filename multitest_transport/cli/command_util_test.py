@@ -486,7 +486,7 @@ class DockerHelperTest(absltest.TestCase):
   def testRemoveContainers(self):
     self._docker_helper.RemoveContainers(['c1', 'c2'])
     self._docker_context.assert_has_calls([
-        mock.call.Run(['container', 'rm', 'c1', 'c2'])])
+        mock.call.Run(['container', 'rm', 'c1', 'c2'], raise_on_failure=True)])
 
   def testRemoveVolumes(self):
     self._docker_helper.RemoveVolumes(['v1', 'v2'])

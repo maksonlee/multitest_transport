@@ -560,7 +560,8 @@ class CliTest(parameterized.TestCase):
         mock.call.Run(['docker', 'container', 'wait', 'mtt'],
                       timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
         mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt']),
+        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
+                      raise_on_failure=False),
     ])
     is_running.assert_called_once_with('mtt')
 
@@ -573,7 +574,8 @@ class CliTest(parameterized.TestCase):
 
     self.mock_context.assert_has_calls([
         mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt']),
+        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
+                      raise_on_failure=False),
     ])
     is_running.assert_called_once_with('mtt')
 
@@ -591,7 +593,8 @@ class CliTest(parameterized.TestCase):
         mock.call.Run(['docker', 'container', 'wait', 'mtt'],
                       timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
         mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt']),
+        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
+                      raise_on_failure=False),
     ])
     is_running.assert_called_once_with('mtt')
 
@@ -609,7 +612,8 @@ class CliTest(parameterized.TestCase):
         mock.call.Run(['docker', 'container', 'wait', 'mtt'],
                       timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
         mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt']),
+        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
+                      raise_on_failure=False),
     ])
     is_running.assert_called_once_with('mtt')
 
@@ -627,7 +631,8 @@ class CliTest(parameterized.TestCase):
         mock.call.Run(['docker', 'container', 'wait', 'mtt'],
                       timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
         mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt']),
+        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
+                      raise_on_failure=False),
     ])
     is_running.assert_called_once_with('mtt')
 
@@ -662,7 +667,8 @@ class CliTest(parameterized.TestCase):
         mock.call.Run(['docker', 'kill', '-s', 'TERM', 'mtt'],
                       timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
         mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt']),
+        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
+                      raise_on_failure=False),
     ])
     force_kill.assert_called_once()
 

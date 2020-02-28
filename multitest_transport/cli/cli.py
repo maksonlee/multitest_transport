@@ -386,7 +386,7 @@ def _StopMttNode(args, host):
     logger.info('No container %s.', args.name)
     return
   logger.info('Remove container %s.', args.name)
-  docker_helper.RemoveContainers([args.name])
+  docker_helper.RemoveContainers([args.name], raise_on_failure=False)
 
 
 def _ForceKillMttNode(host, docker_helper, container_name):

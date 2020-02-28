@@ -747,16 +747,18 @@ class DockerHelper(object):
               container_name, res.stderr, res.stdout))
     return res.stdout.strip() == _CONTAINER_RUNNING_STATUS
 
-  def RemoveContainers(self, container_names):
+  def RemoveContainers(self, container_names, raise_on_failure=True):
     """Remove given containers.
 
     Args:
         container_names: a list of container names to remove.
+        raise_on_failure: raise an exception if an operation fails.
     Returns:
       the CommandResult
     """
     return self._docker_context.Run(
-        ['container', 'rm'] + container_names)
+        ['container', 'rm'] + container_names,
+        raise_on_failure=raise_on_failure)
 
   def RemoveVolumes(self, volume_names, raise_on_failure=False):
     """Remove given volumes.
