@@ -16,6 +16,7 @@
 from __future__ import print_function
 import argparse
 import logging
+import logging.handlers
 import zipfile
 
 import six
@@ -24,6 +25,8 @@ logger = logging.getLogger(__name__)
 _UNKNOWN = 'unknown'
 _VERSION_FILE = 'VERSION'
 _LOG_FORMAT = '%(asctime)s |%(levelname)s| %(module)s:%(lineno)s| %(message)s'
+_LOG_MAX_BYTES = 50 * 10 ** 6  # 50MB
+_LOG_BACKUPS = 5
 _SIMPLE_LOG_FORMAT = '%(message)s'
 _PACKAGE_LOGGER_NAME = 'multitest_transport.cli'
 
@@ -98,7 +101,11 @@ def CreateLogger(args):
   if args.logtostderr and not new_logger.handlers:
     new_logger.addHandler(logging.StreamHandler())
   if args.log_file:
-    new_logger.addHandler(logging.FileHandler(filename=args.log_file))
+    new_logger.addHandler(
+        logging.handlers.RotatingFileHandler(
+            filename=args.log_file,
+            maxBytes=_LOG_MAX_BYTES,
+            backupCount=_LOG_BACKUPS))
   if not new_logger.handlers:
     new_logger.addHandler(logging.StreamHandler())
 
