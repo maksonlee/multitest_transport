@@ -21,7 +21,6 @@ import socket
 import time
 
 from concurrent import futures
-import enum
 from tradefed_cluster.configs import lab_config
 
 from multitest_transport.cli import command_util
@@ -46,11 +45,11 @@ class ExecutionError(Exception):
   """Error for execution action on host."""
 
 
-class HostExecutionState(enum.Enum):
+class HostExecutionState(object):
   """Execution stat for host."""
-  UNKNOWN = 0
-  COMPLETED = 1
-  ERROR = 2
+  UNKNOWN = 'UNKNOWN'
+  COMPLETED = 'COMPLETED'
+  ERROR = 'ERROR'
 
 
 class Host(object):
@@ -59,6 +58,7 @@ class Host(object):
   def __init__(self, host_config, context=None):
     self._config = host_config
     self._context = context
+    self._execution_step = 0
     self._execution_state = HostExecutionState.UNKNOWN
     self._error = None
 
@@ -90,8 +90,13 @@ class Host(object):
   def execution_state(self):
     return self._execution_state
 
+  @property
+  def execution_step(self):
+    return self._execution_step
+
   @execution_state.setter
   def execution_state(self, state):
+    self._execution_step += 1
     self._execution_state = state
 
 
@@ -175,12 +180,23 @@ def _ParallelExecute(func, args, hosts):
       # Instead of blocking on the futures.wait, we waiting with sleep,
       # since sleep can be interrupted.
       if running_futures:
-        hostnames = sorted([future_to_host[running_future].name
-                            for running_future in running_futures])
-        logger.info(
-            'Still executing %r on %r hosts: %s',
-            func.__name__, len(hostnames), ', '.join(hostnames))
+        _PrintExecutionState(
+            [future_to_host[running_future]
+             for running_future in running_futures])
         time.sleep(THREAD_POLL_INTERVAL_SECONDS)
+
+
+def _PrintExecutionState(hosts):
+  """Print hosts' state."""
+  state_to_host = collections.defaultdict(list)
+  for host in hosts:
+    state_to_host[(host.execution_step, host.execution_state)].append(host)
+  for state in sorted(state_to_host.keys()):
+    hosts_in_state = state_to_host.get(state)
+    logger.info(
+        '%r host in "%s": %s',
+        len(hosts_in_state), state[1],
+        ' '.join(sorted([host.name for host in hosts_in_state])))
 
 
 def _SequentialExecute(func, args, hosts, exit_on_error=False):

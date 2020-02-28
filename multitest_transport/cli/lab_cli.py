@@ -71,6 +71,7 @@ def _SetupMTTBinary(args, host):
     host: a Host.
   """
   logger.info('Setting up MTT binary on %s.', host.name)
+  host.execution_state = 'Setting up MTT Binary'
   tmp_folder = tempfile.mkdtemp()
   try:
     with zipfile.ZipFile(args.cli_path, 'r') as cli_zip:
@@ -95,6 +96,7 @@ def _SetupHostConfig(host):
     host: a Host.
   """
   logger.info('Setting up host config on %s.', host.name)
+  host.execution_state = 'Setting up host config'
   config_file = tempfile.NamedTemporaryFile(suffix='.yaml')
   try:
     host.config.Save(config_file.name)
@@ -111,6 +113,7 @@ def _SetupServiceAccountKey(host, service_account_json_key_path):
     service_account_json_key_path: a string, path of the source key file.
   """
   logger.info('Setting up service account key on %s.', host.name)
+  host.execution_state = 'Setting up service account key'
   host.context.CopyFile(
       service_account_json_key_path, _REMOTE_KEY_FILE)
   host.config.service_account_json_key_path = _REMOTE_KEY_FILE
@@ -147,6 +150,7 @@ def Start(args, host):
 
   logger.info('Starting mtt on %s.', host.name)
   remote_cmd = _BuildBaseMTTCmd(args) + ['start', _REMOTE_CONFIG_FILE]
+  host.execution_state = 'Running start'
   host.context.Run(remote_cmd, sudo=args.ask_sudo_password)
   logger.info('Started mtt on %s.', host.name)
 
@@ -163,6 +167,7 @@ def Stop(args, host):
   logger.info('Stopping mtt on %s.', host.name)
   _SetupMTTBinary(args, host)
   remote_cmd = _BuildBaseMTTCmd(args) + ['stop']
+  host.execution_state = 'Running stop'
   host.context.Run(remote_cmd, sudo=args.ask_sudo_password)
   logger.info('Stopped mtt on %s.', host.name)
 
@@ -188,6 +193,7 @@ def Restart(args, host):
 
   logger.info('Restarting mtt on %s.', host.name)
   remote_cmd = _BuildBaseMTTCmd(args) + ['restart', _REMOTE_CONFIG_FILE]
+  host.execution_state = 'Running restart'
   host.context.Run(remote_cmd, sudo=args.ask_sudo_password)
   logger.info('Restarted mtt on %s.', host.name)
 
@@ -213,6 +219,7 @@ def Update(args, host):
 
   logger.info('Updating mtt on %s.', host.name)
   remote_cmd = _BuildBaseMTTCmd(args) + ['update', _REMOTE_CONFIG_FILE]
+  host.execution_state = 'Running update'
   host.context.Run(remote_cmd, sudo=args.ask_sudo_password)
   logger.info('Updated mtt on %s.', host.name)
 
@@ -226,6 +233,7 @@ def RunCmd(args, host):
   """
   logger.info('Run "%s" on %s.', args.cmd, host.name)
   tokens = shlex.split(args.cmd)
+  host.execution_state = 'Running cmd'
   res = host.context.Run(tokens, sudo=args.ask_sudo_password)
   logger.info(res.stdout)
   logger.info('Finished "%s" on %s.', args.cmd, host.name)

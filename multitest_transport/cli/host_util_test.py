@@ -699,6 +699,31 @@ class HostUtilTest(parameterized.TestCase):
              for _ in range(3)]
     self.assertEqual(3, host_util._GetMaxWorker(args, hosts))
 
+  @mock.patch.object(host_util, 'logger')
+  def testPrintExecutionState(self, mock_logger):
+    host1 = host_util.Host(
+        host_util.lab_config.CreateHostConfig(
+            hostname='host1', host_login_name='auser'))
+    host1.execution_state = 'Step1'
+    host1.execution_state = 'Step2'
+    host2 = host_util.Host(
+        host_util.lab_config.CreateHostConfig(
+            hostname='host2', host_login_name='auser'))
+    host2.execution_state = 'Step1'
+    host3 = host_util.Host(
+        host_util.lab_config.CreateHostConfig(
+            hostname='host3', host_login_name='auser'))
+    host3.execution_state = 'Step1'
+    host3.execution_state = 'Step2'
+    host4 = host_util.Host(
+        host_util.lab_config.CreateHostConfig(
+            hostname='host4', host_login_name='auser'))
+    host4.execution_state = 'Step1'
+    host_util._PrintExecutionState([host4, host3, host2, host1])
+    mock_logger.assert_has_calls([
+        mock.call.info('%r host in "%s": %s', 2, 'Step1', 'host2 host4'),
+        mock.call.info('%r host in "%s": %s', 2, 'Step2', 'host1 host3')])
+
 
 if __name__ == '__main__':
   absltest.main()

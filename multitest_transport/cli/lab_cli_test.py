@@ -68,6 +68,7 @@ class LabCliTest(parameterized.TestCase):
             os.path.join(tmp_folder, 'mtt_binary'),
             '/tmp/mtt'),
         mock.call.Run(['chmod', '+x', '/tmp/mtt'])])
+    self.assertEqual('Setting up MTT Binary', host.execution_state)
 
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
   def testSetupHostConfig(self, mock_make_tmpfile):
@@ -81,6 +82,7 @@ class LabCliTest(parameterized.TestCase):
     host.context.CopyFile.assert_called_once_with(
         '/local/config.yaml', '/tmp/mtt_host_config.yaml')
     mock_tmpfile.close.assert_called_once_with()
+    self.assertEqual('Setting up host config', host.execution_state)
 
   @parameterized.named_parameters(
       ('$ sudo mtt start', True),
@@ -110,6 +112,7 @@ class LabCliTest(parameterized.TestCase):
     host.config.Save.assert_called_once_with('/local/config.yaml')
     mock_setup.assert_called_once_with(args, host)
     mock_tmpfile.close.assert_called_once_with()
+    self.assertEqual('Running start', host.execution_state)
 
   @mock.patch.object(lab_cli, '_SetupMTTBinary')
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
@@ -162,6 +165,7 @@ class LabCliTest(parameterized.TestCase):
     host.config.Save.assert_called_once_with('/local/config.yaml')
     mock_setup.assert_called_once_with(args, host)
     mock_tmpfile.close.assert_called_once_with()
+    self.assertEqual('Running update', host.execution_state)
 
   @parameterized.named_parameters(
       ('$ sudo mtt restart', True),
@@ -191,6 +195,7 @@ class LabCliTest(parameterized.TestCase):
     host.config.Save.assert_called_once_with('/local/config.yaml')
     mock_setup.assert_called_once_with(args, host)
     mock_tmpfile.close.assert_called_once_with()
+    self.assertEqual('Running restart', host.execution_state)
 
   @parameterized.named_parameters(
       ('$ sudo mtt stop', True),
@@ -207,6 +212,7 @@ class LabCliTest(parameterized.TestCase):
     host.context.Run.assert_called_once_with(
         ['/tmp/mtt', 'stop'], sudo=ask_sudo_password)
     mock_setup.assert_called_once_with(args, host)
+    self.assertEqual('Running stop', host.execution_state)
 
   @parameterized.named_parameters(
       ('run_cmd_with_sudo', True),
@@ -219,6 +225,7 @@ class LabCliTest(parameterized.TestCase):
     lab_cli.RunCmd(args, host)
     host.context.Run.assert_called_once_with(
         ['run', 'a', 'command', 'line'], sudo=ask_sudo_password)
+    self.assertEqual('Running cmd', host.execution_state)
 
   def testCreateLabCommandArgParser(self):
     parser = lab_cli._CreateLabCommandArgParser()
