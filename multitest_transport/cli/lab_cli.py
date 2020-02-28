@@ -116,6 +116,16 @@ def _SetupServiceAccountKey(host, service_account_json_key_path):
   host.config.service_account_json_key_path = _REMOTE_KEY_FILE
 
 
+def _BuildBaseMTTCmd(args):
+  """Build base MTT cmd."""
+  remote_cmd = [_REMOTE_MTT_BINARY]
+  if args.very_verbose:
+    remote_cmd += ['-vv']
+  elif args.verbose:
+    remote_cmd += ['-v']
+  return remote_cmd
+
+
 def Start(args, host):
   """Start MTT node on remote hosts.
 
@@ -136,7 +146,7 @@ def Start(args, host):
   _SetupHostConfig(host)
 
   logger.info('Starting mtt on %s.', host.name)
-  remote_cmd = [_REMOTE_MTT_BINARY, 'start', _REMOTE_CONFIG_FILE]
+  remote_cmd = _BuildBaseMTTCmd(args) + ['start', _REMOTE_CONFIG_FILE]
   host.context.Run(remote_cmd, sudo=args.ask_sudo_password)
   logger.info('Started mtt on %s.', host.name)
 
@@ -152,8 +162,7 @@ def Stop(args, host):
   """
   logger.info('Stopping mtt on %s.', host.name)
   _SetupMTTBinary(args, host)
-  remote_cmd = [_REMOTE_MTT_BINARY]
-  remote_cmd.append('stop')
+  remote_cmd = _BuildBaseMTTCmd(args) + ['stop']
   host.context.Run(remote_cmd, sudo=args.ask_sudo_password)
   logger.info('Stopped mtt on %s.', host.name)
 
@@ -178,7 +187,7 @@ def Restart(args, host):
   _SetupHostConfig(host)
 
   logger.info('Restarting mtt on %s.', host.name)
-  remote_cmd = [_REMOTE_MTT_BINARY, 'restart', _REMOTE_CONFIG_FILE]
+  remote_cmd = _BuildBaseMTTCmd(args) + ['restart', _REMOTE_CONFIG_FILE]
   host.context.Run(remote_cmd, sudo=args.ask_sudo_password)
   logger.info('Restarted mtt on %s.', host.name)
 
@@ -203,7 +212,7 @@ def Update(args, host):
   _SetupHostConfig(host)
 
   logger.info('Updating mtt on %s.', host.name)
-  remote_cmd = [_REMOTE_MTT_BINARY, 'update', _REMOTE_CONFIG_FILE]
+  remote_cmd = _BuildBaseMTTCmd(args) + ['update', _REMOTE_CONFIG_FILE]
   host.context.Run(remote_cmd, sudo=args.ask_sudo_password)
   logger.info('Updated mtt on %s.', host.name)
 

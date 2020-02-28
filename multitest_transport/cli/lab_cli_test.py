@@ -93,7 +93,9 @@ class LabCliTest(parameterized.TestCase):
     mock_make_tmpfile.return_value = mock_tmpfile
     args = mock.MagicMock(
         service_account_json_key_path='/path/to/keyfile.json',
-        ask_sudo_password=ask_sudo_password)
+        ask_sudo_password=ask_sudo_password,
+        verbose=False,
+        very_verbose=False)
     host = mock.MagicMock()
     host.config.service_account_json_key_path = '/path/to/keyfile.json'
     lab_cli.Start(args, host)
@@ -117,7 +119,9 @@ class LabCliTest(parameterized.TestCase):
     mock_make_tmpfile.return_value = mock_tmpfile
     args = mock.MagicMock(
         service_account_json_key_path=None,
-        ask_sudo_password=False)
+        ask_sudo_password=False,
+        verbose=False,
+        very_verbose=False)
     host = mock.MagicMock()
     host.config.service_account_json_key_path = None
     lab_cli.Start(args, host)
@@ -141,7 +145,9 @@ class LabCliTest(parameterized.TestCase):
     mock_make_tmpfile.return_value = mock_tmpfile
     args = mock.MagicMock(
         service_account_json_key_path='/path/to/keyfile.json',
-        ask_sudo_password=ask_sudo_password)
+        ask_sudo_password=ask_sudo_password,
+        verbose=False,
+        very_verbose=False)
     host = mock.MagicMock()
     host.config.service_account_json_key_path = '/path/to/keyfile.json'
     lab_cli.Update(args, host)
@@ -168,7 +174,9 @@ class LabCliTest(parameterized.TestCase):
     mock_make_tmpfile.return_value = mock_tmpfile
     args = mock.MagicMock(
         service_account_json_key_path='/path/to/keyfile.json',
-        ask_sudo_password=ask_sudo_password)
+        ask_sudo_password=ask_sudo_password,
+        verbose=False,
+        very_verbose=False)
     host = mock.MagicMock()
     host.config.service_account_json_key_path = '/path/to/keyfile.json'
     lab_cli.Restart(args, host)
@@ -189,7 +197,10 @@ class LabCliTest(parameterized.TestCase):
       ('$ mtt stop', False))
   @mock.patch.object(lab_cli, '_SetupMTTBinary')
   def testStop(self, ask_sudo_password, mock_setup):
-    args = mock.MagicMock(ask_sudo_password=ask_sudo_password)
+    args = mock.MagicMock(
+        ask_sudo_password=ask_sudo_password,
+        verbose=False,
+        very_verbose=False)
     host = mock.MagicMock()
     lab_cli.Stop(args, host)
 
@@ -220,6 +231,19 @@ class LabCliTest(parameterized.TestCase):
     args = parser.parse_args(['lab_config.yaml', 'host1', 'cluster1'])
     self.assertEqual('lab_config.yaml', args.lab_config_path)
     self.assertEqual(['host1', 'cluster1'], args.hosts_or_clusters)
+
+  @parameterized.named_parameters(
+      ('no_verbose', [], []),
+      ('verbose', ['-v'], ['-v']),
+      ('very_verbose', ['-vv'], ['-vv']),
+      ('both', ['-v', '-vv'], ['-vv']))
+  def testBuildBaseMTTCmd(self, verbose_flag, res_flag):
+    parser = lab_cli.cli_util.CreateLoggingArgParser()
+    args = parser.parse_args(verbose_flag)
+    cmd = lab_cli._BuildBaseMTTCmd(args)
+    self.assertEqual(
+        [lab_cli._REMOTE_MTT_BINARY] + res_flag,
+        cmd)
 
 
 if __name__ == '__main__':
