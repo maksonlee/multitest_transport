@@ -30,6 +30,9 @@ ENV PATH /tmp/custom_sdk_tools:/mtt/prebuilts/tradefed:${PATH}
 # Authenticate on GCE (ignored if running locally or file not provided)
 ENV GOOGLE_APPLICATION_CREDENTIALS /tmp/keyfile/key.json
 
+# Make sure apt-get retries on failures
+RUN echo 'APT::Acquire::Retries \"3\";' > /etc/apt/apt.conf.d/80retries
+
 RUN apt-get update && apt-get install -y \
         apt-utils \
         cron \
@@ -83,11 +86,11 @@ ENV PATH ${JAVA_HOME}/bin:${PATH}
 
 # Install SDK tools (aapt, adb, fastboot, mke2fs)
 RUN mkdir -p /sdk_tools
-RUN curl -L https://dl.google.com/android/repository/build-tools_r29.0.2-linux.zip -o build-tools.zip \
+RUN curl --retry 3 -L https://dl.google.com/android/repository/build-tools_r29.0.2-linux.zip -o build-tools.zip \
     && unzip -jq build-tools.zip -d /sdk_tools android-10/aapt \
     && rm build-tools.zip
 # TODO: Use platform-tools-latest-linux.zip to get latest version
-RUN curl -L https://dl.google.com/android/repository/platform-tools_r29.0.4-linux.zip -o platform-tools.zip \
+RUN curl --retry 3 -L https://dl.google.com/android/repository/platform-tools_r29.0.4-linux.zip -o platform-tools.zip \
     && unzip -jq platform-tools.zip -d /sdk_tools \
         platform-tools/adb \
         platform-tools/fastboot \
@@ -96,7 +99,7 @@ RUN curl -L https://dl.google.com/android/repository/platform-tools_r29.0.4-linu
 ENV PATH /tmp/custom_sdk_tools:/sdk_tools:${PATH}
 
 # Install App Engine SDK
-RUN curl -O https://storage.googleapis.com/appengine-sdks/featured/google_appengine_1.9.82.zip \
+RUN curl --retry 3 -O https://storage.googleapis.com/appengine-sdks/featured/google_appengine_1.9.82.zip \
     && unzip -q google_appengine_1.9.82.zip \
     && rm google_appengine_1.9.82.zip
 # This is to workaround https://issuetracker.google.com/35901176
