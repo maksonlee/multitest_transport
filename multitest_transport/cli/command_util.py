@@ -412,6 +412,8 @@ class CommandContext(object):
     # TODO: apply timeout once subprocess supports in python3.
     proc = subprocess.Popen(command, **kwargs)
     stdout, stderr = proc.communicate()
+    stdout = six.ensure_str(stdout) if stdout else None
+    stderr = six.ensure_str(stderr) if stderr else None
     logger.debug(
         'Finished running command (took %.1fs): '
         'result=%s, stdout=%s, stderr=%s',

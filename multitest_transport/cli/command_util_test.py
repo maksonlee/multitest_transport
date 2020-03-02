@@ -281,6 +281,15 @@ class LocalCommandContextTest(absltest.TestCase):
     self.assertEqual('stdout', res.stdout)
     self.assertEqual('stderr', res.stderr)
 
+  def testRun_popenReturnBinary(self):
+    self.mock_process.communicate.return_value = (b'stdout', b'stderr')
+    res = self.context.Run(['ls', '-al'])
+    self.mock_subprocess_pkg.assert_has_calls([
+        mock.call.Popen(['ls', '-al'])])
+    self.assertEqual(0, res.return_code)
+    self.assertEqual('stdout', res.stdout)
+    self.assertEqual('stderr', res.stderr)
+
   def testRun_failed(self):
     self.mock_process.returncode = 1
     with self.assertRaises(RuntimeError):
