@@ -11,9 +11,8 @@ import {MttClient} from '../../../app/services/mtt_client';
 import {KarmaTestEnv} from '../../testing/karma_env';
 
 describe('BuildChannelEditPage scuba test', () => {
-  const env = new KarmaTestEnv({
-    scubaGoldensPath:
-        'third_party/py/multitest_transport/ui2/scuba_tests/app/build_channels/scuba_goldens',
+  const env = new KarmaTestEnv(module, {
+    scuba: true,
     axe: false,
   });
 

@@ -22,12 +22,9 @@ import {BuildChannelsModuleNgSummary} from '../../../app/build_channels/build_ch
 import {BuildChannelAuthState} from '../../../app/services/mtt_models';
 import {KarmaTestEnv} from '../../testing/karma_env';
 
-const SCUBA_GOLDENS_PATH =
-    'third_party/py/multitest_transport/ui2/scuba_tests/app/build_channels/scuba_goldens';
-
 describe('BuildChannelItem', () => {
-  const env = new KarmaTestEnv({
-    scubaGoldensPath: SCUBA_GOLDENS_PATH,
+  const env = new KarmaTestEnv(module, {
+    scuba: true,
     axe: true,
   });
 

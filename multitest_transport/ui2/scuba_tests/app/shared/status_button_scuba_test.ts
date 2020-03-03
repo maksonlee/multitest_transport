@@ -21,12 +21,9 @@ import {SharedModule} from '../../../app/shared/shared_module';
 import {SharedModuleNgSummary} from '../../../app/shared/shared_module.ngsummary';
 import {KarmaTestEnv} from '../../testing/karma_env';
 
-const SCUBA_GOLDENS_PATH =
-    'third_party/py/multitest_transport/ui2/scuba_tests/app/shared/scuba_goldens';
-
 describe('Status button', () => {
-  const env = new KarmaTestEnv({
-    scubaGoldensPath: SCUBA_GOLDENS_PATH,
+  const env = new KarmaTestEnv(module, {
+    scuba: true,
     axe: true,
   });
 

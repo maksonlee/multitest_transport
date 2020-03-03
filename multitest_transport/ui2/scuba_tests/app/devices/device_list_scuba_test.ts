@@ -22,12 +22,9 @@ import {DevicesModuleNgSummary} from '../../../app/devices/devices_module.ngsumm
 import {TfcClient} from '../../../app/services/tfc_client';
 import {KarmaTestEnv} from '../../testing/karma_env';
 
-const SCUBA_GOLDENS_PATH =
-    'third_party/py/multitest_transport/ui2/scuba_tests/app/devices/scuba_goldens';
-
 describe('DeviceList', () => {
-  const env = new KarmaTestEnv({
-    scubaGoldensPath: SCUBA_GOLDENS_PATH,
+  const env = new KarmaTestEnv(module, {
+    scuba: true,
     axe: true,
   });
   let tfcClient: jasmine.SpyObj<TfcClient>;
