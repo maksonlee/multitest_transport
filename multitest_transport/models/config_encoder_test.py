@@ -153,16 +153,10 @@ test_run_actions:
     self.CreateBuildChannel(key='foo', name='Foo').put()
 
     # load configuration
-    node_config = self.CreateNodeConfig()
     build_channel = self.CreateBuildChannel(key='foo',
                                             options={'option': 'value'})
-    config_set = config_encoder.ConfigSet(node_config=node_config,
-                                          build_channels=[build_channel])
+    config_set = config_encoder.ConfigSet(build_channels=[build_channel])
     config_encoder.Load(config_set)
-
-    # new stored config added
-    stored_node_config = ndb.Key(ndb_models.NodeConfig, 1).get()
-    self.assertIsNotNone(stored_node_config)
 
     # updated existing build channel
     stored_build_channel = ndb.Key(ndb_models.BuildChannelConfig, 'foo').get()
@@ -170,6 +164,22 @@ test_run_actions:
     self.assertEqual('Foo', stored_build_channel.name)  # preserved
     self.assertEqual('option', stored_build_channel.options[0].name)
     self.assertEqual('value', stored_build_channel.options[0].value)
+
+  def testLoad_nodeConfig(self):
+    """Tests updating a node config."""
+    self.CreateNodeConfig(env_vars={'hello': 'world'}).put()
+
+    # load configuration
+    node_config = self.CreateNodeConfig()
+    node_config.proxy_config = ndb_models.ProxyConfig(http_proxy='proxy')
+    config_set = config_encoder.ConfigSet(node_config=node_config)
+    config_encoder.Load(config_set)
+
+    # updated existing node config
+    stored_node_config = ndb.Key(ndb_models.NodeConfig, 1).get()
+    self.assertIsNotNone(stored_node_config)
+    self.assertLen(stored_node_config.env_vars, 1)  # preserved
+    self.assertEqual(stored_node_config.proxy_config.http_proxy, 'proxy')
 
 
 if __name__ == '__main__':

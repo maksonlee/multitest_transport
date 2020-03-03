@@ -53,7 +53,9 @@ def Decode(string):
   # belongs to.
   info = msg.info
   if info:
-    for obj in msg.tests + msg.device_actions + msg.build_channels:
+    objs = (msg.build_channels + msg.device_actions +
+            msg.test_run_actions + msg.tests)
+    for obj in objs:
       obj.id = _AddNamespaceToId(info.url, obj.id)
   return messages.Convert(msg, ConfigSet)
 
@@ -85,7 +87,7 @@ def _JsonToYaml(string):
 
 def _Load(obj):
   """Upsert a model instance."""
-  existing = obj.key.get()
+  existing = obj.key.get(use_cache=False)
   if existing:
     # existing data found, update with new values
     properties = dir(obj.__class__)

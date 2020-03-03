@@ -977,13 +977,12 @@ def _NodeConfigConverter(obj):
 @Converter(NodeConfig, ndb_models.NodeConfig)
 def _NodeConfigMessageConverter(msg):
   """Converts a NodeConfig message into an object."""
-  node_config = ndb_models.GetNodeConfig()
-  node_config.env_vars = ConvertNameValuePairs(
-      msg.env_vars, ndb_models.NameValuePair)
-  node_config.test_resource_default_download_urls = ConvertNameValuePairs(
-      msg.test_resource_default_download_urls, ndb_models.NameValuePair)
-  node_config.proxy_config = Convert(msg.proxy_config, ndb_models.ProxyConfig)
-  return node_config
+  return ndb_models.NodeConfig(
+      id=ndb_models.NODE_CONFIG_ID,
+      env_vars=ConvertNameValuePairs(msg.env_vars, ndb_models.NameValuePair),
+      test_resource_default_download_urls=ConvertNameValuePairs(
+          msg.test_resource_default_download_urls, ndb_models.NameValuePair),
+      proxy_config=Convert(msg.proxy_config, ndb_models.ProxyConfig))
 
 
 class PrivateNodeConfig(messages.Message):
