@@ -677,17 +677,17 @@ class DockerHelper(object):
         ['kill', '-s', signal] + container_names,
         timeout=_DOCKER_KILL_CMD_TIMEOUT_SEC)
 
-  def Wait(self, container_names):
+  def Wait(self, container_names, timeout=_DOCKER_WAIT_CMD_TIMEOUT_SEC):
     """Wait the containers to stop.
 
     Args:
       container_names: a list of container_names to stop
+      timeout: int, max timeout to wait, in sec.
     Returns:
       the CommandResult
     """
     return self._docker_context.Run(
-        ['container', 'wait'] + container_names,
-        timeout=_DOCKER_WAIT_CMD_TIMEOUT_SEC)
+        ['container', 'wait'] + container_names, timeout=timeout)
 
   def Inspect(self, resource_name, output_format=None, raise_on_failure=False):
     """Inspect the given resource (image or container).
@@ -748,6 +748,24 @@ class DockerHelper(object):
           'Failed to inpect %s:\nstderr:%s\nstdout:%s.' % (
               container_name, res.stderr, res.stdout))
     return res.stdout.strip() == _CONTAINER_RUNNING_STATUS
+
+  def IsContainerAlive(self, container_name):
+    """Check if container is alive.
+
+    The result from "docker inspect" could show container is running, but it
+    is already dead in fact. This function helps to check whether the container
+    is realy alive when it is shown as running.
+
+    Args:
+      container_name: text, the docker container name.
+
+    Returns:
+      A bool, True if the container is alive, otherwise False.
+    """
+    res = self._docker_context.Run(
+        ['exec', container_name, 'echo "Checking container liveliness."'],
+        raise_on_failure=False)
+    return res.return_code == 0
 
   def RemoveContainers(self, container_names, raise_on_failure=True):
     """Remove given containers.

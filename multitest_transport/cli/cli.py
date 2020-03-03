@@ -65,6 +65,10 @@ _CLI_UPDATE_URL_TEMPLATE = 'gs://android-mtt.appspot.com/%s/mtt'
 _TF_QUIT = 'TSTP'
 # Tradefed accept TERM signal as 'kill', which will kill all tests.
 _TF_KILL = 'TERM'
+# The total wait time for MTT docker container shutdown
+_CONTAINER_SHUTDOWN_TIMEOUT_SEC = 60 * 60
+# The waiting interval to check mtt container liveliness
+_DETECT_INTERVAL_SEC = 30
 
 PACKAGE_LOGGER_NAME = 'multitest_transport.cli'
 logger = logging.getLogger(__name__)
@@ -94,6 +98,11 @@ def _WaitForServer(url, timeout):
     except (socket.error, six.moves.urllib.error.URLError):
       pass
   return False
+
+
+def _HasSudoAccess():
+  """Check if the current process has sudo access."""
+  return os.geteuid() == 0
 
 
 def _GetDockerImageName(image_name, tag=None, master_url=None):
@@ -376,10 +385,10 @@ def _StopMttNode(args, host):
       # This use "docker stop" to stop the MTT standalone mode.
       logger.info('Stop container.')
       docker_helper.Stop([args.name])
-    res_shutdown = docker_helper.Wait([args.name])
-    if res_shutdown.return_code != 0:
-      logger.warn('The docker container failed to shut down.')
-      _ForceKillMttNode(host, docker_helper, args.name)
+    if _HasSudoAccess():
+      _DetectAndKillDeadContainer(host, docker_helper, args.name)
+    else:
+      docker_helper.Wait([args.name])
   logger.info('Container %s stopped.', args.name)
   res_inspect = docker_helper.Inspect(args.name)
   if res_inspect.return_code != 0:
@@ -387,6 +396,33 @@ def _StopMttNode(args, host):
     return
   logger.info('Remove container %s.', args.name)
   docker_helper.RemoveContainers([args.name], raise_on_failure=False)
+
+
+def _DetectAndKillDeadContainer(host,
+                                docker_helper,
+                                container_name,
+                                total_wait_sec=_CONTAINER_SHUTDOWN_TIMEOUT_SEC):
+  """Detect a dead MTT container, force kill it when detected or timed out.
+
+  Args:
+    host: an instance of host_util.Host.
+    docker_helper: an instance of command_util.DockerHelper.
+    container_name: string, the name of docker container to kill.
+    total_wait_sec: int, the total time to wait for docker container shutdown.
+  """
+  wait_end_sec = time.time() + total_wait_sec
+  while time.time() < wait_end_sec:
+    if not docker_helper.IsContainerAlive(container_name):
+      logging.debug('The docker container %s is not alive.', container_name)
+      _ForceKillMttNode(host, docker_helper, container_name)
+      return
+    logging.debug('Waiting for docker container <%s> on host <%s> shutdown.',
+                  container_name, host.name)
+    time.sleep(_DETECT_INTERVAL_SEC)
+  logging.info(
+      'The container <%s> failed to shutdown within given %ss on host <%s>.',
+      container_name, total_wait_sec, host.name)
+  _ForceKillMttNode(host, docker_helper, container_name)
 
 
 def _ForceKillMttNode(host, docker_helper, container_name):

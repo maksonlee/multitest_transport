@@ -492,6 +492,16 @@ class DockerHelperTest(absltest.TestCase):
         mock.call.Run(['inspect', 'c1', '--format', '{{.State.Status}}'],
                       raise_on_failure=False)])
 
+  def testIsContainerAlive(self):
+    self._docker_context.Run.return_value = command_util.CommandResult(
+        0, None, 'Checking container liveliness.')
+    self.assertTrue(self._docker_helper.IsContainerAlive('container_1'))
+
+  def testIsContainerCommandFailed(self):
+    self._docker_context.Run.return_value = command_util.CommandResult(
+        1, 'No such container: container_1', None)
+    self.assertFalse(self._docker_helper.IsContainerAlive('container_1'))
+
   def testRemoveContainers(self):
     self._docker_helper.RemoveContainers(['c1', 'c2'])
     self._docker_context.assert_has_calls([

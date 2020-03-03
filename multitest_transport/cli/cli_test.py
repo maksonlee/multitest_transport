@@ -548,7 +548,9 @@ class CliTest(parameterized.TestCase):
     ])
 
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
-  def testStop(self, is_running):
+  @mock.patch('__main__.cli.os.geteuid')
+  def testStop(self, euid, is_running):
+    euid.return_value = 123
     is_running.return_value = True
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop'])
@@ -580,8 +582,10 @@ class CliTest(parameterized.TestCase):
     is_running.assert_called_once_with('mtt')
 
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
-  def testStop_wait(self, is_running):
+  @mock.patch('__main__.cli.os.geteuid')
+  def testStop_gracefulShutdownWithWaitFlag(self, euid, is_running):
     """Test Stop with wait flag set."""
+    euid.return_value = 123
     is_running.return_value = True
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop', '--wait'])
@@ -599,8 +603,10 @@ class CliTest(parameterized.TestCase):
     is_running.assert_called_once_with('mtt')
 
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
-  def testStop_gracefulShutdown(self, is_running):
+  @mock.patch('__main__.cli.os.geteuid')
+  def testStop_gracefulShutdownWithConfig(self, euid, is_running):
     """Test Stop with graceful shutdown set in host config."""
+    euid.return_value = 123
     is_running.return_value = True
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop'])
@@ -618,8 +624,10 @@ class CliTest(parameterized.TestCase):
     is_running.assert_called_once_with('mtt')
 
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
-  def testStop_noMasterUrl(self, is_running):
+  @mock.patch('__main__.cli.os.geteuid')
+  def testStop_noMasterUrl(self, euid, is_running):
     """Test Stop with kill mtt with master_url in host config."""
+    euid.return_value = 123
     is_running.return_value = True
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop'])
@@ -651,15 +659,14 @@ class CliTest(parameterized.TestCase):
         mock.call.Run(['systemctl', 'disable', 'mttd.service']),
     ])
 
-  @mock.patch('__main__.cli.command_util.DockerHelper.Wait')
+  @mock.patch('__main__.cli.os.geteuid')
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
-  @mock.patch.object(cli, '_ForceKillMttNode')
-  def testStop_ForceKill(self, force_kill, is_running, docker_wait):
+  @mock.patch.object(cli, '_DetectAndKillDeadContainer')
+  def testStop_ForceKillInSudoMode(self, detect_and_kill, is_running, euid):
+    euid.return_value = 0
     is_running.return_value = True
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop'])
-    docker_wait.return_value = command_util.CommandResult(
-        -9, None, 'command timed out')
 
     cli.Stop(args, self._CreateHost())
 
@@ -670,7 +677,7 @@ class CliTest(parameterized.TestCase):
         mock.call.Run(['docker', 'container', 'rm', 'mtt'],
                       raise_on_failure=False),
     ])
-    force_kill.assert_called_once()
+    detect_and_kill.assert_called_once()
 
   @mock.patch.object(cli, '_StartMttNode')
   @mock.patch.object(cli, '_StopMttNode')
@@ -1026,6 +1033,37 @@ class CliTest(parameterized.TestCase):
                       raise_on_failure=True),
         mock.call.Run(['kill', '-9', 'a_parent_pid'], raise_on_failure=True),
     ])
+
+  @mock.patch.object(cli, '_ForceKillMttNode')
+  @mock.patch('__main__.cli.time')
+  def testDetectAndKillDeadContainer_detectedAndKilled(self, mock_time,
+                                                       mock_kill):
+    docker_helper = mock.create_autospec(cli.command_util.DockerHelper)
+    docker_helper.IsContainerAlive.side_effect = [True, True, False]
+    mock_time.time.side_effect = [0, 0, 30, 60, 90]
+    host = self._CreateHost()
+    container_name = 'container_1'
+
+    cli._DetectAndKillDeadContainer(
+        host, docker_helper, container_name, total_wait_sec=90)
+
+    mock_kill.assert_called_with(host, docker_helper, container_name)
+    self.assertLen(mock_time.sleep.call_args_list, 2)
+
+  @mock.patch.object(cli, '_ForceKillMttNode')
+  @mock.patch('__main__.cli.time')
+  def testDetectAndKillDeadContainer_timedOut(self, mock_time, mock_kill):
+    docker_helper = mock.create_autospec(cli.command_util.DockerHelper)
+    docker_helper.IsContainerAlive.return_value = True
+    mock_time.time.side_effect = [0, 0, 30, 60, 90]
+    host = self._CreateHost()
+    container_name = 'container_1'
+
+    cli._DetectAndKillDeadContainer(
+        host, docker_helper, container_name, total_wait_sec=90)
+
+    mock_kill.assert_called_with(host, docker_helper, container_name)
+    self.assertLen(mock_time.sleep.call_args_list, 3)
 
 
 _ALL_START_OPTIONS = (
