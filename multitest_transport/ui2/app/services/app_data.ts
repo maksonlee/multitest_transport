@@ -33,10 +33,17 @@ export declare interface AppData {
   readonly fileServerRoot?: string;
   /** Local file store upload URL. */
   readonly fileUploadUrl?: string;
+  readonly isDevMode?: boolean;
+  /** User login URL create by Google appengine api. */
+  readonly loginUrl?: string;
+  /** User logout URL create by Google appengine api. */
+  readonly logoutUrl?: string;
   /** Current MTT version. */
   readonly mttVersion?: string;
   /** Whether or not the user has completed the setup wizard. */
   readonly setupWizardCompleted?: boolean;
   /** Local temporary storage upload URL. */
   readonly tempUploadUrl?: string;
+  /** Current login username. */
+  readonly userNickname?: string;
 }

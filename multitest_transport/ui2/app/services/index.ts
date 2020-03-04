@@ -19,4 +19,6 @@
  * exported along with Services that might be re-used.
  */
 
+export {APP_DATA, AppData} from './app_data';
+export {Notifier} from './notifier';
 export {ServicesModule} from './services_module';
