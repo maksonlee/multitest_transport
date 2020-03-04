@@ -142,7 +142,8 @@ describe('FileService', () => {
 });
 
 /** Custom matcher for testing ArrayBuffer contents. */
-function bufferOf(expected: string): jasmine.AsymmetricMatcher {
+// google3 local modification: Required for Jasmine typings.
+function bufferOf(expected: string): jasmine.AsymmetricMatcher<unknown> {
   return {
     asymmetricMatch: (actual: ArrayBuffer) =>
         new TextDecoder().decode(actual) === expected,
