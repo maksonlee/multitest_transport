@@ -86,7 +86,7 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
         test_id='e2e_fake_test',
         extra_args='--set-option run:FakeModule=F'
     )['id']
-    self.container.WaitForState(test_run_id, 'COMPLETED', timeout=3 * 60)
+    self.container.WaitForState(test_run_id, 'COMPLETED', timeout=6 * 60)
     # Verify that the test failed and had two attempts
     test_run = self.container.GetTestRun(test_run_id)
     attempts = self.container.GetAttempts(test_run['request_id'])
@@ -120,7 +120,7 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
             'name': 'android-cts.zip',
             'url': 'file:///data/cts.zip',
         }])['id']
-    self.container.WaitForState(test_run_id, 'COMPLETED', timeout=3 * 60)
+    self.container.WaitForState(test_run_id, 'COMPLETED', timeout=6 * 60)
     # Verify that the tests were executed
     test_run = self.container.GetTestRun(test_run_id)
     self.assertGreater(int(test_run['total_test_count']), 0)
