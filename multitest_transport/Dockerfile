@@ -16,6 +16,7 @@ FROM ubuntu:16.04
 MAINTAINER Moon Kim <moonk@google.com>
 
 ARG MTT_VERSION=dev
+ARG MTT_TRADEFED_PREBUILT=tradefed.zip
 
 ENV MTT_VERSION ${MTT_VERSION}
 ENV MTT_STORAGE_PATH /data
@@ -25,7 +26,7 @@ ENV MTT_CUSTOM_TF_CONFIG_FILE ${MTT_STORAGE_PATH}/host-config.xml
 ENV MTT_LOG_DIR ${MTT_STORAGE_PATH}/log
 ENV MTT_TEST_OUTPUT_DIR ${MTT_STORAGE_PATH}/app_default_bucket/test_runs
 ENV MTT_TEST_WORK_DIR ${MTT_STORAGE_PATH}/tmp
-ENV PATH /tmp/custom_sdk_tools:/mtt/prebuilts/tradefed:${PATH}
+ENV PATH /tmp/custom_sdk_tools:${PATH}
 
 # Authenticate on GCE (ignored if running locally or file not provided)
 ENV GOOGLE_APPLICATION_CREDENTIALS /tmp/keyfile/key.json
@@ -117,8 +118,10 @@ RUN sed -i s/proxy_bypass\(req.host\)/proxy_bypass\(req.host,proxies=self.proxie
 COPY . /mtt
 # dev_appserver.py errors if there exists Dockerfile.
 RUN rm /mtt/Dockerfile
-RUN unzip -q /mtt/prebuilts/tradefed/tradefed.zip -d /mtt/prebuilts/tradefed
-ENV PATH /mtt/prebuilts/tradefed:${PATH}
+# Unzip the selected prebuilt TF runner
+RUN unzip -q /mtt/prebuilts/tradefed/${MTT_TRADEFED_PREBUILT} -d /tradefed
+RUN rm -rf /mtt/prebuilts/tradefed
+ENV PATH /tradefed:${PATH}
 
 # Setup scripts
 RUN chmod 755 /mtt/scripts/init.sh
