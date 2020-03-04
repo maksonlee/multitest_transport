@@ -39,7 +39,7 @@ ts_development_sources(
 karma_web_test_suite(
     name = "scuba_tests",
     browsers = [
-        "//testing/web/browsers:chrome-linux",
+        "//multitest_transport/ui2/scuba_tests:chrome-linux",
     ],
     data = [
         "//javascript/angular2/components/testing:google_sans.css",

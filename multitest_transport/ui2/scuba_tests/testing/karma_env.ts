@@ -71,7 +71,7 @@ export class KarmaTestEnv {
 
   constructor(module: ModuleSpec, config: KarmaTestEnvConfig) {
     if (config.scuba) {
-      const lastSlash = module.id.lastIndexOf('/') + 1;
+      const lastSlash = module.id.lastIndexOf('/');
       const dirName = module.id.slice(0, lastSlash);
       const goldensPath = `${dirName}/scuba_goldens/`;
       const comparisonOptions = Object.assign(
