@@ -18,6 +18,7 @@ import apiclient
 import httplib2
 
 from tradefed_cluster import api_messages
+from google.appengine.api import modules
 
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base
@@ -29,6 +30,8 @@ ANDROID_BUILD_API_NAME = 'androidbuildinternal'
 ANDROID_BUILD_API_VERSION = 'v3'
 
 SCHEDULER = 'MTT'
+RUNNER = 'tradefed'
+UNKNOWN = 'unknown'
 INVOCATION_ID = 'ants_invocation_id'
 WORK_UNIT_ID = 'ants_work_unit_id'
 
@@ -95,7 +98,6 @@ class AntsHook(base.TestRunHook):
       return  # Invocation already created
 
     # TODO: Parse build ID and target from test resources
-    # TODO: Add invocation metadata (test name, labels, properties)
     response = self._GetClient().invocation().insert(
         body={
             'primaryBuild': {
@@ -103,6 +105,10 @@ class AntsHook(base.TestRunHook):
                 'buildTarget': self.build_target,
             },
             'scheduler': SCHEDULER,
+            'runner': RUNNER,
+            'test': {'name': self._GetTestPackageProperty(test_run, 'name')},
+            'testLabels': test_run.labels,
+            'properties': self._GetExtraProperties(test_run),
         }).execute(num_retries=constant.NUM_RETRIES)
     invocation_id = response['invocationId']
     logging.info('Created AnTS invocation %s', invocation_id)
@@ -110,6 +116,29 @@ class AntsHook(base.TestRunHook):
     # Store invocation ID
     test_run.hook_data[INVOCATION_ID] = invocation_id
     test_run.put()
+
+  def _GetTestPackageProperty(self, test_run, key):
+    """Retrieve a test package property if present."""
+    if not test_run.test_package_info:
+      return UNKNOWN
+    return getattr(test_run.test_package_info, key) or UNKNOWN
+
+  def _GetExtraProperties(self, test_run):
+    """Builds a list of additional invocation properties."""
+    hostname = modules.get_hostname('default')
+    test_run_id = test_run.key.id()
+    properties = [
+        {'name': 'test_run_id', 'value': test_run_id},
+        {'name': 'mtt_host', 'value': 'http://%s' % hostname},
+        {'name': 'mtt_version', 'value': env.VERSION},
+        {'name': 'mtt_url',
+         'value': 'http://%s/test_runs/%s' % (hostname, test_run_id)},
+        {'name': 'run_target', 'value': test_run.test_run_config.run_target},
+        {'name': 'test_id', 'value': test_run.test.key.id()},
+        {'name': 'test_version',
+         'value': self._GetTestPackageProperty(test_run, 'version')}
+    ]
+    return properties
 
   def _CreateWorkUnit(self, test_run, task):
     """Creates a new AnTS work unit and injects it into the task."""

@@ -17,11 +17,13 @@ from absl.testing import absltest
 import mock
 
 from tradefed_cluster import api_messages
+from google.appengine.api import modules
 from google.appengine.ext import testbed
 
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import ants
 from multitest_transport.plugins import base as plugins
+from multitest_transport.util import env
 
 
 class AntsHookTest(absltest.TestCase):
@@ -41,24 +43,47 @@ class AntsHookTest(absltest.TestCase):
     super(AntsHookTest, self).tearDown()
     self.client_patcher.stop()
 
-  def testCreateInvocation(self):
+  @mock.patch.object(modules, 'get_hostname')
+  def testCreateInvocation(self, mock_get_hostname):
     """Tests that invocations can be created."""
-    test_run = ndb_models.TestRun()
-    test_run.put()
+    test_run = ndb_models.TestRun(
+        id='test_run_id',
+        test=ndb_models.Test(id='test_id', command='command'),
+        test_run_config=ndb_models.TestRunConfig(run_target='run_target'),
+        test_package_info=ndb_models.TestPackageInfo(name='test'),
+        labels=['hello', 'world'])
     self.client.invocation().insert().execute.return_value = {
         'invocationId': 'invocation_id'
     }
+    mock_get_hostname.return_value = 'host'
+    env.VERSION = 'version'
 
     # Inserts a new invocation and stores the ID
     self.hook._CreateInvocation(test_run)
     self.client.invocation().insert().execute.assert_called_once()
     self.assertEqual('invocation_id', test_run.hook_data[ants.INVOCATION_ID])
 
+    # Contains the right invocation metadata
+    request = self.client.invocation().insert.call_args_list[1][1]['body']
+    self.assertEqual(request['primaryBuild'],
+                     {'buildId': 'build_id', 'buildTarget': 'build_target'})
+    self.assertEqual(request['scheduler'], ants.SCHEDULER)
+    self.assertEqual(request['runner'], ants.RUNNER)
+    self.assertEqual(request['test'], {'name': 'test'})
+    self.assertEqual(request['testLabels'], ['hello', 'world'])
+    properties = dict({(p['name'], p['value']) for p in request['properties']})
+    self.assertEqual(properties['test_run_id'], 'test_run_id')
+    self.assertEqual(properties['mtt_host'], 'http://host')
+    self.assertEqual(properties['mtt_version'], 'version')
+    self.assertEqual(properties['mtt_url'], 'http://host/test_runs/test_run_id')
+    self.assertEqual(properties['run_target'], 'run_target')
+    self.assertEqual(properties['test_id'], 'test_id')
+    self.assertEqual(properties['test_version'], ants.UNKNOWN)
+
   def testCreateInvocation_alreadyCreated(self):
     """Tests that creation is skipped if invocation ID already defined."""
     test_run = ndb_models.TestRun(
         hook_data={ants.INVOCATION_ID: 'invocation_id'})
-    test_run.put()
 
     # Skips sending insert invocation request
     self.hook._CreateInvocation(test_run)
@@ -68,7 +93,6 @@ class AntsHookTest(absltest.TestCase):
     """Tests that work units can be created."""
     test_run = ndb_models.TestRun(
         hook_data={ants.INVOCATION_ID: 'invocation_id'})
-    test_run.put()
     task = plugins.TestRunTask(None, None, None, {})
     self.client.workunit().insert().execute.return_value = {
         'id': 'work_unit_id'
@@ -90,7 +114,6 @@ class AntsHookTest(absltest.TestCase):
     """Tests that work units can be updated."""
     test_run = ndb_models.TestRun(
         hook_data={ants.WORK_UNIT_ID: 'work_unit_id'})
-    test_run.put()
     attempt = api_messages.CommandAttemptMessage(
         request_id='id',
         command_id='id',
@@ -111,7 +134,6 @@ class AntsHookTest(absltest.TestCase):
     test_run = ndb_models.TestRun(
         state=ndb_models.TestRunState.COMPLETED,
         hook_data={ants.INVOCATION_ID: 'invocation_id'})
-    test_run.put()
     invocation = {}
     self.client.invocation().get().execute.return_value = invocation
 
