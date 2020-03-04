@@ -34,12 +34,9 @@ import six
 from multitest_transport.cli import cli_util
 from multitest_transport.cli import command_util
 from multitest_transport.cli import config
-from multitest_transport.cli import gcs_file_util
-from multitest_transport.cli import google_auth_util
 from multitest_transport.cli import host_util
 
 _MTT_CONTAINER_NAME = 'mtt'
-_MTT_PROJECT = 'android-mtt'
 _MTT_SERVER_WAIT_TIME_SECONDS = 120
 
 _MTT_LIB_DIR = '/var/lib/mtt'
@@ -58,7 +55,6 @@ _UNKNOWN_VERSION = 'unknown'
 _DEFAULT_DOCKERIZED_TF_IMAGE = 'gcr.io/dockerized-tradefed/tradefed:golden'
 _DEFAULT_MTT_IMAGE = 'gcr.io/android-mtt/mtt:prod'
 _DAEMON_UPDATE_INTERVAL_SEC = 60
-_CLI_UPDATE_URL_TEMPLATE = 'gs://android-mtt.appspot.com/%s/mtt'
 
 # Tradefed accept TSTP signal as 'quit', which will wait all running tests
 # to finish.
@@ -335,7 +331,7 @@ def _StartMttDaemon(args, host):
   """
   logger.info('Starting MTT daemon on %s.', host.name)
   if _IsDaemonActive(host):
-    logger.warn('MTT daemon is already running on %s.', host.name)
+    logger.warning('MTT daemon is already running on %s.', host.name)
     return
   _SetupMTTRuntimeIntoLibPath(args, host)
   _SetupSystemdScript(args, host)
@@ -658,15 +654,9 @@ def CreateParser():
     an argparse.ArgumentParser object.
   """
   parser = argparse.ArgumentParser(
-      parents=[cli_util.CreateLoggingArgParser()])
-  parser.add_argument(
-      '--cli_update_url', type=str,
-      help='Remote url to download the latest version command line.')
-  parser.add_argument(
-      '--no_check_update', action='store_true',
-      help='Enable command line auto update or not.')
+      parents=[cli_util.CreateLoggingArgParser(),
+               cli_util.CreateCliUpdateArgParser()])
   subparsers = parser.add_subparsers(title='Actions')
-
   subparser = subparsers.add_parser(
       'configure', help='Configure basic settings')
   subparser.set_defaults(func=Configure)
@@ -702,52 +692,6 @@ def CreateParser():
   return parser
 
 
-def _CheckAndUpdateTool(local_path, cli_update_url=None):
-  """Check the remote version, if it's different, update the local CLI."""
-  if not cli_update_url or not cli_update_url.strip():
-    _, build_environment = cli_util.GetVersion(local_path)
-    if build_environment == 'dev':
-      logger.debug('CLI from dev and no "cli_update_url" set, not update CLI.')
-      return None
-    cli_update_url = _CLI_UPDATE_URL_TEMPLATE % build_environment
-    logger.debug('Command auto update enabled, '
-                 'but there is no cli_update_url set. '
-                 'Using the default: %s.', cli_update_url)
-  cli_update_url = cli_update_url.strip()
-  if not cli_update_url.startswith('gs://'):
-    logger.warn('cli_update_url only Support Google Cloud Storage path.')
-    return None
-  if os.path.basename(local_path) != os.path.basename(cli_update_url):
-    logger.debug(
-        '%s is not %s, not update.',
-        os.path.basename(local_path), os.path.basename(cli_update_url))
-    return None
-  try:
-    cred = google_auth_util.GetGCloudCredential(
-        command_util.CommandContext())
-    gcs_client = gcs_file_util.CreateGCSClient(_MTT_PROJECT, cred)
-    blob = gcs_file_util.GetGCSBlob(gcs_client, cli_update_url)
-  except gcs_file_util.GCSError as e:
-    logger.warn(e)
-    return None
-  local_md5hash = gcs_file_util.CalculateMd5Hash(local_path)
-  if six.ensure_text(blob.md5_hash) == local_md5hash:
-    logger.debug('Local is the same as remote, not update.')
-    return
-  logger.info(
-      'There is a newer version %s on %s, updating.',
-      os.path.basename(local_path), cli_update_url)
-  try:
-    os.rename(
-        local_path,
-        gcs_file_util.CreateBackupFilePath(local_path))
-    blob.download_to_filename(local_path)
-    os.chmod(local_path, 0o770)
-    return local_path
-  except OSError as e:
-    logger.warn('No write access to %s: %s.', os.path.dirname(local_path), e)
-
-
 def Main():
   """The entry point function for CLI."""
   parser = CreateParser()
@@ -757,12 +701,13 @@ def Main():
   logger = cli_util.CreateLogger(args)
   if not args.no_check_update:
     try:
-      new_path = _CheckAndUpdateTool(
+      new_path = cli_util.CheckAndUpdateTool(
           args.cli_path,
           cli_update_url=args.cli_update_url)
       if new_path:
+        logger.debug('CLI is updated.')
         os.execv(new_path, [new_path] + sys.argv[1:])
-    except Exception as e:        logger.warn('Failed to check/update tool: %s', e)
+    except Exception as e:        logger.warning('Failed to check/update tool: %s', e)
   try:
     if hasattr(args, 'func'):
       args.func(args)

@@ -246,7 +246,8 @@ def CreateParser():
     an argparse.ArgumentParser object.
   """
   parser = argparse.ArgumentParser(
-      parents=[cli_util.CreateLoggingArgParser()])
+      parents=[cli_util.CreateLoggingArgParser(),
+               cli_util.CreateCliUpdateArgParser()])
   subparsers = parser.add_subparsers(title='Actions')
   # Commands for users
   subparser = subparsers.add_parser(
@@ -288,6 +289,15 @@ def Main():
   args.cli_path = os.path.realpath(sys.argv[0])
   global logger
   logger = cli_util.CreateLogger(args)
+  if not args.no_check_update:
+    try:
+      new_path = cli_util.CheckAndUpdateTool(
+          args.cli_path,
+          cli_update_url=args.cli_update_url)
+      if new_path:
+        logger.debug('CLI is updated.')
+        os.execv(new_path, [new_path] + sys.argv[1:])
+    except Exception as e:        logger.warning('Failed to check/update tool: %s', e)
   try:
     if (hasattr(args, 'command_executor_factory') and
         args.command_executor_factory):

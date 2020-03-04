@@ -154,7 +154,7 @@ class Config(object):
   def Load(self):
     """Load field values from a config file."""
     if not os.path.exists(self._filename):
-      logging.warn('config file does not exist: %s', self._filename)
+      logging.warning('config file does not exist: %s', self._filename)
     parser = configparser.SafeConfigParser()
     parser.read(self._filename)
     for field in self._field_map.values():

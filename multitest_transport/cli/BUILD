@@ -26,8 +26,6 @@ py_library(
         ":cli_util_lib",
         ":command_util_lib",
         ":config_lib",
-        ":gcs_file_util_lib",
-        ":google_auth_util_lib",
         ":host_util_lib",
         third_party("six"),
     ],
@@ -39,6 +37,12 @@ py_library(
         "cli_util.py",
     ],
     srcs_version = "PY2AND3",
+    deps = [
+        ":command_util_lib",
+        ":gcs_file_util_lib",
+        ":google_auth_util_lib",
+        third_party("six"),
+    ],
 )
 
 py_library(

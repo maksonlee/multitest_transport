@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 try:
   import invoke  except ImportError:
   invoke = None
-  logging.warn('Failed to import invoke')
+  logging.warning('Failed to import invoke')
 
 try:
   # Test importing paramiko.
@@ -41,7 +41,7 @@ try:
   import paramiko    import fabric  except ImportError:
   fabric = None
   paramiko = None
-  logging.warn('Failed to import fabric or paramiko')
+  logging.warning('Failed to import fabric or paramiko')
 
 _GCLOUD_PATHS = ['gcloud', '/google/data/ro/teams/cloud-sdk/gcloud']
 _REMOTE_IMAGE_DIGEST_FORMAT = '{{index .RepoDigests 0}}'
@@ -374,8 +374,9 @@ class CommandContext(object):
       else:
         res = self.wrapped_context.run(command_str, **run_kwargs)
     except invoke.exceptions.CommandTimedOut as err:
-      logger.warn('The command <%s> fails to execute within given time <%s s>.',
-                  command_str, run_kwargs['timeout'])
+      logger.warning(
+          'The command <%s> fails to execute within given time <%s s>.',
+          command_str, run_kwargs['timeout'])
       return CommandResult(
           return_code=err.result.exited, stdout='', stderr=str(err))
 
@@ -471,8 +472,9 @@ class DockerContext(object):
           raise_on_failure=False)
       logger.info('gcloud auth configure-docker')
       return
-    logger.warn('No gcloud or service account json key file, can not login %s.',
-                _DOCKER_SERVER)
+    logger.warning(
+        'No gcloud or service account json key file, can not login %s.',
+        _DOCKER_SERVER)
 
   def _CheckDocker(self):
     """Check if docker is installed."""
