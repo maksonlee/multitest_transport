@@ -27,7 +27,7 @@ _VERSION_FILE = 'VERSION'
 _LOG_FORMAT = '%(asctime)s |%(levelname)s| %(module)s:%(lineno)s| %(message)s'
 _LOG_MAX_BYTES = 50 * 10 ** 6  # 50MB
 _LOG_BACKUPS = 5
-_SIMPLE_LOG_FORMAT = '%(message)s'
+_SIMPLE_LOG_FORMAT = '%(levelname)s| %(message)s'
 _PACKAGE_LOGGER_NAME = 'multitest_transport.cli'
 
 
