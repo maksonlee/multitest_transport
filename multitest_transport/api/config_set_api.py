@@ -33,6 +33,7 @@ from multitest_transport.models import ndb_models
 class ConfigSetApi(remote.Service):
   """A handler for Config Set API."""
 
+  @base.convert_exception
   @endpoints.method(
       endpoints.ResourceContainer(
           message_types.VoidMessage,),
@@ -54,6 +55,7 @@ class ConfigSetApi(remote.Service):
         build_channels=mtt_messages.Convert(channels,
                                             mtt_messages.BuildChannel))
 
+  @base.convert_exception
   @endpoints.method(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
@@ -89,6 +91,7 @@ class ConfigSetApi(remote.Service):
     return mtt_messages.ConfigSetInfoList(
         config_set_infos=info_message_list)
 
+  @base.convert_exception
   @endpoints.method(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
