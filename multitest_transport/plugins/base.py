@@ -23,15 +23,12 @@ import enum
 import six
 
 from multitest_transport.plugins.registry import PluginRegistry
-from multitest_transport.util import oauth2_util
 
 BUILD_PROVIDER_REGISTRY = PluginRegistry()
 TEST_RUN_HOOK_REGISTRY = PluginRegistry()
 
 OptionDef = collections.namedtuple(
     'OptionDef', ['name', 'value_type', 'choices', 'default'])
-
-OAuth2Config = oauth2_util.OAuth2Config
 
 BuildItem = collections.namedtuple('BuildItem', [
     'name', 'path', 'is_file', 'size', 'timestamp', 'origin_url', 'description'
@@ -137,7 +134,7 @@ class BuildProvider(
     """Returns stored credentials.
 
     Returns:
-      an oauth2client.client.Credentials object.
+      a google.auth.credentials.Credentials object.
     """
     return self._credentials
 
@@ -145,7 +142,7 @@ class BuildProvider(
     """Updates stored credentials for a provider.
 
     Args:
-      credentials: an oauth2client.client.Credentials object.
+      credentials: a google.auth.credentials.Credentials object.
     """
     self._credentials = credentials
 

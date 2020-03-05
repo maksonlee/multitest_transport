@@ -213,8 +213,8 @@ class BuildChannelApi(remote.Service):
     """Determine a build channel configuration's authorization information."""
     build_channel = self._GetBuildChannel(request.build_channel_id)
     redirect_uri, is_manual = oauth2_util.GetRedirectUri(request.redirect_uri)
-    auth_url = oauth2_util.GetOAuth2Flow(
-        build_channel.oauth2_config, redirect_uri).step1_get_authorize_url()
+    flow = oauth2_util.GetOAuth2Flow(build_channel.oauth2_config, redirect_uri)
+    auth_url, _ = flow.authorization_url()
     return mtt_messages.AuthorizationInfo(url=auth_url, is_manual=is_manual)
 
   @base.convert_exception
@@ -232,8 +232,8 @@ class BuildChannelApi(remote.Service):
     """Authorize a build channel configuration with an authorization code."""
     build_channel = self._GetBuildChannel(request.build_channel_id)
     redirect_uri, _ = oauth2_util.GetRedirectUri(request.redirect_uri)
-    oauth2_config = build_channel.oauth2_config
-    build_channel.config.credentials = oauth2_util.GetOAuth2Flow(
-        oauth2_config, redirect_uri).step2_exchange(request.code)
+    flow = oauth2_util.GetOAuth2Flow(build_channel.oauth2_config, redirect_uri)
+    flow.fetch_token(code=request.code)
+    build_channel.config.credentials = flow.credentials
     build_channel.config.put()
     return message_types.VoidMessage()

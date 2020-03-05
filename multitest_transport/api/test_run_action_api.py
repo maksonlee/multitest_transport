@@ -132,8 +132,8 @@ class TestRunActionApi(remote.Service):
     action = self._GetTestRunAction(request.action_id)
     redirect_uri, is_manual = oauth2_util.GetRedirectUri(request.redirect_uri)
     oauth2_config = test_run_hook.GetOAuth2Config(action)
-    auth_url = oauth2_util.GetOAuth2Flow(
-        oauth2_config, redirect_uri).step1_get_authorize_url()
+    flow = oauth2_util.GetOAuth2Flow(oauth2_config, redirect_uri)
+    auth_url, _ = flow.authorization_url()
     return mtt_messages.AuthorizationInfo(url=auth_url, is_manual=is_manual)
 
   @base.convert_exception
@@ -152,8 +152,9 @@ class TestRunActionApi(remote.Service):
     action = self._GetTestRunAction(request.action_id)
     redirect_uri, _ = oauth2_util.GetRedirectUri(request.redirect_uri)
     oauth2_config = test_run_hook.GetOAuth2Config(action)
-    action.credentials = oauth2_util.GetOAuth2Flow(
-        oauth2_config, redirect_uri).step2_exchange(request.code)
+    flow = oauth2_util.GetOAuth2Flow(oauth2_config, redirect_uri)
+    flow.fetch_token(code=request.code)
+    action.credentials = flow.credentials
     action.put()
     return message_types.VoidMessage()
 

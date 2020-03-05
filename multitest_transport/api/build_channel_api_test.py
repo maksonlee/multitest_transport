@@ -13,12 +13,11 @@
 # limitations under the License.
 
 """Tests for build_channel_api."""
-
+import multitest_transport.google_import_fixer  
 from absl.testing import absltest
-
 import mock
-from oauth2client import client
 from protorpc import protojson
+from google.oauth2 import credentials as authorized_user
 
 from multitest_transport.api import api_test_util
 from multitest_transport.api import build_channel_api
@@ -166,7 +165,7 @@ class BuildChannelApiTest(api_test_util.TestCase):
     # Mock getting URIs from OAuth2 utilities
     mock_get_redirect.return_value = 'redirect_uri', True
     oauth2_flow = mock.MagicMock()
-    oauth2_flow.step1_get_authorize_url.return_value = 'auth_uri'
+    oauth2_flow.authorization_url.return_value = 'auth_uri', None
     mock_get_flow.return_value = oauth2_flow
     # Verify authorization info
     response = self.app.get(
@@ -190,14 +189,13 @@ class BuildChannelApiTest(api_test_util.TestCase):
     """Tests that a build channel can be authorized."""
     config = self._CreateMockBuildChannel(name='android', provider='Android')
     # Mock getting credentials from OAuth2 utilities
-    oauth2_flow = mock.MagicMock()
-    oauth2_flow.step2_exchange.return_value = client.Credentials()
+    oauth2_flow = mock.MagicMock(credentials=authorized_user.Credentials(None))
     mock_get_flow.return_value = oauth2_flow
     # Verify that credentials were obtained and stored
     self.app.post(
         '/_ah/api/mtt/v1/build_channels/%s/auth_return?redirect_uri=%s&code=%s'
         % (config.key.id(), 'redirect_uri', 'code'))
-    oauth2_flow.step2_exchange.assert_called_once_with('code')
+    oauth2_flow.fetch_token.assert_called_once_with(code='code')
     self.assertIsNotNone(config.credentials)
 
   def testAuthorizeConfig_notFound(self):

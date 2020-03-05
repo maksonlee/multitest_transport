@@ -24,13 +24,15 @@ from multitest_transport.plugins import constant
 from multitest_transport.plugins import file_upload_hook
 from multitest_transport.util import env
 from multitest_transport.util import file_util
+from multitest_transport.util import oauth2_util
 
 _PATH_DELIMITER = '/'
 _EMPTY_FOLDER_CONTENT_TYPE = 'application/x-www-form-urlencoded;charset=UTF-8'
-_GCS_OAUTH2_CONFIG = base.OAuth2Config(
+_GCS_OAUTH2_SCOPES = ['https://www.googleapis.com/auth/devstorage.full_control']
+_GCS_OAUTH2_CONFIG = oauth2_util.OAuth2Config(
     client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
     client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
-    scopes=['https://www.googleapis.com/auth/devstorage.full_control'])
+    scopes=_GCS_OAUTH2_SCOPES)
 _GCS_BUILD_API_NAME = 'storage'
 _GCS_BUILD_API_VERSION = 'v1'
 _PAGE_SIZE = 10
@@ -40,8 +42,7 @@ _UPLOAD_BUFFER_SIZE = 1024 * 1024
 def _GetClient(credentials):
   """Constructs a client to access the Google Cloud Storage API."""
   http = httplib2.Http(timeout=constant.HTTP_TIMEOUT_SECONDS)
-  if credentials:
-    http = credentials.authorize(http)
+  http = oauth2_util.AuthorizeHttp(http, credentials, scopes=_GCS_OAUTH2_SCOPES)
   return apiclient.discovery.build(
       _GCS_BUILD_API_NAME,
       _GCS_BUILD_API_VERSION,

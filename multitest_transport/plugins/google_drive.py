@@ -33,9 +33,8 @@ import datetime
 import json
 import logging
 import os
-import apiclient.discovery
-import apiclient.errors
-import apiclient.http
+
+import apiclient
 import httplib2
 import six
 
@@ -44,6 +43,7 @@ from multitest_transport.plugins import constant
 from multitest_transport.util import env
 from multitest_transport.util import errors
 from multitest_transport.util import file_util
+from multitest_transport.util import oauth2_util
 
 # Google Drive Root Directory's id
 _DRIVE_ROOT_ID = 'root'
@@ -121,11 +121,9 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     """
     if self._client:
       return self._client
-
     http = httplib2.Http(timeout=constant.HTTP_TIMEOUT_SECONDS)
-    credentials = self.GetCredentials()
-    if credentials:
-      http = credentials.authorize(http)
+    http = oauth2_util.AuthorizeHttp(
+        http, self.GetCredentials(), scopes=_GOOGLE_DRIVE_OAUTH2_SCOPES)
     self._client = apiclient.discovery.build(
         _GOOGLE_DRIVE_BUILD_API_NAME,
         _GOOGLE_DRIVE_BUILD_API_VERSION,
@@ -135,7 +133,7 @@ class GoogleDriveBuildProvider(base.BuildProvider):
 
   def GetOAuth2Config(self):
     """Provide base with params needed for OAuth2 authentication."""
-    return base.OAuth2Config(
+    return oauth2_util.OAuth2Config(
         client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
         client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
         scopes=_GOOGLE_DRIVE_OAUTH2_SCOPES)

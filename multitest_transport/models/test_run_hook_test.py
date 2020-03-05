@@ -13,18 +13,20 @@
 # limitations under the License.
 
 """Unit tests for run_hook."""
+import multitest_transport.google_import_fixer  
 from absl.testing import absltest
 import mock
-from oauth2client import client
 
 from tradefed_cluster.api_messages import CommandState
 from tradefed_cluster.command_task_api import CommandTask
 from google.appengine.ext import testbed
+from google.oauth2 import credentials as authorized_user
 
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
 from multitest_transport.plugins import base as plugins
 from multitest_transport.util import tfc_client
+from multitest_transport.util import oauth2_util
 
 
 class SimpleHook(plugins.TestRunHook):
@@ -35,7 +37,7 @@ class SimpleHook(plugins.TestRunHook):
 class OAuth2Hook(plugins.TestRunHook):
   """Test run hook with OAuth2 configuration."""
   name = 'oauth2'
-  oauth2_config = plugins.OAuth2Config('id', 'secret', ['scope'])
+  oauth2_config = oauth2_util.OAuth2Config('id', 'secret', ['scope'])
 
 
 class TestRunHookTest(absltest.TestCase):
@@ -114,7 +116,7 @@ class TestRunHookTest(absltest.TestCase):
     """Tests that a hook can be constructed and executed."""
     mock_init.return_value = None
     hook_context = mock.MagicMock()
-    credentials = client.Credentials()
+    credentials = authorized_user.Credentials(None)
     action = ndb_models.TestRunAction(
         name='Test', hook_class_name='simple',
         options=[ndb_models.NameValuePair(name='ham', value='eggs')],
@@ -156,7 +158,7 @@ class TestRunHookTest(absltest.TestCase):
     """Tests detecting hooks requiring authorization and with credentials."""
     action = ndb_models.TestRunAction(
         name='Test', hook_class_name='oauth2',
-        credentials=client.Credentials(),
+        credentials=authorized_user.Credentials(None),
     )
     self.assertEqual(ndb_models.AuthorizationState.AUTHORIZED,
                      test_run_hook.GetAuthorizationState(action))

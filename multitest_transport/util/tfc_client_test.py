@@ -16,7 +16,7 @@
 import threading
 
 from absl.testing import absltest
-import apiclient.discovery
+import apiclient
 import mock
 
 from google.appengine.api import modules
@@ -42,7 +42,7 @@ class TfcClientTest(absltest.TestCase):
     api_client = tfc_client._GetAPIClient()
 
     mock_build.assert_called_with(
-        tfc_client.API_NAME, tfc_client.API_VERSION,
+        tfc_client.API_NAME, tfc_client.API_VERSION, http=mock.ANY,
         discoveryServiceUrl=tfc_client.API_DISCOVERY_URL_FORMAT % (
             hostname, tfc_client.API_NAME, tfc_client.API_VERSION))
     self.assertEqual(mock_build(), api_client)

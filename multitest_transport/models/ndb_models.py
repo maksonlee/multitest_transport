@@ -18,7 +18,6 @@ import collections
 import datetime
 import uuid
 
-from oauth2client import appengine
 from protorpc import messages
 from tradefed_cluster import common
 
@@ -27,6 +26,7 @@ from google.appengine.ext.ndb import msgprop
 
 from multitest_transport.util import env
 from multitest_transport.util import file_util
+from multitest_transport.util import oauth2_util
 
 NODE_CONFIG_ID = 1
 
@@ -93,7 +93,7 @@ class BuildChannelConfig(ndb.Model):
   name = ndb.StringProperty(required=True)
   provider_name = ndb.StringProperty(required=True)
   options = ndb.StructuredProperty(NameValuePair, repeated=True)
-  credentials = appengine.CredentialsNDBProperty()
+  credentials = oauth2_util.CredentialsProperty()
 
 
 class ConfigSetStatus(messages.Enum):
@@ -243,7 +243,7 @@ class TestRunAction(ndb.Model):
   options = ndb.LocalStructuredProperty(NameValuePair, repeated=True)
   tradefed_result_reporters = ndb.LocalStructuredProperty(
       TradefedConfigObject, repeated=True)
-  credentials = appengine.CredentialsNDBProperty()
+  credentials = oauth2_util.CredentialsProperty()
 
 
 class TestRunActionRef(ndb.Model):

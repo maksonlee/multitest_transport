@@ -21,6 +21,7 @@ import urllib2
 from multitest_transport.plugins import base
 from multitest_transport.util import env
 from multitest_transport.util import file_util
+from multitest_transport.util import oauth2_util
 
 OAUTH2_SCOPES = ('https://www.googleapis.com/auth/partnerdash',
                  'https://www.googleapis.com/auth/alkali-base')
@@ -37,7 +38,7 @@ class PartnerAndroidBuildProvider(base.BuildProvider):
     self.AddOptionDef('account_id')
 
   def GetOAuth2Config(self):
-    return base.OAuth2Config(
+    return oauth2_util.OAuth2Config(
         client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
         client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
         scopes=OAUTH2_SCOPES)
@@ -56,7 +57,8 @@ class PartnerAndroidBuildProvider(base.BuildProvider):
     options = self.GetOptions()
     url = '/'.join(url_parts) + '?a=%s' % options.account_id
     headers = {}
-    self.GetCredentials().apply(headers)
+    oauth2_util.ApplyHeader(
+        headers, self.GetCredentials(), scopes=OAUTH2_SCOPES)
     logging.info('Fetching %s: headers=%s', url, headers)
     request = urllib2.Request(url, headers=headers)
     content = urllib2.urlopen(request).read()

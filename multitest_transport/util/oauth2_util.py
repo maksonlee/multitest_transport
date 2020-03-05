@@ -13,14 +13,73 @@
 # limitations under the License.
 
 """OAuth2 utilities."""
-import collections
-from oauth2client import client
+import multitest_transport.google_import_fixer  
+import json
+import logging
+import pickle
+
+import attr
+import google_auth_httplib2
+from google_auth_oauthlib import flow
 from six.moves import urllib
+from google.appengine.ext import ndb
+from google.auth import credentials as ga_credentials
+from google.oauth2 import credentials as authorized_user
 
 MANUAL_COPY_PASTE_URI = 'urn:ietf:wg:oauth:2.0:oob'
+GOOGLE_AUTH_URI = 'https://accounts.google.com/o/oauth2/auth'
+GOOGLE_TOKEN_URI = 'https://accounts.google.com/o/oauth2/token'
 
-OAuth2Config = collections.namedtuple('OAuth2Config',
-                                      ['client_id', 'client_secret', 'scopes'])
+
+class CredentialsProperty(ndb.BlobProperty):
+  """Stores authorized user or service account credentials."""
+
+  def _validate(self, value):
+    if value is not None and not isinstance(value, ga_credentials.Credentials):
+      raise TypeError('Value %s is not a Credentials instance.' % value)
+
+  def _to_base_type(self, value):
+    return pickle.dumps(value)
+
+  def _from_base_type(self, value):
+    try:
+      return pickle.loads(value)
+    except KeyError:
+      logging.warning('Unpickling credentials failed, reverting to JSON')
+    # Try to parse JSON blob for backwards compatibility with oauth2client
+    try:
+      data = json.loads(value)
+      return authorized_user.Credentials.from_authorized_user_info(data)
+    except ValueError:
+      return None
+
+
+@attr.s(frozen=True)
+class OAuth2Config(object):
+  """OAuth2 configuration."""
+  client_id = attr.ib()
+  client_secret = attr.ib()
+  scopes = attr.ib(factory=list)
+  auth_uri = attr.ib(default=GOOGLE_AUTH_URI)
+  token_uri = attr.ib(default=GOOGLE_TOKEN_URI)
+
+
+def ApplyHeader(headers, credentials, scopes=None):
+  """Helper function to apply credentials to request headers."""
+  if not credentials:
+    return  # TODO: try to use default credentials
+  if scopes:
+    credentials = ga_credentials.with_scopes_if_required(credentials, scopes)
+  credentials.apply(headers)
+
+
+def AuthorizeHttp(http, credentials, scopes=None):
+  """Helper function to apply credentials to an HTTP client."""
+  if not credentials:
+    return http  # TODO: try to use default credentials
+  if scopes:
+    credentials = ga_credentials.with_scopes_if_required(credentials, scopes)
+  return google_auth_httplib2.AuthorizedHttp(credentials, http)
 
 
 def GetRedirectUri(redirect_uri):
@@ -47,12 +106,18 @@ def GetOAuth2Flow(oauth2_config, redirect_uri):
     redirect_uri: URI to redirect to after authorization
 
   Returns:
-    oauth2client.client.OAuth2Flow
+    google_auth_oauthlib.flow.Flow
   """
   if not oauth2_config:
     raise ValueError('No OAuth2 configuration provided')
-  return client.OAuth2WebServerFlow(
-      client_id=oauth2_config.client_id,
-      client_secret=oauth2_config.client_secret,
-      scope=oauth2_config.scopes,
+  return flow.Flow.from_client_config(
+      {
+          'web': {
+              'auth_uri': oauth2_config.auth_uri,
+              'client_id': oauth2_config.client_id,
+              'client_secret': oauth2_config.client_secret,
+              'token_uri': oauth2_config.token_uri,
+          },
+      },
+      scopes=oauth2_config.scopes,
       redirect_uri=redirect_uri)

@@ -26,7 +26,6 @@ py_appengine_library(
         ":ndb_models_lib",
         "//multitest_transport/plugins:plugin_base",
         "//multitest_transport/util",
-        third_party("oauth2client_4_0:oauth2client"),
     ],
 )
 
@@ -138,7 +137,6 @@ py_appengine_library(
     envs = PY_APPENGINE_ENVS,
     deps = [
         "//multitest_transport/util",
-        third_party("oauth2client_4_0:oauth2client"),
         "@tradefed_cluster//tradefed_cluster:common_lib",
     ],
 )

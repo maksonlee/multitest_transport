@@ -16,7 +16,8 @@
 import json
 import threading
 
-import apiclient.discovery
+import apiclient
+import httplib2
 from protorpc import protojson
 from tradefed_cluster import api_messages
 
@@ -25,17 +26,18 @@ from google.appengine.api import modules
 API_NAME = 'tradefed_cluster'
 API_VERSION = 'v1'
 API_DISCOVERY_URL_FORMAT = 'http://%s/_ah/api/discovery/v1/apis/%s/%s/rest'
+HTTP_TIMEOUT_SECONDS = 60
 
 _tls = threading.local()
 
 
 def _GetAPIClient():
   if not hasattr(_tls, 'api_client'):
+    http = httplib2.Http(timeout=HTTP_TIMEOUT_SECONDS)
     hostname = modules.get_hostname('default')
-    discovery_url = API_DISCOVERY_URL_FORMAT % (
-        hostname, API_NAME, API_VERSION)
+    discovery_url = API_DISCOVERY_URL_FORMAT % (hostname, API_NAME, API_VERSION)
     _tls.api_client = apiclient.discovery.build(
-        API_NAME, API_VERSION, discoveryServiceUrl=discovery_url)
+        API_NAME, API_VERSION, http=http, discoveryServiceUrl=discovery_url)
   return _tls.api_client
 
 

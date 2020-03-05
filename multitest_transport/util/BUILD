@@ -78,8 +78,11 @@ py_appengine_library(
         "oauth2_util.py",
     ],
     deps = [
-        # TODO: switch to oauth2client_4_0
-        third_party("apiclient"),
+        "//multitest_transport:google_import_fixer",
+        third_party("attr"),
+        third_party("google/oauth2:credentials"),
+        third_party("google_auth_httplib2"),
+        third_party("google_auth_oauthlib"),
     ],
 )
 
@@ -93,6 +96,8 @@ py_appengine_test(
     deps = [
         ":oauth2_util_lib",
         third_party("absl/testing:absltest"),
+        third_party("mock"),
+        third_party("google/oauth2:service_account"),
     ],
 )
 

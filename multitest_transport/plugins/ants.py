@@ -24,6 +24,7 @@ from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base
 from multitest_transport.plugins import constant
 from multitest_transport.util import env
+from multitest_transport.util import oauth2_util
 
 OAUTH2_SCOPES = ['https://www.googleapis.com/auth/androidbuild.internal']
 ANDROID_BUILD_API_NAME = 'androidbuildinternal'
@@ -61,7 +62,7 @@ ATTEMPT_STATE_MAP = {
 class AntsHook(base.TestRunHook):
   """Hook which uploads results to AnTS."""
   name = 'AnTS'
-  oauth2_config = base.OAuth2Config(
+  oauth2_config = oauth2_util.OAuth2Config(
       client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
       client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
       scopes=OAUTH2_SCOPES)
@@ -73,8 +74,8 @@ class AntsHook(base.TestRunHook):
   def _GetClient(self):
     """Initializes an Android Build client."""
     http = httplib2.Http(timeout=constant.HTTP_TIMEOUT_SECONDS)
-    if self._credentials:
-      http = self._credentials.authorize(http)
+    http = oauth2_util.AuthorizeHttp(
+        http, self._credentials, scopes=OAUTH2_SCOPES)
     return apiclient.discovery.build(
         ANDROID_BUILD_API_NAME,
         ANDROID_BUILD_API_VERSION,

@@ -13,9 +13,73 @@
 # limitations under the License.
 
 """Unit tests for oauth2_util."""
+import multitest_transport.google_import_fixer  
+import json
+
 from absl.testing import absltest
+from google.appengine.ext import ndb
+from google.appengine.ext import testbed
+from google.oauth2 import credentials as authorized_user
+from google.oauth2 import service_account
 
 from multitest_transport.util import oauth2_util
+
+
+class TestModel(ndb.Model):
+  """Dummy model to test storing credentials."""
+  credentials = oauth2_util.CredentialsProperty()
+
+
+class CredentialsPropertyTest(absltest.TestCase):
+  """Tests for oauth2_util.CredentialsProperty."""
+
+  def setUp(self):
+    super(CredentialsPropertyTest, self).setUp()
+    self.testbed = testbed.Testbed()
+    self.testbed.activate()
+    self.testbed.init_all_stubs()
+    self.addCleanup(self.testbed.deactivate)
+
+  def testStore(self):
+    """Tests that credentials can be stored and retrieved."""
+    credentials = authorized_user.Credentials.from_authorized_user_info({
+        'client_id': 'client_id',
+        'client_secret': 'client_secret',
+        'refresh_token': 'refresh_token',
+    })
+    entity = TestModel(id='foo', credentials=credentials)
+    entity.put()
+    retrieved = TestModel.get_by_id('foo')
+    self.assertIsNotNone(retrieved.credentials)
+    self.assertEqual('client_id', retrieved.credentials.client_id)
+    self.assertEqual('client_secret', retrieved.credentials.client_secret)
+    self.assertEqual('refresh_token', retrieved.credentials.refresh_token)
+
+  def testValidate(self):
+    """Tests that the credentials type is validated."""
+    prop = oauth2_util.CredentialsProperty()
+    # None is allowed
+    prop._validate(None)
+    # User authorization and service accounts are allowed
+    prop._validate(authorized_user.Credentials(None))
+    prop._validate(service_account.Credentials(None, None, None))
+    # Anything else is forbidden
+    with self.assertRaises(TypeError):
+      prop._validate({})
+
+  def testParseLegacy(self):
+    """Tests that legacy JSON blobs can be parsed."""
+    prop = oauth2_util.CredentialsProperty()
+    data = {
+        'client_id': 'client_id',
+        'client_secret': 'client_secret',
+        'refresh_token': 'refresh_token',
+    }
+    credentials = prop._from_base_type(json.dumps(data))
+    self.assertIsNotNone(credentials)
+    self.assertEqual('client_id', credentials.client_id)
+    self.assertEqual('client_secret', credentials.client_secret)
+    self.assertEqual('refresh_token', credentials.refresh_token)
 
 
 class OAuth2UtilTest(absltest.TestCase):
@@ -33,12 +97,12 @@ class OAuth2UtilTest(absltest.TestCase):
 
   def testGetOAuth2Flow(self):
     """Tests that an OAuth2 flow can be constructed."""
-    oauth2_config = oauth2_util.OAuth2Config('id', 'secret', ['lorem', 'ipsum'])
-    flow = oauth2_util.GetOAuth2Flow(oauth2_config, 'redirect')
-    self.assertEqual('id', flow.client_id)
-    self.assertEqual('secret', flow.client_secret)
-    self.assertEqual('lorem ipsum', flow.scope)
-    self.assertEqual('redirect', flow.redirect_uri)
+    oauth2_config = oauth2_util.OAuth2Config(
+        client_id='id', client_secret='secret', scopes=['lorem', 'ipsum'])
+    flow = oauth2_util.GetOAuth2Flow(oauth2_config, 'redirect_uri')
+    self.assertEqual('id', flow.oauth2session.client_id)
+    self.assertEqual(['lorem', 'ipsum'], flow.oauth2session.scope)
+    self.assertEqual('redirect_uri', flow.oauth2session.redirect_uri)
 
   def testGetOAuth2Flow_noConfig(self):
     """Tests that the OAuth2 config is required when creating a flow."""

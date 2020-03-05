@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for test_run_hook_api."""
+"""Tests for test_run_action_api."""
+import multitest_transport.google_import_fixer  
 from absl.testing import absltest
 import mock
-from oauth2client import client
 from protorpc import protojson
+from google.oauth2 import credentials as authorized_user
 
 from multitest_transport.api import api_test_util
 from multitest_transport.api import test_run_action_api
@@ -34,7 +35,7 @@ class SimpleHook(plugins.TestRunHook):
 class OAuth2Hook(plugins.TestRunHook):
   """Test run hook with OAuth2 configuration."""
   name = 'oauth2'
-  oauth2_config = plugins.OAuth2Config('id', 'secret', ['scope'])
+  oauth2_config = oauth2_util.OAuth2Config('id', 'secret', ['scope'])
 
 
 class TestRunActionApiTest(api_test_util.TestCase):
@@ -45,7 +46,7 @@ class TestRunActionApiTest(api_test_util.TestCase):
         self._CreateTestRunAction(name='one', hook_class_name='simple'),
         self._CreateTestRunAction(name='two', hook_class_name='oauth2'),
         self._CreateTestRunAction(name='three', hook_class_name='oauth2',
-                                  credentials=client.Credentials())
+                                  credentials=authorized_user.Credentials(None))
     ]
 
   def _CreateTestRunAction(self, **kwargs):
@@ -150,7 +151,7 @@ class TestRunActionApiTest(api_test_util.TestCase):
     # Mock getting URIs from OAuth2 utilities
     mock_get_redirect.return_value = 'redirect_uri', True
     oauth2_flow = mock.MagicMock()
-    oauth2_flow.step1_get_authorize_url.return_value = 'auth_uri'
+    oauth2_flow.authorization_url.return_value = 'auth_uri', None
     mock_get_flow.return_value = oauth2_flow
     # Verify authorization info
     response = self.app.get(
@@ -174,14 +175,13 @@ class TestRunActionApiTest(api_test_util.TestCase):
     """Tests that an action can be authorized."""
     action_id = str(self.test_run_actions[1].key.id())  # unauthorized
     # Mock getting credentials from OAuth2 utilities
-    oauth2_flow = mock.MagicMock()
-    oauth2_flow.step2_exchange.return_value = client.Credentials()
+    oauth2_flow = mock.MagicMock(credentials=authorized_user.Credentials(None))
     mock_get_flow.return_value = oauth2_flow
     # Verify that credentials were obtained and stored
     self.app.post(
-        '/_ah/api/mtt/v1/test_run_actions/%s/auth?redirect_uri=%s&code=%s' %
-        (action_id, 'redirect_uri', 'code'))
-    oauth2_flow.step2_exchange.assert_called_once_with('code')
+        '/_ah/api/mtt/v1/test_run_actions/%s/auth?redirect_uri=%s&code=%s'
+        % (action_id, 'redirect_uri', 'code'))
+    oauth2_flow.fetch_token.assert_called_once_with(code='code')
     self.assertIsNotNone(self.test_run_actions[1].credentials)
 
   def testAuthorize_notFound(self):

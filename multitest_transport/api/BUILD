@@ -63,6 +63,8 @@ py_appengine_test(
     deps = [
         ":api_test_util_lib",
         ":build_channel_api_lib",
+        "//multitest_transport:google_import_fixer",
+        third_party("google/oauth2:credentials"),
         third_party("mock"),
     ],
 )
@@ -274,6 +276,8 @@ py_appengine_test(
     deps = [
         ":api_test_util_lib",
         ":test_run_action_api_lib",
+        "//multitest_transport:google_import_fixer",
+        third_party("google/oauth2:credentials"),
         third_party("mock"),
     ],
 )

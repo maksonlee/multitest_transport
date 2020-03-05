@@ -41,6 +41,12 @@ py_appengine_library(
     ],
 )
 
+py_appengine_library(
+    name = "google_import_fixer",
+    srcs = ["google_import_fixer.py"],
+    visibility = ["//multitest_transport"],
+)
+
 filegroup(
     name = "prebuilts",
     srcs = glob([
