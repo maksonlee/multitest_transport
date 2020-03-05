@@ -263,6 +263,7 @@ py_appengine_library(
     deps = [
         ":base_lib",
         "//multitest_transport/util",
+        third_party("google/oauth2:service_account"),
     ],
 )
 

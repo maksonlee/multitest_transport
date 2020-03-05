@@ -13,9 +13,12 @@
 # limitations under the License.
 
 """Test run action APIs."""
+import multitest_transport.google_import_fixer  
+import json
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
+from google.oauth2 import service_account
 
 import endpoints
 
@@ -155,6 +158,24 @@ class TestRunActionApi(remote.Service):
     flow = oauth2_util.GetOAuth2Flow(oauth2_config, redirect_uri)
     flow.fetch_token(code=request.code)
     action.credentials = flow.credentials
+    action.put()
+    return message_types.VoidMessage()
+
+  @base.convert_exception
+  @endpoints.method(
+      endpoints.ResourceContainer(
+          mtt_messages.SimpleMessage,
+          action_id=messages.StringField(1, required=True)),
+      message_types.VoidMessage,
+      path='test_run_actions/{action_id}/auth',
+      http_method='PUT',
+      name='authorize_with_service_account')
+  def AuthorizeWithServiceAccount(self, request):
+    """Authorize a test run action with an service account JSON key."""
+    action = self._GetTestRunAction(request.action_id)
+    data = json.loads(request.value)
+    credentials = service_account.Credentials.from_service_account_info(data)
+    action.credentials = credentials
     action.put()
     return message_types.VoidMessage()
 
