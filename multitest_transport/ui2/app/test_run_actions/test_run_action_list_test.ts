@@ -41,10 +41,13 @@ describe('TestRunActionList', () => {
   beforeEach(() => {
     liveAnnouncer = jasmine.createSpyObj(['announce', 'clear']);
     notifier = jasmine.createSpyObj(['confirm', 'showError']);
-    client =
-        jasmine.createSpyObj(['list', 'authorize', 'unauthorize', 'delete']);
+    client = jasmine.createSpyObj([
+      'list', 'authorize', 'authorizeWithServiceAccount', 'unauthorize',
+      'delete'
+    ]);
     client.list.and.returnValue(observableOf([]));
     client.authorize.and.returnValue(observableOf(null));
+    client.authorizeWithServiceAccount.and.returnValue(observableOf(null));
     client.unauthorize.and.returnValue(observableOf(null));
     client.delete.and.returnValue(observableOf(null));
 
@@ -108,6 +111,7 @@ describe('TestRunActionList', () => {
     const statusButton = getEl(element, 'mat-card status-button');
     expect(statusButton.textContent).toContain('Authorized');
     expect(hasEl(element, 'mat-card #auth-button')).toBeFalsy();
+    expect(hasEl(element, 'mat-card #keyfile-button')).toBeFalsy();
     expect(hasEl(element, 'mat-card #revoke-button')).toBeTruthy();
   });
 
@@ -116,6 +120,7 @@ describe('TestRunActionList', () => {
     const statusButton = getEl(element, 'mat-card status-button');
     expect(statusButton.textContent).toContain('Unauthorized');
     expect(hasEl(element, 'mat-card #auth-button')).toBeTruthy();
+    expect(hasEl(element, 'mat-card #keyfile-button')).toBeTruthy();
     expect(hasEl(element, 'mat-card #revoke-button')).toBeFalsy();
   });
 
@@ -123,6 +128,7 @@ describe('TestRunActionList', () => {
     reload([{authorization_state: AuthorizationState.NOT_APPLICABLE}]);
     expect(hasEl(element, 'mat-card status-button')).toBeFalsy();
     expect(hasEl(element, 'mat-card #auth-button')).toBeFalsy();
+    expect(hasEl(element, 'mat-card #keyfile-button')).toBeFalsy();
     expect(hasEl(element, 'mat-card #revoke-button')).toBeFalsy();
   });
 
@@ -141,6 +147,33 @@ describe('TestRunActionList', () => {
       {id: 'action_id', authorization_state: AuthorizationState.UNAUTHORIZED}
     ]);
     getEl(element, 'mat-card #auth-button').click();
+    expect(notifier.showError).toHaveBeenCalled();
+  });
+
+  it('can authorize an action with a service account', () => {
+    reload([
+      {id: 'action_id', authorization_state: AuthorizationState.UNAUTHORIZED}
+    ]);
+    const file = new File([], 'file');
+    const fileInput =
+        getEl<HTMLInputElement>(element, 'mat-card input[type=file]');
+    spyOnProperty(fileInput, 'files').and.returnValue([file]);
+    fileInput.dispatchEvent(new Event('change'));  // Select a key file
+    expect(client.authorizeWithServiceAccount)
+        .toHaveBeenCalledWith('action_id', file);
+    expect(notifier.showError).not.toHaveBeenCalled();
+  });
+
+  it('can handle errors when authorizing with a service account', () => {
+    client.authorizeWithServiceAccount.and.returnValue(
+        throwError('authorize failed'));
+    reload([
+      {id: 'action_id', authorization_state: AuthorizationState.UNAUTHORIZED}
+    ]);
+    const fileInput =
+        getEl<HTMLInputElement>(element, 'mat-card input[type=file]');
+    spyOnProperty(fileInput, 'files').and.returnValue([new File([], 'file')]);
+    fileInput.dispatchEvent(new Event('change'));  // Select a key file
     expect(notifier.showError).toHaveBeenCalled();
   });
 

@@ -20,7 +20,7 @@ import {ReplaySubject} from 'rxjs';
 import {delay, finalize, takeUntil} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
-import {TestRunAction} from '../services/mtt_models';
+import {AuthorizationState, TestRunAction} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {buildApiErrorMessage} from '../shared/util';
 
@@ -31,6 +31,7 @@ import {buildApiErrorMessage} from '../shared/util';
   templateUrl: './test_run_action_list.ng.html',
 })
 export class TestRunActionList implements OnInit, OnDestroy {
+  readonly AuthorizationState = AuthorizationState;
   isLoading = false;
   actions: TestRunAction[] = [];
 
@@ -76,6 +77,24 @@ export class TestRunActionList implements OnInit, OnDestroy {
   /** Authorize a test run action and reload. */
   authorize(action: TestRunAction) {
     this.mtt.testRunActions.authorize(action.id)
+        .pipe(delay(500))  // Delay for data to be persisted
+        .subscribe(
+            () => {
+              this.load();
+            },
+            error => {
+              this.notifier.showError(
+                  'Failed to authorize test run action.',
+                  buildApiErrorMessage(error));
+            });
+  }
+
+  /** Authorize a test run action with a service account JSON key and reload. */
+  uploadKeyfile(action: TestRunAction, keyFile?: File) {
+    if (!keyFile) {
+      return;
+    }
+    this.mtt.testRunActions.authorizeWithServiceAccount(action.id, keyFile)
         .pipe(delay(500))  // Delay for data to be persisted
         .subscribe(
             () => {

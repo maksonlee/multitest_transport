@@ -694,6 +694,19 @@ describe('TestRunActionClient', () => {
     expect(http.post).toHaveBeenCalledTimes(1);
   });
 
+  it('can authorize test run action with service account', done => {
+    http.put.and.returnValue(observableOf({}));
+    client.authorizeWithServiceAccount('id', new Blob(['key']))
+        .subscribe(() => {
+          // Uploads key content
+          expect(http.put).toHaveBeenCalledWith(
+              TestRunActionClient.PATH + '/id/auth', {value: 'key'},
+              jasmine.any(Object));
+          expect(http.put).toHaveBeenCalledTimes(1);
+          done();
+        });
+  });
+
   it('can revoke test run action authorization', () => {
     http.delete.and.returnValue(observableOf());
     client.unauthorize('id').subscribe();

@@ -25,6 +25,14 @@
     font-weight: normal;
   }
 
+  input[type=file] {
+    display: none;
+  }
+
+  .mat-stroked-button {
+    margin: 0 3px;
+  }
+
   status-button {
     margin-left: 12px;
   }

@@ -16,8 +16,8 @@
 
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {Inject, Injectable} from '@angular/core';
-import {EMPTY, Observable} from 'rxjs';
-import {map, switchMap} from 'rxjs/operators';
+import {EMPTY, fromEvent, Observable, throwError} from 'rxjs';
+import {first, map, switchMap} from 'rxjs/operators';
 
 import {AnalyticsParams} from './analytics_service';
 import {APP_DATA, AppData} from './app_data';
@@ -463,6 +463,23 @@ export class TestRunActionClient {
         .pipe(switchMap(authInfo => this.auth.getAuthorizationCode(authInfo)))
         .pipe(switchMap(
             code => code ? this.sendAuthorizationCode(id, code) : EMPTY));
+  }
+
+  /** Authorizes a test run action with a service account JSON key. */
+  authorizeWithServiceAccount(id: string, key: Blob): Observable<void> {
+    const reader = new FileReader();
+    const uploadObs =
+        fromEvent(reader, 'loadend').pipe(first()).pipe(switchMap(() => {
+          if (reader.error) {
+            return throwError(reader.error);
+          }
+          const params = new AnalyticsParams('test_run_actions', 'authorize');
+          return this.http.put<void>(
+              `${TestRunActionClient.PATH}/${encodeURIComponent(id)}/auth`,
+              {value: reader.result}, {params});
+        }));
+    reader.readAsBinaryString(key);
+    return uploadObs;
   }
 
   /** Revokes a test run action's authorization. */

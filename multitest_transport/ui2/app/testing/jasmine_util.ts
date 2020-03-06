@@ -23,8 +23,9 @@ import {By} from '@angular/platform-browser';
  * el: element to query from
  * selector: CSS selector
  */
-export function getEl(el: DebugElement, selector: string): HTMLElement {
-  return el.query(By.css(selector)).nativeElement as HTMLElement;
+export function getEl<T extends Element = HTMLElement>(
+    el: DebugElement, selector: string): T {
+  return el.query(By.css(selector)).nativeElement;
 }
 
 /**
@@ -33,8 +34,9 @@ export function getEl(el: DebugElement, selector: string): HTMLElement {
  * el: element to query from
  * selector: CSS selector
  */
-export function getEls(el: DebugElement, selector: string): HTMLElement[] {
-  return el.queryAll(By.css(selector)).map(e => e.nativeElement as HTMLElement);
+export function getEls<T extends Element = HTMLElement>(
+    el: DebugElement, selector: string): T[] {
+  return el.queryAll(By.css(selector)).map(e => e.nativeElement);
 }
 
 /**
