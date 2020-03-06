@@ -99,6 +99,7 @@ class AntsHook(base.TestRunHook):
       return  # Invocation already created
 
     # TODO: Parse build ID and target from test resources
+    # TODO: Add extra build info (e.g. test package)
     response = self._GetClient().invocation().insert(
         body={
             'primaryBuild': {
@@ -135,10 +136,13 @@ class AntsHook(base.TestRunHook):
         {'name': 'mtt_url',
          'value': 'http://%s/test_runs/%s' % (hostname, test_run_id)},
         {'name': 'run_target', 'value': test_run.test_run_config.run_target},
-        {'name': 'test_id', 'value': test_run.test.key.id()},
+        {'name': 'test_id', 'value': test_run.test_run_config.test_key.id()},
         {'name': 'test_version',
          'value': self._GetTestPackageProperty(test_run, 'version')}
     ]
+    if test_run.prev_test_run_key:
+      properties.append({'name': 'prev_test_run_id',
+                         'value': test_run.prev_test_run_key.id()})
     return properties
 
   def _CreateWorkUnit(self, test_run, task):

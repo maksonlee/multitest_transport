@@ -18,6 +18,7 @@ import mock
 
 from tradefed_cluster import api_messages
 from google.appengine.api import modules
+from google.appengine.ext import ndb
 from google.appengine.ext import testbed
 
 from multitest_transport.models import ndb_models
@@ -46,10 +47,13 @@ class AntsHookTest(absltest.TestCase):
   @mock.patch.object(modules, 'get_hostname')
   def testCreateInvocation(self, mock_get_hostname):
     """Tests that invocations can be created."""
+    test = ndb_models.Test(id='test_id', command='command')
     test_run = ndb_models.TestRun(
         id='test_run_id',
-        test=ndb_models.Test(id='test_id', command='command'),
-        test_run_config=ndb_models.TestRunConfig(run_target='run_target'),
+        prev_test_run_key=ndb.Key(ndb_models.TestRun, 'prev_test_run_id'),
+        test=test,
+        test_run_config=ndb_models.TestRunConfig(
+            test_key=test.key, run_target='run_target'),
         test_package_info=ndb_models.TestPackageInfo(name='test'),
         labels=['hello', 'world'])
     self.client.invocation().insert().execute.return_value = {
@@ -79,6 +83,7 @@ class AntsHookTest(absltest.TestCase):
     self.assertEqual(properties['run_target'], 'run_target')
     self.assertEqual(properties['test_id'], 'test_id')
     self.assertEqual(properties['test_version'], ants.UNKNOWN)
+    self.assertEqual(properties['prev_test_run_id'], 'prev_test_run_id')
 
   def testCreateInvocation_alreadyCreated(self):
     """Tests that creation is skipped if invocation ID already defined."""
