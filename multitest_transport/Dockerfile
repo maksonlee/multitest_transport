@@ -32,7 +32,7 @@ ENV PATH /tmp/custom_sdk_tools:${PATH}
 ENV GOOGLE_APPLICATION_CREDENTIALS /tmp/keyfile/key.json
 
 # Make sure apt-get retries on failures
-RUN echo 'APT::Acquire::Retries \"3\";' > /etc/apt/apt.conf.d/80retries
+RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries
 
 RUN apt-get update && apt-get install -y \
         apt-utils \
