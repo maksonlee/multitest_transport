@@ -87,11 +87,10 @@ ENV PATH ${JAVA_HOME}/bin:${PATH}
 
 # Install SDK tools (aapt, adb, fastboot, mke2fs)
 RUN mkdir -p /sdk_tools
-RUN curl --retry 3 -L https://dl.google.com/android/repository/build-tools_r29.0.2-linux.zip -o build-tools.zip \
+RUN curl --retry 3 -L https://dl.google.com/android/repository/build-tools_r29.0.3-linux.zip -o build-tools.zip \
     && unzip -jq build-tools.zip -d /sdk_tools android-10/aapt \
     && rm build-tools.zip
-# TODO: Use platform-tools-latest-linux.zip to get latest version
-RUN curl --retry 3 -L https://dl.google.com/android/repository/platform-tools_r29.0.4-linux.zip -o platform-tools.zip \
+RUN curl --retry 3 -L https://dl.google.com/android/repository/platform-tools_r29.0.6-linux.zip -o platform-tools.zip \
     && unzip -jq platform-tools.zip -d /sdk_tools \
         platform-tools/adb \
         platform-tools/fastboot \
