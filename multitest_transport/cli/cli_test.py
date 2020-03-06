@@ -255,7 +255,6 @@ class CliTest(parameterized.TestCase):
     self.mock_context.assert_has_calls([
         mock.call.Run(
             ['docker', 'volume', 'rm', 'mtt-temp'], raise_on_failure=False),
-        mock.call.CopyFile('/path/to/key.json', '/tmp/keyfile/key.json'),
         mock.call.Run(['docker', 'container', 'rm', 'mtt'],
                       raise_on_failure=False),
         mock.call.Run([
@@ -281,7 +280,7 @@ class CliTest(parameterized.TestCase):
             'gcr.io/android-mtt/mtt:prod']),
         mock.call.Run([
             'docker', 'cp', '-L',
-            '/tmp/keyfile/key.json', 'mtt:/tmp/keyfile/key.json']),
+            '/path/to/key.json', 'mtt:/tmp/keyfile/key.json']),
         mock.call.Run(['docker', 'start', 'mtt'])])
 
   @mock.patch.object(cli, '_WaitForServer')
@@ -402,7 +401,6 @@ class CliTest(parameterized.TestCase):
     self.mock_context.assert_has_calls([
         mock.call.Run(
             ['docker', 'volume', 'rm', 'mtt-temp'], raise_on_failure=False),
-        mock.call.CopyFile('/path/to/key.json', '/tmp/keyfile/key.json'),
         mock.call.Run(['docker', 'container', 'rm', 'mtt'],
                       raise_on_failure=False),
         mock.call.Run([
@@ -430,7 +428,7 @@ class CliTest(parameterized.TestCase):
             'gcr.io/android-mtt/mtt:prod']),
         mock.call.Run([
             'docker', 'cp', '-L',
-            '/tmp/keyfile/key.json', 'mtt:/tmp/keyfile/key.json']),
+            '/path/to/key.json', 'mtt:/tmp/keyfile/key.json']),
         mock.call.Run(['docker', 'start', 'mtt'])])
 
   def testStart_withTmpfs(self):

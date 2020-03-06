@@ -43,7 +43,7 @@ _MTT_LIB_DIR = '/var/lib/mtt'
 _MTT_LOG_DIR = '/var/log/mtt'
 _TMP_DIR = '/tmp'
 _KEY_FILE = os.path.join(_MTT_LIB_DIR, 'keyfile', 'key.json')
-_TMP_KEY_FILE = os.path.join(_TMP_DIR, 'keyfile', 'key.json')
+_DOCKER_KEY_FILE = os.path.join(_TMP_DIR, 'keyfile', 'key.json')
 # Permanent MTT binary path has to match the one in mttd.service file.
 _MTT_BINARY = os.path.join(_MTT_LIB_DIR, 'mtt')
 _HOST_CONFIG = os.path.join(_MTT_LIB_DIR, 'mtt_host_config.yaml')
@@ -269,12 +269,10 @@ def _StartMttNode(args, host):
   docker_helper.AddBind('/var/run/docker.sock', '/var/run/docker.sock')
 
   if host.config.service_account_json_key_path:
-    host.context.CopyFile(
-        host.config.service_account_json_key_path,
-        _TMP_KEY_FILE)
-    docker_helper.AddVolume('mtt-key', os.path.dirname(_TMP_KEY_FILE))
-    docker_helper.AddFile(_TMP_KEY_FILE, _TMP_KEY_FILE)
-    docker_helper.AddEnv('JSON_KEY_PATH', _TMP_KEY_FILE)
+    docker_helper.AddVolume('mtt-key', os.path.dirname(_DOCKER_KEY_FILE))
+    docker_helper.AddFile(
+        host.config.service_account_json_key_path, _DOCKER_KEY_FILE)
+    docker_helper.AddEnv('JSON_KEY_PATH', _DOCKER_KEY_FILE)
   if host.config.enable_stackdriver:
     if host.config.service_account_json_key_path:
       docker_helper.AddEnv('ENABLE_STACKDRIVER_LOGGING', 1)
