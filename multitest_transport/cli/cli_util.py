@@ -143,10 +143,16 @@ def CreateSSHArgParser():
   parser.add_argument(
       '--ssh_key', help='Use ssh key file.')
   parser.add_argument(
-      '--ask_sudo_password', default=False,
-      action='store_true', dest='ask_sudo_password')
+      '-p', '--ask_login_password', default=False,
+      dest='ask_login_password',
+      action='store_true', help='Ask password to ssh to the host.')
   parser.add_argument(
-      '--sudo_user', dest='sudo_user')
+      '--ask_sudo_password', default=False,
+      action='store_true', dest='ask_sudo_password',
+      help='Ask sudo password on the host.')
+  parser.add_argument(
+      '--sudo_user', dest='sudo_user',
+      help='Sudo user to use on the host.')
   return parser
 
 

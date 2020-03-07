@@ -60,6 +60,7 @@ class HostUtilTest(parameterized.TestCase):
         parallel=False,
         ssh_key=None,
         func=self.mock_func,
+        ask_login_password=False,
         ask_sudo_password=False,
         sudo_user=None)
 
@@ -94,6 +95,7 @@ class HostUtilTest(parameterized.TestCase):
         parallel=False,
         ssh_key=None,
         func=self.mock_func,
+        ask_login_password=False,
         ask_sudo_password=False,
         sudo_user=None)
 
@@ -131,6 +133,7 @@ class HostUtilTest(parameterized.TestCase):
         parallel=False,
         ssh_key=None,
         func=self.mock_func,
+        ask_login_password=False,
         ask_sudo_password=False,
         sudo_user=None)
 
@@ -167,6 +170,7 @@ class HostUtilTest(parameterized.TestCase):
         ssh_key=None,
         exit_on_error=True,
         func=self.mock_func,
+        ask_login_password=False,
         ask_sudo_password=False,
         sudo_user=None)
 
@@ -202,6 +206,7 @@ class HostUtilTest(parameterized.TestCase):
         parallel=True,
         ssh_key=None,
         func=self.mock_func,
+        ask_login_password=False,
         ask_sudo_password=False,
         sudo_user=None)
 
@@ -241,6 +246,7 @@ class HostUtilTest(parameterized.TestCase):
         parallel=True,
         ssh_key=None,
         func=self.mock_func,
+        ask_login_password=False,
         ask_sudo_password=False,
         sudo_user=None)
 
@@ -282,6 +288,7 @@ class HostUtilTest(parameterized.TestCase):
         parallel=2,
         ssh_key=None,
         func=self.mock_func,
+        ask_login_password=False,
         ask_sudo_password=False,
         sudo_user=None)
 
@@ -477,16 +484,12 @@ class HostUtilTest(parameterized.TestCase):
   def testBuildHostsWithContext_remoteHost_password(self, mock_getpass):
     """Test _BuildHostsWithContext for a remote host without ssh key."""
     mock_getpass.return_value = 'apassword'
-    self.mock_create_context.side_effect = [
-        host_util.command_util.AuthenticationError(),
-        mock.MagicMock()]
     host_config = host_util.lab_config.CreateHostConfig(
         hostname='ahost', host_login_name='auser')
-    hosts = host_util._BuildHostsWithContext([host_config])
+    hosts = host_util._BuildHostsWithContext(
+        [host_config], ask_login_password=True)
     self.assertLen(hosts, 1)
     self.mock_create_context.assert_has_calls([
-        mock.call('ahost', 'auser', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='auser'),
         mock.call('ahost', 'auser', login_password='apassword', ssh_key=None,
                   sudo_password=None, sudo_user='auser')])
 
@@ -494,30 +497,22 @@ class HostUtilTest(parameterized.TestCase):
   def testBuildHostsWithContext_remoteHosts_password(self, mock_getpass):
     """Test _BuildHostsWithContext for multiple remote hosts without ssh key."""
     mock_getpass.return_value = 'apassword'
-    self.mock_create_context.side_effect = [
-        host_util.command_util.AuthenticationError(),
-        mock.MagicMock(),
-        host_util.command_util.AuthenticationError(),
-        mock.MagicMock()]
     host_configs = [
         host_util.lab_config.CreateHostConfig(
             hostname='host1', host_login_name='auser'),
         host_util.lab_config.CreateHostConfig(
             hostname='host2', host_login_name='auser')]
-    hosts = host_util._BuildHostsWithContext(host_configs)
+    hosts = host_util._BuildHostsWithContext(
+        host_configs, ask_login_password=True)
     self.assertLen(hosts, 2)
     self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'auser', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='auser'),
         mock.call('host1', 'auser', login_password='apassword', ssh_key=None,
-                  sudo_password=None, sudo_user='auser'),
-        mock.call('host2', 'auser', login_password=None, ssh_key=None,
                   sudo_password=None, sudo_user='auser'),
         mock.call('host2', 'auser', login_password='apassword', ssh_key=None,
                   sudo_password=None, sudo_user='auser')])
 
   @mock.patch.object(getpass, 'getpass')
-  def testBuildHostsWithContext_SudoPwdAndSsh(self, mock_getpass):
+  def testBuildHostsWithContext_SudoPwdAndSshKey(self, mock_getpass):
     mock_getpass.return_value = 'sudopwd'
     self.mock_create_context.side_effect = [mock.MagicMock(), mock.MagicMock()]
     host_configs = [
@@ -554,36 +549,24 @@ class HostUtilTest(parameterized.TestCase):
 
   @mock.patch.object(getpass, 'getpass')
   def testBuildHostsWithContext_SudoPwdAndLoginPwd(self, mock_getpass):
-    mock_getpass.side_effect = ['sudopwd', 'loginpwd']
-    self.mock_create_context.side_effect = [
-        host_util.command_util.AuthenticationError(),
-        mock.MagicMock(),
-        host_util.command_util.AuthenticationError(),
-        mock.MagicMock()]
+    mock_getpass.side_effect = ['loginpwd', 'sudopwd']
     host_configs = [
         host_util.lab_config.CreateHostConfig(
             hostname='host1', host_login_name='user1'),
         host_util.lab_config.CreateHostConfig(
             hostname='host2', host_login_name='user2')]
     hosts = host_util._BuildHostsWithContext(
-        host_configs, ask_sudo_password=True)
+        host_configs, ask_login_password=True, ask_sudo_password=True)
     self.assertLen(hosts, 2)
     self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'user1', login_password=None, ssh_key=None,
-                  sudo_password='sudopwd', sudo_user='user1'),
         mock.call('host1', 'user1', login_password='loginpwd', ssh_key=None,
                   sudo_password='sudopwd', sudo_user='user1'),
-        mock.call('host2', 'user2', login_password=None, ssh_key=None,
-                  sudo_password='sudopwd', sudo_user='user2'),
         mock.call('host2', 'user2', login_password='loginpwd', ssh_key=None,
                   sudo_password='sudopwd', sudo_user='user2')])
 
   @mock.patch.object(getpass, 'getpass')
   def testBuildHostsWithContext_SudoPwdAndSudoUser(self, mock_getpass):
-    mock_getpass.side_effect = ['sudopwd', 'loginpwd']
-    self.mock_create_context.side_effect = [
-        host_util.command_util.AuthenticationError(),
-        mock.MagicMock()]
+    mock_getpass.side_effect = ['sudopwd']
     host_configs = [
         host_util.lab_config.CreateHostConfig(
             hostname='host1', host_login_name='user1')]
@@ -592,8 +575,6 @@ class HostUtilTest(parameterized.TestCase):
     self.assertLen(hosts, 1)
     self.mock_create_context.assert_has_calls([
         mock.call('host1', 'user1', login_password=None, ssh_key=None,
-                  sudo_password='sudopwd', sudo_user='sudo_user1'),
-        mock.call('host1', 'user1', login_password='loginpwd', ssh_key=None,
                   sudo_password='sudopwd', sudo_user='sudo_user1')])
 
   def testBuildHostsWithContext_unknownException(self):
