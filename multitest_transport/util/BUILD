@@ -176,4 +176,5 @@ py_library(
     srcs = [
         "noop_handler.py",
     ],
+    srcs_version = "PY2AND3",
 )
