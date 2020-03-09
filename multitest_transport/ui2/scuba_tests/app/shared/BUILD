@@ -7,6 +7,7 @@ ng_module(
     name = "shared_scuba_tests",
     testonly = True,
     srcs = [
+        "list_form_scuba_test.ts",
         "name_value_pair_list_form_scuba_test.ts",
         "status_button_scuba_test.ts",
     ],
