@@ -18,6 +18,8 @@ MAINTAINER Moon Kim <moonk@google.com>
 ARG MTT_VERSION=dev
 ARG MTT_TRADEFED_PREBUILT=tradefed.zip
 
+ENV CLOUD_SDK_VERSION=283.0.0
+ENV CLOUD_SDK_ROOT=/usr/lib/google-cloud-sdk
 ENV MTT_VERSION ${MTT_VERSION}
 ENV MTT_STORAGE_PATH /data
 ENV MTT_MASTER_PORT 8000
@@ -100,18 +102,40 @@ RUN curl --retry 3 -L https://dl.google.com/android/repository/platform-tools_r2
     && rm platform-tools.zip
 ENV PATH /tmp/custom_sdk_tools:/sdk_tools:${PATH}
 
-# Install App Engine SDK
-RUN curl --retry 3 -O https://storage.googleapis.com/appengine-sdks/featured/google_appengine_1.9.82.zip \
-    && unzip -q google_appengine_1.9.82.zip \
-    && rm google_appengine_1.9.82.zip
+# Install Google Cloud SDK
+# Reference: https://github.com/GoogleCloudPlatform/cloud-sdk-docker/blob/master/Dockerfile
+RUN apt-get -qqy update && apt-get install -qqy \
+        curl \
+        gcc \
+        python3-dev \
+        python3-pip \
+        apt-transport-https \
+        lsb-release \
+        openssh-client \
+        git \
+        make \
+        gnupg && \
+    pip3 install -U crcmod && \
+    echo 'deb http://deb.debian.org/debian/ sid main' >> /etc/apt/sources.list && \
+    export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)" && \
+    echo "deb https://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" > /etc/apt/sources.list.d/google-cloud-sdk.list && \
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
+    apt-get update && \
+    apt-get install -y --allow-unauthenticated \
+        google-cloud-sdk=${CLOUD_SDK_VERSION}-0 \
+        google-cloud-sdk-app-engine-python=${CLOUD_SDK_VERSION}-0 \
+        google-cloud-sdk-app-engine-python-extras=${CLOUD_SDK_VERSION}-0 \
+        google-cloud-sdk-datastore-emulator=${CLOUD_SDK_VERSION}-0 \
+        google-cloud-sdk-pubsub-emulator=${CLOUD_SDK_VERSION}-0
+
 # This is to workaround https://issuetracker.google.com/35901176
-RUN rm /google_appengine/lib/cacerts/urlfetch_cacerts.txt
-ENV PATH /google_appengine:${PATH}
+RUN rm ${CLOUD_SDK_ROOT}/platform/google_appengine/lib/cacerts/urlfetch_cacerts.txt
 
 # TODO: remove the following hacks once migrated to Python 3.
 # Modify App Enging SDK to avoid using FancyProxyHandler which does not respect no_proxy.
 RUN sed -i s/fancy_urllib.FancyProxyHandler/urllib2.ProxyHandler/g \
-    /google_appengine/google/appengine/tools/appengine_rpc.py
+    ${CLOUD_SDK_ROOT}/platform/google_appengine/google/appengine/tools/appengine_rpc.py
+
 # Fix a bug in urllib2.ProxyHandler to use one proxy settings.
 RUN sed -i s/proxy_bypass\(req.host\)/proxy_bypass\(req.host,proxies=self.proxies\)/g \
     /usr/lib/python2.7/urllib2.py

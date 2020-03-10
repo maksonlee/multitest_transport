@@ -57,8 +57,11 @@ done
 
 # Set dependent variables
 BLOBSTORE_PATH="$STORAGE_PATH/$BLOBSTORE_ROOT"
+API_PORT="$((${MTT_MASTER_PORT}+3))"
+ADMIN_PORT="$((${MTT_MASTER_PORT}+4))"
 FILE_SERVER_PORT="$((${MTT_MASTER_PORT}+5))"
 FILE_SERVER_PORT2="$((${MTT_MASTER_PORT}+6))"
+PUBSUB_EMULATOR_PORT="$((${MTT_MASTER_PORT}+7))"
 
 # Create storage and blobstore folders if they don't exist
 if [[ ! -d "$STORAGE_PATH" ]]; then
@@ -83,6 +86,9 @@ exec python3 "$SCRIPT_DIR/file_server/file_server.py" \
     --port="$FILE_SERVER_PORT2" \
     &
 
+# Start Google Cloud emulators
+exec gcloud beta emulators pubsub start --host-port="$PUBSUB_EMULATOR_PORT" &
+
 # Start appengine server
 source "$SCRIPT_DIR/scripts/api_keys.sh"
 exec dev_appserver.py \
@@ -90,9 +96,9 @@ exec dev_appserver.py \
     --host="$MTT_HOST" \
     --port="$MTT_MASTER_PORT" \
     --api_host="$ADMIN_HOST" \
-    --api_port="$((${MTT_MASTER_PORT} + 3))" \
+    --api_port="$API_PORT" \
     --admin_host="$ADMIN_HOST" \
-    --admin_port="$((${MTT_MASTER_PORT} + 4))" \
+    --admin_port="$ADMIN_PORT" \
     --storage_path="$STORAGE_PATH" \
     --blobstore_path="$BLOBSTORE_PATH" \
     --log_level="$LOG_LEVEL" \
@@ -116,6 +122,7 @@ exec dev_appserver.py \
     --env_var MTT_HOSTNAME="$MTT_HOSTNAME" \
     --env_var MTT_STORAGE_PATH="$STORAGE_PATH" \
     --env_var MTT_USER="$MTT_USER" \
+    --env_var PUBSUB_EMULATOR_HOST="localhost:$PUBSUB_EMULATOR_PORT" \
     --automatic_restart=yes \
     --enable_host_checking=false \
     --enable_sendmail \
