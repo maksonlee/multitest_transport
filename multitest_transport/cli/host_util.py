@@ -24,7 +24,6 @@ from concurrent import futures
 from tradefed_cluster.configs import lab_config
 
 from multitest_transport.cli import command_util
-from multitest_transport.cli import config
 from multitest_transport.cli import gcs_file_util
 from multitest_transport.cli import google_auth_util
 
@@ -55,9 +54,20 @@ class HostExecutionState(object):
 class Host(object):
   """Host is a simple wrap which has host config and host context."""
 
-  def __init__(self, host_config, context=None):
+  def __init__(
+      self,
+      host_config,
+      login_password=None,
+      ssh_key=None,
+      sudo_user=None,
+      sudo_password=None,
+      context=None):
     self._config = host_config
     self._context = context
+    self._ssh_key = ssh_key
+    self._login_password = login_password
+    self._sudo_user = sudo_user
+    self._sudo_password = sudo_password
     self._execution_step = 0
     self._execution_state = HostExecutionState.UNKNOWN
     self._error = None
@@ -72,6 +82,20 @@ class Host(object):
 
   @property
   def context(self):
+    """Get remote context for the host."""
+    if not self._context:
+      try:
+        self.execution_state = 'Connect to host'
+        self._context = command_util.CommandContext(
+            self.name,
+            self.config.host_login_name,
+            login_password=self._login_password,
+            ssh_key=self._ssh_key,
+            sudo_password=self._sudo_password,
+            sudo_user=self._sudo_user)
+      except command_util.AuthenticationError as e:
+        logger.debug(e)
+        raise e
     return self._context
 
   @context.setter
@@ -149,19 +173,19 @@ def _GetMaxWorker(args, hosts):
     return args.parallel
 
 
-def _ParallelExecute(func, args, hosts):
+def _ParallelExecute(host_func, args, hosts):
   """Execute a func on multiple contexts parallel.
 
   Args:
-    func: the function to run.
+    host_func: the function to run.
     args: parsed args to pass to the function.
     hosts: a list of Hosts
   """
   max_workers = _GetMaxWorker(args, hosts)
   logger.info('Parallel executing %r on %r hosts with %r parallel threads.',
-              func.__name__, len(hosts), max_workers)
+              host_func.__name__, len(hosts), max_workers)
   with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-    future_to_host = {executor.submit(func, args, host): host
+    future_to_host = {executor.submit(host_func, args, host): host
                       for host in hosts}
     running_futures = future_to_host.keys()
     while running_futures:
@@ -174,9 +198,9 @@ def _ParallelExecute(func, args, hosts):
         host = future_to_host[f]
         try:
           f.result()
-        except Exception as e:            logger.error('Failed %s on %s: %s.', func.__name__, host.name, e)
+        except Exception as e:            logger.error('Failed %s on %s: %s.', host_func.__name__, host.name, e)
         else:
-          logger.info('Succeeded %s on %s.', func.__name__, host.name)
+          logger.info('Succeeded %s on %s.', host_func.__name__, host.name)
       # Instead of blocking on the futures.wait, we waiting with sleep,
       # since sleep can be interrupted.
       if running_futures:
@@ -199,11 +223,11 @@ def _PrintExecutionState(hosts):
         ' '.join(sorted([host.name for host in hosts_in_state])))
 
 
-def _SequentialExecute(func, args, hosts, exit_on_error=False):
+def _SequentialExecute(host_func, args, hosts, exit_on_error=False):
   """Execute a func on multiple contexts sequentially.
 
   Args:
-    func: the function to run.
+    host_func: the function to run on host.
     args: parsed args to pass to the function.
     hosts: a list of Hosts
     exit_on_error: exit on error or continue to execute.
@@ -211,100 +235,35 @@ def _SequentialExecute(func, args, hosts, exit_on_error=False):
   # Run the function on a list of remote hosts sequentially.
   for host in hosts:
     try:
-      func(args, host)
-    except Exception as e:        logger.exception('Failed to run "%s" on %s.', func.__name__, host.name)
+      host_func(args, host)
+    except Exception as e:        logger.exception('Failed to run "%s" on %s.',
+                       host_func.__name__, host.name)
       if exit_on_error:
         raise e
 
 
-def _BuildHostsWithContext(
-    host_configs,
-    ssh_key=None,
-    ask_login_password=None,
-    ask_sudo_password=False,
-    sudo_user=None):
-  """Create contexts for hosts.
+def _WrapFuncForSetHost(host_func):
+  """Create a wrapper for host_func so host's state will be set up."""
 
-  Args:
-    host_configs: a list of HostConfig objects.
-    ssh_key: ssh key to login the host.
-    ask_login_password: ask password to ssh to the host.
-    ask_sudo_password: bool, whether to ask for sudo password.
-    sudo_user: string, user to execute sudo commands.
-  Returns:
-    a list of Hosts
-  """
-  hosts = []
-  login_password = None
-  if ask_login_password:
-    login_password = getpass.getpass('Enter the login password:')
-  sudo_password = None
-  if ask_sudo_password:
-    sudo_password = getpass.getpass('Enter the sudo password:')
-  for host_config in host_configs:
-    host = Host(host_config)
-    hosts.append(host)
-    try:
-      if ssh_key:
-        host.context = _BuildHostContext(
-            host_config, ssh_key=ssh_key, sudo_password=sudo_password,
-            sudo_user=sudo_user, raise_on_error=True)
-      elif ask_login_password:
-        host.context = _BuildHostContext(
-            host_config, login_password=login_password,
-            sudo_password=sudo_password, sudo_user=sudo_user,
-            raise_on_error=True)
-      else:
-        host.context = _BuildHostContext(
-            host_config, sudo_password=sudo_password, sudo_user=sudo_user,
-            raise_on_error=True)
-    except Exception as e:        msg = 'Can\'t login %s, skip.' % host_config.hostname
-      logger.exception(msg)
-      host.error = e
-      host.execution_state = HostExecutionState.ERROR
-  return hosts
-
-
-def _BuildHostContext(
-    host_config, raise_on_error=False, login_password=None, ssh_key=None,
-    sudo_password=None, sudo_user=None):
-  """Build HostContext for host config."""
-  sudo_user = sudo_user or host_config.host_login_name
-  try:
-    context = command_util.CommandContext(
-        host_config.hostname, host_config.host_login_name,
-        login_password=login_password, ssh_key=ssh_key,
-        sudo_password=sudo_password, sudo_user=sudo_user)
-    return context
-  except command_util.AuthenticationError as e:
-    logger.debug(e)
-    if raise_on_error:
-      raise e
-  return None
-
-
-def _WrapFuncForSetHost(func):
-  """Create a wrapper for func so host's state will be set up."""
-
-  @functools.wraps(func)
+  @functools.wraps(host_func)
   def _Wrapper(args, host):
-    """A wrapper over func so host's state will be set up."""
+    """A wrapper over host_func so host's state will be set up."""
     if host.execution_state == HostExecutionState.ERROR:
       logger.debug(
           '%s already failed to run %s due to %s.',
-          host.name, func.__name__, host.error)
+          host.name, host_func.__name__, host.error)
       if host.error:
         raise host.error
       return
     if host.execution_state == HostExecutionState.COMPLETED:
-      logger.debug('%s was completed for %s.', host.name, func.__name__)
+      logger.debug('%s was completed for %s.', host.name, host_func.__name__)
       return
     try:
-      func(args, host)
+      host_func(args, host)
       host.execution_state = HostExecutionState.COMPLETED
     except Exception as e:        logger.debug(
           '%s failed to run %s due to %s.',
-          host.name, func.__name__, e)
+          host.name, host_func.__name__, e)
       host.error = e
       host.execution_state = HostExecutionState.ERROR
       raise e
@@ -338,122 +297,107 @@ def _BuildLabConfigPool(lab_config_path, key_path=None):
   return lab_config_pool
 
 
-class Executor(object):
-  """Base executor that execute a function on a list of hosts."""
-
-  def __init__(self, args):
-    # TODO: refactor executor to make the logic clearer.
-    self.args = args
-    self.parallel = args.parallel
-    self.exit_on_error = args.exit_on_error
-    self.lab_config_path = self._GetLabConfigPath()
-    self.lab_config_pool = _BuildLabConfigPool(
-        self.lab_config_path,
-        key_path=getattr(
-            self.args, 'service_account_json_key_path', None))
-    self.host_configs = self._GetHostConfigs()
-    self.hosts = _BuildHostsWithContext(
-        self.host_configs,
-        ssh_key=args.ssh_key,
-        ask_login_password=args.ask_login_password,
-        ask_sudo_password=args.ask_sudo_password,
-        sudo_user=args.sudo_user)
-
-  def _GetLabConfigPath(self):
-    """Get lab config path for the executor."""
-    return config.config.lab_config_path
-
-  def _GetHostConfigs(self):
-    """Get host configs for hosts.
-
-    Returns:
-      a list of HostConfigs.
-    Raises:
-      NotImplementedError: not implemented in base.
-    """
-    raise NotImplementedError(
-        '_GetHostConfigs should be implement in sub class.')
-
-  def _PrintExecutionSummaries(self):
-    """Check the execute result for hosts at the end."""
-    state_to_hosts = collections.defaultdict(list)
-    for host in self.hosts:
-      state_to_hosts[host.execution_state].append(host)
-    if state_to_hosts[HostExecutionState.COMPLETED]:
-      logger.info('Completed "%s" on hosts:', self.args.func.__name__)
-      for host in state_to_hosts[HostExecutionState.COMPLETED]:
-        logger.info(host.name)
-    error_msg = []
-    if state_to_hosts[HostExecutionState.UNKNOWN]:
-      msg = 'Skipped "%s" on hosts:' % self.args.func.__name__
-      logger.error(msg)
-      error_msg.append(msg)
-      for host in state_to_hosts[HostExecutionState.UNKNOWN]:
-        error_msg.append(host.name)
-        logger.error(host.name)
-    if state_to_hosts[HostExecutionState.ERROR]:
-      msg = 'Failed "%s" on hosts:' % self.args.func.__name__
-      logger.error(msg)
-      error_msg.append(msg)
-      for host in state_to_hosts[HostExecutionState.ERROR]:
-        error_msg.append(host.name)
-        logger.error(host.name)
-    if error_msg:
-      error_msg = '\n'.join(error_msg)
-      raise ExecutionError(error_msg)
-
-  def Execute(self):
-    """Execute the function on a list of hosts."""
-    try:
-      f = _WrapFuncForSetHost(self.args.func)
-      if self.parallel:
-        _ParallelExecute(f, self.args, self.hosts)
-      else:
-        _SequentialExecute(
-            f, self.args, self.hosts,
-            exit_on_error=self.exit_on_error)
-    except KeyboardInterrupt:
-      logger.info('Receive KeyboardInterrupt.')
-    finally:
-      for host in self.hosts:
-        try:
-          if host.context:
-            logger.debug('Closing %s.', host.name)
-            host.context.Close()
-        except Exception as e:            logger.error('Failed to close %s: %s.', host.name, e)
-      self._PrintExecutionSummaries()
+def _PrintExecutionSummaries(hosts, func_name):
+  """Check the execute result for hosts at the end."""
+  state_to_hosts = collections.defaultdict(list)
+  for host in hosts:
+    state_to_hosts[host.execution_state].append(host)
+  if state_to_hosts[HostExecutionState.COMPLETED]:
+    logger.info('Completed "%s" on hosts:', func_name)
+    for host in state_to_hosts[HostExecutionState.COMPLETED]:
+      logger.info(host.name)
+  error_msg = []
+  if state_to_hosts[HostExecutionState.UNKNOWN]:
+    msg = 'Skipped "%s" on hosts:' % func_name
+    logger.error(msg)
+    error_msg.append(msg)
+    for host in state_to_hosts[HostExecutionState.UNKNOWN]:
+      error_msg.append(host.name)
+      logger.error(host.name)
+  if state_to_hosts[HostExecutionState.ERROR]:
+    msg = 'Failed "%s" on hosts:' % func_name
+    logger.error(msg)
+    error_msg.append(msg)
+    for host in state_to_hosts[HostExecutionState.ERROR]:
+      error_msg.append(host.name)
+      logger.error(host.name)
+  if error_msg:
+    error_msg = '\n'.join(error_msg)
+    raise ExecutionError(error_msg)
 
 
-class LabExecutor(Executor):
-  """Execute a function on a list of hosts under certain labs."""
+def _GetHostConfigs(lab_config_pool, hosts_or_clusters):
+  """Get host configs for clusters.
 
-  def _GetLabConfigPath(self):
-    return self.args.lab_config_path
-
-  def _GetHostConfigs(self):
-    """Get host configs for clusters.
-
-    Returns:
-      a list of HostConfigs.
-    """
-    hosts_or_clusters = self.args.hosts_or_clusters
-    if not hosts_or_clusters:
-      return self.lab_config_pool.GetHostConfigs()
-    host_configs = collections.OrderedDict()
-    for host_or_cluster in hosts_or_clusters:
-      host_config = self.lab_config_pool.GetHostConfig(host_or_cluster)
-      if host_config:
-        logger.debug('Found config for host %s.', host_or_cluster)
+  Args:
+    lab_config_pool: a lab config pool
+    hosts_or_clusters: a list of hosts or clusters.
+  Returns:
+    a list of HostConfigs.
+  """
+  if not hosts_or_clusters:
+    return lab_config_pool.GetHostConfigs()
+  host_configs = collections.OrderedDict()
+  for host_or_cluster in hosts_or_clusters:
+    host_config = lab_config_pool.GetHostConfig(host_or_cluster)
+    if host_config:
+      logger.debug('Found config for host %s.', host_or_cluster)
+      host_configs[host_config.hostname] = host_config
+      continue
+    logger.debug('No host configured for %s.', host_or_cluster)
+    host_configs_for_cluster = lab_config_pool.GetHostConfigs(
+        host_or_cluster)
+    if host_configs_for_cluster:
+      logger.debug('Found config for cluster %s.', host_or_cluster)
+      for host_config in host_configs_for_cluster:
         host_configs[host_config.hostname] = host_config
-        continue
-      logger.debug('No host configured for %s.', host_or_cluster)
-      host_configs_for_cluster = self.lab_config_pool.GetHostConfigs(
-          host_or_cluster)
-      if host_configs_for_cluster:
-        logger.debug('Found config for cluster %s.', host_or_cluster)
-        for host_config in host_configs_for_cluster:
-          host_configs[host_config.hostname] = host_config
-        continue
-      logger.error('There is no config for %s, will skip.',
-                   host_or_cluster)
-    return host_configs.values()
+      continue
+    logger.error('There is no config for %s, will skip.',
+                 host_or_cluster)
+  return list(host_configs.values())
+
+
+def Execute(args):
+  """Execute a command on hosts."""
+  lab_config_pool = _BuildLabConfigPool(
+      args.lab_config_path,
+      key_path=getattr(args, 'service_account_json_key_path', None))
+  host_configs = _GetHostConfigs(lab_config_pool, args.hosts_or_clusters)
+  if not host_configs:
+    logger.warning('No host configured in %s for %s.',
+                   args.lab_config_path,
+                   args.hosts_or_clusters)
+    return
+  login_password = None
+  if args.ask_login_password:
+    login_password = getpass.getpass('Enter the login password:')
+  sudo_password = None
+  if args.ask_sudo_password:
+    sudo_password = getpass.getpass('Enter the sudo password:')
+
+  hosts = []
+  for host_config in host_configs:
+    hosts.append(
+        Host(host_config,
+             login_password=login_password,
+             ssh_key=args.ssh_key,
+             sudo_password=sudo_password,
+             sudo_user=args.sudo_user))
+  try:
+    f = _WrapFuncForSetHost(args.host_func)
+    if args.parallel:
+      _ParallelExecute(f, args, hosts)
+    else:
+      _SequentialExecute(
+          f, args, hosts,
+          exit_on_error=args.exit_on_error)
+  except KeyboardInterrupt:
+    logger.info('Receive KeyboardInterrupt.')
+  finally:
+    for host in hosts:
+      try:
+        if host.context:
+          logger.debug('Closing %s.', host.name)
+          host.context.Close()
+      except Exception as e:          logger.error('Failed to close %s: %s.', host.name, e)
+    _PrintExecutionSummaries(hosts, args.host_func.__name__)

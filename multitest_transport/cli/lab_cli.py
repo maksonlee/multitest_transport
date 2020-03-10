@@ -41,12 +41,11 @@ def _CreateLabCommandArgParser():
       add_help=False, parents=[
           cli_util.CreateSSHArgParser(),
           cli_util.CreateMultiHostCommandArgParser()])
-  parser.add_argument('lab_config_path', type=str, help='Lab to manage.')
+  parser.add_argument(
+      'lab_config_path', type=str, help='Lab to manage.')
   parser.add_argument(
       'hosts_or_clusters', metavar='hosts_or_clusters', type=str, nargs='*',
       help='Only manage these hosts or clusters that configured in the lab.')
-  parser.set_defaults(
-      command_executor_factory=host_util.LabExecutor)
   return parser
 
 
@@ -257,28 +256,33 @@ def CreateParser():
   subparser = subparsers.add_parser(
       'start', help='Start a MTT instance on a remote host.',
       parents=[_CreateLabCommandArgParser(), _CreateServiceAccountArgParser()])
-  subparser.set_defaults(func=Start)
+  subparser.set_defaults(host_func=Start)
+  subparser.set_defaults(func=host_util.Execute)
 
   subparser = subparsers.add_parser(
       'restart', help='Restart a MTT instance on a remote host.',
       parents=[_CreateLabCommandArgParser(), _CreateServiceAccountArgParser()])
-  subparser.set_defaults(func=Restart)
+  subparser.set_defaults(host_func=Restart)
+  subparser.set_defaults(func=host_util.Execute)
 
   subparser = subparsers.add_parser(
       'update', help='Update a MTT instance on a remote host.',
       parents=[_CreateLabCommandArgParser(), _CreateServiceAccountArgParser()])
-  subparser.set_defaults(func=Update)
+  subparser.set_defaults(host_func=Update)
+  subparser.set_defaults(func=host_util.Execute)
 
   subparser = subparsers.add_parser(
       'stop', help='Stop a MTT instance on a remote host.',
       parents=[_CreateLabCommandArgParser()])
-  subparser.set_defaults(func=Stop)
+  subparser.set_defaults(host_func=Stop)
+  subparser.set_defaults(func=host_util.Execute)
 
   subparser = subparsers.add_parser(
       'run_cmd', help='Run command line on a remote host.',
       parents=[_CreateLabCommandArgParser()])
   subparser.add_argument('--cmd', type=str, help='Command line to run.')
-  subparser.set_defaults(func=RunCmd)
+  subparser.set_defaults(host_func=RunCmd)
+  subparser.set_defaults(func=host_util.Execute)
   return parser
 
 
@@ -299,11 +303,7 @@ def Main():
         os.execv(new_path, [new_path] + sys.argv[1:])
     except Exception as e:        logger.warning('Failed to check/update tool: %s', e)
   try:
-    if (hasattr(args, 'command_executor_factory') and
-        args.command_executor_factory):
-      executor = args.command_executor_factory(args)
-      executor.Execute()
-    elif hasattr(args, 'func'):
+    if hasattr(args, 'func'):
       args.func(args)
     else:
       parser.print_usage()

@@ -33,7 +33,7 @@ class HostUtilTest(parameterized.TestCase):
         '__main__.host_util.command_util.CommandContext',
         return_value=self.mock_context)
     self.mock_create_context = self.context_patcher.start()
-    self.mock_func = mock.MagicMock(__name__='mock_func')
+    self.mock_host_func = mock.MagicMock(__name__='mock_host_func')
     self.host_config1 = host_util.lab_config.CreateHostConfig(
         cluster_name='cluster1', hostname='host1',
         host_login_name='user1')
@@ -49,8 +49,8 @@ class HostUtilTest(parameterized.TestCase):
     super(HostUtilTest, self).tearDown()
 
   @mock.patch.object(host_util, '_BuildLabConfigPool')
-  def testLabExecutor(self, mock_build_lab_config_pool):
-    """Test lab executor on multiple hosts sequentially."""
+  def testExecute(self, mock_build_lab_config_pool):
+    """Test execute."""
     mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
     self.mock_lab_config_pool.GetHostConfigs.side_effect = [[
         self.host_config1, self.host_config2]]
@@ -59,280 +59,137 @@ class HostUtilTest(parameterized.TestCase):
         hosts_or_clusters=[],
         parallel=False,
         ssh_key=None,
-        func=self.mock_func,
+        host_func=self.mock_host_func,
         ask_login_password=False,
         ask_sudo_password=False,
         sudo_user=None)
 
-    executor = host_util.LabExecutor(args)
-    executor.Execute()
+    host_util.Execute(args)
 
-    self.mock_lab_config_pool.assert_has_calls([
-        mock.call.GetHostConfigs()])
-    self.assertLen(executor.hosts, 2)
-    self.assertEqual('host1', executor.hosts[0].config.hostname)
-    self.assertEqual('host2', executor.hosts[1].config.hostname)
+    self.mock_lab_config_pool.GetHostConfigs.assert_called_once_with()
     self.mock_create_context.assert_has_calls([
         mock.call('host1', 'user1', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='user1'),
+                  sudo_password=None, sudo_user=None),
         mock.call('host2', 'user1', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='user1')])
-    self.mock_func.assert_has_calls([
-        mock.call(args, executor.hosts[0]),
-        mock.call(args, executor.hosts[1])])
+                  sudo_password=None, sudo_user=None)])
+    self.assertLen(self.mock_host_func.call_args_list, 2)
+    args1, host1 = self.mock_host_func.call_args_list[0][0]
+    args2, host2 = self.mock_host_func.call_args_list[1][0]
+    self.assertEqual(args, args1)
+    self.assertEqual('host1', host1.name)
+    self.assertEqual(args, args2)
+    self.assertEqual('host2', host2.name)
 
+  @mock.patch.object(getpass, 'getpass')
   @mock.patch.object(host_util, '_BuildLabConfigPool')
-  def testLabExecutor_withHostOrCluster(self, mock_build_lab_config_pool):
-    """Test lab executor with hosts_or_clusters provided."""
-    mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
-    self.mock_lab_config_pool.GetHostConfig.side_effect = [
-        self.host_config1, None]
-    self.mock_lab_config_pool.GetHostConfigs.side_effect = [[
-        self.host_config2]]
-    args = mock.MagicMock(
-        lab_config_path='lab_config.yaml',
-        hosts_or_clusters=['host1', 'cluster2'],
-        parallel=False,
-        ssh_key=None,
-        func=self.mock_func,
-        ask_login_password=False,
-        ask_sudo_password=False,
-        sudo_user=None)
-
-    executor = host_util.LabExecutor(args)
-    executor.Execute()
-
-    self.mock_lab_config_pool.assert_has_calls([
-        mock.call.GetHostConfig('host1'),
-        mock.call.GetHostConfig('cluster2'),
-        mock.call.GetHostConfigs('cluster2')])
-    self.assertLen(executor.hosts, 2)
-    self.assertEqual('host1', executor.hosts[0].config.hostname)
-    self.assertEqual('host2', executor.hosts[1].config.hostname)
-    self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'user1', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='user1'),
-        mock.call('host2', 'user1', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='user1')])
-    self.mock_func.assert_has_calls([
-        mock.call(args, executor.hosts[0]),
-        mock.call(args, executor.hosts[1])])
-
-  @mock.patch.object(host_util, '_BuildLabConfigPool')
-  def testLabExecutor_withDuplicatedHostOrCluster(
-      self, mock_build_lab_config_pool):
-    """Test lab executor with hosts_or_clusters and there is duplicate."""
-    mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
-    self.mock_lab_config_pool.GetHostConfig.side_effect = [
-        self.host_config1, None]
-    self.mock_lab_config_pool.GetHostConfigs.side_effect = [[
-        self.host_config1, self.host_config2]]
-    args = mock.MagicMock(
-        lab_config_path='lab_config.yaml',
-        hosts_or_clusters=['host1', 'cluster1'],
-        parallel=False,
-        ssh_key=None,
-        func=self.mock_func,
-        ask_login_password=False,
-        ask_sudo_password=False,
-        sudo_user=None)
-
-    executor = host_util.LabExecutor(args)
-    executor.Execute()
-
-    self.mock_lab_config_pool.assert_has_calls([
-        mock.call.GetHostConfig('host1'),
-        mock.call.GetHostConfig('cluster1'),
-        mock.call.GetHostConfigs('cluster1')])
-    self.assertLen(executor.hosts, 2)
-    self.assertEqual('host1', executor.hosts[0].config.hostname)
-    self.assertEqual('host2', executor.hosts[1].config.hostname)
-    self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'user1', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='user1'),
-        mock.call('host2', 'user1', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='user1')])
-    self.mock_func.assert_has_calls([
-        mock.call(args, executor.hosts[0]),
-        mock.call(args, executor.hosts[1])])
-
-  @mock.patch.object(host_util, '_BuildLabConfigPool')
-  def testLabExecutor_exitOnError(self, mock_build_lab_config_pool):
-    """Test lab executor on multiple hosts sequentially and failed."""
+  def testExecute_askPass(self, mock_build_lab_config_pool, mock_getpass):
+    """Test execute on multiple hosts with password."""
+    mock_getpass.side_effect = ['login_pswd', 'sudo_pswd']
     mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
     self.mock_lab_config_pool.GetHostConfigs.side_effect = [[
         self.host_config1, self.host_config2]]
-    self.mock_func.side_effect = [Exception(), None]
     args = mock.MagicMock(
         lab_config_path='lab_config.yaml',
         hosts_or_clusters=[],
         parallel=False,
         ssh_key=None,
+        host_func=self.mock_host_func,
+        ask_password=True,
+        ask_sudo_password=True,
+        sudo_user='sudo_user')
+
+    host_util.Execute(args)
+
+    self.mock_lab_config_pool.GetHostConfigs.assert_called_once_with()
+    self.mock_create_context.assert_has_calls([
+        mock.call('host1', 'user1', login_password='login_pswd', ssh_key=None,
+                  sudo_password='sudo_pswd', sudo_user='sudo_user'),
+        mock.call('host2', 'user1', login_password='login_pswd', ssh_key=None,
+                  sudo_password='sudo_pswd', sudo_user='sudo_user')])
+    self.assertLen(self.mock_host_func.call_args_list, 2)
+    args1, host1 = self.mock_host_func.call_args_list[0][0]
+    args2, host2 = self.mock_host_func.call_args_list[1][0]
+    self.assertEqual(args, args1)
+    self.assertEqual('host1', host1.name)
+    self.assertEqual(args, args2)
+    self.assertEqual('host2', host2.name)
+
+  def testSequentialExecute_exitOnError(self):
+    """Test _SequentialExecute multiple hosts sequentially and failed."""
+    hosts = [
+        host_util.Host(host_config, context=self.mock_context)
+        for host_config in
+        [self.host_config1, self.host_config2]]
+    self.mock_host_func.side_effect = [Exception(), None]
+    args = mock.MagicMock(
+        parallel=False,
         exit_on_error=True,
-        func=self.mock_func,
-        ask_login_password=False,
-        ask_sudo_password=False,
-        sudo_user=None)
+        host_func=self.mock_host_func)
 
-    executor = host_util.LabExecutor(args)
     with self.assertRaises(Exception):
-      executor.Execute()
+      host_util._SequentialExecute(
+          host_util._WrapFuncForSetHost(self.mock_host_func),
+          args,
+          hosts,
+          exit_on_error=True)
 
-    self.mock_lab_config_pool.assert_has_calls([
-        mock.call.GetHostConfigs()])
-    self.assertLen(executor.hosts, 2)
-    self.assertEqual('host1', executor.hosts[0].config.hostname)
-    self.assertEqual('host2', executor.hosts[1].config.hostname)
-    self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'user1', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='user1'),
-        mock.call('host2', 'user1', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='user1')])
-    self.mock_func.assert_called_once_with(args, executor.hosts[0])
+    self.mock_host_func.assert_called_once_with(args, hosts[0])
     self.assertEqual(host_util.HostExecutionState.ERROR,
-                     executor.hosts[0].execution_state)
+                     hosts[0].execution_state)
     self.assertEqual(host_util.HostExecutionState.UNKNOWN,
-                     executor.hosts[1].execution_state)
+                     hosts[1].execution_state)
 
-  @mock.patch.object(host_util, '_BuildLabConfigPool')
-  def testLabExecutor_parallel(self, mock_build_lab_config_pool):
-    """Test lab executor on multiple hosts parallel."""
-    mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
-    self.mock_lab_config_pool.GetHostConfigs.side_effect = [
+  def testParallelExecute(self):
+    """Test ParallelExecute on multiple hosts parallel."""
+    hosts = [
+        host_util.Host(host_config, context=self.mock_context)
+        for host_config in
+        [self.host_config1, self.host_config2, self.host_config3]]
+    args = mock.MagicMock(
+        parallel=2,
+        host_func=self.mock_host_func)
+
+    host_util._ParallelExecute(
+        host_util._WrapFuncForSetHost(self.mock_host_func),
+        args,
+        hosts)
+
+    # We don't know the order of the call since it's parallel.
+    self.mock_host_func.assert_has_calls([mock.call(args, hosts[0])])
+    self.mock_host_func.assert_has_calls([mock.call(args, hosts[1])])
+    self.mock_host_func.assert_has_calls([mock.call(args, hosts[2])])
+    self.assertEqual(host_util.HostExecutionState.COMPLETED,
+                     hosts[0].execution_state)
+    self.assertEqual(host_util.HostExecutionState.COMPLETED,
+                     hosts[1].execution_state)
+    self.assertEqual(host_util.HostExecutionState.COMPLETED,
+                     hosts[2].execution_state)
+
+  def testParallelExecute_partialFailed(self):
+    """Test ParallelExecute on multiple hosts parallel with some host failed."""
+    self.mock_host_func.side_effect = [None, Exception()]
+    hosts = [
+        host_util.Host(host_config, context=self.mock_context)
+        for host_config in
         [self.host_config1, self.host_config2]]
     args = mock.MagicMock(
-        lab_config_path='lab_config.yaml',
-        hosts_or_clusters=[],
         parallel=True,
-        ssh_key=None,
-        func=self.mock_func,
-        ask_login_password=False,
-        ask_sudo_password=False,
-        sudo_user=None)
+        host_func=self.mock_host_func)
 
-    executor = host_util.LabExecutor(args)
-    executor.Execute()
+    host_util._ParallelExecute(
+        host_util._WrapFuncForSetHost(self.mock_host_func),
+        args,
+        hosts)
 
-    self.mock_lab_config_pool.assert_has_calls([
-        mock.call.GetHostConfigs()])
-    self.assertLen(executor.hosts, 2)
-    self.assertEqual('host1', executor.hosts[0].config.hostname)
-    self.assertEqual('host2', executor.hosts[1].config.hostname)
-    self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'user1', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='user1'),
-        mock.call('host2', 'user1', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='user1')])
     # We don't know the order of the call since it's parallel.
-    self.mock_func.assert_has_calls([
-        mock.call(args, executor.hosts[0])])
-    self.mock_func.assert_has_calls([
-        mock.call(args, executor.hosts[1])])
+    self.mock_host_func.assert_has_calls([
+        mock.call(args, hosts[0])])
+    self.mock_host_func.assert_has_calls([
+        mock.call(args, hosts[1])])
     self.assertEqual(host_util.HostExecutionState.COMPLETED,
-                     executor.hosts[0].execution_state)
-    self.assertEqual(host_util.HostExecutionState.COMPLETED,
-                     executor.hosts[1].execution_state)
-
-  @mock.patch.object(host_util, '_BuildLabConfigPool')
-  def testLabExecutor_parallel_partialFailed(self, mock_build_lab_config_pool):
-    """Test lab executor on multiple hosts parallel with some failed."""
-    mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
-    self.mock_func.side_effect = [None, Exception()]
-    self.mock_lab_config_pool.GetHostConfigs.side_effect = [[
-        self.host_config1, self.host_config2]]
-    args = mock.MagicMock(
-        lab_config_path='lab_config.yaml',
-        hosts_or_clusters=[],
-        parallel=True,
-        ssh_key=None,
-        func=self.mock_func,
-        ask_login_password=False,
-        ask_sudo_password=False,
-        sudo_user=None)
-
-    executor = host_util.LabExecutor(args)
-    with self.assertRaises(Exception):
-      executor.Execute()
-
-    self.mock_lab_config_pool.assert_has_calls([
-        mock.call.GetHostConfigs()])
-    self.assertLen(executor.hosts, 2)
-    self.assertEqual('host1', executor.hosts[0].config.hostname)
-    self.assertEqual('host2', executor.hosts[1].config.hostname)
-    self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'user1', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='user1'),
-        mock.call('host2', 'user1', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='user1')])
-    # We don't know the order of the call since it's parallel.
-    self.mock_func.assert_has_calls([
-        mock.call(args, executor.hosts[0])])
-    self.mock_func.assert_has_calls([
-        mock.call(args, executor.hosts[1])])
-    self.assertEqual(host_util.HostExecutionState.COMPLETED,
-                     executor.hosts[0].execution_state)
+                     hosts[0].execution_state)
     self.assertEqual(host_util.HostExecutionState.ERROR,
-                     executor.hosts[1].execution_state)
-
-  @mock.patch.object(host_util, '_BuildLabConfigPool')
-  def testLabExecutor_parallelWithFixedThreads(self,
-                                               mock_build_lab_config_pool):
-    """Test lab executor on multiple hosts parallel."""
-    mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
-    self.mock_lab_config_pool.GetHostConfigs.side_effect = [[
-        self.host_config1, self.host_config2, self.host_config3
-    ]]
-    args = mock.MagicMock(
-        lab_config_path='lab_config.yaml',
-        hosts_or_clusters=[],
-        parallel=2,
-        ssh_key=None,
-        func=self.mock_func,
-        ask_login_password=False,
-        ask_sudo_password=False,
-        sudo_user=None)
-
-    executor = host_util.LabExecutor(args)
-    executor.Execute()
-
-    self.mock_lab_config_pool.assert_has_calls([mock.call.GetHostConfigs()])
-    self.assertLen(executor.hosts, 3)
-    self.assertEqual('host1', executor.hosts[0].config.hostname)
-    self.assertEqual('host2', executor.hosts[1].config.hostname)
-    self.assertEqual('host3', executor.hosts[2].config.hostname)
-    self.mock_create_context.assert_has_calls([
-        mock.call(
-            'host1',
-            'user1',
-            login_password=None,
-            ssh_key=None,
-            sudo_password=None,
-            sudo_user='user1'),
-        mock.call(
-            'host2',
-            'user1',
-            login_password=None,
-            ssh_key=None,
-            sudo_password=None,
-            sudo_user='user1'),
-        mock.call(
-            'host3',
-            'user1',
-            login_password=None,
-            ssh_key=None,
-            sudo_password=None,
-            sudo_user='user1')
-    ])
-    # We don't know the order of the call since it's parallel.
-    self.mock_func.assert_has_calls([mock.call(args, executor.hosts[0])])
-    self.mock_func.assert_has_calls([mock.call(args, executor.hosts[1])])
-    self.mock_func.assert_has_calls([mock.call(args, executor.hosts[2])])
-    self.assertEqual(host_util.HostExecutionState.COMPLETED,
-                     executor.hosts[0].execution_state)
-    self.assertEqual(host_util.HostExecutionState.COMPLETED,
-                     executor.hosts[1].execution_state)
-    self.assertEqual(host_util.HostExecutionState.COMPLETED,
-                     executor.hosts[2].execution_state)
+                     hosts[1].execution_state)
 
   @mock.patch.object(host_util, '_BuildLabConfigPool')
   @mock.patch.object(socket, 'gethostname')
@@ -397,6 +254,38 @@ class HostUtilTest(parameterized.TestCase):
         mock.call.GetHostConfig('host1'),
         mock.call.GetHostConfig('host1.google.com')])
 
+  def testGetHostConfigs(self):
+    """Test _GetHostConfigs."""
+    self.mock_lab_config_pool.GetHostConfig.side_effect = [
+        self.host_config1, None]
+    self.mock_lab_config_pool.GetHostConfigs.side_effect = [[
+        self.host_config2]]
+
+    host_configs = host_util._GetHostConfigs(
+        self.mock_lab_config_pool, ['host1', 'cluster2'])
+
+    self.assertLen(host_configs, 2)
+    self.assertEqual('host1', host_configs[0].hostname)
+    self.assertEqual('host2', host_configs[1].hostname)
+
+  def testGetHostConfigs_withDuplicatedHostOrCluster(self):
+    """Test _GetHostConfigs with hosts_or_clusters and there is duplicate."""
+    self.mock_lab_config_pool.GetHostConfig.side_effect = [
+        self.host_config1, None]
+    self.mock_lab_config_pool.GetHostConfigs.side_effect = [[
+        self.host_config1, self.host_config2]]
+
+    host_configs = host_util._GetHostConfigs(
+        self.mock_lab_config_pool, ['host1', 'cluster1'])
+
+    self.mock_lab_config_pool.assert_has_calls([
+        mock.call.GetHostConfig('host1'),
+        mock.call.GetHostConfig('cluster1'),
+        mock.call.GetHostConfigs('cluster1')])
+    self.assertLen(host_configs, 2)
+    self.assertEqual('host1', host_configs[0].hostname)
+    self.assertEqual('host2', host_configs[1].hostname)
+
   @mock.patch.object(host_util.lab_config, 'LocalFileEnumerator')
   @mock.patch.object(host_util.lab_config, 'LabConfigPool')
   def testBuildLabConfigPool(
@@ -430,175 +319,40 @@ class HostUtilTest(parameterized.TestCase):
     self.assertTrue(mock_create_gcs_client.called)
     self.assertTrue(mock_get_cred.called)
 
-  def testBuildHostsWithContext_remoteHost(self):
-    """Test _BuildHostsWithContext for a remote host."""
+  def testHostContext(self):
+    """Test Host.context."""
     host_config = host_util.lab_config.CreateHostConfig(
         hostname='ahost', host_login_name='auser')
-    hosts = host_util._BuildHostsWithContext([host_config])
-    self.assertLen(hosts, 1)
+    host = host_util.Host(host_config)
+    self.assertIsNotNone(host.context)
     self.mock_create_context.assert_called_once_with(
         'ahost', 'auser', login_password=None, ssh_key=None, sudo_password=None,
-        sudo_user='auser')
+        sudo_user=None)
 
-  def testBuildHostsWithContext_remoteHosts(self):
-    """Test _BuildHostsWithContext for multiple remote hosts."""
-    host_configs = [
-        host_util.lab_config.CreateHostConfig(
-            hostname='host1', host_login_name='auser'),
-        host_util.lab_config.CreateHostConfig(
-            hostname='host2', host_login_name='auser')]
-    hosts = host_util._BuildHostsWithContext(host_configs)
-    self.assertLen(hosts, 2)
-    self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'auser', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='auser'),
-        mock.call('host2', 'auser', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='auser')])
-
-  def testBuildHostsWithContext_remoteHost_sshkey(self):
-    """Test _BuildHostsWithContext for a remote host with ssh key."""
+  def testHostContext_withSSHInfo(self):
     host_config = host_util.lab_config.CreateHostConfig(
-        hostname='ahost', host_login_name='auser')
-    hosts = host_util._BuildHostsWithContext([host_config], ssh_key='/sshkey')
-    self.assertLen(hosts, 1)
+        hostname='host1', host_login_name='user1')
+    host = host_util.Host(
+        host_config, sudo_user='sudo_user1', sudo_password='sudopwd',
+        login_password='loginpwd', ssh_key='/ssh_key')
+    self.assertIsNotNone(host.context)
     self.mock_create_context.assert_called_once_with(
-        'ahost', 'auser', login_password=None, ssh_key='/sshkey',
-        sudo_password=None, sudo_user='auser')
+        'host1', 'user1', login_password='loginpwd',
+        ssh_key='/ssh_key', sudo_password='sudopwd', sudo_user='sudo_user1')
 
-  def testBuildHostsWithContext_remoteHosts_sshkey(self):
-    """Test _BuildHostsWithContext for multiple remote hosts with ssh key."""
-    host_configs = [
-        host_util.lab_config.CreateHostConfig(
-            hostname='host1', host_login_name='auser'),
-        host_util.lab_config.CreateHostConfig(
-            hostname='host2', host_login_name='auser')]
-    hosts = host_util._BuildHostsWithContext(host_configs, ssh_key='/sshkey')
-    self.assertLen(hosts, 2)
-    self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'auser', login_password=None, ssh_key='/sshkey',
-                  sudo_password=None, sudo_user='auser'),
-        mock.call('host2', 'auser', login_password=None, ssh_key='/sshkey',
-                  sudo_password=None, sudo_user='auser')])
-
-  @mock.patch.object(getpass, 'getpass')
-  def testBuildHostsWithContext_remoteHost_password(self, mock_getpass):
-    """Test _BuildHostsWithContext for a remote host without ssh key."""
-    mock_getpass.return_value = 'apassword'
+  def testHostContext_unknownException(self):
+    """Test Host.context with exception."""
     host_config = host_util.lab_config.CreateHostConfig(
-        hostname='ahost', host_login_name='auser')
-    hosts = host_util._BuildHostsWithContext(
-        [host_config], ask_login_password=True)
-    self.assertLen(hosts, 1)
-    self.mock_create_context.assert_has_calls([
-        mock.call('ahost', 'auser', login_password='apassword', ssh_key=None,
-                  sudo_password=None, sudo_user='auser')])
+        hostname='host1', host_login_name='auser')
+    self.mock_create_context.side_effect = Exception('Connection timeout.')
 
-  @mock.patch.object(getpass, 'getpass')
-  def testBuildHostsWithContext_remoteHosts_password(self, mock_getpass):
-    """Test _BuildHostsWithContext for multiple remote hosts without ssh key."""
-    mock_getpass.return_value = 'apassword'
-    host_configs = [
-        host_util.lab_config.CreateHostConfig(
-            hostname='host1', host_login_name='auser'),
-        host_util.lab_config.CreateHostConfig(
-            hostname='host2', host_login_name='auser')]
-    hosts = host_util._BuildHostsWithContext(
-        host_configs, ask_login_password=True)
-    self.assertLen(hosts, 2)
-    self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'auser', login_password='apassword', ssh_key=None,
-                  sudo_password=None, sudo_user='auser'),
-        mock.call('host2', 'auser', login_password='apassword', ssh_key=None,
-                  sudo_password=None, sudo_user='auser')])
-
-  @mock.patch.object(getpass, 'getpass')
-  def testBuildHostsWithContext_SudoPwdAndSshKey(self, mock_getpass):
-    mock_getpass.return_value = 'sudopwd'
-    self.mock_create_context.side_effect = [mock.MagicMock(), mock.MagicMock()]
-    host_configs = [
-        host_util.lab_config.CreateHostConfig(
-            hostname='host1', host_login_name='user1'),
-        host_util.lab_config.CreateHostConfig(
-            hostname='host2', host_login_name='user2')]
-    hosts = host_util._BuildHostsWithContext(
-        host_configs, ssh_key='/sshkey', ask_sudo_password=True)
-    self.assertLen(hosts, 2)
-    self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'user1', login_password=None, ssh_key='/sshkey',
-                  sudo_password='sudopwd', sudo_user='user1'),
-        mock.call('host2', 'user2', login_password=None, ssh_key='/sshkey',
-                  sudo_password='sudopwd', sudo_user='user2')])
-
-  @mock.patch.object(getpass, 'getpass')
-  def testBuildHostsWithContext_SudoPwdAndNoLoginPwd(self, mock_getpass):
-    mock_getpass.return_value = 'sudopwd'
-    self.mock_create_context.side_effect = [mock.MagicMock(), mock.MagicMock()]
-    host_configs = [
-        host_util.lab_config.CreateHostConfig(
-            hostname='host1', host_login_name='user1'),
-        host_util.lab_config.CreateHostConfig(
-            hostname='host2', host_login_name='user2')]
-    hosts = host_util._BuildHostsWithContext(
-        host_configs, ask_sudo_password=True)
-    self.assertLen(hosts, 2)
-    self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'user1', login_password=None, ssh_key=None,
-                  sudo_password='sudopwd', sudo_user='user1'),
-        mock.call('host2', 'user2', login_password=None, ssh_key=None,
-                  sudo_password='sudopwd', sudo_user='user2')])
-
-  @mock.patch.object(getpass, 'getpass')
-  def testBuildHostsWithContext_SudoPwdAndLoginPwd(self, mock_getpass):
-    mock_getpass.side_effect = ['loginpwd', 'sudopwd']
-    host_configs = [
-        host_util.lab_config.CreateHostConfig(
-            hostname='host1', host_login_name='user1'),
-        host_util.lab_config.CreateHostConfig(
-            hostname='host2', host_login_name='user2')]
-    hosts = host_util._BuildHostsWithContext(
-        host_configs, ask_login_password=True, ask_sudo_password=True)
-    self.assertLen(hosts, 2)
-    self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'user1', login_password='loginpwd', ssh_key=None,
-                  sudo_password='sudopwd', sudo_user='user1'),
-        mock.call('host2', 'user2', login_password='loginpwd', ssh_key=None,
-                  sudo_password='sudopwd', sudo_user='user2')])
-
-  @mock.patch.object(getpass, 'getpass')
-  def testBuildHostsWithContext_SudoPwdAndSudoUser(self, mock_getpass):
-    mock_getpass.side_effect = ['sudopwd']
-    host_configs = [
-        host_util.lab_config.CreateHostConfig(
-            hostname='host1', host_login_name='user1')]
-    hosts = host_util._BuildHostsWithContext(
-        host_configs, ask_sudo_password=True, sudo_user='sudo_user1')
-    self.assertLen(hosts, 1)
-    self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'user1', login_password=None, ssh_key=None,
-                  sudo_password='sudopwd', sudo_user='sudo_user1')])
-
-  def testBuildHostsWithContext_unknownException(self):
-    """Test _BuildHostsWithContext for multiple remote hosts."""
-    host_configs = [
-        host_util.lab_config.CreateHostConfig(
-            hostname='host1', host_login_name='auser'),
-        host_util.lab_config.CreateHostConfig(
-            hostname='host2', host_login_name='auser')]
-    self.mock_create_context.side_effect = [
-        Exception('Connection timeout.'),
-        self.mock_context]
-
-    hosts = host_util._BuildHostsWithContext(host_configs)
-    self.assertLen(hosts, 2)
-    self.assertEqual('host1', hosts[0].name)
-    self.assertEqual(
-        host_util.HostExecutionState.ERROR, hosts[0].execution_state)
-    self.assertEqual('host2', hosts[1].name)
-    self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'auser', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='auser'),
-        mock.call('host2', 'auser', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user='auser')])
+    context = None
+    with self.assertRaises(Exception):
+      context = host_util.Host(host_config).context
+    self.assertIsNone(context)
+    self.mock_create_context.assert_called_once_with(
+        'host1', 'auser', login_password=None, ssh_key=None,
+        sudo_password=None, sudo_user=None)
 
   def testWrapFuncForSetHost(self):
     host = host_util.Host(
@@ -611,12 +365,12 @@ class HostUtilTest(parameterized.TestCase):
         user=None,
         cluster=None,
         parallel=False,
-        func=self.mock_func)
-    f = host_util._WrapFuncForSetHost(self.mock_func)
+        func=self.mock_host_func)
+    f = host_util._WrapFuncForSetHost(self.mock_host_func)
 
     f(args, host)
 
-    self.mock_func.assert_called_once_with(args, host)
+    self.mock_host_func.assert_called_once_with(args, host)
     self.assertEqual(host_util.HostExecutionState.COMPLETED,
                      host.execution_state)
 
@@ -631,15 +385,15 @@ class HostUtilTest(parameterized.TestCase):
         user=None,
         cluster=None,
         parallel=False,
-        func=self.mock_func)
-    f = host_util._WrapFuncForSetHost(self.mock_func)
+        func=self.mock_host_func)
+    f = host_util._WrapFuncForSetHost(self.mock_host_func)
     e = Exception('Fail to run command.')
-    self.mock_func.side_effect = [e]
+    self.mock_host_func.side_effect = [e]
 
     with self.assertRaises(Exception):
       f(args, host)
 
-    self.mock_func.assert_called_once_with(args, host)
+    self.mock_host_func.assert_called_once_with(args, host)
     self.assertEqual(host_util.HostExecutionState.ERROR,
                      host.execution_state)
     self.assertEqual(e, host.error)
@@ -656,12 +410,12 @@ class HostUtilTest(parameterized.TestCase):
         user=None,
         cluster=None,
         parallel=False,
-        func=self.mock_func)
-    f = host_util._WrapFuncForSetHost(self.mock_func)
+        func=self.mock_host_func)
+    f = host_util._WrapFuncForSetHost(self.mock_host_func)
 
     f(args, host)
 
-    self.assertFalse(self.mock_func.called)
+    self.assertFalse(self.mock_host_func.called)
 
   @parameterized.parameters(
       (False, 1),

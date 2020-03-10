@@ -168,7 +168,7 @@ class CommandContext(object):
     self._ssh_key = ssh_key
     self._closed = False
     self._sudo_password = sudo_password
-    self._sudo_user = sudo_user
+    self._sudo_user = sudo_user or self._user
     self._out_stream = HostCommandOutStream(
         None if self._is_local else host, 'stdout')
     # We also output stderr to DEBUG level, if the command failed and

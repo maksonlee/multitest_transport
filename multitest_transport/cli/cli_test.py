@@ -137,8 +137,8 @@ class CliTest(parameterized.TestCase):
             cluster_name='acluster',
             lab_name='alab'))
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run([
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/etc/localtime:/etc/localtime:ro',
@@ -158,7 +158,7 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
             'gcr.io/android-mtt/mtt:prod']),
-        mock.call.Run(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt'])])
 
   @mock.patch.dict(
       os.environ, {
@@ -174,8 +174,8 @@ class CliTest(parameterized.TestCase):
         args,
         self._CreateHost(cluster_name='acluster'))
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run([
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/etc/localtime:/etc/localtime:ro',
@@ -198,7 +198,7 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
             'gcr.io/android-mtt/mtt:prod']),
-        mock.call.Run(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt'])])
 
   @mock.patch.object(cli.command_util.DockerHelper, 'IsContainerRunning')
   def testStart_alreadyRunning(self, mock_is_running):
@@ -221,8 +221,8 @@ class CliTest(parameterized.TestCase):
         args,
         self._CreateHost(cluster_name='acluster'))
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run([
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/etc/localtime:/etc/localtime:ro',
@@ -240,7 +240,7 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
             'gcr.io/android-mtt/mtt:prod']),
-        mock.call.Run(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt'])])
 
   def testStart_withServiceAccount(self):
     """Test Start function."""
@@ -252,12 +252,12 @@ class CliTest(parameterized.TestCase):
             cluster_name='acluster',
             service_account_json_key_path='/path/to/key.json'))
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run(
+    self.mock_context.Run.assert_has_calls([
+        mock.call(
             ['docker', 'volume', 'rm', 'mtt-temp'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
-                      raise_on_failure=False),
-        mock.call.Run([
+        mock.call(['docker', 'container', 'rm', 'mtt'],
+                  raise_on_failure=False),
+        mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/etc/localtime:/etc/localtime:ro',
@@ -278,10 +278,10 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
             'gcr.io/android-mtt/mtt:prod']),
-        mock.call.Run([
+        mock.call([
             'docker', 'cp', '-L',
             '/path/to/key.json', 'mtt:/tmp/keyfile/key.json']),
-        mock.call.Run(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt'])])
 
   @mock.patch.object(cli, '_WaitForServer')
   def testStart_standalone(self, wait_for_server):
@@ -290,8 +290,8 @@ class CliTest(parameterized.TestCase):
     args = self.arg_parser.parse_args(['start'])
     cli.Start(args, self._CreateHost(master_url=None))
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run([
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/etc/localtime:/etc/localtime:ro',
@@ -309,7 +309,7 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
             'gcr.io/android-mtt/mtt:prod']),
-        mock.call.Run(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt'])])
 
   def testStart_argsWithContainerNameAndImageName(self):
     """Test Start function."""
@@ -320,12 +320,12 @@ class CliTest(parameterized.TestCase):
         args,
         self._CreateHost(cluster_name='acluster'))
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run(
+    self.mock_context.Run.assert_has_calls([
+        mock.call(
             ['docker', 'volume', 'rm', 'mtt-temp'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'acontainer'],
-                      raise_on_failure=False),
-        mock.call.Run([
+        mock.call(['docker', 'container', 'rm', 'acontainer'],
+                  raise_on_failure=False),
+        mock.call([
             'docker', 'create',
             '--name', 'acontainer', '-it',
             '-v', '/etc/localtime:/etc/localtime:ro',
@@ -344,7 +344,7 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
             'animage:atag']),
-        mock.call.Run(['docker', 'start', 'acontainer'])])
+        mock.call(['docker', 'start', 'acontainer'])])
 
   @mock.patch.object(shutil, 'rmtree')
   @mock.patch.object(shutil, 'copy')
@@ -362,8 +362,8 @@ class CliTest(parameterized.TestCase):
     mock_copy_file.assert_called_with('/local/adb', '/tmp/dir/adb')
     mock_rm_dir.assert_called_with('/tmp/dir')
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run([
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/etc/localtime:/etc/localtime:ro',
@@ -382,10 +382,10 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
             'gcr.io/android-mtt/mtt:prod']),
-        mock.call.Run([  # temp directory copied over to container
+        mock.call([  # temp directory copied over to container
             'docker',
             'cp', '-L', '/tmp/dir', 'mtt:/tmp/custom_sdk_tools']),
-        mock.call.Run(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt'])])
 
   def testStart_withStackdriver(self):
     """Test Start with stackdriver logging enabled."""
@@ -398,12 +398,12 @@ class CliTest(parameterized.TestCase):
             enable_stackdriver=True,
             service_account_json_key_path='/path/to/key.json'))
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run(
+    self.mock_context.Run.assert_has_calls([
+        mock.call(
             ['docker', 'volume', 'rm', 'mtt-temp'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
-                      raise_on_failure=False),
-        mock.call.Run([
+        mock.call(['docker', 'container', 'rm', 'mtt'],
+                  raise_on_failure=False),
+        mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/etc/localtime:/etc/localtime:ro',
@@ -426,10 +426,10 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
             'gcr.io/android-mtt/mtt:prod']),
-        mock.call.Run([
+        mock.call([
             'docker', 'cp', '-L',
             '/path/to/key.json', 'mtt:/tmp/keyfile/key.json']),
-        mock.call.Run(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt'])])
 
   def testStart_withTmpfs(self):
     """Test Start with tmpfs."""
@@ -441,12 +441,12 @@ class CliTest(parameterized.TestCase):
             tmpfs_configs=[
                 lab_config.CreateTmpfsConfig('/atmpfs', 1000, '750')]))
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run(
+    self.mock_context.Run.assert_has_calls([
+        mock.call(
             ['docker', 'volume', 'rm', 'mtt-temp'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
-                      raise_on_failure=False),
-        mock.call.Run([
+        mock.call(['docker', 'container', 'rm', 'mtt'],
+                  raise_on_failure=False),
+        mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/etc/localtime:/etc/localtime:ro',
@@ -466,7 +466,7 @@ class CliTest(parameterized.TestCase):
                         'dst=/var/run/docker.sock'),
             '--mount', 'type=tmpfs,dst=/atmpfs,tmpfs-size=1000,tmpfs-mode=750',
             'gcr.io/android-mtt/mtt:prod']),
-        mock.call.Run(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt'])])
 
   def testStart_imageNameAndMasterUrlInHost(self):
     """Test start with image name and master url in host."""
@@ -478,8 +478,8 @@ class CliTest(parameterized.TestCase):
             cluster_name='acluster', master_url='tfc',
             docker_image='a_docker_image'))
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run([
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/etc/localtime:/etc/localtime:ro',
@@ -498,7 +498,7 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
             'a_docker_image']),
-        mock.call.Run(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt'])])
 
   @mock.patch.object(cli, '_StartMttNode')
   @mock.patch.object(cli, '_StartMttDaemon')
@@ -540,9 +540,9 @@ class CliTest(parameterized.TestCase):
     cli._StartMttDaemon(args, host)
     setup_mttd.assert_called_with(args, host)
     setup_permanent_bin.assert_called_with(args, host)
-    self.mock_context.assert_has_calls([
-        mock.call.Run(['systemctl', 'enable', 'mttd.service']),
-        mock.call.Run(['systemctl', 'start', 'mttd.service']),
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['systemctl', 'enable', 'mttd.service']),
+        mock.call(['systemctl', 'start', 'mttd.service']),
     ])
 
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
@@ -554,14 +554,14 @@ class CliTest(parameterized.TestCase):
     args = self.arg_parser.parse_args(['stop'])
     cli.Stop(args, self._CreateHost())
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run(['docker', 'kill', '-s', 'TERM', 'mtt'],
-                      timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
-        mock.call.Run(['docker', 'container', 'wait', 'mtt'],
-                      timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
-        mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
-                      raise_on_failure=False),
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'kill', '-s', 'TERM', 'mtt'],
+                  timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
+        mock.call(['docker', 'container', 'wait', 'mtt'],
+                  timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
+        mock.call(['docker', 'inspect', 'mtt'], raise_on_failure=False),
+        mock.call(['docker', 'container', 'rm', 'mtt'],
+                  raise_on_failure=False),
     ])
     is_running.assert_called_once_with('mtt')
 
@@ -572,10 +572,10 @@ class CliTest(parameterized.TestCase):
     args = self.arg_parser.parse_args(['stop'])
     cli.Stop(args, self._CreateHost())
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
-                      raise_on_failure=False),
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'inspect', 'mtt'], raise_on_failure=False),
+        mock.call(['docker', 'container', 'rm', 'mtt'],
+                  raise_on_failure=False),
     ])
     is_running.assert_called_once_with('mtt')
 
@@ -589,14 +589,14 @@ class CliTest(parameterized.TestCase):
     args = self.arg_parser.parse_args(['stop', '--wait'])
     cli.Stop(args, self._CreateHost())
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run(['docker', 'kill', '-s', 'TSTP', 'mtt'],
-                      timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
-        mock.call.Run(['docker', 'container', 'wait', 'mtt'],
-                      timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
-        mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
-                      raise_on_failure=False),
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'kill', '-s', 'TSTP', 'mtt'],
+                  timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
+        mock.call(['docker', 'container', 'wait', 'mtt'],
+                  timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
+        mock.call(['docker', 'inspect', 'mtt'], raise_on_failure=False),
+        mock.call(['docker', 'container', 'rm', 'mtt'],
+                  raise_on_failure=False),
     ])
     is_running.assert_called_once_with('mtt')
 
@@ -610,14 +610,14 @@ class CliTest(parameterized.TestCase):
     args = self.arg_parser.parse_args(['stop'])
     cli.Stop(args, self._CreateHost(graceful_shutdown=True))
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run(['docker', 'kill', '-s', 'TSTP', 'mtt'],
-                      timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
-        mock.call.Run(['docker', 'container', 'wait', 'mtt'],
-                      timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
-        mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
-                      raise_on_failure=False),
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'kill', '-s', 'TSTP', 'mtt'],
+                  timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
+        mock.call(['docker', 'container', 'wait', 'mtt'],
+                  timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
+        mock.call(['docker', 'inspect', 'mtt'], raise_on_failure=False),
+        mock.call(['docker', 'container', 'rm', 'mtt'],
+                  raise_on_failure=False),
     ])
     is_running.assert_called_once_with('mtt')
 
@@ -631,14 +631,14 @@ class CliTest(parameterized.TestCase):
     args = self.arg_parser.parse_args(['stop'])
     cli.Stop(args, self._CreateHost(master_url=None))
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run(['docker', 'stop', 'mtt'],
-                      timeout=command_util._DOCKER_STOP_CMD_TIMEOUT_SEC),
-        mock.call.Run(['docker', 'container', 'wait', 'mtt'],
-                      timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
-        mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
-                      raise_on_failure=False),
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'stop', 'mtt'],
+                  timeout=command_util._DOCKER_STOP_CMD_TIMEOUT_SEC),
+        mock.call(['docker', 'container', 'wait', 'mtt'],
+                  timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
+        mock.call(['docker', 'inspect', 'mtt'], raise_on_failure=False),
+        mock.call(['docker', 'container', 'rm', 'mtt'],
+                  raise_on_failure=False),
     ])
     is_running.assert_called_once_with('mtt')
 
@@ -652,9 +652,9 @@ class CliTest(parameterized.TestCase):
     cli.Stop(args, host)
 
     stop_mtt.assert_called_with(args, host)
-    self.mock_context.assert_has_calls([
-        mock.call.Run(['systemctl', 'stop', 'mttd.service']),
-        mock.call.Run(['systemctl', 'disable', 'mttd.service']),
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['systemctl', 'stop', 'mttd.service']),
+        mock.call(['systemctl', 'disable', 'mttd.service']),
     ])
 
   @mock.patch('__main__.cli.os.geteuid')
@@ -668,12 +668,12 @@ class CliTest(parameterized.TestCase):
 
     cli.Stop(args, self._CreateHost())
 
-    self.mock_context.assert_has_calls([
-        mock.call.Run(['docker', 'kill', '-s', 'TERM', 'mtt'],
-                      timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
-        mock.call.Run(['docker', 'inspect', 'mtt'], raise_on_failure=False),
-        mock.call.Run(['docker', 'container', 'rm', 'mtt'],
-                      raise_on_failure=False),
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'kill', '-s', 'TERM', 'mtt'],
+                  timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
+        mock.call(['docker', 'inspect', 'mtt'], raise_on_failure=False),
+        mock.call(['docker', 'container', 'rm', 'mtt'],
+                  raise_on_failure=False),
     ])
     detect_and_kill.assert_called_once()
 
@@ -770,8 +770,8 @@ class CliTest(parameterized.TestCase):
 
     is_running.assert_called_once_with('mtt')
     get_image_id.assert_called_once_with('mtt')
-    self.mock_context.assert_has_calls([
-        mock.call.Run(['docker', 'pull', 'gcr.io/android-mtt/mtt:prod'])])
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'pull', 'gcr.io/android-mtt/mtt:prod'])])
     get_remote_image_digest.assert_has_calls([
         mock.call('image_id'),
         mock.call('gcr.io/android-mtt/mtt:prod'),
@@ -792,8 +792,8 @@ class CliTest(parameterized.TestCase):
 
     is_running.assert_called_once_with('mtt')
     get_image_id.assert_called_once_with('mtt')
-    self.mock_context.assert_has_calls([
-        mock.call.Run(['docker', 'pull', 'gcr.io/android-mtt/mtt:prod'])])
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'pull', 'gcr.io/android-mtt/mtt:prod'])])
     get_remote_image_digest.assert_has_calls([
         mock.call('image_id'),
         mock.call('gcr.io/android-mtt/mtt:prod'),
@@ -816,11 +816,11 @@ class CliTest(parameterized.TestCase):
     host = mock.create_autospec(cli.host_util.Host)
     host.name = 'host1'
     cli._SetupSystemdScript(args, host)
-    host.context.assert_has_calls([
-        mock.call.CopyFile(
-            os.path.join(tmp_folder, cli._ZIPPED_MTTD_FILE),
-            cli._MTTD_FILE),
-        mock.call.Run(['systemctl', 'daemon-reload'])])
+    host.context.CopyFile.assert_called_once_with(
+        os.path.join(tmp_folder, cli._ZIPPED_MTTD_FILE),
+        cli._MTTD_FILE)
+    host.context.Run.assert_has_calls([
+        mock.call(['systemctl', 'daemon-reload'])])
 
   def testSetupMTTRuntimeIntoPermanentPath(self):
     mtt_path = os.path.join(self.tmp_root, 'mtt')
@@ -874,10 +874,10 @@ class CliTest(parameterized.TestCase):
         'a_container_name')
     docker_helper.IsContainerRunning.assert_called_with('a_container_name')
     docker_helper.Wait.assert_called_with(['a_container_name'])
-    host.context.assert_has_calls([
-        mock.call.Run(['ps', '-o', 'ppid=', '-p', 'acontainer_pid'],
-                      raise_on_failure=True),
-        mock.call.Run(['kill', '-9', 'a_parent_pid'], raise_on_failure=True),
+    host.context.Run.assert_has_calls([
+        mock.call(['ps', '-o', 'ppid=', '-p', 'acontainer_pid'],
+                  raise_on_failure=True),
+        mock.call(['kill', '-9', 'a_parent_pid'], raise_on_failure=True),
     ])
 
   @mock.patch.object(cli, '_ForceKillMttNode')
