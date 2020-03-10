@@ -29,11 +29,11 @@
 }
 
 .results-passed {
-  color: $text-success;
+  color: $text-success-small;
   font-weight: bold;
 }
 
 .results-failed {
-  color: $text-danger;
+  color: $text-danger-small;
   font-weight: bold;
 }

@@ -29,6 +29,7 @@ $cyan-500: #24c1e0;
 
 $green-100: #ceead6;
 $green-500: #34a853;
+$green-900: #0d652d;
 
 $grey-100: #f1f3f4;
 $grey-300: #dadce0;
@@ -65,6 +66,7 @@ $progress: $cyan-500;
 $progress-background: $blue-100;
 
 $success: $green-500;
+$success-dark: $green-900;
 $success-background: $green-100;
 
 $warning: $yellow-400;
@@ -89,11 +91,12 @@ $navigation: $grey-800;
 $text-button: $accent-dark;
 $text-button-flat: $white;
 $text-danger: $danger;
-$text-danger-dark: $danger-dark;
+$text-danger-small: $danger-dark;
 $text-header: $primary-dark;
 $text-link: $accent-dark;
 $text-menu: $accent-dark;
 $text-primary: $primary-more;
 $text-progress: $progress;
 $text-success: $success;
+$text-success-small: $success-dark;
 $text-warning: $warning;
