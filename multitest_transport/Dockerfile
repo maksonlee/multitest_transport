@@ -44,13 +44,15 @@ RUN apt-get update && apt-get install -y \
         libc++-dev \
         python-pip \
         python3-pip \
+        tzdata \
         usbutils \
         unzip \
         wget \
         zip
-RUN pip3 install browsepy \
+RUN pip3 install \
         absl-py \
         attrs \
+        browsepy \
         cachetools \
         flask
 
