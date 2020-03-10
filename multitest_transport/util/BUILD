@@ -36,6 +36,7 @@ py_library(
     srcs = [
         "env.py",
     ],
+    srcs_version = "PY2AND3",
 )
 
 py_library(
