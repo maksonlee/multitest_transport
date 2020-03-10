@@ -381,8 +381,6 @@ class DockerHelperTest(absltest.TestCase):
     self._docker_context.assert_has_calls([
         mock.call.Run(
             ['create', '--name', 'acontainer', '-it',
-             '-v', '/etc/localtime:/etc/localtime:ro',
-             '-v', '/etc/timezone:/etc/timezone:ro',
              '-v', '/dev/bus/usb:/dev/bus/usb',
              '-v', '/run/udev/control:/run/udev/control',
              '--device-cgroup-rule', 'c 189:* rwm',

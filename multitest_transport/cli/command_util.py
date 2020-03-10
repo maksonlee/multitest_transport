@@ -621,8 +621,6 @@ class DockerHelper(object):
         'create',
         '--name', container_name,
         '-it',
-        '-v', '/etc/localtime:/etc/localtime:ro',  # Sync localtime
-        '-v', '/etc/timezone:/etc/timezone:ro',  # Sync timezone
         '-v', '/dev/bus/usb:/dev/bus/usb',  # Mount USB devices
         '-v', '/run/udev/control:/run/udev/control',  # Receive udev events
         '--device-cgroup-rule', 'c 189:* rwm',  # Grant access to USB devices

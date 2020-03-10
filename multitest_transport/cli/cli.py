@@ -189,6 +189,16 @@ def _SetupMTTRuntimeIntoLibPath(args, host):
   host.config.Save(_HOST_CONFIG)
 
 
+def _GetHostTimezone():
+  """Get a host timezone.
+
+  Returns:
+    A TZ name of a host timezone.
+  """
+  with open('/etc/timezone') as f:
+    return f.read().strip()
+
+
 def Start(args, host=None):
   """Execute 'mtt start [OPTION] ...' on local host.
 
@@ -248,6 +258,7 @@ def _StartMttNode(args, host):
         host.config.tf_global_config_path)
 
   docker_helper.AddEnv('USER', os.environ.get('USER'))
+  docker_helper.AddEnv('TZ', _GetHostTimezone())
 
   # Copy proxy settings if exists
   docker_helper.CopyEnv('http_proxy')

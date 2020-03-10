@@ -62,6 +62,9 @@ class CliTest(parameterized.TestCase):
     self.mock_exist_files = ['/local/.android']
     self.old_user = os.environ.get('USER')
     os.environ['USER'] = 'user'
+    self.mock_timezone_patcher = mock.patch(
+        '__main__.cli._GetHostTimezone', return_value='Etc/UTC')
+    self.mock_timezone_patcher.start()
     self.tmp_root = tempfile.mkdtemp()
 
     self.arg_parser = cli.CreateParser()
@@ -141,8 +144,6 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/etc/localtime:/etc/localtime:ro',
-            '-v', '/etc/timezone:/etc/timezone:ro',
             '-v', '/dev/bus/usb:/dev/bus/usb',
             '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
@@ -152,6 +153,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'LAB_NAME=alab',
             '-e', 'CLUSTER=acluster',
             '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -178,8 +180,6 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/etc/localtime:/etc/localtime:ro',
-            '-v', '/etc/timezone:/etc/timezone:ro',
             '-v', '/dev/bus/usb:/dev/bus/usb',
             '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
@@ -188,6 +188,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'MTT_MASTER_URL=url',
             '-e', 'CLUSTER=acluster',
             '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
             '-e', 'http_proxy=http_proxy',
             '-e', 'https_proxy=https_proxy',
             '-e', 'ftp_proxy=ftp_proxy',
@@ -225,8 +226,6 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/etc/localtime:/etc/localtime:ro',
-            '-v', '/etc/timezone:/etc/timezone:ro',
             '-v', '/dev/bus/usb:/dev/bus/usb',
             '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
@@ -235,6 +234,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'MTT_MASTER_URL=url',
             '-e', 'CLUSTER=acluster',
             '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', ('type=bind,src=/var/run/docker.sock,'
@@ -260,8 +260,6 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/etc/localtime:/etc/localtime:ro',
-            '-v', '/etc/timezone:/etc/timezone:ro',
             '-v', '/dev/bus/usb:/dev/bus/usb',
             '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
@@ -270,6 +268,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'MTT_MASTER_URL=url',
             '-e', 'CLUSTER=acluster',
             '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
             '-e', 'JSON_KEY_PATH=/tmp/keyfile/key.json',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
@@ -294,8 +293,6 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/etc/localtime:/etc/localtime:ro',
-            '-v', '/etc/timezone:/etc/timezone:ro',
             '-v', '/dev/bus/usb:/dev/bus/usb',
             '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
@@ -303,6 +300,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '-e', 'MTT_MASTER_PORT=8000',
             '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -328,8 +326,6 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'acontainer', '-it',
-            '-v', '/etc/localtime:/etc/localtime:ro',
-            '-v', '/etc/timezone:/etc/timezone:ro',
             '-v', '/dev/bus/usb:/dev/bus/usb',
             '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
@@ -338,6 +334,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'MTT_MASTER_URL=url',
             '-e', 'CLUSTER=acluster',
             '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -366,8 +363,6 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/etc/localtime:/etc/localtime:ro',
-            '-v', '/etc/timezone:/etc/timezone:ro',
             '-v', '/dev/bus/usb:/dev/bus/usb',
             '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
@@ -376,6 +371,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'MTT_MASTER_URL=url',
             '-e', 'CLUSTER=acluster',
             '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -406,8 +402,6 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/etc/localtime:/etc/localtime:ro',
-            '-v', '/etc/timezone:/etc/timezone:ro',
             '-v', '/dev/bus/usb:/dev/bus/usb',
             '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
@@ -416,6 +410,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'MTT_MASTER_URL=url',
             '-e', 'CLUSTER=acluster',
             '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
             '-e', 'JSON_KEY_PATH=/tmp/keyfile/key.json',
             '-e', 'ENABLE_STACKDRIVER_LOGGING=1',
             '-e', 'ENABLE_STACKDRIVER_MONITORING=1',
@@ -449,8 +444,6 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/etc/localtime:/etc/localtime:ro',
-            '-v', '/etc/timezone:/etc/timezone:ro',
             '-v', '/dev/bus/usb:/dev/bus/usb',
             '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
@@ -459,6 +452,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'MTT_MASTER_URL=url',
             '-e', 'CLUSTER=acluster',
             '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -482,8 +476,6 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/etc/localtime:/etc/localtime:ro',
-            '-v', '/etc/timezone:/etc/timezone:ro',
             '-v', '/dev/bus/usb:/dev/bus/usb',
             '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
@@ -492,6 +484,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'MTT_MASTER_URL=tfc',
             '-e', 'CLUSTER=acluster',
             '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
