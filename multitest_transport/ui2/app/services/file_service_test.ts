@@ -18,15 +18,71 @@ import {HttpClient} from '@angular/common/http';
 import {of as observableOf, throwError} from 'rxjs';
 import {toArray} from 'rxjs/operators';
 
-import {FileNode, FileService, FileType, PROXY_PATH} from './file_service';
+import {FileNode, FileService, FileType, joinPath, PROXY_PATH} from './file_service';
+import {TestRun} from './mtt_models';
+import {CommandAttempt, CommandState} from './tfc_models';
+import {AppData} from './app_data';
 
 describe('FileService', () => {
   let http: jasmine.SpyObj<HttpClient>;
   let fs: FileService;
 
   beforeEach(() => {
-    http = jasmine.createSpyObj<HttpClient>('HttpClient', ['get', 'put']);
-    fs = new FileService(http);
+    const appData: AppData = {
+      fileBrowseUrl: 'browse',
+      fileOpenUrl: 'open',
+      fileServerRoot: '/root',
+    };
+    http = jasmine.createSpyObj<HttpClient>(['get', 'put', 'delete']);
+    fs = new FileService(appData, http);
+  });
+
+  it('can get file URL for active attempts', () => {
+    const testRun = {} as TestRun;
+    const attempt = {
+      command_id: 'command_id',
+      attempt_id: 'attempt_id',
+      state: CommandState.RUNNING
+    } as CommandAttempt;
+    const path = 'path/to/file';
+    const expected = 'file:///root/tmp/attempt_id/path/to/file';
+    expect(fs.getTestRunFileUrl(testRun, attempt, path)).toEqual(expected);
+  });
+
+  it('can get file URL for completed attempts', () => {
+    const testRun = {output_url: 'output_url'} as TestRun;
+    const attempt = {
+      command_id: 'command_id',
+      attempt_id: 'attempt_id',
+      state: CommandState.COMPLETED
+    } as CommandAttempt;
+    const path = 'path/to/file';
+    const expected = 'output_url/command_id/attempt_id/path/to/file';
+    expect(fs.getTestRunFileUrl(testRun, attempt, path)).toEqual(expected);
+  });
+
+  it('can get file browse URL for absolute file URLs', () => {
+    const url = 'file:///root/path/to/file';
+    const expected = 'browse/path/to/file';
+    expect(fs.getFileBrowseUrl(url)).toEqual(expected);
+  });
+
+  it('can get file browse URL for relative file paths', () => {
+    const path = 'path/to/file';
+    const expected = 'browse/path/to/file';
+    expect(fs.getFileBrowseUrl(path)).toEqual(expected);
+  });
+
+  it('can get file open URL for absolute file URLs', () => {
+    const url = 'file:///root/path/to/file';
+    const expected = 'open/path/to/file';
+    expect(fs.getFileOpenUrl(url)).toEqual(expected);
+  });
+
+  it('can get file open URL for relative file paths', () => {
+    const path = 'path/to/file';
+    const expected = 'open/path/to/file';
+    expect(fs.getFileOpenUrl(path)).toEqual(expected);
   });
 
   it('can list files in a directory', done => {
@@ -48,7 +104,7 @@ describe('FileService', () => {
   });
 
   it('can upload an entire file', done => {
-    const file = new File(['test'], 'filename');
+    const file = new Blob(['test']);
     http.put.and.returnValue(observableOf(null));
 
     fs.uploadFile(file, 'path').pipe(toArray()).subscribe(events => {
@@ -66,7 +122,7 @@ describe('FileService', () => {
   });
 
   it('can upload an empty file', done => {
-    const file = new File([''], 'filename');
+    const file = new Blob([]);
     http.put.and.returnValue(observableOf(null));
 
     fs.uploadFile(file, 'path').pipe(toArray()).subscribe(events => {
@@ -83,7 +139,7 @@ describe('FileService', () => {
   });
 
   it('can upload a file in chunks', done => {
-    const file = new File(['test'], 'filename');
+    const file = new Blob(['test']);
     http.put.and.returnValue(observableOf(null));
 
     fs.uploadFile(file, 'path', 2).pipe(toArray()).subscribe(events => {
@@ -110,7 +166,7 @@ describe('FileService', () => {
   });
 
   it('can handle upload errors', done => {
-    const file = new File(['test'], 'filename');
+    const file = new Blob(['test']);
     http.put.and.returnValue(throwError(new Error()));
 
     fs.uploadFile(file, 'path')
@@ -125,7 +181,7 @@ describe('FileService', () => {
   });
 
   it('can handle read errors', done => {
-    const file = new File(['test'], 'filename');
+    const file = new Blob(['test']);
     // tslint:disable-next-line:no-any replace FileReader for testing
     spyOn(window as any, 'FileReader').and.returnValue(new FailingFileReader());
 
@@ -139,11 +195,32 @@ describe('FileService', () => {
               done();
             });
   });
+
+  it('can delete a file', done => {
+    http.delete.and.returnValue(observableOf(null));
+    fs.deleteFile('path').subscribe(() => {
+      expect(http.delete).toHaveBeenCalledWith(PROXY_PATH + '/file/path');
+      done();
+    });
+  });
+});
+
+describe('joinPath', () => {
+  it('can handle a single path substring', () => {
+    expect(joinPath('one/two')).toBe('one/two');
+  });
+
+  it('can handle paths without leading/trailing slashes', () => {
+    expect(joinPath('one/two', 'three/four')).toBe('one/two/three/four');
+  });
+
+  it('can handle paths with leading/trailing slashes', () => {
+    expect(joinPath('one/two/', '/three/four')).toBe('one/two/three/four');
+  });
 });
 
 /** Custom matcher for testing ArrayBuffer contents. */
-// google3 local modification: Required for Jasmine typings.
-function bufferOf(expected: string): jasmine.AsymmetricMatcher<unknown> {
+function bufferOf(expected: string): jasmine.AsymmetricMatcher<ArrayBuffer> {
   return {
     asymmetricMatch: (actual: ArrayBuffer) =>
         new TextDecoder().decode(actual) === expected,
