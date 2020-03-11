@@ -51,6 +51,7 @@ import {MatTreeModule} from '@angular/material/tree';
 import {Breadcrumb} from './breadcrumb';
 import {FormErrorInfo} from './form_error_info';
 import {FromNowPipe} from './from_now_pipe';
+import {LinkifyPipe} from './linkify_pipe';
 import {InfiniteScroll} from './infinite_scroll';
 import {ListForm} from './list_form';
 import {LocalFileStore} from './local_file_store';
@@ -123,6 +124,7 @@ const DIRECTIVES = [
 
 const PIPES = [
   FromNowPipe,
+  LinkifyPipe,
   MapListFieldPipe,
   UtcPipe,
 ];
