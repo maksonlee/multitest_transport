@@ -167,11 +167,16 @@ class HostUtilTest(parameterized.TestCase):
 
   def testParallelExecute_partialFailed(self):
     """Test ParallelExecute on multiple hosts parallel with some host failed."""
-    self.mock_host_func.side_effect = [None, Exception()]
     hosts = [
         host_util.Host(host_config, context=self.mock_context)
         for host_config in
         [self.host_config1, self.host_config2]]
+    def _FakeHostFuncFactory(bad_hosts):
+      def _FakeHostFunc(unused_args, host):
+        if host in bad_hosts:
+          raise Exception()
+      return _FakeHostFunc
+    self.mock_host_func.side_effect = _FakeHostFuncFactory(bad_hosts=[hosts[1]])
     args = mock.MagicMock(
         parallel=True,
         host_func=self.mock_host_func)
