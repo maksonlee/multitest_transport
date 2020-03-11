@@ -3,12 +3,12 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute} from '@angular/router';
 import {RouterTestingModule} from '@angular/router/testing';
 import {beforeEach, bootstrapTemplate, describe, it, setupModule} from 'google3/javascript/angular2/testing/catalyst';
+import {BuildChannelsModule} from 'google3/third_party/py/multitest_transport/ui2/app/build_channels/build_channels_module';
+// TODO Add copybara rule to exlucde absolute path
+import {BuildChannelsModuleNgSummary} from 'google3/third_party/py/multitest_transport/ui2/app/build_channels/build_channels_module.ngsummary';
+import {MttClient} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_client';
+import {KarmaTestEnv} from 'google3/third_party/py/multitest_transport/ui2/scuba_tests/testing/karma_env';
 import {of as observableOf} from 'rxjs';
-
-import {BuildChannelsModule} from '../../../app/build_channels/build_channels_module';
-import {BuildChannelsModuleNgSummary} from '../../../app/build_channels/build_channels_module.ngsummary';
-import {MttClient} from '../../../app/services/mtt_client';
-import {KarmaTestEnv} from '../../testing/karma_env';
 
 describe('BuildChannelEditPage scuba test', () => {
   const env = new KarmaTestEnv(module, {

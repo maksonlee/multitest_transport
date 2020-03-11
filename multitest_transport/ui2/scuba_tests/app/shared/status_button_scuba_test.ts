@@ -17,9 +17,9 @@
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {beforeEach, bootstrapTemplate, describe, it, setupModule} from 'google3/javascript/angular2/testing/catalyst';
 
-import {SharedModule} from '../../../app/shared/shared_module';
-import {SharedModuleNgSummary} from '../../../app/shared/shared_module.ngsummary';
-import {KarmaTestEnv} from '../../testing/karma_env';
+import {SharedModule} from 'google3/third_party/py/multitest_transport/ui2/app/shared/shared_module';
+import {SharedModuleNgSummary} from 'google3/third_party/py/multitest_transport/ui2/app/shared/shared_module.ngsummary';
+import {KarmaTestEnv} from 'google3/third_party/py/multitest_transport/ui2/scuba_tests/testing/karma_env';
 
 describe('Status button', () => {
   const env = new KarmaTestEnv(module, {

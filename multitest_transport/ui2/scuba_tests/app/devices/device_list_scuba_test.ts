@@ -17,10 +17,10 @@
 import {beforeEach, bootstrapTemplate, describe, it, setupModule} from 'google3/javascript/angular2/testing/catalyst';
 import {of as observableOf} from 'rxjs';
 
-import {DevicesModule} from '../../../app/devices/devices_module';
-import {DevicesModuleNgSummary} from '../../../app/devices/devices_module.ngsummary';
-import {TfcClient} from '../../../app/services/tfc_client';
-import {KarmaTestEnv} from '../../testing/karma_env';
+import {DevicesModule} from 'google3/third_party/py/multitest_transport/ui2/app/devices/devices_module';
+import {DevicesModuleNgSummary} from 'google3/third_party/py/multitest_transport/ui2/app/devices/devices_module.ngsummary';
+import {TfcClient} from 'google3/third_party/py/multitest_transport/ui2/app/services/tfc_client';
+import {KarmaTestEnv} from 'google3/third_party/py/multitest_transport/ui2/scuba_tests/testing/karma_env';
 
 describe('DeviceList', () => {
   const env = new KarmaTestEnv(module, {

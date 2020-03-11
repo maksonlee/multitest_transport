@@ -17,10 +17,10 @@
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {beforeEach, bootstrapTemplate, describe, it, setupModule} from 'google3/javascript/angular2/testing/catalyst';
 
-import {NameValuePair} from '../../../app/services/mtt_models';
-import {SharedModule} from '../../../app/shared/shared_module';
-import {SharedModuleNgSummary} from '../../../app/shared/shared_module.ngsummary';
-import {KarmaTestEnv} from '../../testing/karma_env';
+import {NameValuePair} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_models';
+import {SharedModule} from 'google3/third_party/py/multitest_transport/ui2/app/shared/shared_module';
+import {SharedModuleNgSummary} from 'google3/third_party/py/multitest_transport/ui2/app/shared/shared_module.ngsummary';
+import {KarmaTestEnv} from 'google3/third_party/py/multitest_transport/ui2/scuba_tests/testing/karma_env';
 
 describe('NameValuePairListForm', () => {
   const env = new KarmaTestEnv(module, {
