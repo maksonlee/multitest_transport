@@ -289,15 +289,30 @@ def _CreateTFCRequest(test_run_id):
     output_upload_url = gcs_util.GetUploadUrl(test_run.output_path)
 
   # Construct command
-  command_line = test_run.test.command
-  if test_run.test_run_config.extra_args:
-    command_line = ' '.join([command_line, test_run.test_run_config.extra_args])
+  if test_run.test_run_config.command:
+    command_line = test_run.test_run_config.command
+  else:  # TODO: Deprecate extra_args
+    logging.warning(
+        'Test run %s missing command, using test.command and extra_args: %s %s',
+        test_run_id, test_run.test.command, test_run.test_run_config.extra_args)
+    command_line = test_run.test.command
+    if test_run.test_run_config.extra_args:
+      command_line = ' '.join([command_line,
+                               test_run.test_run_config.extra_args])
 
   # Construct retry command
-  retry_command_line = test_run.test.retry_command_line
-  if retry_command_line and test_run.test_run_config.retry_extra_args:
-    retry_command_line = ' '.join([retry_command_line,
-                                   test_run.test_run_config.retry_extra_args])
+  if test_run.test_run_config.retry_command:
+    retry_command_line = test_run.test_run_config.retry_command
+  else:  # TODO: Deprecate extra_args
+    logging.warning(
+        ('Test run %s missing retry command, using test.retry_command and '
+         'retry_extra_args: %s %s'),
+        test_run_id, test_run.test.retry_command_line,
+        test_run.test_run_config.retry_extra_args)
+    retry_command_line = test_run.test.retry_command_line
+    if retry_command_line and test_run.test_run_config.retry_extra_args:
+      retry_command_line = ' '.join([retry_command_line,
+                                     test_run.test_run_config.retry_extra_args])
 
   # Append sharding arguments
   sharding_mode = (

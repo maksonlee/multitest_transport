@@ -106,8 +106,6 @@ describe('NewTestRunPage', () => {
   it('loads previous test run data', () => {
     newTestRunPage.loadPrevTestRun(testRun);
     expect(newTestRunPage.testRunConfig.test_id).toBe(test.id!);
-    expect(newTestRunPage.testRunConfig.extra_args)
-        .toBe(testRun.test_run_config!.extra_args);
   });
 
   it('adds labels', () => {

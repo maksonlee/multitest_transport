@@ -68,9 +68,11 @@
 <!-- Command line -->
 <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
   <mat-label>Command</mat-label>
-  <span class="prefix">{{testMap[testId] ? testMap[testId].command : ''}}&nbsp;</span>
-  <input matInput type="text" placeholder=" "
-         [(ngModel)]="testRunConfig.extra_args" [disabled]="isRerun">
+  <textarea matInput type="text"
+    [(ngModel)]="testRunConfig.command"
+    [disabled]="isRerun"
+    cdkTextareaAutosize
+  ></textarea>
   <!-- TODO: replace with a test suite specific instruction link. -->
   <mat-hint>Find supported CTS parameters from
     <a href="https://source.android.com/compatibility/cts/run#ctsv2_reference"
@@ -83,8 +85,10 @@
 <mat-form-field appearance="outline" floatLabel="always" fxLayout="column"
                 *ngIf="isRerun || testRunConfig?.max_retry_on_test_failures > 0">
   <mat-label>Retry Command</mat-label>
-  <span class="prefix">{{testMap[testId] ? testMap[testId].retry_command_line : ''}}&nbsp;</span>
-  <input matInput type="text" [(ngModel)]="testRunConfig.retry_extra_args" placeholder=" ">
+  <textarea matInput type="text"
+    [(ngModel)]="testRunConfig.retry_command"
+    cdkTextareaAutosize
+  ></textarea>
 </mat-form-field>
 
 <!-- Previous run information -->

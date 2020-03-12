@@ -545,34 +545,46 @@ class TestRunConfig(messages.Message):
   """A test run config."""
   test_id = messages.StringField(1, required=True)
   cluster = messages.StringField(2, required=True, default=_DEFAULT_CLUSTER)
-  run_target = messages.StringField(3, required=True)
-  run_count = messages.IntegerField(4, required=True, default=1)
-  shard_count = messages.IntegerField(5, required=True, default=1)
-  sharding_mode = messages.EnumField(ndb_models.ShardingMode, 6)
-  extra_args = messages.StringField(7)
-  retry_extra_args = messages.StringField(8)
-  max_retry_on_test_failures = messages.IntegerField(9)
+  command = messages.StringField(3, required=True, default='')
+  retry_command = messages.StringField(4, required=True, default='')
+  run_target = messages.StringField(5, required=True)
+  run_count = messages.IntegerField(6, required=True, default=1)
+  shard_count = messages.IntegerField(7, required=True, default=1)
+  sharding_mode = messages.EnumField(ndb_models.ShardingMode, 8)
+  extra_args = messages.StringField(9)  # TODO: Deprecated
+  retry_extra_args = messages.StringField(10)  # TODO: Deprecated
+  max_retry_on_test_failures = messages.IntegerField(11)
   queue_timeout_seconds = messages.IntegerField(
-      10, required=True, default=env.DEFAULT_QUEUE_TIMEOUT_SECONDS)
+      12, required=True, default=env.DEFAULT_QUEUE_TIMEOUT_SECONDS)
   output_idle_timeout_seconds = messages.IntegerField(
-      11, default=env.DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS)
-  before_device_action_ids = messages.StringField(12, repeated=True)
+      13, default=env.DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS)
+  before_device_action_ids = messages.StringField(14, repeated=True)
   test_run_action_refs = messages.MessageField(
-      TestRunActionRef, 13, repeated=True)
+      TestRunActionRef, 15, repeated=True)
 
 
 @Converter(ndb_models.TestRunConfig, TestRunConfig)
 def _TestRunConfigConverter(obj):
   """Converts test run configs."""
+  if not obj.command or not obj.retry_command:
+    test = obj.test_key.get()
+    if not obj.command:
+      obj.command = test.command
+      if obj.extra_args:
+        obj.command += ' %s' % obj.extra_args
+    if not obj.retry_command:
+      obj.retry_command = test.retry_command_line
+      if obj.retry_extra_args:
+        obj.retry_command += ' %s' % obj.retry_extra_args
   return TestRunConfig(
       test_id=str(obj.test_key.id()) if obj.test_key else None,
       cluster=obj.cluster,
+      command=obj.command,
+      retry_command=obj.retry_command,
       run_target=obj.run_target,
       run_count=obj.run_count,
       shard_count=obj.shard_count,
       sharding_mode=obj.sharding_mode,
-      extra_args=obj.extra_args,
-      retry_extra_args=obj.retry_extra_args,
       max_retry_on_test_failures=obj.max_retry_on_test_failures,
       queue_timeout_seconds=obj.queue_timeout_seconds,
       output_idle_timeout_seconds=obj.output_idle_timeout_seconds,
@@ -588,11 +600,13 @@ def _TestRunConfigMessageConverter(msg):
   return ndb_models.TestRunConfig(
       test_key=ConvertToKey(ndb_models.Test, msg.test_id),
       cluster=msg.cluster,
+      command=msg.command,
+      retry_command=msg.retry_command,
       run_target=msg.run_target,
       run_count=msg.run_count,
       shard_count=msg.shard_count,
-      extra_args=msg.extra_args,
-      retry_extra_args=msg.retry_extra_args,
+      extra_args=msg.extra_args,  # TODO: Deprecated
+      retry_extra_args=msg.retry_extra_args,  # TODO: Deprecated
       max_retry_on_test_failures=msg.max_retry_on_test_failures,
       queue_timeout_seconds=msg.queue_timeout_seconds,
       output_idle_timeout_seconds=msg.output_idle_timeout_seconds,

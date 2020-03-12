@@ -15,7 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, EventEmitter, Inject, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Inject, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
 
@@ -38,6 +38,7 @@ import {assertRequiredInput, noAwait} from './util';
   providers: [{provide: FormChangeTracker, useExisting: TestRunConfigForm}]
 })
 export class TestRunConfigForm extends FormChangeTracker implements OnInit,
+                                                                    OnChanges,
                                                                     OnDestroy {
   @Input() testMap!: {[id: string]: Test};
   @Input() testId!: string;
@@ -76,12 +77,30 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
     assertRequiredInput(this.testMap, 'testMap', 'test-run-config-form');
     assertRequiredInput(
         this.testRunConfig, 'testRunConfig', 'test-run-config-form');
+    this.load();
     this.updateRerunContext();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    this.load();
   }
 
   ngOnDestroy() {
     this.destroy.next();
     this.liveAnnouncer.clear();
+  }
+
+  load() {
+    if (!this.testRunConfig.command) {
+      this.testRunConfig.command =
+          this.testMap[this.testId] ? this.testMap[this.testId].command : '';
+    }
+
+    if (!this.testRunConfig.retry_command) {
+      this.testRunConfig.retry_command = this.testMap[this.testId] ?
+          this.testMap[this.testId].retry_command_line :
+          '';
+    }
   }
 
   /**

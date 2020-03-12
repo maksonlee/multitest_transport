@@ -273,6 +273,8 @@ class TestRunConfig(ndb.Model):
   Attributes:
     test_key: a Test key.
     cluster: a cluster to run a test in.
+    command: the command to run the test suite
+    retry_command: the command to retry this test run
     run_target: a run target.
     run_count: a run count.
     shard_count: a shard count.
@@ -289,13 +291,15 @@ class TestRunConfig(ndb.Model):
   """
   test_key = ndb.KeyProperty(kind=Test, required=True)
   cluster = ndb.StringProperty(required=True)
+  command = ndb.StringProperty(required=True, default='')
+  retry_command = ndb.StringProperty(required=True, default='')
   run_target = ndb.StringProperty(required=True)
   run_count = ndb.IntegerProperty(required=True, default=1)
   shard_count = ndb.IntegerProperty(required=True, default=1)
   sharding_mode = msgprop.EnumProperty(
       ShardingMode, default=ShardingMode.RUNNER)
-  extra_args = ndb.StringProperty()
-  retry_extra_args = ndb.StringProperty()
+  extra_args = ndb.StringProperty()   # TODO: Deprecated
+  retry_extra_args = ndb.StringProperty()  # TODO: Deprecated
   max_retry_on_test_failures = ndb.IntegerProperty()
   queue_timeout_seconds = ndb.IntegerProperty(
       required=True, default=env.DEFAULT_QUEUE_TIMEOUT_SECONDS)

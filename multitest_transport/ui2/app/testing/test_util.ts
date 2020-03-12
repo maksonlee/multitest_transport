@@ -53,12 +53,14 @@ const REQUEST_STATE = TfcModels.RequestState.RUNNING;
 const RUN_TARGET_LIST = ['target1', 'target2'];
 const RUN_TARGET_STRING = RUN_TARGET_LIST.join(';');
 const TARGET_PREPARER_CLASS_NAME = 'test_class_name';
+const TEST_COMMAND = 'test_command';
 const TEST_GROUP_STATUS_NAME = 'testgroupstatusname';
 const TEST_ID = 'testid123';
 const TEST_NAME = 'test456';
 const TEST_RESOURCE_DEF_NAME = 'testname';
 const TEST_RESOURCE_DEF_DEFAULT_DOWNLOAD_URL = 'url';
 const TEST_RESOURCE_TYPE = MttModels.TestResourceType.TEST_PACKAGE;
+const TEST_RETRY_COMMAND = 'test_retry_command';
 const TEST_RUN_ID = 'id123';
 const TEST_RUN_OUTPUT_LINES = [
   'Invocation finished in 100s. PASSED: 42, FAILED: 13, MODULES: 2 of 2\n',
@@ -263,8 +265,9 @@ export function newMockProxyConfig() {
 }
 
 /** Creates a new Test */
-export function newMockTest(id = TEST_ID, name = TEST_NAME) {
-  return {id, name};
+export function newMockTest(
+    id = TEST_ID, name = TEST_NAME, command = TEST_COMMAND) {
+  return {id, name, command};
 }
 
 /** Creates a new mock test group status */
@@ -360,14 +363,16 @@ export function newMockTestRun(
 }
 
 /** Creates a new Test Run Config given a testid */
-export function newMockTestRunConfig(testId: string) {
+export function newMockTestRunConfig(
+    testId: string, command = TEST_COMMAND, retryCommand = TEST_RETRY_COMMAND) {
   return {
     test_id: testId,
     cluster: CLUSTER,
+    command,
+    retry_command: retryCommand,
     run_target: RUN_TARGET_STRING,
     run_count: 1,
     shard_count: 1,
-    extra_args: '',
     queue_timeout_seconds: 100,
     sharding_mode: MttModels.TFShardingMode.RUNNER,
     before_device_action_ids: [],

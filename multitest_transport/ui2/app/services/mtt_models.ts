@@ -564,6 +564,10 @@ export declare interface TestRunConfig {
   test_id: string;
   /** Host cluster */
   cluster: string;
+  /** Command to execute the test suite */
+  command: string;
+  /** Command to retry a test run */
+  retry_command: string;
   /** Device selection rules */
   run_target: string;
   /** Number of times the test was run */
@@ -572,10 +576,6 @@ export declare interface TestRunConfig {
   shard_count: number;
   /** Tradefed sharding mode */
   sharding_mode?: TFShardingMode;
-  /** Extra command line arguments */
-  extra_args?: string;
-  /** Additional arguments to use when retrying */
-  retry_extra_args?: string;
   /** Max number of retries */
   max_retry_on_test_failures?: number;
   /** Timeout second when waiting in queue */
@@ -593,11 +593,11 @@ export function initTestRunConfig(): Partial<TestRunConfig> {
   return {
     cluster: DEFAULT_CLUSTER,
     run_count: DEFAULT_RUN_COUNT,
+    command: '',
+    retry_command: '',
     run_target: '',
     shard_count: DEFAULT_SHARD_COUNT,
     sharding_mode: TFShardingMode.RUNNER,
-    extra_args: '',
-    retry_extra_args: '',
     max_retry_on_test_failures: DEFAULT_MAX_RETRY_ON_TEST_FAILURES,
     queue_timeout_seconds: DEFAULT_QUEUE_TIMEOUT_SECONDS,
     output_idle_timeout_seconds: DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS,

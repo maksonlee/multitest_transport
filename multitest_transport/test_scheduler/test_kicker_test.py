@@ -185,11 +185,10 @@ class TestKickerTest(absltest.TestCase):
       command='command',
       retry_command_line=None,
       runner_sharding_args=None,
-      extra_args=None,
-      retry_extra_args=None,
       run_target='run_target',
       shard_count=1,
-      sharding_mode=ndb_models.ShardingMode.RUNNER):
+      sharding_mode=ndb_models.ShardingMode.RUNNER,
+      edited_command=None):
     test = ndb_models.Test(
         name=test_name,
         command=command,
@@ -199,8 +198,7 @@ class TestKickerTest(absltest.TestCase):
     test_run_config = ndb_models.TestRunConfig(
         test_key=test.key, cluster='cluster', run_target=run_target,
         shard_count=shard_count, sharding_mode=sharding_mode,
-        extra_args=extra_args,
-        retry_extra_args=retry_extra_args)
+        command=edited_command)
     test_resources = [
         ndb_models.TestResourceObj(name='foo', url='http://foo_origin_url'),
         ndb_models.TestResourceObj(name='bar', url='https://bar_origin_url'),
@@ -302,8 +300,7 @@ class TestKickerTest(absltest.TestCase):
   @mock.patch.object(download_util, 'DownloadResource', autospec=True)
   def testKickTestRun(
       self, mock_download_resource, mock_new_request, mock_track_test_run):
-    test_run = self._CreateMockTestRun(
-        command='command', extra_args='extra_args')
+    test_run = self._CreateMockTestRun()
     test_run_id = test_run.key.id()
     mock_download_resource.return_value = 'cache_url'
     mock_request = api_messages.RequestMessage(id='request_id')
@@ -317,7 +314,7 @@ class TestKickerTest(absltest.TestCase):
     mock_new_request.assert_called()
     msg = mock_new_request.call_args[0][0]
     self._CheckNewRequestMessage(
-        msg, test_run, command_line='command extra_args')
+        msg, test_run, command_line='command')
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
@@ -331,7 +328,6 @@ class TestKickerTest(absltest.TestCase):
     test_run = self._CreateMockTestRun(
         command='command',
         runner_sharding_args='--shard-count ${TF_SHARD_COUNT}',
-        extra_args='extra_args',
         run_target='run_target;run_target',
         shard_count=2,
         sharding_mode=ndb_models.ShardingMode.RUNNER)
@@ -350,8 +346,35 @@ class TestKickerTest(absltest.TestCase):
     self._CheckNewRequestMessage(
         msg,
         test_run,
-        command_line='command extra_args --shard-count 2',
+        command_line='command --shard-count 2',
         run_target='run_target;run_target',
+        shard_count=1)
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    self.assertEqual(mock_request.id, test_run.request_id)
+    self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
+
+  @mock.patch.object(tfc_client, 'NewRequest', autospec=True)
+  @mock.patch.object(download_util, 'DownloadResource', autospec=True)
+  def testKickTestRun_editedCommand(
+      self, mock_download_resource, mock_new_request):
+    test_run = self._CreateMockTestRun(
+        edited_command='edited command')
+    test_run_id = test_run.key.id()
+    mock_download_resource.return_value = 'cache_url'
+    mock_request = api_messages.RequestMessage(id='request_id')
+    mock_new_request.return_value = mock_request
+
+    test_kicker.KickTestRun(test_run_id)
+
+    mock_download_resource.assert_has_calls([
+        mock.call(r.url) for r in test_run.test_resources
+    ])
+    mock_new_request.assert_called()
+    msg = mock_new_request.call_args[0][0]
+    self._CheckNewRequestMessage(
+        msg,
+        test_run,
+        command_line='edited command',
         shard_count=1)
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
@@ -364,7 +387,6 @@ class TestKickerTest(absltest.TestCase):
     test_run = self._CreateMockTestRun(
         command='command',
         retry_command_line='retry_command_line',
-        retry_extra_args='extra_args',
         runner_sharding_args='--shard-count ${TF_SHARD_COUNT}',
         shard_count=6)
     test_run.prev_test_context = ndb_models.TestContextObj(
@@ -388,11 +410,11 @@ class TestKickerTest(absltest.TestCase):
         msg,
         test_run,
         command_line='command --shard-count 6',
-        retry_command_line='retry_command_line extra_args --shard-count 6',
+        retry_command_line='retry_command_line --shard-count 6',
         shard_count=1)
     # prev_test_context's command_line should be replaced.
     self.assertEqual(
-        'retry_command_line extra_args --shard-count 6',
+        'retry_command_line --shard-count 6',
         msg.prev_test_context.command_line)
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
@@ -474,7 +496,7 @@ class TestKickerTest(absltest.TestCase):
   def testPrepareTestResources(
       self, mock_file_handle, mock_get_suite_info, mock_download_resource):
     test_run = self._CreateMockTestRun(
-        command='command', extra_args='extra_args')
+        command='command')
     test_run.test_resources = [
         ndb_models.TestResourceObj(
             name='foo',

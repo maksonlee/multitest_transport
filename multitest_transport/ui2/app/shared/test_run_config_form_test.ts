@@ -62,6 +62,7 @@ describe('TestRunConfigForm', () => {
     debugEl = fixture.debugElement;
     configForm = fixture.componentInstance;
     configForm.testMap = {[test.id!]: test};
+    configForm.testId = test.id!;
     configForm.testRunConfig = testRunConfig;
     spyOn(configForm.rerunContext, 'emit');
     fixture.detectChanges();
@@ -69,6 +70,13 @@ describe('TestRunConfigForm', () => {
 
   it('initializes a component', () => {
     expect(configForm).toBeTruthy();
+  });
+
+  it('can handle configs without commands', () => {
+    const configWithoutCommand = newMockTestRunConfig(test.id!, '', '');
+    configForm.testRunConfig = configWithoutCommand;
+    configForm.load();
+    expect(configForm.testRunConfig.command).toEqual(test.command!);
   });
 
   it('can disable reruns', () => {

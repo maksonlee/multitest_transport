@@ -48,7 +48,7 @@ class TestRunApiTest(api_test_util.TestCase):
 
   def _createMockTestRuns(
       self, test=None, labels=None, cluster='cluster', run_target='run_target',
-      run_count=1, shard_count=1, extra_args=None, test_devices=None,
+      run_count=1, shard_count=1, test_devices=None,
       test_package_info=None, test_resources=None,
       state=None, output_path=None, count=1):
     """Create a mock ndb_models.TestRun object."""
@@ -63,8 +63,7 @@ class TestRunApiTest(api_test_util.TestCase):
               cluster=cluster,
               run_target=run_target,
               run_count=run_count,
-              shard_count=shard_count,
-              extra_args=extra_args),
+              shard_count=shard_count),
           test_devices=test_devices or [],
           test_package_info=test_package_info,
           test_resources=test_resources or [],
@@ -203,7 +202,7 @@ class TestRunApiTest(api_test_util.TestCase):
     test_run = self._createMockTestRuns(
         test, ['label'], cluster='cluster',
         run_target='run_target', run_count=10,
-        shard_count=100, extra_args='extra_args')[0]
+        shard_count=100)[0]
 
     res = self.app.get('/_ah/api/mtt/v1/test_runs/%s' % test_run.key.id())
 
@@ -217,7 +216,6 @@ class TestRunApiTest(api_test_util.TestCase):
     self.assertEqual('run_target', test_run_msg.test_run_config.run_target)
     self.assertEqual(10, test_run_msg.test_run_config.run_count)
     self.assertEqual(100, test_run_msg.test_run_config.shard_count)
-    self.assertEqual('extra_args', test_run_msg.test_run_config.extra_args)
 
   @mock.patch.object(gcs, 'listbucket')
   def testListArtifacts(self, mock_listbucket):
@@ -225,7 +223,7 @@ class TestRunApiTest(api_test_util.TestCase):
     test_run = self._createMockTestRuns(
         test, ['label'], cluster='cluster',
         run_target='run_target', run_count=10,
-        shard_count=100, extra_args='extra_args', output_path='/foo')[0]
+        shard_count=100, output_path='/foo')[0]
     mock_gcs_files = [
         mock.MagicMock(name_='abc', filename='/foo/abc', st_size=1),
         mock.MagicMock(name_='def', filename='/foo/def', st_size=10),
@@ -258,7 +256,6 @@ class TestRunApiTest(api_test_util.TestCase):
             'run_target': 'run_target',
             'run_count': 10,
             'shard_count': 100,
-            'extra_args': 'extra_args',
             'max_retry_on_test_failures': 1000,
         },
         'test_resource_pipes': [
@@ -276,7 +273,7 @@ class TestRunApiTest(api_test_util.TestCase):
         test=test, labels=['label'], test_run_config=ndb_models.TestRunConfig(
             test_key=test.key, cluster='cluster',
             run_target='run_target', run_count=10, shard_count=100,
-            extra_args='extra_args', max_retry_on_test_failures=1000))
+            max_retry_on_test_failures=1000))
     test_run.put()
     mock_run_test.return_value = test_run
 
@@ -290,7 +287,6 @@ class TestRunApiTest(api_test_util.TestCase):
             run_target='run_target',
             run_count=10,
             shard_count=100,
-            extra_args='extra_args',
             max_retry_on_test_failures=1000),
         test_resources=[
             ndb_models.TestResourceObj(name='bar', url='bar_url'),
