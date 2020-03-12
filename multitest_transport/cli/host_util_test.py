@@ -442,6 +442,7 @@ class HostUtilTest(parameterized.TestCase):
       (None, None, 10, 'Time elapsed: 0 min 0 s(not started)'),
       (1, None, 10, 'Time elapsed: 0 min 9 s(running)'),
       (1, 602, 608, 'Time elapsed: 10 min 1 s(ended)'),
+      (1.3, 602.5, 608.7, 'Time elapsed: 10 min 1 s(ended)'),
       )
   @mock.patch('__main__.host_util.time')
   def testExecutionTimeElapsed(

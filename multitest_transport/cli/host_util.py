@@ -77,10 +77,10 @@ class Host(object):
     self._error = None
 
   def StartExecutionTimer(self):
-    self._execution_start_time = time.time()
+    self._execution_start_time = _GetCurrentTime()
 
   def StopExecutionTimer(self):
-    self._execution_end_time = time.time()
+    self._execution_end_time = _GetCurrentTime()
 
   @property
   def name(self):
@@ -141,11 +141,11 @@ class Host(object):
       time_elapsed_sec = 0
     elif not self._execution_end_time:
       time_status = 'running'
-      time_elapsed_sec = time.time() - self._execution_start_time
+      time_elapsed_sec = _GetCurrentTime() - self._execution_start_time
     else:
       time_status = 'ended'
       time_elapsed_sec = self._execution_end_time - self._execution_start_time
-    time_elapsed_text = '%s min %s s' % (
+    time_elapsed_text = '%d min %d s' % (
         time_elapsed_sec // 60, time_elapsed_sec % 60)
     return 'Time elapsed: %s(%s)' % (time_elapsed_text, time_status)
 
@@ -201,6 +201,15 @@ def _GetMaxWorker(args, hosts):
     return 1
     else:
     return args.parallel
+
+
+def _GetCurrentTime():
+  """Get the current time in int sec.
+
+  Returns:
+    An int, the current time in sec.
+  """
+  return int(time.time())
 
 
 def _ParallelExecute(host_func, args, hosts):
