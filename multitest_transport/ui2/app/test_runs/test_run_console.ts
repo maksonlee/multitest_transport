@@ -18,6 +18,7 @@ import {Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, SimpleChange
 import {defer, EMPTY, iif, of, ReplaySubject, Subscription, timer} from 'rxjs';
 import {catchError, filter, repeat, switchMapTo, take, takeUntil, tap} from 'rxjs/operators';
 
+import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
 import {TestRun} from '../services/mtt_models';
 import {CommandAttempt, isFinalCommandState, Request} from '../services/tfc_models';
@@ -63,7 +64,8 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
 
   @ViewChild('outputContainer', {static: false}) outputContainer!: ElementRef;
 
-  constructor(private readonly mtt: MttClient) {}
+  constructor(private readonly fs: FileService,
+              private readonly mtt: MttClient) {}
 
   ngOnInit() {
     assertRequiredInput(this.testRun, 'testRun', 'test-run-console');
@@ -120,8 +122,8 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
       return null;
     }
     const url =
-        this.mtt.getTestRunFileUrl(this.testRun, this.selectedAttempt, path);
-    return this.mtt.getFileOpenUrl(url);
+        this.fs.getTestRunFileUrl(this.testRun, this.selectedAttempt, path);
+    return this.fs.getFileOpenUrl(url);
   }
 
   /** Clear console output. */

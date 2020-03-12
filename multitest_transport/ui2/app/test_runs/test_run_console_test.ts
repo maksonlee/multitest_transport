@@ -20,6 +20,7 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of, throwError} from 'rxjs';
 
+import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
 import {TestRunOutput} from '../services/mtt_models';
 import {CommandAttempt, CommandState} from '../services/tfc_models';
@@ -56,7 +57,10 @@ describe('TestRunConsole', () => {
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
       aotSummaries: TestRunsModuleNgSummary,
-      providers: [{provide: MttClient, useValue: mtt}],
+      providers: [
+        {provide: MttClient, useValue: mtt},
+        {provide: FileService, useValue: {}},
+      ],
     });
 
     // Configure component.

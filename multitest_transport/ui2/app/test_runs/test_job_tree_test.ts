@@ -20,7 +20,7 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import * as moment from 'moment';
 
-import {MttClient} from '../services/mtt_client';
+import {FileService} from '../services/file_service';
 import {Test, TestRun} from '../services/mtt_models';
 import {Command, CommandAttempt, Request} from '../services/tfc_models';
 import {getEl} from '../testing/jasmine_util';
@@ -34,7 +34,7 @@ describe('TestJobTree', () => {
   let testJobTree: TestJobTree;
   let testJobTreeFixture: ComponentFixture<TestJobTree>;
   let el: DebugElement;
-  let mttClient: jasmine.SpyObj<MttClient>;
+  let fs: jasmine.SpyObj<FileService>;
 
   let request: Request;
   let command: Command;
@@ -51,16 +51,13 @@ describe('TestJobTree', () => {
     test = newMockTest();
     testRun = newMockTestRun(test);
 
-    mttClient = jasmine.createSpyObj(
-        'mttClient', ['getFileBrowseUrl', 'getFileServerRoot']);
-    mttClient.getFileBrowseUrl.and.returnValue('file/browse/url');
-    mttClient.getFileServerRoot.and.returnValue('file/server/root');
+    fs = jasmine.createSpyObj(['getTestRunFileUrl', 'getFileBrowseUrl']);
 
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
       aotSummaries: TestRunsModuleNgSummary,
       providers: [
-        {provide: MttClient, useValue: mttClient},
+        {provide: FileService, useValue: fs},
       ],
     });
 

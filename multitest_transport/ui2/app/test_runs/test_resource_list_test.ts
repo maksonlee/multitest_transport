@@ -18,7 +18,7 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
-import {MttClient} from '../services/mtt_client';
+import {FileService} from '../services/file_service';
 import {Test, TestResourceObj, TestRun, TestRunState} from '../services/mtt_models';
 import {getTextContent} from '../testing/jasmine_util';
 import {newMockTest, newMockTestResourceObj, newMockTestRun} from '../testing/test_util';
@@ -29,7 +29,7 @@ import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 describe('TestResourceList', () => {
   let testResourceList: TestResourceList;
   let testResourceListFixture: ComponentFixture<TestResourceList>;
-  let mttClient: jasmine.SpyObj<MttClient>;
+  let fs: jasmine.SpyObj<FileService>;
   let el: DebugElement;
 
   let test: Test;
@@ -42,14 +42,14 @@ describe('TestResourceList', () => {
     testRun = newMockTestRun(
         test, 'trid123', TestRunState.COMPLETED, [testResourceObj]);
 
-    mttClient = jasmine.createSpyObj('mttClient', ['getFileOpenUrl']);
-    mttClient.getFileOpenUrl.and.returnValue('file/open/url');
+    fs = jasmine.createSpyObj(['getFileOpenUrl']);
+    fs.getFileOpenUrl.and.returnValue('open_url');
 
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule],
       aotSummaries: TestRunsModuleNgSummary,
       providers: [
-        {provide: MttClient, useValue: mttClient},
+        {provide: FileService, useValue: fs},
       ],
     });
     testResourceListFixture = TestBed.createComponent(TestResourceList);

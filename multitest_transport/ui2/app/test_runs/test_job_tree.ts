@@ -17,11 +17,11 @@
 import {ChangeDetectionStrategy, Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
 import * as moment from 'moment';
 
-import {MttClient} from '../services/mtt_client';
+import {FileService} from '../services/file_service';
 import {TestRun} from '../services/mtt_models';
-import {Command, CommandAttempt, isFinalCommandState, Request} from '../services/tfc_models';
+import {Command, CommandAttempt, Request} from '../services/tfc_models';
 import {TreeNode} from '../shared/tree_table';
-import {assertRequiredInput, joinPath, millisToDuration} from '../shared/util';
+import {assertRequiredInput, millisToDuration} from '../shared/util';
 
 /** A component for displaying a tree of test jobs. */
 @Component({
@@ -58,7 +58,7 @@ export class TestJobTree implements OnInit, OnChanges {
     }
   ];
 
-  constructor(private readonly mtt: MttClient) {}
+  constructor(private readonly fs: FileService) {}
 
   ngOnInit() {
     assertRequiredInput(this.testRun, 'testRun', 'test-job-tree');
@@ -163,17 +163,8 @@ export class TestJobTree implements OnInit, OnChanges {
   }
 
   getFileLink(attempt: CommandAttempt): string {
-    const active = !isFinalCommandState(attempt.state);
-
-    let link: string;
-    if (active) {
-      link = this.mtt.getFileBrowseUrl(joinPath(
-          'file:///', this.mtt.getFileServerRoot(), 'tmp', attempt.attempt_id));
-    } else {
-      link = this.mtt.getFileBrowseUrl(joinPath(
-          this.testRun.output_url!, attempt.command_id, attempt.attempt_id));
-    }
-    return link;
+    const url = this.fs.getTestRunFileUrl(this.testRun, attempt);
+    return this.fs.getFileBrowseUrl(url);
   }
 
   getRunTime(startDate?: string, endDate?: string): string {

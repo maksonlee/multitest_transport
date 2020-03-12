@@ -456,21 +456,6 @@ export function newMockRequest(
  * Functions to create other mock objects
  *****************************************/
 
-/** Create a new mock app data */
-export function newMockAppData(
-    fileServerRoot = FILE_SERVER_ROOT, fileBrowseUrl = FILE_BROWSE_URL,
-    fileOpenUrl = FILE_OPEN_URL, analyticsTrackingId = ANALYTICS_TRACKING_ID,
-    mttVersion = MTT_VERSION, adbVersion = ADB_VERSION): AppData {
-  return {
-    adbVersion,
-    analyticsTrackingId,
-    fileBrowseUrl,
-    fileOpenUrl,
-    fileServerRoot,
-    mttVersion,
-  };
-}
-
 /**
  * Make a File object with custom text content
  * @param text Custom text content

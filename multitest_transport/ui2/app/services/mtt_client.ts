@@ -15,15 +15,13 @@
  */
 
 import {HttpClient, HttpParams} from '@angular/common/http';
-import {Inject, Injectable} from '@angular/core';
+import {Injectable} from '@angular/core';
 import {EMPTY, fromEvent, Observable, throwError} from 'rxjs';
 import {first, map, switchMap} from 'rxjs/operators';
 
 import {AnalyticsParams} from './analytics_service';
-import {APP_DATA, AppData} from './app_data';
 import {AuthService, REDIRECT_URI} from './auth_service';
 import * as model from './mtt_models';
-import {CommandAttempt, isFinalCommandState} from './tfc_models';
 
 /** URL for MTT API methods */
 export const MTT_API_URL = '/_ah/api/mtt/v1';
@@ -36,7 +34,6 @@ export class MttClient {
   readonly testRunActions: TestRunActionClient;
 
   constructor(
-      @Inject(APP_DATA) private readonly appData: AppData,
       private readonly http: HttpClient, private readonly auth: AuthService) {
     // TODO: Reorganize MttClient methods
     this.testRunActions = new TestRunActionClient(http, auth);
@@ -336,83 +333,6 @@ export class MttClient {
         `${MTT_API_URL}/test_runs/${encodeURIComponent(testRunId)}/output`,
         {params});
   }
-
-  /**
-   * Determine a test run output file's URL.
-   * @param testRun related test run
-   * @param attempt related TFC attempt
-   * @param path relative file path
-   * @return file URL
-   */
-  getTestRunFileUrl(
-      testRun: model.TestRun, attempt: CommandAttempt, path: string): string {
-    if (isFinalCommandState(attempt.state)) {
-      // Completed run files are stored in the configured output location.
-      const outputUrl = testRun.output_url || '';
-      return joinPath(outputUrl, attempt.command_id, attempt.attempt_id, path);
-    }
-    // Active run files are stored in a local temporary location.
-    return joinPath(
-        'file:///', this.getFileServerRoot(), 'tmp', attempt.attempt_id, path);
-  }
-
-  /**
-   * Returns a URL for viewing a file stored in MTT
-   */
-  getFileBrowseUrl(fileUrl: string): string {
-    const fileServerPath = this.getFileServerPath(fileUrl);
-    if (!fileServerPath) {
-      return fileUrl;
-    }
-    return joinPath(this.appData.fileBrowseUrl || '', fileServerPath);
-  }
-
-  /**
-   * Returns a URL for opening a file stored in MTT
-   */
-  getFileOpenUrl(fileUrl: string): string {
-    // TODO: Refactor file functions
-    const fileServerPath = this.getFileServerPath(fileUrl);
-    if (!fileServerPath) {
-      return fileUrl;
-    }
-    return joinPath(this.appData.fileOpenUrl || '', fileServerPath);
-  }
-
-  /**
-   * Returns the base path to MTT's file server
-   */
-  getFileServerPath(fileUrl: string): string|null {
-    const fileServerRoot = this.getFileServerRoot();
-    if (!fileServerRoot) {
-      return null;
-    }
-    const parser = document.createElement('a');
-    parser.href = fileUrl;
-    if (parser.protocol !== 'file:' ||
-        !parser.pathname.startsWith(fileServerRoot)) {
-      return null;
-    }
-    return parser.pathname.substring(fileServerRoot.length);
-  }
-
-  getFileServerRoot(): string {
-    return this.appData.fileServerRoot || '';
-  }
-}
-
-/**
- * Joins filepaths
- *
- * TODO: use shared/utils.ts joinPath after removing shared
- *                    dependencies on services
- */
-export function joinPath(...paths: string[]): string {
-  const tokens = [];
-  for (const path of paths) {
-    tokens.push(path.replace(/^\/|\/$/g, ''));
-  }
-  return tokens.join('/');
 }
 
 /** Provides access to the test run action API. */

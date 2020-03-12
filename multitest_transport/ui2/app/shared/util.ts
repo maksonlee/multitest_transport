@@ -71,17 +71,6 @@ const FNMATCH_PATTERN = /(\*|\?|\[.*\])/;
 export const isFnmatchPattern = (s: string) => FNMATCH_PATTERN.test(s);
 
 /**
- * Joins filepaths, removing trailing and leading slashes from each argument
- */
-export function joinPath(...paths: string[]): string {
-  const tokens = [];
-  for (const path of paths) {
-    tokens.push(path.replace(/^\/|\/$/g, ''));
-  }
-  return tokens.join('/');
-}
-
-/**
  * Convert milliseconds to a time duration in format HHH:MM:SS
  */
 export function millisToDuration(millis?: number): string {

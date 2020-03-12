@@ -21,6 +21,7 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
+import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
 import {Test, TestPackageInfo, TestRun, TestRunState} from '../services/mtt_models';
 import {TfcClient} from '../services/tfc_client';
@@ -35,6 +36,7 @@ import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 describe('TestRunDetail', () => {
   let testRunDetail: TestRunDetail;
   let testRunDetailFixture: ComponentFixture<TestRunDetail>;
+  let fs: jasmine.SpyObj<FileService>;
   let mttClient: jasmine.SpyObj<MttClient>;
   let tfcClient: jasmine.SpyObj<TfcClient>;
   let el: DebugElement;
@@ -61,12 +63,10 @@ describe('TestRunDetail', () => {
 
     liveAnnouncer =
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
-    mttClient = jasmine.createSpyObj(
-        'mttClient', ['getFileBrowseUrl', 'getFileServerRoot', 'getTestRun']);
+    fs = jasmine.createSpyObj(['getTestRunFileUrl', 'getFileBrowseUrl']);
+    fs.getFileBrowseUrl.and.returnValue('browse_url');
+    mttClient = jasmine.createSpyObj(['getTestRun']);
     mttClient.getTestRun.and.returnValue(observableOf(testRun));
-    mttClient.getFileServerRoot.and.returnValue('fileServerRoot');
-    mttClient.getFileBrowseUrl.and.returnValue('fileServerRoot');
-
     tfcClient =
         jasmine.createSpyObj('tfcClient', ['getDeviceInfos', 'getRequest']);
     tfcClient.getDeviceInfos.and.returnValue(observableOf(testDevices));
@@ -76,6 +76,7 @@ describe('TestRunDetail', () => {
       imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
       aotSummaries: TestRunsModuleNgSummary,
       providers: [
+        {provide: FileService, useValue: fs},
         {provide: MttClient, useValue: mttClient},
         {provide: TfcClient, useValue: tfcClient},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
@@ -129,7 +130,7 @@ describe('TestRunDetail', () => {
     testRunDetailFixture.detectChanges();
     textContent = getTextContent(el);
     expect(textContent).toContain('View Output Files');
-    expect(testRunDetail.outputFilesUrl).toEqual('fileServerRoot');
+    expect(testRunDetail.outputFilesUrl).toEqual('browse_url');
   });
 
   describe('back button', () => {

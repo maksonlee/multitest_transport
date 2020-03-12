@@ -16,7 +16,8 @@
 
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
-import {joinPath} from '../services/mtt_client';
+
+import {joinPath} from '../services/file_service';
 import {BuildChannel, TestResourceDef, TestResourceObj} from '../services/mtt_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
 import {assertRequiredInput} from '../shared/util';

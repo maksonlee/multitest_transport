@@ -21,13 +21,14 @@ import {Router} from '@angular/router';
 import {EMPTY, interval, ReplaySubject, zip} from 'rxjs';
 import {finalize, switchMap, takeUntil} from 'rxjs/operators';
 
+import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
 import {isFinalTestRunState, TestRun} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {TfcClient} from '../services/tfc_client';
-import {CommandAttempt, InvocationStatus, isFinalCommandState, Request} from '../services/tfc_models';
+import {InvocationStatus, Request} from '../services/tfc_models';
 import {OverflowListType} from '../shared/overflow_list';
-import {assertRequiredInput, buildApiErrorMessage, joinPath} from '../shared/util';
+import {assertRequiredInput, buildApiErrorMessage} from '../shared/util';
 
 /** A component for displaying the details of a test run. */
 @Component({
@@ -64,6 +65,7 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
   constructor(
       private readonly notifier: Notifier,
       private readonly router: Router,
+      private readonly fs: FileService,
       private readonly mtt: MttClient,
       private readonly tfc: TfcClient,
       private readonly liveAnnouncer: LiveAnnouncer,
@@ -130,21 +132,8 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
 
     const attempts = this.request.command_attempts;
     const lastAttempt = attempts[attempts.length - 1];
-    this.outputFilesUrl = this.getFileLink(lastAttempt, this.testRun);
-  }
-
-  getFileLink(attempt: CommandAttempt, testRun: TestRun): string {
-    const active = !isFinalCommandState(attempt.state);
-
-    let link: string;
-    if (active) {
-      link = this.mtt.getFileBrowseUrl(joinPath(
-          'file:///', this.mtt.getFileServerRoot(), 'tmp', attempt.attempt_id));
-    } else {
-      link = this.mtt.getFileBrowseUrl(joinPath(
-          testRun.output_url!, attempt.command_id, attempt.attempt_id));
-    }
-    return link;
+    const fileUrl = this.fs.getTestRunFileUrl(this.testRun, lastAttempt);
+    this.outputFilesUrl = this.fs.getFileBrowseUrl(fileUrl);
   }
 
   updateExportUrl() {
@@ -159,7 +148,7 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    this.exportUrl = this.mtt.getFileOpenUrl(contextFile);
+    this.exportUrl = this.fs.getFileOpenUrl(contextFile);
   }
 
   cancelTestRun() {

@@ -17,7 +17,7 @@
 import {ChangeDetectionStrategy, Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
 import {MatTableDataSource} from '@angular/material/table';
 
-import {MttClient} from '../services/mtt_client';
+import {FileService} from '../services/file_service';
 import {TestResourceObj, TestRun} from '../services/mtt_models';
 import {assertRequiredInput} from '../shared/util';
 
@@ -34,7 +34,7 @@ export class TestResourceList implements OnInit, OnChanges {
 
   dataSource = new MatTableDataSource<TestResourceObj>([]);
 
-  constructor(private readonly mtt: MttClient) {}
+  constructor(private readonly fs: FileService) {}
 
   ngOnInit() {
     assertRequiredInput(this.testRun, 'testRun', 'test-run-resources');
@@ -50,6 +50,6 @@ export class TestResourceList implements OnInit, OnChanges {
   }
 
   getTestResourceLink(cacheUrl: string) {
-    return this.mtt.getFileOpenUrl(cacheUrl);
+    return this.fs.getFileOpenUrl(cacheUrl);
   }
 }

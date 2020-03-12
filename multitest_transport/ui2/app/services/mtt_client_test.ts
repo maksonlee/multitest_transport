@@ -21,8 +21,7 @@ import * as testUtil from '../testing/test_util';
 
 import {AuthService, REDIRECT_URI} from './auth_service';
 import {MTT_API_URL, MttClient, TestRunActionClient} from './mtt_client';
-import {BuildChannelList, TestPlanList, TestRun, TestRunAction} from './mtt_models';
-import {CommandAttempt, CommandState} from './tfc_models';
+import {BuildChannelList, TestPlanList, TestRunAction} from './mtt_models';
 
 describe('MttClient', () => {
   let httpClientSpy: jasmine.SpyObj<HttpClient>;
@@ -34,8 +33,7 @@ describe('MttClient', () => {
         'HttpClient', ['get', 'post', 'put', 'delete']);
     authServiceSpy = jasmine.createSpyObj<AuthService>(
         'AuthService', ['getAuthorizationCode']);
-    mttClient =
-        new MttClient(testUtil.newMockAppData(), httpClientSpy, authServiceSpy);
+    mttClient = new MttClient(httpClientSpy, authServiceSpy);
   });
 
   describe('authorizeBuildChannel', () => {
@@ -569,49 +567,6 @@ describe('MttClient', () => {
       observable.subscribe((response) => {
         expect(response).toEqual(jasmine.objectContaining(testRunOutput));
       });
-    });
-  });
-
-  describe('getFileUrl', () => {
-    let testRun: TestRun;
-
-    beforeEach(() => {
-      testRun = {output_url: 'output_url'} as TestRun;
-    });
-
-    it('can get URL for active attempts', () => {
-      const attempt = {
-        command_id: 'command_id',
-        attempt_id: 'attempt_id',
-        state: CommandState.RUNNING
-      } as CommandAttempt;
-      const path = 'path/to/file';
-      const expected = 'file:///file/server/root/tmp/attempt_id/path/to/file';
-      expect(mttClient.getTestRunFileUrl(testRun, attempt, path))
-          .toEqual(expected);
-    });
-
-    it('can get URL for completed attempts', () => {
-      const attempt = {
-        command_id: 'command_id',
-        attempt_id: 'attempt_id',
-        state: CommandState.COMPLETED
-      } as CommandAttempt;
-      const path = 'path/to/file';
-      const expected = 'output_url/command_id/attempt_id/path/to/file';
-      expect(mttClient.getTestRunFileUrl(testRun, attempt, path))
-          .toEqual(expected);
-    });
-  });
-
-  describe('getFileServerPath', () => {
-    it('converts the file server paths correctly', () => {
-      const fileUrl = 'file:///file/server/root/app_default_bucket/test_runs/' +
-          'command_id/output/106001/attempt_id';
-      const serverPath = '/app_default_bucket/test_runs/' +
-          'command_id/output/106001/attempt_id';
-      const result = mttClient.getFileServerPath(fileUrl);
-      expect(result).toEqual(serverPath);
     });
   });
 });

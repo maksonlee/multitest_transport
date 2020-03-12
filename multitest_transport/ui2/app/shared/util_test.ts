@@ -16,25 +16,7 @@
 
 import 'jasmine';
 
-import {isFnmatchPattern, joinPath} from './util';
-
-describe('joinPath', () => {
-  const paths =
-      ['path/one', 'path/two', '/path/three', 'path/four/', '/path/five/'];
-
-  it('handles two arguments without edge slashes', () => {
-    expect(joinPath(paths[0], paths[1])).toBe('path/one/path/two');
-  });
-
-  it('handles two arguments with edge slashes', () => {
-    expect(joinPath(paths[3], paths[2])).toBe('path/four/path/three');
-  });
-
-  it('handles multiple arguments with edge slashes', () => {
-    expect(joinPath(paths[2], paths[3], paths[4]))
-        .toBe('path/three/path/four/path/five');
-  });
-});
+import {isFnmatchPattern} from './util';
 
 describe('isFnmatchPattern', () => {
   it('should behave correctly on valid input', () => {
