@@ -72,7 +72,15 @@ class Host(object):
     self._sudo_password = sudo_password
     self._execution_step = 0
     self._execution_state = HostExecutionState.UNKNOWN
+    self._execution_start_time = None
+    self._execution_end_time = None
     self._error = None
+
+  def StartExecutionTimer(self):
+    self._execution_start_time = time.time()
+
+  def StopExecutionTimer(self):
+    self._execution_end_time = time.time()
 
   @property
   def name(self):
@@ -124,6 +132,22 @@ class Host(object):
   def execution_state(self, state):
     self._execution_step += 1
     self._execution_state = state
+
+  @property
+  def execution_time_elapsed(self):
+    """Get the execution time expression in text of host command."""
+    if not self._execution_start_time:
+      time_status = 'not started'
+      time_elapsed_sec = 0
+    elif not self._execution_end_time:
+      time_status = 'running'
+      time_elapsed_sec = time.time() - self._execution_start_time
+    else:
+      time_status = 'ended'
+      time_elapsed_sec = self._execution_end_time - self._execution_start_time
+    time_elapsed_text = '%s min %s s' % (
+        time_elapsed_sec // 60, time_elapsed_sec % 60)
+    return 'Time elapsed: %s(%s)' % (time_elapsed_text, time_status)
 
 
 def CreateHost(args):
@@ -264,6 +288,7 @@ def _WrapFuncForSetHost(host_func):
     if host.execution_state == HostExecutionState.COMPLETED:
       logger.debug('%s was completed for %s.', host.name, host_func.__name__)
       return
+    host.StartExecutionTimer()
     try:
       host_func(args, host)
       host.execution_state = HostExecutionState.COMPLETED
@@ -273,6 +298,8 @@ def _WrapFuncForSetHost(host_func):
       host.error = e
       host.execution_state = HostExecutionState.ERROR
       raise e
+    finally:
+      host.StopExecutionTimer()
   return _Wrapper
 
 
@@ -311,7 +338,7 @@ def _PrintExecutionSummaries(hosts, func_name):
   if state_to_hosts[HostExecutionState.COMPLETED]:
     logger.info('Completed "%s" on hosts:', func_name)
     for host in state_to_hosts[HostExecutionState.COMPLETED]:
-      logger.info(host.name)
+      logger.info('%s [%s]', host.name, host.execution_time_elapsed)
   error_msg = []
   if state_to_hosts[HostExecutionState.UNKNOWN]:
     msg = 'Skipped "%s" on hosts:' % func_name
@@ -319,14 +346,14 @@ def _PrintExecutionSummaries(hosts, func_name):
     error_msg.append(msg)
     for host in state_to_hosts[HostExecutionState.UNKNOWN]:
       error_msg.append(host.name)
-      logger.error(host.name)
+      logger.error('%s [%s]', host.name, host.execution_time_elapsed)
   if state_to_hosts[HostExecutionState.ERROR]:
     msg = 'Failed "%s" on hosts:' % func_name
     logger.error(msg)
     error_msg.append(msg)
     for host in state_to_hosts[HostExecutionState.ERROR]:
       error_msg.append(host.name)
-      logger.error(host.name)
+      logger.error('%s [%s]', host.name, host.execution_time_elapsed)
   if error_msg:
     error_msg = '\n'.join(error_msg)
     raise ExecutionError(error_msg)

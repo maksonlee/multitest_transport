@@ -368,6 +368,8 @@ class HostUtilTest(parameterized.TestCase):
         host_util.lab_config.CreateHostConfig(
             hostname='host1', host_login_name='auser'))
     host.context = self.mock_context
+    host.StartExecutionTimer = mock.MagicMock()
+    host.StopExecutionTimer = mock.MagicMock()
     args = mock.MagicMock(
         hosts=[],
         extra_hosts=None,
@@ -382,12 +384,16 @@ class HostUtilTest(parameterized.TestCase):
     self.mock_host_func.assert_called_once_with(args, host)
     self.assertEqual(host_util.HostExecutionState.COMPLETED,
                      host.execution_state)
+    host.StartExecutionTimer.assert_called_once()
+    host.StopExecutionTimer.assert_called_once()
 
   def testWrapFuncForSetHost_error(self):
     host = host_util.Host(
         host_util.lab_config.CreateHostConfig(
             hostname='host1', host_login_name='auser'))
     host.context = self.mock_context
+    host.StartExecutionTimer = mock.MagicMock()
+    host.StopExecutionTimer = mock.MagicMock()
     args = mock.MagicMock(
         hosts=[],
         extra_hosts=None,
@@ -406,12 +412,16 @@ class HostUtilTest(parameterized.TestCase):
     self.assertEqual(host_util.HostExecutionState.ERROR,
                      host.execution_state)
     self.assertEqual(e, host.error)
+    host.StartExecutionTimer.assert_called_once()
+    host.StopExecutionTimer.assert_called_once()
 
   def testWrapFuncForSetHost_skip(self):
     host = host_util.Host(
         host_util.lab_config.CreateHostConfig(
             hostname='host1', host_login_name='auser'))
     host.context = self.mock_context
+    host.StartExecutionTimer = mock.MagicMock()
+    host.StopExecutionTimer = mock.MagicMock()
     host.execution_state = host_util.HostExecutionState.COMPLETED
     args = mock.MagicMock(
         hosts=[],
@@ -425,6 +435,22 @@ class HostUtilTest(parameterized.TestCase):
     f(args, host)
 
     self.assertFalse(self.mock_host_func.called)
+    host.StartExecutionTimer.assert_not_called()
+    host.StopExecutionTimer.assert_not_called()
+
+  @parameterized.parameters(
+      (None, None, 10, 'Time elapsed: 0 min 0 s(not started)'),
+      (1, None, 10, 'Time elapsed: 0 min 9 s(running)'),
+      (1, 602, 608, 'Time elapsed: 10 min 1 s(ended)'),
+      )
+  @mock.patch('__main__.host_util.time')
+  def testExecutionTimeElapsed(
+      self, start_time, end_time, current_time, expected_expression, mock_time):
+    mock_time.time.return_value = current_time
+    host = host_util.Host(host_util.lab_config.CreateHostConfig())
+    host._execution_start_time = start_time
+    host._execution_end_time = end_time
+    self.assertEqual(expected_expression, host.execution_time_elapsed)
 
   @parameterized.parameters(
       (False, 1),
