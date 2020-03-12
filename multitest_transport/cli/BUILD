@@ -25,7 +25,6 @@ py_library(
     deps = [
         ":cli_util_lib",
         ":command_util_lib",
-        ":config_lib",
         ":host_util_lib",
         third_party("six"),
     ],
@@ -53,7 +52,6 @@ py_library(
     srcs_version = "PY2AND3",
     deps = [
         ":command_util_lib",
-        ":config_lib",
     ],
 )
 
@@ -65,17 +63,6 @@ py_library(
     srcs_version = "PY2AND3",
     deps = [
         ":google_auth_util_lib",
-        third_party("six"),
-    ],
-)
-
-py_library(
-    name = "config_lib",
-    srcs = [
-        "config.py",
-    ],
-    srcs_version = "PY2AND3",
-    deps = [
         third_party("six"),
     ],
 )
@@ -124,7 +111,6 @@ py_library(
     srcs_version = "PY2AND3",
     deps = [
         ":cli_util_lib",
-        ":config_lib",
         ":host_util_lib",
     ],
 )
@@ -137,7 +123,6 @@ py_library(
     srcs_version = "PY2AND3",
     deps = [
         ":command_util_lib",
-        ":config_lib",
         ":gcs_file_util_lib",
         ":google_auth_util_lib",
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",

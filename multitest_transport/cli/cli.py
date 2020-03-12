@@ -33,7 +33,6 @@ import six
 
 from multitest_transport.cli import cli_util
 from multitest_transport.cli import command_util
-from multitest_transport.cli import config
 from multitest_transport.cli import host_util
 
 _MTT_CONTAINER_NAME = 'mtt'
@@ -52,8 +51,6 @@ _MTTD_FILE = '/etc/systemd/system/mttd.service'
 _CONFIG_ROOT = 'config'
 _VERSION_FILE = 'VERSION'
 _UNKNOWN_VERSION = 'unknown'
-_DEFAULT_DOCKERIZED_TF_IMAGE = 'gcr.io/dockerized-tradefed/tradefed:golden'
-_DEFAULT_MTT_IMAGE = 'gcr.io/android-mtt/mtt:prod'
 _DAEMON_UPDATE_INTERVAL_SEC = 60
 
 # Tradefed accept TSTP signal as 'quit', which will wait all running tests
@@ -68,12 +65,6 @@ _DETECT_INTERVAL_SEC = 30
 
 PACKAGE_LOGGER_NAME = 'multitest_transport.cli'
 logger = logging.getLogger(__name__)
-
-
-def Configure(_):
-  """Configures the common settings."""
-  config.config.Prompt()
-  config.config.Save()
 
 
 def _WaitForServer(url, timeout):
@@ -101,21 +92,15 @@ def _HasSudoAccess():
   return os.geteuid() == 0
 
 
-def _GetDockerImageName(image_name, tag=None, master_url=None):
-  """Get a MTT image name to use.
+def _GetDockerImageName(image_name, tag=None):
+  """Get a Docker image name to use.
 
   Args:
     image_name: an image name.
     tag: an image tag (optional).
-    master_url: master url to determine to use dockerized tf or mtt.
   Returns:
     a Docker image name.
   """
-  if not image_name:
-    if master_url:
-      image_name = _DEFAULT_DOCKERIZED_TF_IMAGE
-    else:
-      image_name = _DEFAULT_MTT_IMAGE
   if tag:
     image_name = image_name.split(':', 2)[0] + ':' + tag
   return image_name
@@ -227,9 +212,7 @@ def _StartMttNode(args, host):
   """
   master_url = host.config.master_url
   image_name = _GetDockerImageName(
-      host.config.docker_image or args.image_name,
-      master_url=master_url,
-      tag=args.tag)
+      args.image_name or host.config.docker_image, tag=args.tag)
   logger.info('Using image %s.', image_name)
   docker_context = command_util.DockerContext(
       host.context,
@@ -298,13 +281,13 @@ def _StartMttNode(args, host):
         tmpfs_config.path, size=tmpfs_config.size, mode=tmpfs_config.mode)
 
   custom_sdk_dir = None
-  if config.config.custom_adb_path:
+  if args.custom_adb_path:
     # Create temp directory for custom SDK tools, will be copied over to ensure
     # MTT has access, and will be cleaned up on next start
     custom_sdk_dir = tempfile.mkdtemp()
     docker_helper.AddFile(custom_sdk_dir, '/tmp/custom_sdk_tools')
     # TODO: support GCS files
-    shutil.copy(config.config.custom_adb_path, '%s/adb' % custom_sdk_dir)
+    shutil.copy(args.custom_adb_path, '%s/adb' % custom_sdk_dir)
 
   docker_helper.Run(args.name)
 
@@ -484,10 +467,7 @@ def _PullUpdate(args, host):
   if args.force_update:
     logger.info('force_update==True, updating.')
     return True
-  image_name = _GetDockerImageName(
-      host.config.docker_image or args.image_name,
-      tag=args.tag,
-      master_url=host.config.master_url)
+  image_name = _GetDockerImageName(args.image_name or host.config.docker_image)
   logger.debug('Using image %s.', image_name)
   docker_context = command_util.DockerContext(
       host.context,
@@ -586,11 +566,8 @@ def RunDaemon(args):
 def _CreateImageArgParser():
   """Create argparser for docker image relate operations."""
   parser = argparse.ArgumentParser(add_help=False)
-  parser.add_argument('--image_name',
-                      default=config.config.docker_image,
-                      help='The docker image to use.')
-  parser.add_argument('--tag',
-                      help='A tag for a new image.')
+  parser.add_argument('--image_name', help='The docker image to use.')
+  parser.add_argument('--tag', help='A tag for a new image.')
   return parser
 
 
@@ -609,9 +586,8 @@ def _CreateStartArgParser():
   parser.add_argument('--port', type=int, default=8000)
   # TODO: delete service_account_json_key_path arg.
   parser.add_argument(
-      '--service_account_json_key_path',
-      default=config.config.service_account_json_key_path,
-      help='Service account json key path.')
+      '--service_account_json_key_path', help='Service account json key path.')
+  parser.add_argument('--custom_adb_path', help='Path to custom ADB tool')
   parser.set_defaults(func=Start)
   return parser
 
@@ -666,9 +642,6 @@ def CreateParser():
       parents=[cli_util.CreateLoggingArgParser(),
                cli_util.CreateCliUpdateArgParser()])
   subparsers = parser.add_subparsers(title='Actions')
-  subparser = subparsers.add_parser(
-      'configure', help='Configure basic settings')
-  subparser.set_defaults(func=Configure)
 
   # Commands for users
   subparsers.add_parser(

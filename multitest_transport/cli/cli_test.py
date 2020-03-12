@@ -43,11 +43,6 @@ class CliTest(parameterized.TestCase):
         mock.MagicMock(return_code=0, stdout=_DOCKER_VERSION_STRING))
     self.mock_context.IsLocal.return_value = True
 
-    self.config_patcher = mock.patch('__main__.cli.config.config')
-    self.mock_config = self.config_patcher.start()
-    self.mock_config.docker_image = 'gcr.io/android-mtt/mtt:prod'
-    self.mock_config.service_account_json_key_path = None
-    self.mock_config.custom_adb_path = None
     self.mock_auth_patcher = mock.patch(
         '__main__.cli.command_util.google_auth_util'
         '.CreateCredentialFromServiceAccount')
@@ -65,6 +60,8 @@ class CliTest(parameterized.TestCase):
     self.mock_timezone_patcher = mock.patch(
         '__main__.cli._GetHostTimezone', return_value='Etc/UTC')
     self.mock_timezone_patcher.start()
+    self.mock_waiter_patcher = mock.patch('__main__.cli._WaitForServer')
+    self.mock_waiter_patcher.start()
     self.tmp_root = tempfile.mkdtemp()
 
     self.arg_parser = cli.CreateParser()
@@ -74,7 +71,6 @@ class CliTest(parameterized.TestCase):
     self.expanduser_patcher.stop()
     self.file_exists_patcher.stop()
     self.mock_auth_patcher.stop()
-    self.config_patcher.stop()
     self.context_patcher.stop()
     super(CliTest, self).tearDown()
 
@@ -86,28 +82,12 @@ class CliTest(parameterized.TestCase):
         'image:yyy',
         cli._GetDockerImageName('image:xxx', tag='yyy'))
 
-  def testGetDockerImageName_defaultDockerizedTf(self):
-    self.assertEqual(
-        cli._DEFAULT_DOCKERIZED_TF_IMAGE,
-        cli._GetDockerImageName(None, master_url='tfc'))
-    self.assertEqual(
-        'gcr.io/dockerized-tradefed/tradefed:yyy',
-        cli._GetDockerImageName(None, master_url='tfc', tag='yyy'))
-
-  def testGetDockerImageName_defaultMTT(self):
-    self.assertEqual(
-        cli._DEFAULT_MTT_IMAGE,
-        cli._GetDockerImageName(None))
-    self.assertEqual(
-        'gcr.io/android-mtt/mtt:yyy',
-        cli._GetDockerImageName(None, tag='yyy'))
-
   def _CreateHost(self,
                   hostname=None,
                   cluster_name=None,
                   login_name=None,
                   tmpfs_configs=None,
-                  docker_image=None,
+                  docker_image='gcr.io/android-mtt/mtt:prod',
                   master_url='url',
                   graceful_shutdown=False,
                   enable_stackdriver=False,
@@ -349,8 +329,8 @@ class CliTest(parameterized.TestCase):
   def testStart_adb(self, mock_temp_dir, mock_copy_file, mock_rm_dir):
     """Test starting with a custom ADB tool."""
     mock_temp_dir.return_value = '/tmp/dir'
-    self.mock_config.custom_adb_path = '/local/adb'
-    args = self.arg_parser.parse_args(['start'])
+    args = self.arg_parser.parse_args(
+        ['start', '--custom_adb_path', '/local/adb'])
     cli.Start(
         args,
         self._CreateHost(cluster_name='acluster'))
@@ -464,7 +444,6 @@ class CliTest(parameterized.TestCase):
 
   def testStart_imageNameAndMasterUrlInHost(self):
     """Test start with image name and master url in host."""
-    self.mock_config.docker_image = None
     args = self.arg_parser.parse_args(['start'])
     cli.Start(
         args,
@@ -758,7 +737,7 @@ class CliTest(parameterized.TestCase):
     get_image_id.return_value = 'image_id'
     get_remote_image_digest.side_effect = ['container_image', 'remote_image']
     args = self.arg_parser.parse_args(['update'])
-    host = self._CreateHost()
+    host = self._CreateHost(docker_image='gcr.io/android-mtt/mtt:prod')
     self.assertTrue(cli._PullUpdate(args, host))
 
     is_running.assert_called_once_with('mtt')
@@ -780,7 +759,7 @@ class CliTest(parameterized.TestCase):
     get_image_id.return_value = 'image_id'
     get_remote_image_digest.return_value = 'remote_image'
     args = self.arg_parser.parse_args(['update'])
-    host = self._CreateHost()
+    host = self._CreateHost(docker_image='gcr.io/android-mtt/mtt:prod')
     self.assertFalse(cli._PullUpdate(args, host))
 
     is_running.assert_called_once_with('mtt')

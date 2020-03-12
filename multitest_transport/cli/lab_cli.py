@@ -23,7 +23,6 @@ import tempfile
 import zipfile
 
 from multitest_transport.cli import cli_util
-from multitest_transport.cli import config
 from multitest_transport.cli import host_util
 
 logger = logging.getLogger(__name__)
@@ -54,9 +53,7 @@ def _CreateServiceAccountArgParser():
   parser = argparse.ArgumentParser(add_help=False)
   # TODO: delete service_account_json_key_path arg.
   parser.add_argument(
-      '--service_account_json_key_path',
-      default=config.config.service_account_json_key_path,
-      help='Service account json key path.')
+      '--service_account_json_key_path', help='Service account json key path.')
   return parser
 
 

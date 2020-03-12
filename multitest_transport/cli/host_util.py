@@ -33,6 +33,8 @@ logger = logging.getLogger(__name__)
 
 THREAD_WAIT_TIMEOUT_SECONDS = 0.01
 THREAD_POLL_INTERVAL_SECONDS = 10
+_DEFAULT_DOCKERIZED_TF_IMAGE = 'gcr.io/dockerized-tradefed/tradefed:golden'
+_DEFAULT_MTT_IMAGE = 'gcr.io/android-mtt/mtt:prod'
 _MTT_PROJECT = 'android-mtt'
 
 
@@ -127,9 +129,18 @@ class Host(object):
 def CreateHost(args):
   """Create a Host object for local host."""
   key_path = getattr(args, 'service_account_json_key_path', None)
-  host_config = _GetHostConfig(
-      lab_config_path=args.lab_config_path,
-      key_path=key_path)
+  if not args.lab_config_path:
+    # MTT standalone mode
+    logger.info('No lab config path set; using standalone mode config')
+    host_config = lab_config.CreateHostConfig(
+        cluster_name='default',
+        hostname=socket.getfqdn(),
+        docker_image=_DEFAULT_MTT_IMAGE)
+  else:
+    host_config = _GetHostConfig(
+        lab_config_path=args.lab_config_path, key_path=key_path)
+    if not host_config.docker_image:
+      host_config.docker_image = _DEFAULT_DOCKERIZED_TF_IMAGE
   host = Host(host_config, context=command_util.CommandContext())
   # override host configs from input args.
   if key_path:
@@ -139,11 +150,6 @@ def CreateHost(args):
 
 def _GetHostConfig(lab_config_path, key_path=None):
   """Get host config for local hosts."""
-  if not lab_config_path:
-    # Without lab config path, only MTT standalone mode will be started.
-    logger.debug('No lab config path set.')
-    return lab_config.LabConfigPool().BuildHostConfig(
-        socket.getfqdn(), cluster_name='default')
   # For dockerized tf, there should always be a lab config.
   lab_config_pool = _BuildLabConfigPool(lab_config_path, key_path)
   for hostname in [socket.gethostname(), socket.getfqdn()]:

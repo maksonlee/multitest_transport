@@ -224,6 +224,16 @@ class HostUtilTest(parameterized.TestCase):
     self.assertEqual(json_key_path, host.config.service_account_json_key_path)
     self.assertIsNotNone(host.context)
 
+  @mock.patch.object(socket, 'getfqdn')
+  def testCreateHost_withoutLabConfig(self, mock_getfqdn):
+    mock_getfqdn.return_value = 'host1.google.com'
+    args = mock.MagicMock(
+        lab_config_path=None, service_account_json_key_path=None)
+    host = host_util.CreateHost(args)
+    self.assertEqual('host1.google.com', host.config.hostname)
+    self.assertEqual(host_util._DEFAULT_MTT_IMAGE, host.config.docker_image)
+    self.assertIsNotNone(host.context)
+
   @mock.patch.object(host_util, '_BuildLabConfigPool')
   @mock.patch.object(socket, 'gethostname')
   def testGetHostConfig(
@@ -235,12 +245,6 @@ class HostUtilTest(parameterized.TestCase):
         lab_config_path='lab_config.yaml')
     self.assertEqual(self.host_config1, host_config)
     self.mock_lab_config_pool.GetHostConfig.assert_called_once_with('host1')
-
-  @mock.patch.object(socket, 'getfqdn')
-  def testGetHostConfig_withoutLabConfig(self, mock_getfqdn):
-    mock_getfqdn.return_value = 'host1.google.com'
-    host_config = host_util._GetHostConfig(None)
-    self.assertEqual('host1.google.com', host_config.hostname)
 
   @mock.patch.object(host_util, '_BuildLabConfigPool')
   @mock.patch.object(socket, 'getfqdn')
