@@ -119,7 +119,7 @@ export declare interface BuildChannel {
  * A list of the IDs for the default build channels that shouldn't be editable
  */
 export const DEFAULT_BUILD_CHANNEL_IDS =
-    ['local_file_store', 'google_drive', 'google_cloud_storage'];
+    ['android_ci', 'google_cloud_storage', 'google_drive', 'local_file_store'];
 
 /**
  * Check whether a build channel is available

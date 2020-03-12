@@ -4,6 +4,29 @@ load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_appengine_library", 
 
 licenses(["notice"])
 
+py_library(
+    name = "android_lib",
+    srcs = [
+        "android.py",
+    ],
+    deps = [
+        ":plugin_base",
+        third_party("apiclient"),
+    ],
+)
+
+py_appengine_test(
+    name = "android_test",
+    srcs = [
+        "android_test.py",
+    ],
+    deps = [
+        ":android_lib",
+        third_party("absl/testing:absltest"),
+        third_party("mock"),
+    ],
+)
+
 
 py_library(
     name = "file_upload_hook_lib",
@@ -131,6 +154,7 @@ py_library(
     ],
     visibility = ["//multitest_transport"],
     deps = [
+        ":android_lib",
         ":plugin_base",
         ":gcs_lib",
         ":google_drive_lib",

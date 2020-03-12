@@ -14,15 +14,18 @@
 
 # Base MTT configuration
 build_channels:
-- id: local_file_store
-  name: Local File Store
-  provider_name: Local File Store
-- id: google_drive
-  name: Google Drive
-  provider_name: Google Drive
+- id: android_ci
+  name: Android CI
+  provider_name: Android
 - id: google_cloud_storage
   name: Google Cloud Storage
   provider_name: Google Cloud Storage
+- id: google_drive
+  name: Google Drive
+  provider_name: Google Drive
+- id: local_file_store
+  name: Local File Store
+  provider_name: Local File Store
 
 device_actions:
 - id: copy_cts_media
