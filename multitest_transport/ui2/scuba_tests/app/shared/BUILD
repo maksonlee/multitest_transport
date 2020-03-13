@@ -7,13 +7,13 @@ ng_module(
     name = "shared_scuba_tests",
     testonly = True,
     srcs = [
+        "form_error_info_scuba_test.ts",
         "list_form_scuba_test.ts",
         "name_value_pair_list_form_scuba_test.ts",
         "status_button_scuba_test.ts",
     ],
     visibility = ["//multitest_transport"],
     deps = [
-        "//multitest_transport/ui2/app/shared",
         third_party_js("angular2:cdk_a11y"),
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),
@@ -25,6 +25,7 @@ ng_module(
         "//javascript/angular2/testing/catalyst",
         "//third_party/javascript/angular2:platform_browser_dynamic_testing",
         "//multitest_transport/ui2/app/services",
+        "//multitest_transport/ui2/app/shared",
         "//multitest_transport/ui2/scuba_tests/testing:karma",
     ],
 )
