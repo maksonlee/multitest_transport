@@ -1,6 +1,6 @@
 # Frontend application for MTT
 
-load("//multitest_transport:adapter.bzl", "COMPILER_FLAGS", "MATERIAL_SASS_INCLUDE_PATHS", "js_binary", "karma_web_test_suite", "ng_module", "sass_binary", "sass_library", "third_party_js", "ts_config", "ts_development_sources")
+load("//multitest_transport:adapter.bzl", "COMPILER_FLAGS", "js_binary", "karma_web_test_suite", "ng_module", "sass_binary", "sass_library", "third_party_js", "ts_config", "ts_development_sources")
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "Fileset", "FilesetEntry", "py_appengine_library", "third_party")
 
 licenses(["notice"])
@@ -46,7 +46,6 @@ sass_library(
 sass_binary(
     name = "styles",
     src = "styles.scss",
-    include_paths = MATERIAL_SASS_INCLUDE_PATHS,
     output_name = "styles.css",
     visibility = ["//multitest_transport"],
     deps = [
