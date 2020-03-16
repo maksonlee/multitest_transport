@@ -18,6 +18,7 @@ import getpass
 import logging
 import os
 import pipes
+import re
 import socket
 import subprocess
 import threading
@@ -55,6 +56,9 @@ _DOCKER_SERVER = 'https://gcr.io'
 _DOCKER_STOP_CMD_TIMEOUT_SEC = 60 * 60
 _DOCKER_KILL_CMD_TIMEOUT_SEC = 60
 _DOCKER_WAIT_CMD_TIMEOUT_SEC = 2 * 60 * 60
+_DOCKER_LIVELINESS_CHECKING_MESSAGE = 'Checking container liveliness.'
+_DOCKER_IMG_NOT_ALIVE_PATTERN = re.compile(
+    '^Error response from daemon: Container .* is not running$')
 
 CommandResult = collections.namedtuple(
     'CommandResult', ['return_code', 'stdout', 'stderr'])
@@ -749,23 +753,29 @@ class DockerHelper(object):
               container_name, res.stderr, res.stdout))
     return res.stdout.strip() == _CONTAINER_RUNNING_STATUS
 
-  def IsContainerAlive(self, container_name):
-    """Check if container is alive.
+  def IsContainerDead(self, container_name):
+    """Check if container is dead.
 
     The result from "docker inspect" could show container is running, but it
     is already dead in fact. This function helps to check whether the container
     is realy alive when it is shown as running.
 
+    Dead means container is neither running nor removed.
+
     Args:
       container_name: text, the docker container name.
 
     Returns:
-      A bool, True if the container is alive, otherwise False.
+      A bool, True if the container is dead, otherwise False.
     """
     res = self._docker_context.Run(
-        ['exec', container_name, 'echo "Checking container liveliness."'],
+        ['exec', container_name, 'echo', _DOCKER_LIVELINESS_CHECKING_MESSAGE],
         raise_on_failure=False)
-    return res.return_code == 0
+    if res.return_code == 1:
+      logging.info(
+          'Std-Err output when checking container liveliness: %s', res.stderr)
+      return bool(_DOCKER_IMG_NOT_ALIVE_PATTERN.match(res.stderr))
+    return False
 
   def RemoveContainers(self, container_names, raise_on_failure=True):
     """Remove given containers.

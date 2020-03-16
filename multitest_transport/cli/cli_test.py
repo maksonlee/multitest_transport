@@ -857,7 +857,8 @@ class CliTest(parameterized.TestCase):
   def testDetectAndKillDeadContainer_detectedAndKilled(self, mock_time,
                                                        mock_kill):
     docker_helper = mock.create_autospec(cli.command_util.DockerHelper)
-    docker_helper.IsContainerAlive.side_effect = [True, True, False]
+    docker_helper.IsContainerDead.side_effect = [False, False, True]
+    docker_helper.IsContainerRunning.return_value = True
     mock_time.time.side_effect = [0, 0, 30, 60, 90]
     host = self._CreateHost()
     container_name = 'container_1'
@@ -872,7 +873,8 @@ class CliTest(parameterized.TestCase):
   @mock.patch('__main__.cli.time')
   def testDetectAndKillDeadContainer_timedOut(self, mock_time, mock_kill):
     docker_helper = mock.create_autospec(cli.command_util.DockerHelper)
-    docker_helper.IsContainerAlive.return_value = True
+    docker_helper.IsContainerDead.return_value = False
+    docker_helper.IsContainerRunning.return_value = True
     mock_time.time.side_effect = [0, 0, 30, 60, 90]
     host = self._CreateHost()
     container_name = 'container_1'
@@ -882,6 +884,23 @@ class CliTest(parameterized.TestCase):
 
     mock_kill.assert_called_with(host, docker_helper, container_name)
     self.assertLen(mock_time.sleep.call_args_list, 3)
+
+  @mock.patch.object(cli, '_ForceKillMttNode')
+  @mock.patch('__main__.cli.time')
+  def testDetectAndKillDeadContainer_NoLongerRunning(self, mock_time,
+                                                     mock_kill):
+    docker_helper = mock.create_autospec(cli.command_util.DockerHelper)
+    docker_helper.IsContainerDead.side_effect = [False, False, True]
+    docker_helper.IsContainerRunning.side_effect = [True, True, False]
+    mock_time.time.side_effect = [0, 0, 30, 60, 90]
+    host = self._CreateHost()
+    container_name = 'container_1'
+
+    cli._DetectAndKillDeadContainer(
+        host, docker_helper, container_name, total_wait_sec=90)
+
+    mock_kill.assert_not_called()
+    self.assertLen(mock_time.sleep.call_args_list, 2)
 
 
 _ALL_START_OPTIONS = (

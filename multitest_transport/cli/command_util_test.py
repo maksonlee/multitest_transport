@@ -490,15 +490,24 @@ class DockerHelperTest(absltest.TestCase):
         mock.call.Run(['inspect', 'c1', '--format', '{{.State.Status}}'],
                       raise_on_failure=False)])
 
-  def testIsContainerAlive(self):
+  def testIsContainerDead_alive(self):
     self._docker_context.Run.return_value = command_util.CommandResult(
-        0, None, 'Checking container liveliness.')
-    self.assertTrue(self._docker_helper.IsContainerAlive('container_1'))
+        0, 'Checking container liveliness.\n', u'')
+    self.assertFalse(self._docker_helper.IsContainerDead('container_1'))
 
-  def testIsContainerCommandFailed(self):
+  def testIsContainerDead_dead(self):
     self._docker_context.Run.return_value = command_util.CommandResult(
-        1, 'No such container: container_1', None)
-    self.assertFalse(self._docker_helper.IsContainerAlive('container_1'))
+        1,
+        u'',
+        (u'Error response from daemon: Container '
+         u'635f81a3dea9060288942b6995ffbcbbcc48ddf2eb77472773068af14cd68b99'
+         u' is not running\n'))
+    self.assertTrue(self._docker_helper.IsContainerDead('container_1'))
+
+  def testIsContainerDead_commandFailed(self):
+    self._docker_context.Run.return_value = command_util.CommandResult(
+        1, u'No such container: container_1\n', u'')
+    self.assertFalse(self._docker_helper.IsContainerDead('container_1'))
 
   def testRemoveContainers(self):
     self._docker_helper.RemoveContainers(['c1', 'c2'])

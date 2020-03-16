@@ -400,7 +400,11 @@ def _DetectAndKillDeadContainer(host,
   """
   wait_end_sec = time.time() + total_wait_sec
   while time.time() < wait_end_sec:
-    if not docker_helper.IsContainerAlive(container_name):
+    if not docker_helper.IsContainerRunning(container_name):
+      logging.debug('The docker container %s has shut down already.',
+                    container_name)
+      return
+    if docker_helper.IsContainerDead(container_name):
       logging.debug('The docker container %s is not alive.', container_name)
       _ForceKillMttNode(host, docker_helper, container_name)
       return
