@@ -18,6 +18,7 @@ from absl.testing import absltest
 import mock
 from protorpc import protojson
 from google.oauth2 import credentials as authorized_user
+from google.oauth2 import service_account
 
 from multitest_transport.api import api_test_util
 from multitest_transport.api import build_channel_api
@@ -178,7 +179,7 @@ class BuildChannelApiTest(api_test_util.TestCase):
 
   def testGetAuthorizationInfo_notFound(self):
     """Tests that an error occurs when a build channel is not found."""
-    response = self.app.put_json(
+    response = self.app.get(
         '/_ah/api/mtt/v1/build_channels/%s/auth?redirect_uri=%s' %
         ('unknown', 'redirect_uri'),
         expect_errors=True)
@@ -203,6 +204,40 @@ class BuildChannelApiTest(api_test_util.TestCase):
     response = self.app.post(
         '/_ah/api/mtt/v1/build_channels/%s/auth_return?redirect_uri=%s&code=%s'
         % ('unknown', 'redirect_uri', 'code'), expect_errors=True)
+    self.assertEqual('404 Not Found', response.status)
+
+  @mock.patch.object(service_account.Credentials, 'from_service_account_info')
+  def testAuthorizeConfigWithServiceAccount(self, mock_parse_key):
+    """Tests that a build channel can be authorized with a service account."""
+    config = self._CreateMockBuildChannel(name='android', provider='Android')
+    # Mock parsing service account JSON key
+    mock_parse_key.return_value = service_account.Credentials(None, None, None)
+    # Verify that credentials were obtained and stored
+    self.app.put_json(
+        '/_ah/api/mtt/v1/build_channels/%s/auth' % config.key.id(),
+        {'value': '{}'})
+    self.assertIsNotNone(config.credentials)
+
+  def testAuthorizeWithServiceAccount_notFound(self):
+    """Tests that an error occurs when a build channel is not found."""
+    response = self.app.put_json(
+        '/_ah/api/mtt/v1/build_channels/%s/auth' % 'unknown', {'value': '{}'},
+        expect_errors=True)
+    self.assertEqual('404 Not Found', response.status)
+
+  def testUnauthorize(self):
+    """Tests that a build channel can be unauthorized."""
+    config = self._CreateMockBuildChannel(name='android', provider='Android')
+    config.credentials = authorized_user.Credentials(None)
+    # Verify that credentials were removed
+    self.app.delete('/_ah/api/mtt/v1/build_channels/%s/auth' % config.key.id())
+    self.assertIsNone(config.credentials)
+
+  def testUnauthorize_notFound(self):
+    """Tests that an error occurs when a build channel is not found."""
+    response = self.app.delete(
+        '/_ah/api/mtt/v1/build_channels/%s/auth' % 'unknown',
+        expect_errors=True)
     self.assertEqual('404 Not Found', response.status)
 
 

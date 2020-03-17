@@ -50,6 +50,7 @@ py_appengine_library(
     ],
     deps = [
         ":base_lib",
+        third_party("google/oauth2:service_account"),
     ],
 )
 

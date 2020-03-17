@@ -13,12 +13,15 @@
 # limitations under the License.
 
 """A module to provide build channel APIs."""
+import multitest_transport.google_import_fixer  
 import collections
+import json
 
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
 
+from google.oauth2 import service_account
 import endpoints
 
 from multitest_transport.api import base
@@ -235,5 +238,39 @@ class BuildChannelApi(remote.Service):
     flow = oauth2_util.GetOAuth2Flow(build_channel.oauth2_config, redirect_uri)
     flow.fetch_token(code=request.code)
     build_channel.config.credentials = flow.credentials
+    build_channel.config.put()
+    return message_types.VoidMessage()
+
+  @base.convert_exception
+  @endpoints.method(
+      endpoints.ResourceContainer(
+          mtt_messages.SimpleMessage,
+          build_channel_id=messages.StringField(1, required=True)),
+      message_types.VoidMessage,
+      path='{build_channel_id}/auth',
+      http_method='PUT',
+      name='authorize_with_service_account')
+  def AuthorizeConfigWithServiceAccount(self, request):
+    """Authorize a build channel configuration with a service account key."""
+    build_channel = self._GetBuildChannel(request.build_channel_id)
+    data = json.loads(request.value)
+    credentials = service_account.Credentials.from_service_account_info(data)
+    build_channel.config.credentials = credentials
+    build_channel.config.put()
+    return message_types.VoidMessage()
+
+  @base.convert_exception
+  @endpoints.method(
+      endpoints.ResourceContainer(
+          message_types.VoidMessage,
+          build_channel_id=messages.StringField(1, required=True)),
+      message_types.VoidMessage,
+      path='{build_channel_id}/auth',
+      http_method='DELETE',
+      name='unauthorize')
+  def UnauthorizeConfig(self, request):
+    """Revoke a build channel configuration's authorization."""
+    build_channel = self._GetBuildChannel(request.build_channel_id)
+    build_channel.config.credentials = None
     build_channel.config.put()
     return message_types.VoidMessage()
