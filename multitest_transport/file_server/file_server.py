@@ -189,8 +189,8 @@ class FileNode(object):
           name=os.path.basename(path),
           type=FileType.FromStatInfo(stat_info),
           size=stat_info.st_size,
-          access_time=int(stat_info.st_atime),
-          update_time=int(stat_info.st_mtime))
+          access_time=int(stat_info.st_atime * 1000),
+          update_time=int(stat_info.st_mtime * 1000))
     except IOError:
       return None
 

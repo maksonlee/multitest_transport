@@ -114,6 +114,14 @@ class FileServerProxyTest(absltest.TestCase):
     proxy_request = self.GetProxyRequest()
     self.AssertRequest(proxy_request, method='DELETE', url=mock.ANY)
 
+  def testProxyRequest_encodedUrl(self):
+    """Tests that encoded URLs are passed to the proxy request."""
+    self.mock_urlopen.return_value = MockProxyResponse()
+    response = self.SendMockRequest('/fs_proxy/hello%20world')
+    self.AssertResponse(response, status=200)
+    proxy_request = self.GetProxyRequest()
+    self.AssertRequest(proxy_request, url='http://localhost:8006/hello%20world')
+
   def testProxyRequest_requestData(self):
     """Tests that data is passed to the proxy request."""
     self.mock_urlopen.return_value = MockProxyResponse()

@@ -38,6 +38,7 @@ class FileServerProxy(webapp2.RequestHandler):
 
   def _ProxyRequest(self, method, path):
     # Combine target host and request URL
+    path = urllib.parse.quote(path)
     target_host = env.FILE_SERVER_URL2
     (scheme, host, _, _, _) = urllib.parse.urlsplit(target_host)
     (_, _, _, query, fragment) = urllib.parse.urlsplit(self.request.url)
