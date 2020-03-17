@@ -35,6 +35,15 @@ export class FileService {
       private readonly http: HttpClient) {}
 
   /**
+   * Generate an absolute file URL.
+   * @param parts path substrings
+   * @return absolute file URL
+   */
+  getFileUrl(...parts: string[]) {
+    return joinPath(`file://${this.appData.fileServerRoot || ''}`, ...parts);
+  }
+
+  /**
    * Determine a file URL in a test run attempt's directory.
    * @param testRun relevant test run
    * @param attempt relevant attempt
@@ -49,9 +58,7 @@ export class FileService {
       return joinPath(outputUrl, attempt.command_id, attempt.attempt_id, path);
     }
     // Active run files are stored in a local temporary location.
-    return joinPath(
-        `file://${this.appData.fileServerRoot || ''}`, 'tmp',
-        attempt.attempt_id, path);
+    return this.getFileUrl('tmp', attempt.attempt_id, path);
   }
 
   /**
