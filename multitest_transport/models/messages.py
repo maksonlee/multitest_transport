@@ -27,6 +27,7 @@ from google.appengine.ext import ndb
 
 from multitest_transport.plugins import base as plugins
 from multitest_transport.models import build
+from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.util import env
 from multitest_transport.util import file_util
@@ -183,6 +184,21 @@ def _FileSegmentConverter(obj):
   lines = [unicode(line, encoding='utf-8', errors='ignore')
            for line in obj.lines]
   return FileSegment(offset=obj.offset, length=obj.length, lines=lines)
+
+
+class EventLogEntry(messages.Message):
+  """An event log entry."""
+  create_time = message_types.DateTimeField(1, required=True)
+  level = messages.EnumField(ndb_models.EventLogLevel, 2, required=True)
+  message = messages.StringField(3, required=True)
+
+
+@Converter(ndb_models.EventLogEntry, EventLogEntry)
+def _EventLogEntryConverter(obj):
+  return EventLogEntry(
+      create_time=_AddTimezone(obj.create_time),
+      level=obj.level,
+      message=obj.message)
 
 
 class TestResourceDef(messages.Message):
@@ -795,6 +811,7 @@ class TestRun(messages.Message):
 
   test_devices = messages.MessageField(TestDeviceInfo, 22, repeated=True)
   test_package_info = messages.MessageField(TestPackageInfo, 23)
+  log_entries = messages.MessageField(EventLogEntry, 24, repeated=True)
 
 
 @Converter(ndb_models.TestRun, TestRun)
@@ -833,7 +850,8 @@ def _TestRunConverter(obj):
       before_device_actions=Convert(obj.before_device_actions, DeviceAction),
       test_run_actions=Convert(obj.test_run_actions, TestRunAction),
       test_devices=Convert(obj.test_devices, TestDeviceInfo),
-      test_package_info=Convert(obj.test_package_info, TestPackageInfo)
+      test_package_info=Convert(obj.test_package_info, TestPackageInfo),
+      log_entries=Convert(event_log.GetEntries(obj), EventLogEntry),
   )
 
 

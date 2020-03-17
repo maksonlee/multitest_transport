@@ -92,12 +92,32 @@ py_appengine_test(
 )
 
 py_appengine_library(
+    name = "event_log_lib",
+    srcs = ["event_log.py"],
+    deps = [
+        ":ndb_models_lib",
+    ],
+)
+
+py_appengine_test(
+    name = "event_log_test",
+    srcs = [
+        "event_log_test.py",
+    ],
+    deps = [
+        ":event_log_lib",
+        third_party("absl/testing:absltest"),
+    ],
+)
+
+py_appengine_library(
     name = "messages_lib",
     srcs = [
         "messages.py",
     ],
     deps = [
         ":build_lib",
+        ":event_log_lib",
         ":ndb_models_lib",
         "//multitest_transport/plugins:plugin_base",
     ],

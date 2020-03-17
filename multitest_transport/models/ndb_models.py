@@ -124,6 +124,26 @@ class ConfigSetInfoList(ndb.Model):
   config_set_infos = ndb.StructuredProperty(ConfigSetInfo, repeated=True)
 
 
+class EventLogLevel(messages.Enum):
+  """Event log levels."""
+  INFO = 1
+  WARNING = 2
+  ERROR = 3
+
+
+class EventLogEntry(ndb.Model):
+  """Event log entry. The optional parent key defines the related object.
+
+  Attributes:
+    create_time: creation timestamp
+    level: log level
+    message: log message
+  """
+  create_time = ndb.DateTimeProperty(auto_now_add=True)
+  level = msgprop.EnumProperty(EventLogLevel, required=True)
+  message = ndb.TextProperty(required=True)
+
+
 class TestResourceType(messages.Enum):
   UNKNOWN = 0
   DEVICE_IMAGE = 1
