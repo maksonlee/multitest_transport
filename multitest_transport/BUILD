@@ -44,6 +44,7 @@ py_appengine_library(
 py_appengine_library(
     name = "google_import_fixer",
     srcs = ["google_import_fixer.py"],
+    srcs_version = "PY2AND3",
     visibility = ["//multitest_transport"],
 )
 
