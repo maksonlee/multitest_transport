@@ -73,6 +73,7 @@ py_appengine_library(
         "config_set_helper.py",
     ],
     envs = PY_APPENGINE_ENVS,
+    srcs_version = "PY2AND3",
 )
 
 py_appengine_test(
