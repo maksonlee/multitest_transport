@@ -179,10 +179,9 @@ def ng_module(**kwargs):
 def per_file_sass_binaries(name, srcs, **kwargs):
     """Compiles each scss file provided into its own css file.
 
-    It generates a separate .css file for every src. MATERIAL_SASS_INCLUDE_PATHS
-    is also added to include_paths. Each css file is autoprefixed to support
-    older browsers.Finally, a fileset rule is defined which contains all the
-    resulting css files.
+    It generates a separate .css file for every src. Each css file is
+    autoprefixed to support older browsers.Finally, a fileset rule is defined
+    which contains all the resulting css files.
 
     Args:
       name: The name of the rule. Used to name a fileset containing all the
@@ -198,9 +197,6 @@ def per_file_sass_binaries(name, srcs, **kwargs):
         base_file = ".".join(src_file.split(".")[:-1])
         bin_name = "gen_" + name + "_" + base_file
         binary_targets.append(":" + bin_name)
-
-        # Include material include paths.
-        kwargs["include_paths"] = kwargs.get("include_paths", []) + MATERIAL_SASS_INCLUDE_PATHS
 
         _sass_binary(
             name = bin_name,
