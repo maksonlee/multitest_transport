@@ -23,6 +23,7 @@ import {MatTabChangeEvent} from '@angular/material/tabs';
 import {ReplaySubject, Subject, Subscription} from 'rxjs';
 import {debounceTime, delay, finalize, first, takeUntil} from 'rxjs/operators';
 
+import {joinPath} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
 import {BuildChannel, BuildItem, isBuildChannelAvailable} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
@@ -37,18 +38,13 @@ enum ProviderType {
 }
 
 /**
- * Data format when passed to BuildPicker
- * @param searchBarUrlValue: a web url or an mtt url directory displayed in
- * searchbar
- * @param searchBarFilenameValue: a filename displayed in search bar
- * @param buildChannelId: initial active build channel id
- * @param buildChannels: a list of build channel object
+ * Data passed when opening the build picker.
+ * @param buildChannels: a list of build channels
+ * @param resourceUrl: optional initial resource URL
  */
 export interface BuildPickerData {
-  searchBarUrlValue: string;
-  searchBarFilenameValue: string;
-  buildChannelId: string;
   buildChannels: BuildChannel[];
+  resourceUrl?: string;
 }
 
 /**
@@ -72,12 +68,14 @@ export interface BuildPickerTabState {
   encapsulation: ViewEncapsulation.None,
 })
 export class BuildPicker implements OnInit, OnDestroy {
-  isBuildChannelAvailable = isBuildChannelAvailable;
-  providerType = ProviderType;
+  readonly isBuildChannelAvailable = isBuildChannelAvailable;
+  readonly isFnmatchPattern = isFnmatchPattern;
+  readonly ProviderType = ProviderType;
+
   private readonly destroy = new ReplaySubject<void>();
-  isFnmatchPattern = isFnmatchPattern;
 
   /** Tab related variable */
+  buildChannels: BuildChannel[];
   selectedTabIndex = 0;
   selectedBuildChannel?: BuildChannel;
 
@@ -96,7 +94,8 @@ export class BuildPicker implements OnInit, OnDestroy {
   searchBarFilenameValue = '';
 
   /** Track build picker state when switch between tabs */
-  buildPickerTabStateMap: {[key: number]: BuildPickerTabState} = {};
+  private readonly buildPickerTabStateMap:
+      {[key: number]: BuildPickerTabState} = {};
 
   private readonly searchUpdated = new Subject<string>();
 
@@ -105,16 +104,19 @@ export class BuildPicker implements OnInit, OnDestroy {
   }
 
   constructor(
-      public dialogRef: MatDialogRef<BuildPicker>,
-      @Inject(MAT_DIALOG_DATA) public data: BuildPickerData,
+      private readonly dialogRef: MatDialogRef<BuildPicker>,
+      @Inject(MAT_DIALOG_DATA) data: BuildPickerData,
       private readonly liveAnnouncer: LiveAnnouncer,
       private readonly mttClient: MttClient,
       private readonly notifier: Notifier) {
+    // Initialize the build picker
+    this.buildChannels = data.buildChannels;
+    this.decodeResourceUrl(data.resourceUrl);
     // When search updated, reload the current build list
     this.searchUpdated.asObservable()
         .pipe(debounceTime(200), takeUntil(this.destroy))
         .subscribe(
-            result => {
+            () => {
               this.loadBuildList();
             },
             error => {
@@ -123,44 +125,54 @@ export class BuildPicker implements OnInit, OnDestroy {
             });
   }
 
-  /**
-   * On selecting an url, close the dialog
-   */
-  selectUrl(isWebUrl: boolean) {
-    this.dialogRef.close({
-      searchBarUrlValue: isWebUrl ? this.searchBarUrlValue :
-                                    this.getBuildUrl(this.searchBarUrlValue),
-      searchBarFilenameValue: this.searchBarFilenameValue
-    });
+  ngOnInit() {
+    this.loadBuildList();
   }
 
-  ngOnInit() {
-    this.searchBarUrlValue = this.data.searchBarUrlValue;
-    this.searchBarFilenameValue = this.data.searchBarFilenameValue;
+  /** Close the dialog and return the selected resource URL. */
+  selectAndClose() {
+    this.dialogRef.close(this.encodeResourceUrl());
+  }
 
-    // Record initial state
-    this.buildPickerTabStateMap[this.selectedTabIndex] = {
-      searchBarUrlValue: this.searchBarUrlValue,
-      searchBarFilenameValue: this.searchBarFilenameValue
-    };
-
-    // Set the current tab based on buildChannelId
-    if (this.data.buildChannelId.length) {
-      const idx = this.data.buildChannels.map(x => x.id).indexOf(
-          this.data.buildChannelId);
-      this.selectedBuildChannel = this.data.buildChannels[idx];
-      // Add 1 because the 0th index is web url
-      this.selectedTabIndex = idx + 1;
-      this.loadBuildList();
+  /** Parse a resource URL to initialize search bar parameters. */
+  private decodeResourceUrl(url?: string): void {
+    if (!url) {
+      return;  // No resource URL provided, use default parameters
     }
+
+    const match = url.match(/^mtt:\/\/\/([^\/]+)\/(?:(.*)\/(.*)|(.*))$/i);
+    if (!match) {
+      this.searchBarUrlValue = url;  // Unknown URL, assume web provider
+      return;
+    }
+    // Find relevant build channel
+    const channelId = match[1];
+    const channelIndex = this.buildChannels.findIndex(c => c.id === channelId);
+    this.selectedBuildChannel = this.buildChannels[channelIndex];
+    this.selectedTabIndex = channelIndex + 1;
+    // Set search bar parameters
+    this.searchBarUrlValue = match[2] || '';
+    this.searchBarFilenameValue = decodeURIComponent(match[3] || match[4]);
+  }
+
+  /** Encode the search bar parameters into a resource URL. */
+  private encodeResourceUrl(): string {
+    let url = this.searchBarUrlValue;
+    if (this.selectedBuildChannel) {
+      url = `mtt:///${this.selectedBuildChannel.id}/${url}`;
+    }
+    if (this.searchBarFilenameValue) {
+      url = joinPath(url, encodeURIComponent(this.searchBarFilenameValue));
+    }
+    return url;
   }
 
   loadBuildChannels() {
     this.mttClient.getBuildChannels().pipe(first()).subscribe(
         result => {
-          this.data.buildChannels = result.build_channels || [];
+          this.buildChannels = result.build_channels || [];
           this.selectedBuildChannel =
-              this.data.buildChannels[this.selectedTabIndex - 1];
+              this.buildChannels[this.selectedTabIndex - 1];
           this.loadBuildList();
         },
         error => {
@@ -204,12 +216,8 @@ export class BuildPicker implements OnInit, OnDestroy {
     this.nextPageToken = '';
     this.selection.clear();
 
-    this.selectedBuildChannel = this.data.buildChannels[tabEvent.index - 1];
+    this.selectedBuildChannel = this.buildChannels[tabEvent.index - 1];
     this.loadBuildList();
-  }
-
-  onFilenameValueChange(newFilename: string) {
-    this.searchBarFilenameValue = newFilename;
   }
 
   /**
@@ -300,11 +308,6 @@ export class BuildPicker implements OnInit, OnDestroy {
     this.onBreadCrumbPathChange(row.path);
   }
 
-  getBuildUrl(url: string) {
-    return 'mtt:///' + this.selectedBuildChannel!.id + (url.length ? '/' : '') +
-        url;
-  }
-
   /**
    * Triggered when breadcrumb path has changed
    * @param updatedSearchBarValue Current Search Bar Value
@@ -356,12 +359,9 @@ export class BuildPicker implements OnInit, OnDestroy {
    * Returns true if using a GCS build channel and the search bar is empty
    */
   isMissingGcsBucket(): boolean {
-    if (this.selectedBuildChannel &&
+    return !!this.selectedBuildChannel &&
         this.selectedBuildChannel.provider_name ===
-            ProviderType.GOOGLE_CLOUD_STORAGE &&
-        this.searchBarUrlValue === '') {
-      return true;
-    }
-    return false;
+        ProviderType.GOOGLE_CLOUD_STORAGE &&
+        !this.searchBarUrlValue;
   }
 }

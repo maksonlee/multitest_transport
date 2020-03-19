@@ -32,17 +32,17 @@
       <button mat-button color="accent" mat-dialog-close>
         Cancel
       </button>
-      <button mat-flat-button color="accent" (click)="selectUrl(true)"
+      <button mat-flat-button color="accent" (click)="selectAndClose()"
               [attr.aria-disabled]="!searchBarUrlValue">
         Select
       </button>
     </div>
   </mat-tab>
 
-  <mat-tab [label]="buildChannel.name" *ngFor="let buildChannel of data.buildChannels">
+  <mat-tab [label]="buildChannel.name" *ngFor="let buildChannel of buildChannels">
     <ng-container [ngSwitch]="buildChannel.provider_name">
 
-      <ng-container *ngSwitchCase="providerType.LOCAL_STORE">
+      <ng-container *ngSwitchCase="ProviderType.LOCAL_STORE">
         <local_file_store
           [selectedFile]="searchBarFilenameValue"
           [selection]="selection"
@@ -57,7 +57,7 @@
           <button
             mat-flat-button
             color="accent"
-            (click)="selectUrl(false)"
+            (click)="selectAndClose()"
             [attr.aria-disabled]="!selection.selected.length && !searchBarFilenameValue"
             >
             Select
@@ -78,7 +78,7 @@
           <button
             mat-flat-button
             color="accent"
-            (click)="selectUrl(false)"
+            (click)="selectAndClose()"
             [attr.aria-disabled]="!selection.selected.length && !searchBarFilenameValue"
             >
             Select
@@ -110,9 +110,7 @@
         <mat-form-field id="filename" appearance="outline" floatLabel="always"
           fxLayout="column">
           <mat-label>Filename (can support wildcards)</mat-label>
-          <input matInput type="text"
-            [(ngModel)]="searchBarFilenameValue"
-            (input)="onFilenameValueChange($event.target.value)" name="searchBarFilenameValue">
+          <input matInput type="text" [(ngModel)]="searchBarFilenameValue">
           </mat-form-field>
       </div>
 

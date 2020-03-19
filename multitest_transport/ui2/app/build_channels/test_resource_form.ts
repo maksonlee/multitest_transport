@@ -17,12 +17,11 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 
-import {joinPath} from '../services/file_service';
 import {BuildChannel, TestResourceDef, TestResourceObj} from '../services/mtt_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
 import {assertRequiredInput} from '../shared/util';
 
-import {BuildPicker, BuildPickerData, BuildPickerTabState} from './build_picker';
+import {BuildPicker} from './build_picker';
 
 /** Class of test resources being used in this form */
 export enum TestResourceClassType {
@@ -68,69 +67,24 @@ export class TestResourceForm extends FormChangeTracker implements OnInit {
   }
 
   openBuildPicker(testResource: TestResourceObj|TestResourceDef) {
-    const urlComponent = this.decodeUrl(this.getUrl(testResource));
-
-    const data: BuildPickerData = {
-      searchBarUrlValue: urlComponent.searchBarUrlValue,
-      searchBarFilenameValue: urlComponent.searchBarFilenameValue,
-      buildChannelId: urlComponent.buildChannelId,
-      buildChannels: this.buildChannels
-    };
     const dialogRef = this.dialog.open(BuildPicker, {
       width: '800px',
       panelClass: 'build-picker-container',
-      data
+      data: {
+        buildChannels: this.buildChannels,
+        resourceUrl: this.getUrl(testResource),
+      }
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        testResource = this.setUrl(testResource, this.encodeUrl(result));
+    dialogRef.afterClosed().subscribe(resourceUrl => {
+      if (resourceUrl) {
+        this.setUrl(testResource, resourceUrl);
       }
     });
   }
 
-  decodeUrl(url?: string) {
-    let buildChannelId = '';
-    let searchBarUrlValue = '';
-    let searchBarFilenameValue = '';
-    if (!url) {
-      return {buildChannelId, searchBarUrlValue, searchBarFilenameValue};
-    }
-    const m = url.match(/mtt:\/\/\/([^\/]+)\/(.*)/i);
-    // Web url won't match
-    if (!m) {
-      return {
-        buildChannelId,
-        searchBarUrlValue: url,
-        searchBarFilenameValue,
-      };
-    }
-    // For all other case, it will be started with mtt:///
-    buildChannelId = m[1];
-    const path = m[2];
-    // Find last unescaped slash
-    const idx = path.lastIndexOf('/');
-    if (idx === -1) {
-      // No path, only filename
-      searchBarFilenameValue = decodeURIComponent(path);
-    } else {
-      searchBarUrlValue = path.substring(0, idx);
-      searchBarFilenameValue = decodeURIComponent(path.substring(idx + 1));
-    }
-    return {searchBarUrlValue, searchBarFilenameValue, buildChannelId};
-  }
-
-  encodeUrl(state: BuildPickerTabState) {
-    if (state.searchBarFilenameValue) {
-      return joinPath(
-          state.searchBarUrlValue,
-          encodeURIComponent(state.searchBarFilenameValue));
-    }
-    // Web url don't have filename
-    return state.searchBarUrlValue;
-  }
-
-  getUrl(testResource: TestResourceDef|TestResourceObj): string|undefined {
+  private getUrl(testResource: TestResourceDef|TestResourceObj): string
+      |undefined {
     if (this.isDef(testResource)) {
       return testResource.default_download_url;
     } else {
@@ -138,14 +92,12 @@ export class TestResourceForm extends FormChangeTracker implements OnInit {
     }
   }
 
-  setUrl(testResource: TestResourceDef|TestResourceObj, url: string):
-      TestResourceDef|TestResourceObj {
+  private setUrl(testResource: TestResourceDef|TestResourceObj, url: string) {
     if (this.isDef(testResource)) {
       testResource.default_download_url = url;
     } else {
       testResource.url = url;
     }
-    return testResource;
   }
 
   isDef(testResource: TestResourceDef|
