@@ -497,11 +497,10 @@ class DockerHelperTest(absltest.TestCase):
 
   def testIsContainerDead_dead(self):
     self._docker_context.Run.return_value = command_util.CommandResult(
-        1,
-        u'',
-        (u'Error response from daemon: Container '
-         u'635f81a3dea9060288942b6995ffbcbbcc48ddf2eb77472773068af14cd68b99'
-         u' is not running\n'))
+        126,
+        (u'OCI runtime exec failed: exec failed:'
+         ' cannot exec a container that has stopped: unknown'),
+        u'')
     self.assertTrue(self._docker_helper.IsContainerDead('container_1'))
 
   def testIsContainerDead_commandFailed(self):

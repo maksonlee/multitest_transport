@@ -57,8 +57,12 @@ _DOCKER_STOP_CMD_TIMEOUT_SEC = 60 * 60
 _DOCKER_KILL_CMD_TIMEOUT_SEC = 60
 _DOCKER_WAIT_CMD_TIMEOUT_SEC = 2 * 60 * 60
 _DOCKER_LIVELINESS_CHECKING_MESSAGE = 'Checking container liveliness.'
-_DOCKER_IMG_NOT_ALIVE_PATTERN = re.compile(
-    '^Error response from daemon: Container .* is not running$')
+# To exec command on a dead container, docker will output:
+# OCI runtime exec failed: exec failed: cannot exec a container that has
+# stopped: unknown
+# to the stdout.
+_DOCKER_CONTAINER_NOT_ALIVE_PATTERN = re.compile(
+    '.*cannot exec a container that has stopped.*')
 
 CommandResult = collections.namedtuple(
     'CommandResult', ['return_code', 'stdout', 'stderr'])
@@ -771,10 +775,11 @@ class DockerHelper(object):
     res = self._docker_context.Run(
         ['exec', container_name, 'echo', _DOCKER_LIVELINESS_CHECKING_MESSAGE],
         raise_on_failure=False)
-    if res.return_code == 1:
-      logging.info(
-          'Std-Err output when checking container liveliness: %s', res.stderr)
-      return bool(_DOCKER_IMG_NOT_ALIVE_PATTERN.match(res.stderr))
+    # The return code will be 126 when container is dead.
+    if res.return_code:
+      logger.info(
+          'Std-Out output when checking container liveliness: %s', res.stdout)
+      return bool(_DOCKER_CONTAINER_NOT_ALIVE_PATTERN.match(res.stdout))
     return False
 
   def RemoveContainers(self, container_names, raise_on_failure=True):
