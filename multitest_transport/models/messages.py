@@ -935,6 +935,7 @@ class RerunContext(messages.Message):
   """
   test_run_id = messages.StringField(1)
   context_filename = messages.StringField(2)
+  context_file_url = messages.StringField(3)
 
 
 class NewTestRunRequest(messages.Message):

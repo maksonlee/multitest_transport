@@ -232,18 +232,18 @@ class TestKickerTest(absltest.TestCase):
     self.assertEqual(prev_test_run.key, prev_run_key)
     self.assertEqual(prev_test_run.next_test_context, prev_test_context)
 
-  @mock.patch.object(download_util, 'DownloadResource')
-  def testGetRerunInfo_remote(self, mock_download):
+  def testGetRerunInfo_remote(self):
     test = ndb_models.Test(context_file_dir='context/')
-    mock_download.return_value = 'url'
 
     # determine rerun info using parent ID
     prev_run_key, prev_test_context = test_kicker._GetRerunInfo(
-        test, messages.RerunContext(context_filename='file'))
+        test, messages.RerunContext(context_filename='file',
+                                    context_file_url='file_url'))
 
     # no test run key and test context contains provided file
     expected_context = ndb_models.TestContextObj(test_resources=[
-        ndb_models.TestResourceObj(name='context/file', url='url')])
+        ndb_models.TestResourceObj(
+            name='context/file', url='file_url')])
     self.assertIsNone(prev_run_key)
     self.assertEqual(expected_context, prev_test_context)
 

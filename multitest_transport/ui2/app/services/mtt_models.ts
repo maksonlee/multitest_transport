@@ -360,8 +360,10 @@ export declare interface ProxyConfig {
 export declare interface RerunContext {
   /** local test run id */
   test_run_id?: string;
-  /** remote test run file */
+  /** remote test run filename */
   context_filename?: string;
+  /** remote test run file URL */
+  context_file_url?: string;
 }
 
 /**

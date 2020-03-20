@@ -15,12 +15,11 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, EventEmitter, Inject, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
 
-import {APP_DATA, AppData} from '../services/app_data';
-import {FileUploadService} from '../services/file_upload_service';
+import {FileService} from '../services/file_service';
 import {RerunContext, Test, TestRunConfig} from '../services/mtt_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
 import {assertRequiredInput, noAwait} from './util';
@@ -59,16 +58,16 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
   isRerun = false;
   /** True if resuming a remote test run (from another instance). */
   isRemoteRerun = false;
-  /** Test results filename of the previous remote run. */
+  /** Test results filename/URL of the previous remote run. */
   testResultsFilename?: string;
+  private testResultsFileUrl?: string;
   /** True if currently uploading a results file for a remote rerun. */
   isUploading = false;
   /** File upload completion percentage (0 to 100). */
   uploadProgress = 0;
 
   constructor(
-      @Inject(APP_DATA) private readonly appData: AppData,
-      private readonly uploadService: FileUploadService,
+      private readonly fs: FileService,
       private readonly liveAnnouncer: LiveAnnouncer) {
     super();
   }
@@ -111,16 +110,10 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
     if (!file) {
       return;
     }
-    // Determine the upload URL.
-    const url = (this.appData.tempUploadUrl || '') + file.name;
-    const location =
-        // TODO: toPromise can return Promise<T|undefined>
-        // tslint:disable-next-line:no-unnecessary-type-assertion
-        (await this.uploadService.startUploadProcess(url).toPromise())!;
-    // Perform upload and update progress.
+
     this.isUploading = true;
-    noAwait(this.liveAnnouncer.announce('Uploading', 'polite'));
-    this.uploadService.uploadFile(file, location)
+    noAwait(this.liveAnnouncer.announce(`Uploading ${file.name}`, 'polite'));
+    this.fs.uploadFile(file, `tmp/${file.name}`)
         .pipe(
             takeUntil(this.destroy),
             finalize(() => {
@@ -128,12 +121,13 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
               this.uploadProgress = 0;
             }),
             )
-        .subscribe(result => {
-          this.uploadProgress = result.uploaded / file.size * 100;
-          if (result.type === 'complete') {
+        .subscribe(event => {
+          this.uploadProgress = event.progress;
+          if (event.done) {
             this.testResultsFilename = file.name;
+            this.testResultsFileUrl = this.fs.getFileUrl(`tmp/${file.name}`);
             this.updateRerunContext();
-            this.liveAnnouncer.announce('Upload completed', 'assertive');
+            this.liveAnnouncer.announce(`${file.name} uploaded`, 'assertive');
           }
         });
   }
@@ -146,7 +140,10 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
     }
     if (this.isRemoteRerun) {
       this.isRerun = !!this.testResultsFilename;
-      this.rerunContext.emit({context_filename: this.testResultsFilename});
+      this.rerunContext.emit({
+        context_filename: this.testResultsFilename,
+        context_file_url: this.testResultsFileUrl
+      });
     } else {
       this.isRerun = !!this.prevTestRunId;
       this.rerunContext.emit({test_run_id: this.prevTestRunId});

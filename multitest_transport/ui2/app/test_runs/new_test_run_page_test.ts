@@ -21,8 +21,7 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
-import {APP_DATA} from '../services/app_data';
-import {FileUploadService} from '../services/file_upload_service';
+import {FileService} from '../services/file_service';
 import {MttClient, TestRunActionClient} from '../services/mtt_client';
 import {Test, TestRun} from '../services/mtt_models';
 import {TfcClient} from '../services/tfc_client';
@@ -80,9 +79,8 @@ describe('NewTestRunPage', () => {
       imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
       aotSummaries: TestRunsModuleNgSummary,
       providers: [
-        {provide: APP_DATA, useValue: {}},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
-        {provide: FileUploadService, useValue: {}},
+        {provide: FileService, useValue: {}},
         {provide: MttClient, useValue: mttClient},
         {provide: TfcClient, useValue: tfcClient},
       ],

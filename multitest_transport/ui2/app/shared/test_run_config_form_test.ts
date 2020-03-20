@@ -19,10 +19,9 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {of, Subject} from 'rxjs';
+import {Subject} from 'rxjs';
 
-import {APP_DATA} from '../services/app_data';
-import {FileUploadEvent, FileUploadService} from '../services/file_upload_service';
+import {FileService, FileUploadEvent} from '../services/file_service';
 import {Test, TestRunConfig} from '../services/mtt_models';
 import {newMockTest, newMockTestRunConfig} from '../testing/test_util';
 
@@ -31,7 +30,7 @@ import {SharedModuleNgSummary} from './shared_module.ngsummary';
 import {TestRunConfigForm} from './test_run_config_form';
 
 describe('TestRunConfigForm', () => {
-  let uploadService: jasmine.SpyObj<FileUploadService>;
+  let fs: jasmine.SpyObj<FileService>;
   let liveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
   let fixture: ComponentFixture<TestRunConfigForm>;
   let debugEl: DebugElement;
@@ -43,16 +42,14 @@ describe('TestRunConfigForm', () => {
   beforeEach(() => {
     liveAnnouncer =
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
-    uploadService = jasmine.createSpyObj(
-        'uploadService', ['startUploadProcess', 'uploadFile']);
+    fs = jasmine.createSpyObj(['getFileUrl', 'uploadFile']);
     test = newMockTest();
     testRunConfig = newMockTestRunConfig(test.id!);
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
       providers: [
-        {provide: APP_DATA, useValue: {}},
-        {provide: FileUploadService, useValue: uploadService},
+        {provide: FileService, useValue: fs},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
       ],
       aotSummaries: SharedModuleNgSummary,
@@ -119,7 +116,8 @@ describe('TestRunConfigForm', () => {
     expect(debugEl.query(By.css('.rerun .remote'))).toBeTruthy();
     expect(configForm.isRerun).toBeFalsy();
     expect(configForm.rerunContext.emit).toHaveBeenCalledWith({
-      context_filename: undefined
+      context_filename: undefined,
+      context_file_url: undefined,
     });
   });
 
@@ -139,9 +137,9 @@ describe('TestRunConfigForm', () => {
   it('can upload results file', fakeAsync(() => {
        configForm.isRemoteRerun = true;
        const file = {name: 'filename', size: 100} as File;
-       const upload = new Subject<FileUploadEvent>();
-       uploadService.startUploadProcess.and.returnValue(of('url'));
-       uploadService.uploadFile.and.returnValue(upload);
+       const upload = new Subject<Partial<FileUploadEvent>>();
+       fs.getFileUrl.and.returnValue('file_url');
+       fs.uploadFile.and.returnValue(upload);
 
        // can start upload
        configForm.uploadResultsFile(file);
@@ -150,23 +148,24 @@ describe('TestRunConfigForm', () => {
        expect(configForm.uploadProgress).toEqual(0);
 
        // can track progress
-       upload.next({type: 'progress', uploaded: 50});
+       upload.next({done: false, progress: 50});
        tick();
        expect(configForm.isUploading).toBeTruthy();
        expect(configForm.uploadProgress).toEqual(50);
 
        // can complete upload
-       upload.next({type: 'complete', uploaded: 100});
+       upload.next({done: true, progress: 100});
        upload.complete();
        tick();
        expect(configForm.isUploading).toBeFalsy();
        expect(configForm.isRerun).toBeTruthy();
        expect(configForm.rerunContext.emit).toHaveBeenCalledWith({
-         context_filename: 'filename'
+         context_filename: 'filename',
+         context_file_url: 'file_url',
        });
        expect(liveAnnouncer.announce)
-           .toHaveBeenCalledWith('Uploading', 'polite');
+           .toHaveBeenCalledWith('Uploading filename', 'polite');
        expect(liveAnnouncer.announce)
-           .toHaveBeenCalledWith('Upload completed', 'assertive');
+           .toHaveBeenCalledWith('filename uploaded', 'assertive');
      }));
 });

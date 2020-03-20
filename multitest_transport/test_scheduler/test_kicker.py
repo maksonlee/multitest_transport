@@ -148,7 +148,6 @@ def _GetRerunInfo(test, rerun_context):
   Returns:
     previous test run key and previous test context to use during rerun
   """
-  # TODO: support directly fetching rerun context from remote MTT
   if rerun_context and rerun_context.test_run_id:
     # local rerun - fetch key and test context from DB
     logging.info('Rerunning local test run %s', rerun_context.test_run_id)
@@ -159,7 +158,8 @@ def _GetRerunInfo(test, rerun_context):
           'Previous test run %s not found' % prev_test_run_key.id())
     return prev_test_run_key, prev_test_run.next_test_context
 
-  if rerun_context and rerun_context.context_filename:
+  if (rerun_context and rerun_context.context_filename
+      and rerun_context.context_file_url):
     # remote rerun - construct test context from locally uploaded file
     logging.info('Rerunning test run from %s', rerun_context.context_filename)
     if not test.context_file_dir:
@@ -168,10 +168,7 @@ def _GetRerunInfo(test, rerun_context):
     remote_test_context = ndb_models.TestContextObj(test_resources=[
         ndb_models.TestResourceObj(
             name=test.context_file_dir + rerun_context.context_filename,
-            # TODO: determine filename without calling DownloadResource
-            url=download_util.DownloadResource(
-                'gs:/%s/%s' %
-                (env.GCS_TEMP_PATH, rerun_context.context_filename)))
+            url=rerun_context.context_file_url)
     ])
     return None, remote_test_context
 
