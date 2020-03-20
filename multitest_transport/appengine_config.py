@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Google App Engine module configuration."""
-import logging
 import os
 
 import google3
@@ -23,7 +22,6 @@ from tradefed_cluster import env_config
 
 from google.appengine.api import modules
 
-from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
 
 # Set TFC env_config.
@@ -38,24 +36,6 @@ env_config.CONFIG = env_config.EnvConfig(
                          common.ObjectEventType.COMMAND_ATTEMPT_STATE_CHANGED])
 
 
-def apply_proxy_config():
-  """Apply proxy config."""
-  node_config = ndb_models.GetNodeConfig()
-  proxy_config = node_config.proxy_config
-  if not proxy_config:
-    return
-  logging.info('Applying proxy config: %s', proxy_config)
-  if proxy_config.http_proxy:
-    os.environ['http_proxy'] = proxy_config.http_proxy
-  if proxy_config.https_proxy:
-    os.environ['https_proxy'] = proxy_config.https_proxy
-  if proxy_config.ftp_proxy:
-    os.environ['ftp_proxy'] = proxy_config.ftp_proxy
-  if proxy_config.no_proxy:
-    # Append 127.0.0.1 to no proxy list to exclude in-server API calls.
-    os.environ['no_proxy'] = proxy_config.no_proxy + ',127.0.0.1'
-
-
 def webapp_add_wsgi_middleware(app):
   # Patch HTTP_HOST to a default module's hostname.
   # GAE's GCS library constructs local API URL using HTTP_HOST variable.
@@ -63,5 +43,4 @@ def webapp_add_wsgi_middleware(app):
   # a MTT machine (e.g. a proxy hostname), all GCS operations fail.
   # TODO: remove this once we removed local GCS dependency.
   os.environ['HTTP_HOST'] = modules.get_hostname('default')
-  apply_proxy_config()
   return app

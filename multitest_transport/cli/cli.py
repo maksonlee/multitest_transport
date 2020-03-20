@@ -243,13 +243,17 @@ def _StartMttNode(args, host):
   docker_helper.AddEnv('USER', os.environ.get('USER'))
   docker_helper.AddEnv('TZ', _GetHostTimezone())
 
-  # Copy proxy settings if exists
-  docker_helper.CopyEnv('http_proxy')
-  docker_helper.CopyEnv('https_proxy')
-  docker_helper.CopyEnv('ftp_proxy')
-  if os.environ.get('no_proxy'):
-    os.environ['no_proxy'] = os.environ.get('no_proxy') + ',127.0.0.1'
-  docker_helper.CopyEnv('no_proxy')
+  # Copy proxy settings if exists.
+  http_proxy = docker_helper.CopyEnv('HTTP_PROXY', ['http_proxy'])
+  docker_helper.CopyEnv('HTTPS_PROXY', ['https_proxy'])
+  docker_helper.CopyEnv('FTP_PROXY', ['ftp_proxy'])
+  no_proxy = os.environ.get('NO_PROXY', os.environ.get('no_proxy'))
+  if http_proxy or no_proxy:
+    # Add localhost to NO_PROXY. This enables in-server API calls.
+    tokens = filter(None, ['127.0.0.1', host.name, no_proxy])
+    no_proxy = ','.join(tokens)
+    os.environ['NO_PROXY'] = no_proxy
+    docker_helper.AddEnv('NO_PROXY', no_proxy)
 
   if host.context.IsLocal():
     android_sdk_path = os.path.expanduser('~/.android')

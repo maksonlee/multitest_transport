@@ -552,15 +552,22 @@ class DockerHelper(object):
     """
     self._env.append((key, value))
 
-  def CopyEnv(self, key):
+  def CopyEnv(self, key, alt_keys=None):
     """Copy an environment variable from the current environment if exists.
 
     Args:
       key: an environment variable name.
+      alt_keys: alternative variable names to lookup if the key doesn't exist.
+    Returns:
+      a value if a variable exists. Otherwise None.
     """
-    value = os.environ.get(key)
-    if value is not None:
-      self.AddEnv(key, value)
+    keys = [key] + (alt_keys or [])
+    for k in keys:
+      value = os.environ.get(k)
+      if value is not None:
+        self.AddEnv(key, value)
+        return value
+    return None
 
   def AddVolume(self, volume_name, dst):
     """Create a volume to mount to docker container.

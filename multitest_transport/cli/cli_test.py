@@ -154,7 +154,7 @@ class CliTest(parameterized.TestCase):
     args = self.arg_parser.parse_args(['start'])
     cli.Start(
         args,
-        self._CreateHost(cluster_name='acluster'))
+        self._CreateHost(hostname='ahost', cluster_name='acluster'))
 
     self.mock_context.Run.assert_has_calls([
         mock.call([
@@ -169,10 +169,10 @@ class CliTest(parameterized.TestCase):
             '-e', 'CLUSTER=acluster',
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
-            '-e', 'http_proxy=http_proxy',
-            '-e', 'https_proxy=https_proxy',
-            '-e', 'ftp_proxy=ftp_proxy',
-            '-e', 'no_proxy=no_proxy,127.0.0.1',
+            '-e', 'HTTP_PROXY=http_proxy',
+            '-e', 'HTTPS_PROXY=https_proxy',
+            '-e', 'FTP_PROXY=ftp_proxy',
+            '-e', 'NO_PROXY=127.0.0.1,ahost,no_proxy',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
