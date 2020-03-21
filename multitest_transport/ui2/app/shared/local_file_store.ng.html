@@ -15,10 +15,10 @@
 -->
 
 <div class="page">
-  <!-- Name Field -->
+  <!-- selected file name -->
   <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
     <mat-label> Selected File </mat-label>
-    <input matInput type="text" [ngModel]="selectedFile" disabled />
+    <input matInput type="text" [ngModel]="selectedFile?.name" disabled />
   </mat-form-field>
 
   <!-- upload button -->
@@ -33,26 +33,17 @@
   <mat-progress-bar *ngIf="isUploading" mode="determinate" [value]="uploadProgress">
   </mat-progress-bar>
 
-  <!-- recently uploaded files -->
+  <!-- table to display the file list -->
   <h4>Uploaded Files</h4>
-
-  <!-- Table to display the content -->
-  <mat-table
-    *ngIf="buildItems && buildItems.length; else emptyTemplate"
-    mttInfiniteScroll
-    [dataSource]="buildItems"
-    [enableInfiniteScroll]="nextPageToken && nextPageToken.length > 0"
-    [scrollThreshold]="80"
-    (scrollLoad)="loadBuildItems()"
-    aria-label="Local file store"
-  >
+  <mat-table *ngIf="files?.length; else emptyTemplate"
+    [dataSource]="files" aria-label="Local file store">
     <!-- Name -->
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef [fxFlex]="45">
         Name
       </mat-header-cell>
-      <mat-cell *matCellDef="let item" [fxFlex]="45">
-        {{ item.name }}
+      <mat-cell *matCellDef="let file" [fxFlex]="45">
+        {{ file.name }}
       </mat-cell>
     </ng-container>
 
@@ -61,8 +52,8 @@
       <mat-header-cell *matHeaderCellDef [fxFlex]="35">
         Timestamp
       </mat-header-cell>
-      <mat-cell *matCellDef="let item" [fxFlex]="35">
-        {{ item.timestamp | utc | date:'MM/dd/yyyy h:mma' }}
+      <mat-cell *matCellDef="let file" [fxFlex]="35">
+        {{ file.update_time | utc | date:'MM/dd/yyyy h:mma' }}
       </mat-cell>
     </ng-container>
 
@@ -71,29 +62,31 @@
       <mat-header-cell *matHeaderCellDef [fxFlex]="10">
         Size (bytes)
       </mat-header-cell>
-      <mat-cell *matCellDef="let item" [fxFlex]="10">
-        {{ item.is_file ? item.size : "" }}
+      <mat-cell *matCellDef="let file" [fxFlex]="10">
+        {{ file.type !== FileType.DIRECTORY ? file.size : "" }}
       </mat-cell>
     </ng-container>
 
     <!-- Actions -->
     <ng-container matColumnDef="action" stickyEnd>
       <mat-header-cell *matHeaderCellDef [fxFlex]="10"></mat-header-cell>
-      <mat-cell *matCellDef="let item" [fxFlex]="10" fxLayoutAlign="center">
+      <mat-cell *matCellDef="let file" [fxFlex]="10" fxLayoutAlign="center">
         <button mat-icon-button aria-label="Delete"
-                (click)="deleteFile(item); $event.stopPropagation()">
+                (click)="deleteFile(file); $event.stopPropagation()">
           <mat-icon>delete_forever</mat-icon>
         </button>
       </mat-cell>
     </ng-container>
+
+    <!-- Header -->
     <mat-header-row *matHeaderRowDef="columnsToDisplay"> </mat-header-row>
-    <mat-row *matRowDef="let row; columns: columnsToDisplay" tabindex="0"
-      (click)="onRowClick(row)"
-      (keyup.enter)="onRowClick(row)"
-      [ngClass]="{ 'selected': selection.isSelected(row)}"
-    >
+    <mat-row *matRowDef="let file; columns: columnsToDisplay" tabindex="0"
+      (click)="selectFile(file)"
+      (keyup.enter)="selectFile(file)"
+      [class.selected]="file === selectedFile">
     </mat-row>
   </mat-table>
+
   <!-- No content found template -->
   <ng-template #emptyTemplate>
     <h3 class="not-found">

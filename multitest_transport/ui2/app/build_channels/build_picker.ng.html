@@ -39,53 +39,41 @@
     </div>
   </mat-tab>
 
+  <!-- local file tab -->
+  <mat-tab label="Local File">
+    <ng-template matTabContent>
+      <local-file-store [(url)]="searchBarUrlValue"></local-file-store>
+      <div class="button-group">
+        <button mat-button color="accent" mat-dialog-close>
+          Cancel
+        </button>
+        <button mat-flat-button color="accent" (click)="selectAndClose()"
+                [attr.aria-disabled]="!searchBarUrlValue">
+          Select
+        </button>
+      </div>
+    </ng-template>
+  </mat-tab>
+
   <mat-tab [label]="buildChannel.name" *ngFor="let buildChannel of buildChannels">
-    <ng-container [ngSwitch]="buildChannel.provider_name">
-
-      <ng-container *ngSwitchCase="ProviderType.LOCAL_STORE">
-        <local_file_store
-          [selectedFile]="searchBarFilenameValue"
-          [selection]="selection"
-          [buildChannel]="buildChannel"
-          (fileSelected)="selectFile($event)"
-          >
-        </local_file_store>
-        <div class="button-group">
-          <button mat-button color="accent" mat-dialog-close>
-            Cancel
-          </button>
-          <button
-            mat-flat-button
-            color="accent"
-            (click)="selectAndClose()"
-            [attr.aria-disabled]="!selection.selected.length && !searchBarFilenameValue"
-            >
-            Select
-          </button>
-        </div>
-      </ng-container>
-
-      <ng-container *ngSwitchDefault>
-        <ng-container
-          [ngTemplateOutlet]="isBuildChannelAvailable(buildChannel) ? channelTemplate : authTemplate"
-          [ngTemplateOutletContext]="{buildChannel: buildChannel}"
-          >
-        </ng-container>
-        <div *ngIf="isBuildChannelAvailable(buildChannel)" class="button-group">
-          <button mat-button color="accent" mat-dialog-close>
-            Cancel
-          </button>
-          <button
-            mat-flat-button
-            color="accent"
-            (click)="selectAndClose()"
-            [attr.aria-disabled]="!selection.selected.length && !searchBarFilenameValue"
-            >
-            Select
-          </button>
-        </div>
-      </ng-container> <!-- End of ngswitch default -->
-    </ng-container> <!-- End of ngswitch -->
+    <ng-container
+        [ngTemplateOutlet]="isBuildChannelAvailable(buildChannel) ? channelTemplate : authTemplate"
+        [ngTemplateOutletContext]="{buildChannel: buildChannel}"
+    >
+    </ng-container>
+    <div *ngIf="isBuildChannelAvailable(buildChannel)" class="button-group">
+      <button mat-button color="accent" mat-dialog-close>
+        Cancel
+      </button>
+      <button
+          mat-flat-button
+          color="accent"
+          (click)="selectAndClose()"
+          [attr.aria-disabled]="!selection.selected.length && !searchBarFilenameValue"
+      >
+        Select
+      </button>
+    </div>
   </mat-tab>
 </mat-tab-group>
 

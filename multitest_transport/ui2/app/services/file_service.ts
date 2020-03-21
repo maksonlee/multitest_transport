@@ -86,9 +86,9 @@ export class FileService {
    * @param fileUrl file URL to relativize
    * @return relative file path
    */
-  private getRelativePath(fileUrl: string): string {
+  getRelativePath(fileUrl: string): string {
     const fileServerRoot = `file://${this.appData.fileServerRoot || ''}`;
-    return fileUrl.replace(new RegExp(`^${fileServerRoot}`), '');
+    return fileUrl.replace(new RegExp(`^${fileServerRoot}/?`), '');
   }
 
   /**

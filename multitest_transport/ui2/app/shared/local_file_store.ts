@@ -15,32 +15,26 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {SelectionModel} from '@angular/cdk/collections';
-import {Component, EventEmitter, Inject, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
 import {MatTable} from '@angular/material/table';
-import {ReplaySubject, Subscription} from 'rxjs';
+import {ReplaySubject} from 'rxjs';
 import {filter, finalize, mergeMap, takeUntil} from 'rxjs/operators';
 
-import {APP_DATA, AppData} from '../services/app_data';
-import {FileUploadService} from '../services/file_upload_service';
-import {MttClient} from '../services/mtt_client';
-import {BuildChannel, BuildItem} from '../services/mtt_models';
+import {FileNode, FileService, FileType} from '../services/file_service';
 import {Notifier} from '../services/notifier';
-import {assertRequiredInput, buildApiErrorMessage, noAwait} from './util';
+import {buildApiErrorMessage, noAwait} from './util';
 
-/**
- * Form for local file store.
- */
+/** Displays and manages user-uploaded local files. */
 @Component({
-  selector: 'local_file_store',
+  selector: 'local-file-store',
   styleUrls: ['local_file_store.css'],
   templateUrl: './local_file_store.ng.html',
 })
 export class LocalFileStore implements OnInit, OnDestroy {
-  @Input() buildChannel!: BuildChannel;
-  @Input() selectedFile!: string;
-  @Input() selection!: SelectionModel<BuildItem>;
-  @Output() fileSelected = new EventEmitter<BuildItem>();
+  readonly FileType = FileType;
+
+  @Input() url!: string;
+  @Output() urlChange = new EventEmitter<string>();
 
   @ViewChild(MatTable, {static: false}) table!: MatTable<{}>;
   columnsToDisplay = ['name', 'timestamp', 'size', 'action'];
@@ -49,63 +43,48 @@ export class LocalFileStore implements OnInit, OnDestroy {
   private readonly destroy = new ReplaySubject();
 
   isLoading = false;
-  buildItems: BuildItem[] = [];
-  nextPageToken?: string;
-  buildItemsSubscription?: Subscription;
-
+  files: FileNode[] = [];
+  selectedFile?: FileNode;
   /** True if currently uploading a file to local storage. */
   isUploading = false;
   /** File upload completion percentage (0 to 100). */
   uploadProgress = 0;
 
   constructor(
-      @Inject(APP_DATA) private readonly appData: AppData,
-      private readonly fileUploadService: FileUploadService,
+      private readonly fs: FileService,
       private readonly liveAnnouncer: LiveAnnouncer,
-      private readonly mttClient: MttClient,
       private readonly notifier: Notifier) {}
 
   ngOnInit() {
-    assertRequiredInput(this.buildChannel, 'buildChannel', 'local_file_store');
-    this.loadBuildItems();
+    this.loadFiles();
   }
 
   ngOnDestroy() {
     this.destroy.next();
   }
 
-  loadBuildItems(reset?: boolean) {
-    if (this.buildItemsSubscription) {
-      this.buildItemsSubscription.unsubscribe();
-      this.buildItemsSubscription = undefined;
-    }
-    if (reset) {
-      this.buildItems = [];
-      this.nextPageToken = undefined;
-    }
+  loadFiles() {
     this.isLoading = true;
-    this.buildItemsSubscription =
-        this.mttClient
-            .listBuildItems(this.buildChannel.id, '', this.nextPageToken)
-            .pipe(finalize(() => {
+    this.fs.listFiles('local_file_store')
+        .pipe(
+            takeUntil(this.destroy),
+            finalize(() => {
               this.isLoading = false;
-            }))
-            .subscribe(res => {
-              this.buildItems = this.buildItems.concat(res.build_items || []);
-              this.nextPageToken = res.next_page_token;
-              if (this.table) {
-                this.table.renderRows();
-              }
-            });
+            }),
+            )
+        .subscribe(files => {
+          this.files = files;
+          // Check if selected file exists
+          const path = this.selectedFile ?
+              this.selectedFile.path : this.fs.getRelativePath(this.url);
+          const file = this.files.find(f => f.path === path);
+          this.selectFile(file);
+        });
   }
 
-  /**
-   * Trigger when a row clicked inside the table
-   * @param row A buildItem
-   */
-  onRowClick(row: BuildItem) {
-    this.selectedFile = row.path;
-    this.fileSelected.emit(row);
+  selectFile(file?: FileNode) {
+    this.selectedFile = file;
+    this.urlChange.emit(file ? this.fs.getFileUrl(file.path) : '');
   }
 
   /**
@@ -116,56 +95,41 @@ export class LocalFileStore implements OnInit, OnDestroy {
     if (!file) {
       return;
     }
-    // Determine the upload URL.
-    const url = (this.appData.fileUploadUrl || '') + file.name;
-    const location =
-        // TODO: toPromise can return Promise<T|undefined>
-        // tslint:disable-next-line:no-unnecessary-type-assertion
-        (await this.fileUploadService.startUploadProcess(url).toPromise())!;
-    // Perform upload and update progress.
+
     this.isUploading = true;
-    noAwait(this.liveAnnouncer.announce('Uploading ' + file.name, 'polite'));
-    this.fileUploadService.uploadFile(file, location)
+    noAwait(this.liveAnnouncer.announce(`Uploading ${file.name}`, 'polite'));
+    this.fs.uploadFile(file, `local_file_store/${file.name}`)
         .pipe(
             takeUntil(this.destroy),
             finalize(() => {
               this.isUploading = false;
               this.uploadProgress = 0;
             }),
-        )
-        .subscribe(result => {
-          this.uploadProgress = result.uploaded / file.size * 100;
-          if (result.type === 'complete') {
-            this.liveAnnouncer.announce('Completed uploading ' + file.name,
-                                        'assertive');
-            if (this.selectedFile) {
-              this.liveAnnouncer.announce(
-                  this.selectedFile + ' is currently selected', 'polite');
-            }
-            this.loadBuildItems(true);
+            )
+        .subscribe(event => {
+          this.uploadProgress = event.progress;
+          if (event.done) {
+            this.liveAnnouncer.announce(`${file.name} uploaded`, 'assertive');
+            this.loadFiles();
           }
         });
   }
 
-  /**
-   * Deletes a local file.
-   * @param item build item corresponding to the file
-   */
-  deleteFile(item: BuildItem) {
+  /** Deletes a local file. */
+  deleteFile(file: FileNode) {
     this.notifier
         .confirm('Do you really want to delete this file?', 'Delete File')
         .pipe(
             filter(x => x),
-            mergeMap(
-                () => this.mttClient.deleteBuildItem(
-                    this.buildChannel.id, item.path)))
+            mergeMap(() => this.fs.deleteFile(file.path)),
+            )
         .subscribe(
-            res => {
-              this.loadBuildItems(true);
+            () => {
+              this.loadFiles();
             },
             error => {
               this.notifier.showError(
-                  `Failed to delete file '${item.name}'.`,
+                  `Failed to delete file '${file.name}'.`,
                   buildApiErrorMessage(error));
             });
   }

@@ -30,12 +30,11 @@ import {Notifier} from '../services/notifier';
 import {InfiniteScrollLoadEvent} from '../shared/infinite_scroll';
 import {buildApiErrorMessage, isFnmatchPattern} from '../shared/util';
 
-enum ProviderType {
-  LOCAL_STORE = 'Local File Store',
-  GOOGLE_DRIVE = 'Google Drive',
-  ANDROID = 'Android',
-  GOOGLE_CLOUD_STORAGE = 'Google Cloud Storage'
-}
+/** Number of static tabs (which do not correspond to a build channel). */
+const NUM_STATIC_TABS = 2;
+/** Build provider names. */
+const LOCAL_FILE_PROVIDER = 'Local File Store';
+const GCS_PROVIDER = 'Google Cloud Storage';
 
 /**
  * Data passed when opening the build picker.
@@ -70,7 +69,6 @@ export interface BuildPickerTabState {
 export class BuildPicker implements OnInit, OnDestroy {
   readonly isBuildChannelAvailable = isBuildChannelAvailable;
   readonly isFnmatchPattern = isFnmatchPattern;
-  readonly ProviderType = ProviderType;
 
   private readonly destroy = new ReplaySubject<void>();
 
@@ -110,7 +108,9 @@ export class BuildPicker implements OnInit, OnDestroy {
       private readonly mttClient: MttClient,
       private readonly notifier: Notifier) {
     // Initialize the build picker
-    this.buildChannels = data.buildChannels;
+    // TODO: remove local file provider
+    this.buildChannels = data.buildChannels
+        .filter(c => c.provider_name !== LOCAL_FILE_PROVIDER);
     this.decodeResourceUrl(data.resourceUrl);
     // When search updated, reload the current build list
     this.searchUpdated.asObservable()
@@ -142,14 +142,16 @@ export class BuildPicker implements OnInit, OnDestroy {
 
     const match = url.match(/^mtt:\/\/\/([^\/]+)\/(?:(.*)\/(.*)|(.*))$/i);
     if (!match) {
-      this.searchBarUrlValue = url;  // Unknown URL, assume web provider
+      // Not a build channel URL
+      this.selectedTabIndex = url.startsWith('file://') ? 1 : 0;
+      this.searchBarUrlValue = url;
       return;
     }
     // Find relevant build channel
     const channelId = match[1];
     const channelIndex = this.buildChannels.findIndex(c => c.id === channelId);
     this.selectedBuildChannel = this.buildChannels[channelIndex];
-    this.selectedTabIndex = channelIndex + 1;
+    this.selectedTabIndex = channelIndex + NUM_STATIC_TABS;
     // Set search bar parameters
     this.searchBarUrlValue = match[2] || '';
     this.searchBarFilenameValue = decodeURIComponent(match[3] || match[4]);
@@ -172,7 +174,7 @@ export class BuildPicker implements OnInit, OnDestroy {
         result => {
           this.buildChannels = result.build_channels || [];
           this.selectedBuildChannel =
-              this.buildChannels[this.selectedTabIndex - 1];
+              this.buildChannels[this.selectedTabIndex - NUM_STATIC_TABS];
           this.loadBuildList();
         },
         error => {
@@ -216,7 +218,8 @@ export class BuildPicker implements OnInit, OnDestroy {
     this.nextPageToken = '';
     this.selection.clear();
 
-    this.selectedBuildChannel = this.buildChannels[tabEvent.index - 1];
+    this.selectedBuildChannel =
+        this.buildChannels[tabEvent.index - NUM_STATIC_TABS];
     this.loadBuildList();
   }
 
@@ -249,10 +252,7 @@ export class BuildPicker implements OnInit, OnDestroy {
       this.buildItems.length = 0;
     }
     // Load build item
-    const path =
-        this.selectedBuildChannel.provider_name === ProviderType.LOCAL_STORE ?
-        '' :
-        this.searchBarUrlValue;
+    const path = this.searchBarUrlValue;
 
     this.isLoadingBuildItems = true;
     this.liveAnnouncer.announce('Loading', 'polite');
@@ -360,8 +360,7 @@ export class BuildPicker implements OnInit, OnDestroy {
    */
   isMissingGcsBucket(): boolean {
     return !!this.selectedBuildChannel &&
-        this.selectedBuildChannel.provider_name ===
-        ProviderType.GOOGLE_CLOUD_STORAGE &&
+        this.selectedBuildChannel.provider_name === GCS_PROVIDER &&
         !this.searchBarUrlValue;
   }
 }
