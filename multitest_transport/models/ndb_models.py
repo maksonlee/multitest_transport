@@ -640,22 +640,6 @@ class TestRunSummary(ndb.Model):
   update_time = ndb.DateTimeProperty()
 
 
-class ProxyConfig(ndb.Model):
-  """A proxy configuration.
-
-  Attributes:
-    http_proxy: a proxy server for HTTP traffic.
-    https_proxy: a proxy server for HTTPS traffic.
-    ftp_proxy: a proxy server for FTP traffic.
-    no_proxy: patterns for IP addresses or domain names that shouldn't use the
-        proxy.
-  """
-  http_proxy = ndb.StringProperty()
-  https_proxy = ndb.StringProperty()
-  ftp_proxy = ndb.StringProperty()
-  no_proxy = ndb.StringProperty()
-
-
 class NodeConfig(ndb.Model):
   """A MTT node configuration.
 
@@ -663,12 +647,10 @@ class NodeConfig(ndb.Model):
     env_vars: default environment vars.
     test_resource_default_download_urls: default download URLs for test
         resources.
-    proxy_config: proxy configuration.
   """
   env_vars = ndb.LocalStructuredProperty(NameValuePair, repeated=True)
   test_resource_default_download_urls = ndb.LocalStructuredProperty(
       NameValuePair, repeated=True)
-  proxy_config = ndb.LocalStructuredProperty(ProxyConfig)
 
 
 def GetNodeConfig():

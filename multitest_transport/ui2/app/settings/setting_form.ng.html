@@ -52,28 +52,6 @@
 
     <mat-divider></mat-divider>
 
-    <!-- Proxy Settings -->
-    <h2> Proxy Settings </h2>
-    <div class="description">You need to restart MTT for new proxy settings to take effect.</div>
-    <div class="proxy-wrapper">
-      <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
-        <mat-label> HTTP Proxy </mat-label>
-        <input matInput type="text" [(ngModel)]="proxyConfig.http_proxy" name="http_proxy">
-      </mat-form-field>
-      <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
-        <mat-label> HTTPS Proxy </mat-label>
-        <input matInput type="text" [(ngModel)]="proxyConfig.https_proxy" name="https_proxy">
-      </mat-form-field>
-      <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
-        <mat-label> FTP Proxy </mat-label>
-        <input matInput type="text" [(ngModel)]="proxyConfig.ftp_proxy" name="ftp_proxy">
-      </mat-form-field>
-      <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
-        <mat-label> No Proxy </mat-label>
-        <input matInput type="text" [(ngModel)]="proxyConfig.no_proxy" name="no_proxy">
-      </mat-form-field>
-    </div>
-
     <!-- Submit Button -->
     <button mat-flat-button color="accent" type="button" (click)="onSubmit()">
       Update

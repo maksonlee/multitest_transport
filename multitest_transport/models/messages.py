@@ -964,38 +964,11 @@ class TestArtifactList(messages.Message):
   next_page_token = messages.StringField(2)
 
 
-class ProxyConfig(messages.Message):
-  """Proxy config."""
-  http_proxy = messages.StringField(1)
-  https_proxy = messages.StringField(2)
-  ftp_proxy = messages.StringField(3)
-  no_proxy = messages.StringField(4)
-
-
-@Converter(ndb_models.ProxyConfig, ProxyConfig)
-def _ProxyConfigConverter(obj):
-  return ProxyConfig(
-      http_proxy=obj.http_proxy,
-      https_proxy=obj.https_proxy,
-      ftp_proxy=obj.ftp_proxy,
-      no_proxy=obj.no_proxy)
-
-
-@Converter(ProxyConfig, ndb_models.ProxyConfig)
-def _ProxyConfigMessageConverter(msg):
-  return ndb_models.ProxyConfig(
-      http_proxy=msg.http_proxy,
-      https_proxy=msg.https_proxy,
-      ftp_proxy=msg.ftp_proxy,
-      no_proxy=msg.no_proxy)
-
-
 class NodeConfig(messages.Message):
   """Node config."""
   env_vars = messages.MessageField(NameValuePair, 1, repeated=True)
   test_resource_default_download_urls = messages.MessageField(
       NameValuePair, 2, repeated=True)
-  proxy_config = messages.MessageField(ProxyConfig, 3)
 
 
 @Converter(ndb_models.NodeConfig, NodeConfig)
@@ -1003,8 +976,7 @@ def _NodeConfigConverter(obj):
   return NodeConfig(
       env_vars=ConvertNameValuePairs(obj.env_vars, NameValuePair),
       test_resource_default_download_urls=ConvertNameValuePairs(
-          obj.test_resource_default_download_urls, NameValuePair),
-      proxy_config=Convert(obj.proxy_config, ProxyConfig))
+          obj.test_resource_default_download_urls, NameValuePair))
 
 
 @Converter(NodeConfig, ndb_models.NodeConfig)
@@ -1014,8 +986,7 @@ def _NodeConfigMessageConverter(msg):
       id=ndb_models.NODE_CONFIG_ID,
       env_vars=ConvertNameValuePairs(msg.env_vars, ndb_models.NameValuePair),
       test_resource_default_download_urls=ConvertNameValuePairs(
-          msg.test_resource_default_download_urls, ndb_models.NameValuePair),
-      proxy_config=Convert(msg.proxy_config, ndb_models.ProxyConfig))
+          msg.test_resource_default_download_urls, ndb_models.NameValuePair))
 
 
 class PrivateNodeConfig(messages.Message):

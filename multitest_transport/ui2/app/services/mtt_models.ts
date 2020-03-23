@@ -295,8 +295,6 @@ export declare interface NodeConfig {
    * would be prefilled with the url if supplied here.
    */
   test_resource_default_download_urls?: NameValuePair[];
-  /** proxy configuration. */
-  proxy_config?: ProxyConfig;
 }
 
 /**
@@ -332,23 +330,6 @@ export declare interface PrivateNodeConfig {
   metrics_enabled?: boolean;
   /** If false, trigger the setup wizard */
   setup_wizard_completed?: boolean;
-}
-
-/**
- *   Proxy config
- */
-export declare interface ProxyConfig {
-  /** a proxy server for HTTP traffic. */
-  http_proxy?: string;
-  /** a proxy server for HTTPS traffic. */
-  https_proxy?: string;
-  /** a proxy server for FTP traffic. */
-  ftp_proxy?: string;
-  /**
-   * patterns for IP addresses or domain names that shouldn't use the
-   *  proxy.
-   */
-  no_proxy?: string;
 }
 
 /**

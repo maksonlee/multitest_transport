@@ -251,17 +251,12 @@ export function newMockNewTestRunRequest() {
 
 /** Create a mock a node config object */
 export function newMockNodeConfig() {
-  return {proxy_config: newMockProxyConfig()};
+  return {};
 }
 
 /** Create new build channel provider option definition */
 export function newMockOptionDef(name = OPTION_DEF_NAME) {
   return {name, value_type: 'str', choices: [], default: ''};
-}
-
-/** Create a mock ProxyConfig object */
-export function newMockProxyConfig() {
-  return {http_proxy: 'sample http proxy', no_proxy: 'sample no proxy'};
 }
 
 /** Creates a new Test */

@@ -171,7 +171,6 @@ test_run_actions:
 
     # load configuration
     node_config = self.CreateNodeConfig()
-    node_config.proxy_config = ndb_models.ProxyConfig(http_proxy='proxy')
     config_set = config_encoder.ConfigSet(node_config=node_config)
     config_encoder.Load(config_set)
 
@@ -179,7 +178,6 @@ test_run_actions:
     stored_node_config = ndb.Key(ndb_models.NodeConfig, 1).get()
     self.assertIsNotNone(stored_node_config)
     self.assertLen(stored_node_config.env_vars, 1)  # preserved
-    self.assertEqual(stored_node_config.proxy_config.http_proxy, 'proxy')
 
 
 if __name__ == '__main__':

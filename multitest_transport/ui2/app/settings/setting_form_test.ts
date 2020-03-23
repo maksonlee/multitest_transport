@@ -77,13 +77,10 @@ describe('SettingForm', () => {
     expect(textContent)
         .toContain('Test Resource Default Download Urls Variables');
     expect(textContent).toContain('Update');
-    expect(textContent).toContain('HTTP Proxy');
   });
 
   it('sets up parameters correctly', async(async () => {
        await settingFormFixture.whenStable();
-       const inp = el.query(By.css('.proxy-wrapper')).query(By.css('input'));
-       expect(inp.nativeElement.value).toBe('sample http proxy');
      }));
 
   it('displays and announces a loading mask', () => {

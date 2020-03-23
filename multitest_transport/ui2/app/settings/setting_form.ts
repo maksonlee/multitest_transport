@@ -20,7 +20,7 @@ import {forkJoin, ReplaySubject} from 'rxjs';
 import {finalize, first, takeUntil} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
-import {NodeConfig, PrivateNodeConfig, ProxyConfig} from '../services/mtt_models';
+import {NodeConfig, PrivateNodeConfig} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {FormChangeTracker} from '../shared/can_deactivate';
 import {NameValuePairListForm} from '../shared/name_value_pair_list_form';
@@ -46,7 +46,6 @@ export class SettingForm extends FormChangeTracker implements OnInit,
     super();
   }
   nodeConfig!: Partial<NodeConfig>;
-  proxyConfig: Partial<ProxyConfig> = {};
   privateNodeConfig: PrivateNodeConfig = {};
   private readonly destroy = new ReplaySubject<void>();
 
@@ -79,7 +78,6 @@ export class SettingForm extends FormChangeTracker implements OnInit,
               this.nodeConfig.env_vars = nodeConfigRes.env_vars || [];
               this.nodeConfig.test_resource_default_download_urls =
                   nodeConfigRes.test_resource_default_download_urls || [];
-              this.proxyConfig = nodeConfigRes.proxy_config || {};
 
               this.privateNodeConfig = privateNodeConfigRes;
               this.privateNodeConfig.metrics_enabled =
@@ -128,7 +126,6 @@ export class SettingForm extends FormChangeTracker implements OnInit,
       return;
     }
     const resultNodeConfig: NodeConfig = {...this.nodeConfig} as NodeConfig;
-    resultNodeConfig.proxy_config = {...this.proxyConfig} as ProxyConfig;
 
     const nodeConfigObs = this.mtt.updateNodeConfig(resultNodeConfig);
     const privateNodeConfigObs =

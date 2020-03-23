@@ -38,8 +38,7 @@ class NodeConfigApiTest(api_test_util.TestCase):
         test_resource_default_download_urls=[
             ndb_models.NameValuePair(**obj)
             for obj in data['test_resource_default_download_urls']
-        ],
-        proxy_config=ndb_models.ProxyConfig(**data['proxy_config']))
+        ])
     return node_config
 
   def testGet(self):
@@ -52,12 +51,6 @@ class NodeConfigApiTest(api_test_util.TestCase):
             {'name': 'abc', 'value': 'file://abc'},
             {'name': 'def', 'value': 'file://def'},
         ],
-        'proxy_config': {
-            'http_proxy': 'http_proxy',
-            'https_proxy': 'https_proxy',
-            'ftp_proxy': 'ftp_proxy',
-            'no_proxy': 'no_proxy',
-        },
     }
     node_config = self._CreateNodeConfig(data)
     node_config.put()
@@ -77,12 +70,6 @@ class NodeConfigApiTest(api_test_util.TestCase):
             {'name': 'abc', 'value': 'file://abc'},
             {'name': 'def', 'value': 'file://def'},
         ],
-        'proxy_config': {
-            'http_proxy': 'http_proxy',
-            'https_proxy': 'https_proxy',
-            'ftp_proxy': 'ftp_proxy',
-            'no_proxy': 'no_proxy',
-        },
     }
 
     self.app.post_json('/_ah/api/mtt/v1/node_config', data)
