@@ -25,12 +25,12 @@ import webapp2
 from google.appengine.ext import deferred
 from google.appengine.ext import ndb
 
+from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
 from multitest_transport.util import analytics
 from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
-
 
 TEST_RUN_STATE_MAP = {
     api_messages.RequestState.UNKNOWN: ndb_models.TestRunState.UNKNOWN,
@@ -87,6 +87,10 @@ def _AfterTestRunHandler(test_run):
 
   # Record metrics
   deferred.defer(_TrackTestRun, test_run.key.id(), _transactional=True)
+
+  # Log final state
+  deferred.defer(event_log.Info, test_run.key, 'Test run reached final state',
+                 _transactional=True)
 
 
 def ProcessRequestEvent(message):

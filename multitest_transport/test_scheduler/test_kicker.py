@@ -28,6 +28,7 @@ import webapp2
 from google.appengine.api import taskqueue
 from google.appengine.ext import ndb
 
+from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
 from multitest_transport.test_scheduler import download_util
@@ -39,7 +40,6 @@ from multitest_transport.util import errors
 from multitest_transport.util import file_util
 from multitest_transport.util import gcs_util
 from multitest_transport.util import tfc_client
-
 
 TEST_KICKER_QUEUE = 'test-kicker-queue'
 TEST_RUN_OUTPUT_PATH_FORMAT = '/%s/test_runs/%%s/output/' % env.GCS_BUCKET_NAME
@@ -134,7 +134,8 @@ def CreateTestRun(labels,
       test_run_actions=test_run_actions)
   test_run.put()
   test_run_id = test_run.key.id()
-  logging.info('test run %s created', test_run_id)
+  logging.info('Test run %s created', test_run_id)
+  event_log.Info(test_run, 'Test run created')
   EnqueueTestRun(test_run_id)
   return test_run
 

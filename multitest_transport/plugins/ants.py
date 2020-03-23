@@ -20,6 +20,7 @@ import httplib2
 from tradefed_cluster import api_messages
 from google.appengine.api import modules
 
+from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base
 from multitest_transport.plugins import constant
@@ -35,6 +36,8 @@ RUNNER = 'tradefed'
 UNKNOWN = 'unknown'
 INVOCATION_ID = 'ants_invocation_id'
 WORK_UNIT_ID = 'ants_work_unit_id'
+
+INVOCATION_URL_FORMAT = 'https://android-build.googleplex.com/builds/tests/view?invocationId=%s'
 
 # Maps test run states to AnTS scheduler states
 TEST_RUN_STATE_MAP = {
@@ -113,7 +116,11 @@ class AntsHook(base.TestRunHook):
             'properties': self._GetExtraProperties(test_run),
         }).execute(num_retries=constant.NUM_RETRIES)
     invocation_id = response['invocationId']
+    invocation_url = INVOCATION_URL_FORMAT % invocation_id
     logging.info('Created AnTS invocation %s', invocation_id)
+    # TODO: create confined logger for plugins
+    event_log.Info(test_run,
+                   '[AnTS] Created AnTS invocation %s' % invocation_url)
 
     # Store invocation ID
     test_run.hook_data[INVOCATION_ID] = invocation_id
@@ -147,7 +154,11 @@ class AntsHook(base.TestRunHook):
 
   def _CreateWorkUnit(self, test_run, task):
     """Creates a new AnTS work unit and injects it into the task."""
-    invocation_id = test_run.hook_data[INVOCATION_ID]
+    invocation_id = test_run.hook_data.get(INVOCATION_ID)
+    if not invocation_id:
+      event_log.Warn(
+          test_run, '[AnTS] Cannot create work unit: invocation ID not found.')
+      return
 
     response = self._GetClient().workunit().insert(body={
         'invocationId': invocation_id,
@@ -169,7 +180,12 @@ class AntsHook(base.TestRunHook):
 
   def _UpdateWorkUnit(self, test_run, attempt):
     """Updates an existing AnTS work unit to a final state."""
-    work_unit_id = test_run.hook_data[WORK_UNIT_ID]
+    work_unit_id = test_run.hook_data.get(WORK_UNIT_ID)
+    if not work_unit_id:
+      event_log.Warn(test_run,
+                     '[AnTS] Cannot update work unit: work unit ID not found.')
+      return
+
     client = self._GetClient()
     state = ATTEMPT_STATE_MAP[attempt.state]
 
@@ -183,7 +199,12 @@ class AntsHook(base.TestRunHook):
 
   def _UpdateInvocation(self, test_run):
     """Updates an existing AnTS invocation to a final state."""
-    invocation_id = test_run.hook_data[INVOCATION_ID]
+    invocation_id = test_run.hook_data.get(INVOCATION_ID)
+    if not invocation_id:
+      event_log.Warn(
+          test_run, '[AnTS] Cannot update invocation: invocation ID not found.')
+      return
+
     client = self._GetClient()
     state = TEST_RUN_STATE_MAP[test_run.state]
 

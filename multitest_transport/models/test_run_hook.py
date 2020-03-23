@@ -23,6 +23,7 @@ from tradefed_cluster import api_messages
 from tradefed_cluster.common import IsFinalCommandState
 from tradefed_cluster.plugins import base as tfc_plugins
 
+from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base as plugins
 from multitest_transport.util import tfc_client
@@ -66,7 +67,9 @@ def _ExecuteHook(action, hook_context):
       options['_credentials'] = action.credentials
     hook = hook_cls(**options)
     hook.Execute(hook_context)
-  except Exception as e:      logging.error('Failed to execute hook %s: %s', action, e)
+  except Exception as e:      logging.error('Failed to execute action %s: %s', action, e)
+    event_log.Error(hook_context.test_run,
+                    'Test run action \'%s\' failed: %s' % (action.name, e))
 
 
 def GetOAuth2Config(action):

@@ -144,6 +144,7 @@ py_appengine_library(
         ":build_lib",
         ":config_encoder_lib",
         ":config_set_helper_lib",
+        ":event_log_lib",
         ":messages_lib",
         ":ndb_models_lib",
         ":test_run_hook_lib",
@@ -166,6 +167,7 @@ py_appengine_library(
     name = "test_run_hook_lib",
     srcs = ["test_run_hook.py"],
     deps = [
+        ":event_log_lib",
         ":ndb_models_lib",
         "//multitest_transport/plugins:plugin_base",
         "@tradefed_cluster//tradefed_cluster/plugins:base_lib",

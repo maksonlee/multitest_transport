@@ -16,6 +16,7 @@
 import datetime
 import logging
 
+from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.util import tfc_client
 
@@ -50,9 +51,11 @@ def SetTestRunState(test_run_id, state, update_time=None, error_reason=None):
   if test_run.request_id and state == ndb_models.TestRunState.CANCELED:
     # Need to cancel an associated TFC request and wait.
     tfc_client.CancelRequest(test_run.request_id)
+    event_log.Warn(test_run, 'Test run canceled')
 
   if state == ndb_models.TestRunState.ERROR:
     test_run.error_reason = error_reason
+    event_log.Error(test_run, 'Test run failed: %s' % error_reason)
   test_run.state = state
   test_run.update_time = update_time
   test_run.put()

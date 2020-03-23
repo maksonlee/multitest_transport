@@ -24,6 +24,7 @@ import webapp2
 from google.appengine.api import urlfetch
 from google.appengine.ext import ndb
 from multitest_transport.models import build
+from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.util import env
 from multitest_transport.util import file_util
@@ -48,7 +49,7 @@ def GetCacheFilename(url):
   return TEST_RESOURCE_CACHE_FILENAME_FORMAT % urllib2.quote(url, safe='')
 
 
-def DownloadResource(url):
+def DownloadResource(url, test_run=None):
   """Download resource(s) to Google Cloud Storage.
 
   If a url starts with mtt://, this function tries to download a file from
@@ -57,6 +58,7 @@ def DownloadResource(url):
 
   Args:
     url: resource URL.
+    test_run: optional related test run
   Returns:
     a GCS download URL.
   """
@@ -83,6 +85,8 @@ def DownloadResource(url):
     # TODO: notify test run instead of waiting
     _WaitForDownload(url)
 
+  if test_run:
+    event_log.Info(test_run, 'Downloaded resource \'%s\'' % url)
   return gcs_util.GetDownloadUrl(dst_path)
 
 
