@@ -19,6 +19,7 @@ import http
 import logging
 import os
 import re
+import shutil
 import stat
 import tempfile
 import threading
@@ -137,7 +138,7 @@ def UploadFile(path: str) -> flask.Response:
   if is_final_chunk:
     logging.info('Finished uploading \'%s\'', resolved_path)
     os.makedirs(os.path.dirname(resolved_path), exist_ok=True)
-    os.replace(tmp_path, resolved_path)
+    shutil.move(tmp_path, resolved_path)
     return flask.Response(status=http.HTTPStatus.CREATED)
   return flask.Response(status=http.HTTPStatus.PARTIAL_CONTENT)
 
