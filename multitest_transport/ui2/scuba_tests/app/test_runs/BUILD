@@ -8,6 +8,7 @@ ng_module(
     testonly = True,
     srcs = [
         "test_run_failures_scuba_test.ts",
+        "test_run_progress_scuba_test.ts",
     ],
     visibility = ["//multitest_transport"],
     deps = [
@@ -29,6 +30,10 @@ ng_module(
 ts_development_sources(
     name = "dev_sources_for_test",
     testonly = 1,
+    runtime_deps = [
+        third_party_js("moment:moment_minified"),
+        third_party_js("moment_duration_format"),
+    ],
     deps = [
         ":test_runs_scuba_tests",
     ],
