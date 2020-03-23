@@ -109,6 +109,9 @@
 
     <!-- Output Info Tabs -->
     <mat-tab-group>
+      <mat-tab label="Progress">
+        <test-run-progress [testRun]="testRun" [request]="request"></test-run-progress>
+      </mat-tab>
       <mat-tab label="Jobs">
         <test-job-tree [testRun]="testRun" [request]="request"></test-job-tree>
       </mat-tab>

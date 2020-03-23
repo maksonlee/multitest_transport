@@ -1,0 +1,51 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<!-- TODO: add download progress -->
+
+<ng-container [ngSwitch]="entity.progressType" *ngFor="let entity of entities">
+  <!-- log entry container -->
+  <div class="entity log" *ngSwitchCase="'log'">
+    <span class="time-column timestamp">{{entity.timestamp | date:'MM/dd/yyyy h:mm a'}}</span>
+    <mat-icon class="warning" *ngIf="entity.level === EventLogLevel.WARNING">warning</mat-icon>
+    <mat-icon class="error" *ngIf="entity.level === EventLogLevel.ERROR">error</mat-icon>
+    <span class="log-message" [innerHTML]="entity.message | linkify"></span>
+  </div>
+
+  <!-- attempt container -->
+  <div class="entity attempt mat-elevation-z2" *ngSwitchCase="'attempt'">
+    <div class="time-column">
+      <div class="timestamp">{{entity.timestamp | date:'MM/dd/yyyy h:mm a'}}</div>
+      <div class="duration">+{{getDuration(entity)}}</div>
+    </div>
+    <div class="attempt-content">
+      <div class="attempt-header">
+        <div>Attempt {{entity.attempt_id}}</div>
+        <status-button [state]="entity.state"></status-button>
+        <test-run-failures [state]="entity.state"
+                           [numFailedTests]="entity.failed_test_count"
+                           [numTotalTests]="+entity.failed_test_count + +entity.passed_test_count">
+        </test-run-failures>
+        <div class="buttons">
+          <a mat-stroked-button color="accent" [href]="getOutputFilesUrl(entity)" target='_blank'>
+            View Output Files
+          </a>
+        </div>
+      </div>
+      <div class="attempt-summary" [innerHTML]="entity.summary | linkify"></div>
+      <div class="attempt-error">{{entity.error}}</div>
+    </div>
+  </div>
+</ng-container>

@@ -245,16 +245,18 @@ export declare interface DeviceActionList {
   device_actions: DeviceAction[];
 }
 
-/**
- * An Endpoint Error object
- */
-export declare interface EndpointError {
-  /** Detailed Error message */
+/** Event log levels. */
+export enum EventLogLevel {
+  INFO = 'INFO',
+  WARNING = 'WARNING',
+  ERROR = 'ERROR',
+}
+
+/** Event log entry. */
+export declare interface EventLogEntry {
+  create_time: string;
+  level: EventLogLevel;
   message: string;
-  /** Domain information */
-  domain: string;
-  /** Error type (e.g. Bad request) */
-  reason: string;
 }
 
 /** A Name Value Pair */
@@ -652,6 +654,8 @@ export declare interface TestRun {
   prev_test_context?: TestContextObj;
   /** test context generated from this test run */
   next_test_context?: TestContextObj;
+  /** Test run log entries */
+  log_entries?: EventLogEntry[];
 }
 
 /** Partial test run information. */

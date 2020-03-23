@@ -40,6 +40,7 @@ import {TestRunDetailPage} from './test_run_detail_page';
 import {TestRunFailures} from './test_run_failures';
 import {TestRunList} from './test_run_list';
 import {TestRunListPage} from './test_run_list_page';
+import {TestRunProgress} from './test_run_progress';
 import {TestRunResults} from './test_run_results';
 import {TestRunTargetPicker} from './test_run_target_picker';
 import {TestRunTreeTable} from './test_run_tree_table';
@@ -57,6 +58,7 @@ const COMPONENTS = [
   TestRunFailures,
   TestRunList,
   TestRunListPage,
+  TestRunProgress,
   TestRunResults,
   TestRunTargetPicker,
   TestRunTreeTable,
