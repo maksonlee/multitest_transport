@@ -36,7 +36,7 @@
       Please authenticate with your Google Cloud Storage account to access this feature.
     </div>
     <build-channel-item [buildChannel]="buildChannels[0]" [edit]="false"
-                        (authorize)="authorize($event)" *ngIf="buildChannels[0]">
+                        (authChange)="load()" *ngIf="buildChannels[0]">
     </build-channel-item>
   </div>
 

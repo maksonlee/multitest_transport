@@ -22,7 +22,7 @@ import {EMPTY, of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
 import {BuildChannelAuthState} from '../services/mtt_models';
-import {getEl, getTextContent} from '../testing/jasmine_util';
+import {getTextContent} from '../testing/jasmine_util';
 
 import {BuildChannelSetup} from './build_channel_setup';
 import {SetupWizardModule} from './setup_wizard_module';
@@ -85,10 +85,5 @@ describe('BuildChannelSetup', () => {
     const text = getTextContent(el);
     expect(text).toContain('Google Drive name');
     expect(text).not.toContain('Local File Storage');
-  });
-
-  it('triggers the authorization flow', () => {
-    getEl(el, '.auth-button').click();
-    expect(mttClient.authorizeBuildChannel).toHaveBeenCalled();
   });
 });

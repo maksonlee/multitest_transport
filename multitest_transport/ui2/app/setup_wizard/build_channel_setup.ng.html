@@ -23,7 +23,7 @@
 </div>
 
 <build-channel-item [buildChannel]="driveBuildChannel" [edit]="false"
-                    (authorize)="authorize($event)" *ngIf="driveBuildChannel">
+                    (authChange)="load()" *ngIf="driveBuildChannel">
 </build-channel-item>
 <div class="description">
   Most test suite zip files are stored in Google Drive. Authenticating Google Drive here will allow

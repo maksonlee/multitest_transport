@@ -28,7 +28,7 @@
     <div class="actions">
       <!-- TODO: Add logout option -->
       <button mat-button color='accent' *ngIf="!isBuildChannelAvailable(buildChannel)"
-            (click)="authorize.emit(buildChannel.id)"
+            (click)="authorize()"
             aria-label="Authorize"
             class="auth-button">
         Authorize
@@ -41,7 +41,7 @@
         [routerLink]="['/build_channels', buildChannel.id]">
           <mat-icon>edit</mat-icon>
       </button>
-      <button *ngIf="!isDefault"
+      <button *ngIf="!isDefault && edit"
         class="delete-button"
         aria-label="Delete"
         matTooltip="Delete"

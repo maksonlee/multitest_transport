@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
-import {delay, finalize, first, takeUntil} from 'rxjs/operators';
+import {finalize, first, takeUntil} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
 import {BuildChannel, isDefaultBuildChannel} from '../services/mtt_models';
@@ -103,23 +103,5 @@ export class BuildChannelList implements OnInit, OnDestroy {
                         buildApiErrorMessage(error));
                   });
         });
-  }
-
-  /**
-   * Authorize Build Channel
-   * @param buildChannelId A buildchannel id
-   */
-  authorize(buildChannelId: string) {
-    this.mtt.authorizeBuildChannel(buildChannelId)
-        .pipe(delay(500))  // delay for data to be persisted
-        .subscribe(
-            () => {
-              this.load();
-            },
-            error => {
-              this.notifier.showError(
-                  'Failed to authorize build channel.',
-                  buildApiErrorMessage(error));
-            });
   }
 }

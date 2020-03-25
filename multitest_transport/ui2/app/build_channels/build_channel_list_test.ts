@@ -19,11 +19,11 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
-import {EMPTY, of as observableOf} from 'rxjs';
+import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
 import {BuildChannelAuthState} from '../services/mtt_models';
-import {getEl, getTextContent} from '../testing/jasmine_util';
+import {getTextContent} from '../testing/jasmine_util';
 
 import {BuildChannelList} from './build_channel_list';
 import {BuildChannelsModule} from './build_channels_module';
@@ -50,9 +50,7 @@ describe('BuildChannelList', () => {
   beforeEach(() => {
     liveAnnouncer =
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
-    mttClient = jasmine.createSpyObj(
-        'mttClient', ['authorizeBuildChannel', 'getBuildChannels']);
-    mttClient.authorizeBuildChannel.and.returnValue(EMPTY);
+    mttClient = jasmine.createSpyObj('mttClient', ['getBuildChannels']);
     mttClient.getBuildChannels.and.returnValue(
         observableOf({build_channels: [...BUILD_CHANNELS]}));
 
@@ -84,11 +82,6 @@ describe('BuildChannelList', () => {
     for (const buildChannel of BUILD_CHANNELS) {
       expect(text).toContain(buildChannel.name);
     }
-  });
-
-  it('trigger authorization flow correctly', () => {
-    getEl(el, '.auth-button').click();
-    expect(mttClient.authorizeBuildChannel).toHaveBeenCalled();
   });
 
   it('displays and announces a loading mask', () => {

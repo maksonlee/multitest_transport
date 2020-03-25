@@ -15,60 +15,33 @@
  */
 
 import {Component, OnInit} from '@angular/core';
-import {delay, first} from 'rxjs/operators';
+import {first} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
 import {BuildChannel} from '../services/mtt_models';
-import {Notifier} from '../services/notifier';
-import {buildApiErrorMessage} from '../shared/util';
 
-/**
- * This component allows users to authenticate their Google Drive or Google
- * Cloud Storage build channels
- */
+/** Default Google Drive build channel ID. */
+const GOOGLE_DRIVE_ID = 'google_drive';
+
+/** Allows users to authenticate their Google Drive build channel. */
 @Component({
   selector: 'build-channel-setup',
   styleUrls: ['build_channel_setup.css'],
   templateUrl: './build_channel_setup.ng.html',
 })
 export class BuildChannelSetup implements OnInit {
-  GOOGLE_DRIVE_ID = 'google_drive';
+  driveBuildChannel?: BuildChannel;
 
-  driveBuildChannel!: BuildChannel;
-
-  constructor(
-      private readonly mtt: MttClient, private readonly notifier: Notifier) {}
+  constructor(private readonly mtt: MttClient) {}
 
   ngOnInit() {
     this.load();
   }
 
   load() {
-    this.mtt.getBuildChannels().pipe(first()).subscribe(buildChannelList => {
-      const buildChannelMap: {[key: string]: BuildChannel} = {};
-      for (const buildChannel of buildChannelList.build_channels!) {
-        if (buildChannel.id === this.GOOGLE_DRIVE_ID) {
-          this.driveBuildChannel = buildChannel;
-        }
-      }
+    this.mtt.getBuildChannels().pipe(first()).subscribe(result => {
+      this.driveBuildChannel = (result.build_channels || [])
+          .find(bc => bc.id === GOOGLE_DRIVE_ID);
     });
-  }
-
-  /**
-   * Authorize Build Channel
-   * @param buildChannelId A buildchannel id
-   */
-  authorize(buildChannelId: string) {
-    this.mtt.authorizeBuildChannel(buildChannelId)
-        .pipe(delay(500))  // delay for data to be persisted
-        .subscribe(
-            () => {
-              this.load();
-            },
-            error => {
-              this.notifier.showError(
-                  'Failed to authorize build channel.',
-                  buildApiErrorMessage(error));
-            });
   }
 }

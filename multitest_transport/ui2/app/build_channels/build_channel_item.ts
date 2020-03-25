@@ -16,8 +16,10 @@
 
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 
+import {MttClient} from '../services/mtt_client';
 import {BuildChannel, isBuildChannelAvailable, isDefaultBuildChannel} from '../services/mtt_models';
-import {assertRequiredInput} from '../shared/util';
+import {Notifier} from '../services/notifier';
+import {assertRequiredInput, buildApiErrorMessage, delay} from '../shared/util';
 
 /** A component for displaying a list of build channels. */
 @Component({
@@ -27,18 +29,35 @@ import {assertRequiredInput} from '../shared/util';
 })
 export class BuildChannelItem implements OnInit {
   isBuildChannelAvailable = isBuildChannelAvailable;
-  columnsToDisplay = ['id', 'provider_name', 'state'];
   isDefault = true;
 
   @Input() buildChannel!: BuildChannel;
   @Input() edit = true;
 
-  @Output() authorize = new EventEmitter<string>();
+  @Output() authChange = new EventEmitter<BuildChannel>();
   @Output() deleteItem = new EventEmitter<BuildChannel>();
+
+  constructor(
+      private readonly mtt: MttClient, private readonly notifier: Notifier) {}
 
   ngOnInit() {
     assertRequiredInput(
         this.buildChannel, 'buildChannel', 'build_channel_item');
     this.isDefault = isDefaultBuildChannel(this.buildChannel);
+  }
+
+  authorize(): void {
+    this.mtt.authorizeBuildChannel(this.buildChannel.id)
+        .pipe(delay(500))  // delay for data to be persisted
+        .subscribe(
+            () => {
+              this.authChange.emit(this.buildChannel);
+            },
+            error => {
+              this.notifier.showError(
+                  `Failed to authorize build channel '${
+                      this.buildChannel.name}'.`,
+                  buildApiErrorMessage(error));
+            });
   }
 }

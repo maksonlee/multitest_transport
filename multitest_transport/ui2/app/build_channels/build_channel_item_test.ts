@@ -15,84 +15,123 @@
  */
 
 import {DebugElement} from '@angular/core';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
+import {of as observableOf, throwError} from 'rxjs';
 
-import {BuildChannelAuthState} from '../services/mtt_models';
-import {getEl, getTextContent} from '../testing/jasmine_util';
+import {MttClient} from '../services/mtt_client';
+import {BuildChannel, BuildChannelAuthState} from '../services/mtt_models';
+import {Notifier} from '../services/notifier';
+import {getEl, hasEl} from '../testing/jasmine_util';
 
 import {BuildChannelItem} from './build_channel_item';
 import {BuildChannelsModule} from './build_channels_module';
 import {BuildChannelsModuleNgSummary} from './build_channels_module.ngsummary';
 
 describe('BuildChannelItem', () => {
-  const defaultBuildChannel = {
-    id: 'google_drive',
-    name: 'Google Drive Name',
-    provider_name: 'Google Drive',
-    need_auth: true,
-    auth_state: BuildChannelAuthState.NOT_AUTHORIZED,
-  };
+  let mtt: jasmine.SpyObj<MttClient>;
+  let notifier: jasmine.SpyObj<Notifier>;
 
-  const customBuildChannel = {
-    id: '71a29c99-0182-4bf3-aa15-b6aee191e60b',
-    name: 'Custom Build Channel',
-    provider_name: 'Google Drive',
-    need_auth: true,
-    auth_state: BuildChannelAuthState.NOT_AUTHORIZED,
-  };
-
-  let buildChannelItem: BuildChannelItem;
-  let buildChannelItemFixture: ComponentFixture<BuildChannelItem>;
-  let el: DebugElement;
+  let component: BuildChannelItem;
+  let fixture: ComponentFixture<BuildChannelItem>;
+  let element: DebugElement;
 
   beforeEach(() => {
+    notifier = jasmine.createSpyObj(['showError']);
+    mtt = jasmine.createSpyObj(['authorizeBuildChannel']);
+
     TestBed.configureTestingModule({
       imports: [BuildChannelsModule, NoopAnimationsModule, RouterTestingModule],
       aotSummaries: BuildChannelsModuleNgSummary,
+      providers: [
+        {provide: MttClient, useValue: mtt},
+        {provide: Notifier, useValue: notifier},
+      ],
     });
-    buildChannelItemFixture = TestBed.createComponent(BuildChannelItem);
-    el = buildChannelItemFixture.debugElement;
-    buildChannelItem = buildChannelItemFixture.componentInstance;
-    buildChannelItem.buildChannel = defaultBuildChannel;
-    buildChannelItemFixture.detectChanges();
+
+    fixture = TestBed.createComponent(BuildChannelItem);
+    element = fixture.debugElement;
+    component = fixture.componentInstance;
+    spyOn(component.authChange, 'emit');
+    spyOn(component.deleteItem, 'emit');
   });
 
-  it('gets initialized correctly', () => {
-    expect(buildChannelItem).toBeTruthy();
+  /** Convenience method to reload a new build channel. */
+  function reload(data: Partial<BuildChannel>, editable = true) {
+    component.buildChannel = data as BuildChannel;
+    component.edit = editable;
+    fixture.detectChanges();
+  }
+
+  it('can display an authorized build channel', () => {
+    reload({need_auth: true, auth_state: BuildChannelAuthState.AUTHORIZED});
+    expect(hasEl(element, '.auth-button')).toBeFalsy();
   });
 
-  it('displays build channels correctly', () => {
-    const text = getTextContent(el);
-    expect(text).toContain(defaultBuildChannel.name);
+  it('can display an unauthorized build channel', () => {
+    reload({need_auth: true, auth_state: BuildChannelAuthState.NOT_AUTHORIZED});
+    expect(hasEl(element, '.auth-button')).toBeTruthy();
   });
 
-  it('can delete custom build channels', () => {
-    buildChannelItem.buildChannel = customBuildChannel;
-    buildChannelItem.ngOnInit();
-    buildChannelItemFixture.detectChanges();
-    const onDeleteItem = jasmine.createSpy('onDeleteItem');
-    buildChannelItem.deleteItem.subscribe(onDeleteItem);
-    getEl(el, '.delete-button').click();
-    expect(onDeleteItem).toHaveBeenCalled();
-    expect(onDeleteItem).toHaveBeenCalledWith(customBuildChannel);
+  it('can display a build channel without authorization', () => {
+    reload({need_auth: false});
+    expect(hasEl(element, '.auth-button')).toBeFalsy();
   });
 
-  describe('edit button', () => {
-    it('should display correct aria-label and tooltip', () => {
-      const editButton = getEl(el, '.edit-button');
-      expect(editButton).toBeTruthy();
-      expect(editButton.getAttribute('aria-label')).toBe('Edit');
-      expect(editButton.getAttribute('mattooltip')).toBe('Edit');
+  it('can enable editing', () => {
+    reload({}, true);
+    expect(hasEl(element, '.edit-button')).toBeTruthy();
+    expect(hasEl(element, '.delete-button')).toBeTruthy();
+  });
+
+  it('can disable editing', () => {
+    reload({}, false);
+    expect(hasEl(element, '.edit-button')).toBeFalsy();
+    expect(hasEl(element, '.delete-button')).toBeFalsy();
+  });
+
+  it('can display a default build channel', () => {
+    reload({id: 'google_cloud_storage'});  // default GCS build channel
+    // can't delete default build channel
+    expect(hasEl(element, '.edit-button')).toBeTruthy();
+    expect(hasEl(element, '.delete-button')).toBeFalsy();
+  });
+
+  it('can delete a build channel', () => {
+    reload({id: 'bc_id'});
+    getEl(element, '.delete-button').click();
+    // notifies parent to delete item
+    expect(component.deleteItem.emit)
+        .toHaveBeenCalledWith(jasmine.objectContaining({id: 'bc_id'}));
+  });
+
+  it('can authorize a build channel', fakeAsync(() => {
+       mtt.authorizeBuildChannel.and.returnValue(observableOf(null));
+       reload({
+         id: 'bc_id',
+         need_auth: true,
+         auth_state: BuildChannelAuthState.NOT_AUTHORIZED
+       });
+       getEl(element, '.auth-button').click();
+       tick(500);
+       // authorizes build channel and notifies parent
+       expect(mtt.authorizeBuildChannel).toHaveBeenCalledWith('bc_id');
+       expect(notifier.showError).not.toHaveBeenCalled();
+       expect(component.authChange.emit)
+           .toHaveBeenCalledWith(jasmine.objectContaining({id: 'bc_id'}));
+     }));
+
+  it('can handle errors when authorizing', () => {
+    mtt.authorizeBuildChannel.and.returnValue(throwError('authorize failed'));
+    reload({
+      id: 'bc_id',
+      need_auth: true,
+      auth_state: BuildChannelAuthState.NOT_AUTHORIZED
     });
-  });
-
-  describe('Authenticate button', () => {
-    it('should display correct aria-label', () => {
-      const authButton = getEl(el, '.auth-button');
-      expect(authButton).toBeTruthy();
-      expect(authButton.getAttribute('aria-label')).toBe('Authorize');
-    });
+    getEl(element, '.auth-button').click();
+    // displays error and doesn't notify parent
+    expect(notifier.showError).toHaveBeenCalled();
+    expect(component.authChange.emit).not.toHaveBeenCalled();
   });
 });

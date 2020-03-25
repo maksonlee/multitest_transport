@@ -132,23 +132,6 @@ export class ConfigSetPicker implements OnInit {
     this.selection.toggle(row);
   }
 
-  /**
-   * Authorize Build Channel
-   * @param buildChannelId A buildchannel id
-   */
-  authorize(buildChannelId: string) {
-    this.mttClient.authorizeBuildChannel(buildChannelId)
-        .subscribe(
-            () => {
-              this.load();
-            },
-            error => {
-              this.notifier.showError(
-                  'Failed to authorize build channel.',
-                  buildApiErrorMessage(error));
-            });
-  }
-
   back() {
     this.location.back();
   }

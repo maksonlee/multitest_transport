@@ -19,6 +19,7 @@ import {beforeEach, bootstrapTemplate, describe, it, setupModule} from 'google3/
 
 import {BuildChannelsModule} from 'google3/third_party/py/multitest_transport/ui2/app/build_channels/build_channels_module';
 import {BuildChannelsModuleNgSummary} from 'google3/third_party/py/multitest_transport/ui2/app/build_channels/build_channels_module.ngsummary';
+import {MttClient} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_client';
 import {BuildChannelAuthState} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_models';
 import {KarmaTestEnv} from 'google3/third_party/py/multitest_transport/ui2/scuba_tests/testing/karma_env';
 
@@ -32,6 +33,9 @@ describe('BuildChannelItem', () => {
     setupModule({
       imports: [BuildChannelsModule, NoopAnimationsModule, RouterTestingModule],
       summaries: [BuildChannelsModuleNgSummary],
+      providers: [
+        {provide: MttClient, useValue: {}},
+      ],
     });
   });
 

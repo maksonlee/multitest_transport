@@ -26,7 +26,7 @@
 
   <ng-container *ngFor="let buildChannel of buildChannels">
     <build-channel-item [buildChannel]="buildChannel" [edit]="true"
-                        (authorize)="authorize($event)" (deleteItem)="delete(buildChannel)"
+                        (authChange)="load()" (deleteItem)="delete(buildChannel)"
                         *ngIf="isDefaultBuildChannel(buildChannel)">
     </build-channel-item>
   </ng-container>
@@ -43,7 +43,7 @@
 
   <ng-container *ngFor="let buildChannel of buildChannels">
     <build-channel-item [buildChannel]="buildChannel" [edit]="true"
-                        (authorize)="authorize($event)" (deleteItem)="delete(buildChannel)"
+                        (authChange)="load()" (deleteItem)="delete(buildChannel)"
                         *ngIf="!isDefaultBuildChannel(buildChannel)">
     </build-channel-item>
   </ng-container>

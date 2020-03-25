@@ -18,6 +18,8 @@
 import {HttpErrorResponse} from '@angular/common/http';
 import {ElementRef} from '@angular/core';
 import * as moment from 'moment';
+import {timer} from 'rxjs';
+import {switchMap, mapTo} from 'rxjs/operators';
 
 // A custom interface for moment-duration-format.
 interface Duration extends moment.Duration {
@@ -59,6 +61,11 @@ export function continuousNumberArray(length: number, prefix = 0): number[] {
 /** Returns a deep copy of the specified value. */
 export function deepCopy<T>(value: T): T {
   return value && JSON.parse(JSON.stringify(value)) as T;
+}
+
+/** Replacement for rxjs delay() which is compatible with fakeAsync. */
+export function delay<T>(ms: number|Date) {
+  return switchMap((value: T) => timer(ms).pipe(mapTo(value)));
 }
 
 const FNMATCH_PATTERN = /(\*|\?|\[.*\])/;
