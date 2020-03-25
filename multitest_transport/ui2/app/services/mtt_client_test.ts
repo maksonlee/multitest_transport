@@ -62,10 +62,37 @@ describe('MttClient', () => {
       // Sends authorization code
       expect(httpClientSpy.post)
           .toHaveBeenCalledWith(
-              '/_ah/api/mtt/v1/build_channels/build_channel_id/auth_return',
+              '/_ah/api/mtt/v1/build_channels/build_channel_id/auth',
               {'redirect_uri': REDIRECT_URI, 'code': CODE},
               jasmine.any(Object));
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('authorizeBuildChannelWithServiceAccount', () => {
+    it('can authorize build channel with service account', done => {
+      httpClientSpy.put.and.returnValue(observableOf(null));
+      mttClient.authorizeBuildChannelWithServiceAccount('id', new Blob(['key']))
+          .subscribe(() => {
+            // Uploads key content
+            expect(httpClientSpy.put)
+                .toHaveBeenCalledWith(
+                    '/_ah/api/mtt/v1/build_channels/id/auth', {value: 'key'},
+                    jasmine.any(Object));
+            expect(httpClientSpy.put).toHaveBeenCalledTimes(1);
+            done();
+          });
+    });
+  });
+
+  describe('unauthorizeBuildChannel', () => {
+    it('can revoke build channel authorization', () => {
+      httpClientSpy.delete.and.returnValue(observableOf());
+      mttClient.unauthorizeBuildChannel('id').subscribe();
+      expect(httpClientSpy.delete)
+          .toHaveBeenCalledWith(
+              '/_ah/api/mtt/v1/build_channels/id/auth', jasmine.any(Object));
+      expect(httpClientSpy.delete).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -16,11 +16,12 @@
 
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {EMPTY, fromEvent, Observable, throwError} from 'rxjs';
-import {first, map, switchMap} from 'rxjs/operators';
+import {EMPTY, from, Observable} from 'rxjs';
+import {map, switchMap} from 'rxjs/operators';
 
 import {AnalyticsParams} from './analytics_service';
 import {AuthService, REDIRECT_URI} from './auth_service';
+import {readBlobAsText} from './file_service';
 import * as model from './mtt_models';
 
 /** URL for MTT API methods */
@@ -60,7 +61,7 @@ export class MttClient {
     const params = new AnalyticsParams('build_channels', 'authorize');
     return this.http.post<void>(
         `${MTT_API_URL}/build_channels/${
-            encodeURIComponent(buildChannelId)}/auth_return`,
+            encodeURIComponent(buildChannelId)}/auth`,
         {'redirect_uri': REDIRECT_URI, 'code': code}, {params});
   }
 
@@ -69,6 +70,27 @@ export class MttClient {
       Observable<model.AuthorizationInfo> {
     const params = new HttpParams().set('redirect_uri', REDIRECT_URI);
     return this.http.get<model.AuthorizationInfo>(
+        `${MTT_API_URL}/build_channels/${
+            encodeURIComponent(buildChannelId)}/auth`,
+        {params});
+  }
+
+  /** Authorizes a build channel with a service account JSON key. */
+  authorizeBuildChannelWithServiceAccount(buildChannelId: string, key: Blob):
+      Observable<void> {
+    return from(readBlobAsText(key)).pipe(switchMap(data => {
+      const params = new AnalyticsParams('build_channels', 'authorize');
+      return this.http.put<void>(
+          `${MTT_API_URL}/build_channels/${
+              encodeURIComponent(buildChannelId)}/auth`,
+          {value: data}, {params});
+    }));
+  }
+
+  /** Revokes a build channel's authorization. */
+  unauthorizeBuildChannel(buildChannelId: string): Observable<void> {
+    const params = new AnalyticsParams('build_channels', 'unauthorize');
+    return this.http.delete<void>(
         `${MTT_API_URL}/build_channels/${
             encodeURIComponent(buildChannelId)}/auth`,
         {params});
@@ -367,7 +389,8 @@ export class TestRunActionClient {
       Observable<model.TestRunAction> {
     const params = new AnalyticsParams('test_run_actions', 'update');
     return this.http.put<model.TestRunAction>(
-        `${TestRunActionClient.PATH}/${encodeURIComponent(id)}`, data, {params});
+        `${TestRunActionClient.PATH}/${encodeURIComponent(id)}`, data,
+        {params});
   }
 
   /** Deletes a test run action. */
@@ -387,19 +410,12 @@ export class TestRunActionClient {
 
   /** Authorizes a test run action with a service account JSON key. */
   authorizeWithServiceAccount(id: string, key: Blob): Observable<void> {
-    const reader = new FileReader();
-    const uploadObs =
-        fromEvent(reader, 'loadend').pipe(first()).pipe(switchMap(() => {
-          if (reader.error) {
-            return throwError(reader.error);
-          }
-          const params = new AnalyticsParams('test_run_actions', 'authorize');
-          return this.http.put<void>(
-              `${TestRunActionClient.PATH}/${encodeURIComponent(id)}/auth`,
-              {value: reader.result}, {params});
-        }));
-    reader.readAsBinaryString(key);
-    return uploadObs;
+    return from(readBlobAsText(key)).pipe(switchMap(data => {
+      const params = new AnalyticsParams('test_run_actions', 'authorize');
+      return this.http.put<void>(
+          `${TestRunActionClient.PATH}/${encodeURIComponent(id)}/auth`,
+          {value: data}, {params});
+    }));
   }
 
   /** Revokes a test run action's authorization. */

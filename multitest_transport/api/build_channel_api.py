@@ -228,9 +228,9 @@ class BuildChannelApi(remote.Service):
           redirect_uri=messages.StringField(2, required=True),
           code=messages.StringField(3, required=True)),
       message_types.VoidMessage,
-      path='{build_channel_id}/auth_return',
+      path='{build_channel_id}/auth',
       http_method='POST',
-      name='auth_return')
+      name='authorize')
   def AuthorizeConfig(self, request):
     """Authorize a build channel configuration with an authorization code."""
     build_channel = self._GetBuildChannel(request.build_channel_id)

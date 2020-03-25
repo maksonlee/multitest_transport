@@ -194,7 +194,7 @@ class BuildChannelApiTest(api_test_util.TestCase):
     mock_get_flow.return_value = oauth2_flow
     # Verify that credentials were obtained and stored
     self.app.post(
-        '/_ah/api/mtt/v1/build_channels/%s/auth_return?redirect_uri=%s&code=%s'
+        '/_ah/api/mtt/v1/build_channels/%s/auth?redirect_uri=%s&code=%s'
         % (config.key.id(), 'redirect_uri', 'code'))
     oauth2_flow.fetch_token.assert_called_once_with(code='code')
     self.assertIsNotNone(config.credentials)

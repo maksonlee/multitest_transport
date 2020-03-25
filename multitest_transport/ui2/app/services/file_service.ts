@@ -201,8 +201,22 @@ export class FileUploadEvent {
   }
 }
 
-/** Utility method to join multiple file path substrings. */
+/** Join multiple file path substrings. */
 export function joinPath(...parts: string[]): string {
   // Remove leading and trailing slashes and join.
   return parts.map(p => p.replace(/^\/|\/$/g, '')).join('/');
+}
+
+/** Read a blob as text. */
+export function readBlobAsText(blob: Blob): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve(reader.result as string);
+    };
+    reader.onerror = () => {
+      reject(reader.error);
+    };
+    reader.readAsText(blob);
+  });
 }
