@@ -142,15 +142,16 @@ class BuildChannel(object):
   def __init__(self, config):
     self.id = config.key.id()
     self.config = config
-    self.auth_state = ndb_models.BuildChannelAuthState.NOT_AUTHORIZED
     self.provider = GetBuildProviderClass(config.provider_name)()
     self.provider.UpdateOptions(
         **ndb_models.NameValuePair.ToDict(self.config.options))
     # Load credentials and set authorization state
     self.oauth2_config = self.provider.GetOAuth2Config()
-    self.auth_state = ndb_models.BuildChannelAuthState.NOT_AUTHORIZED
-    if config.credentials:
-      self.auth_state = ndb_models.BuildChannelAuthState.AUTHORIZED
+    self.auth_state = ndb_models.AuthorizationState.UNAUTHORIZED
+    if not self.oauth2_config:
+      self.auth_state = ndb_models.AuthorizationState.NOT_APPLICABLE
+    elif config.credentials:
+      self.auth_state = ndb_models.AuthorizationState.AUTHORIZED
       self.provider.UpdateCredentials(config.credentials)
 
   def ListBuildItems(self, path=None, page_token=None, item_type=None):

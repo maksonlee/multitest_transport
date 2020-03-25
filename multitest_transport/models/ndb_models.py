@@ -31,12 +31,6 @@ from multitest_transport.util import oauth2_util
 NODE_CONFIG_ID = 1
 
 
-class BuildChannelAuthState(messages.Enum):
-  """Build channel authorization states."""
-  NOT_AUTHORIZED = 0
-  AUTHORIZED = 1
-
-
 class NameValuePair(ndb.Model):
   """A generic name-value pair to store an option.
 

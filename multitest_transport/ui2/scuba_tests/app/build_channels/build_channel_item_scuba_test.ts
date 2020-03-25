@@ -20,7 +20,7 @@ import {beforeEach, bootstrapTemplate, describe, it, setupModule} from 'google3/
 import {BuildChannelsModule} from 'google3/third_party/py/multitest_transport/ui2/app/build_channels/build_channels_module';
 import {BuildChannelsModuleNgSummary} from 'google3/third_party/py/multitest_transport/ui2/app/build_channels/build_channels_module.ngsummary';
 import {MttClient} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_client';
-import {BuildChannelAuthState} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_models';
+import {AuthorizationState} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_models';
 import {KarmaTestEnv} from 'google3/third_party/py/multitest_transport/ui2/scuba_tests/testing/karma_env';
 
 describe('BuildChannelItem', () => {
@@ -42,8 +42,7 @@ describe('BuildChannelItem', () => {
   it.async('renders not authorized build channel item', async () => {
     const unauthorizedChannel = {
       name: 'Unauthorized Build Channel',
-      need_auth: true,
-      auth_state: BuildChannelAuthState.NOT_AUTHORIZED,
+      auth_state: AuthorizationState.UNAUTHORIZED,
     };
 
     bootstrapTemplate(
@@ -57,8 +56,7 @@ describe('BuildChannelItem', () => {
   it.async('renders authorized build channel item', async () => {
     const authorizedChannel = {
       name: 'Authorized Build Channel',
-      need_auth: true,
-      auth_state: BuildChannelAuthState.AUTHORIZED,
+      auth_state: AuthorizationState.AUTHORIZED,
     };
 
     bootstrapTemplate(
@@ -72,7 +70,7 @@ describe('BuildChannelItem', () => {
   it.async('renders build channel item which do not require auth', async () => {
     const buildchannel = {
       name: 'Build Channel without Authorization',
-      need_auth: false,
+      auth_state: AuthorizationState.NOT_APPLICABLE,
     };
 
     bootstrapTemplate(

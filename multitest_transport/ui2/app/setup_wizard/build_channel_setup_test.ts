@@ -21,7 +21,7 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {EMPTY, of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
-import {BuildChannelAuthState} from '../services/mtt_models';
+import {AuthorizationState} from '../services/mtt_models';
 import {getTextContent} from '../testing/jasmine_util';
 
 import {BuildChannelSetup} from './build_channel_setup';
@@ -34,15 +34,13 @@ describe('BuildChannelSetup', () => {
       id: 'google_drive',
       name: 'Google Drive name',
       provider_name: 'Google Drive provider',
-      need_auth: true,
-      auth_state: BuildChannelAuthState.NOT_AUTHORIZED,
+      auth_state: AuthorizationState.UNAUTHORIZED,
     },
     {
       id: 'google_cloud_storage',
       name: 'Google Cloud Storage name',
       provider_name: 'Google Cloud Storage provider',
-      need_auth: true,
-      auth_state: BuildChannelAuthState.NOT_AUTHORIZED,
+      auth_state: AuthorizationState.UNAUTHORIZED,
     },
     {
       id: 'local_file_store',

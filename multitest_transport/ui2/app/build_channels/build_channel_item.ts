@@ -17,7 +17,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 
 import {MttClient} from '../services/mtt_client';
-import {BuildChannel, isBuildChannelAvailable, isDefaultBuildChannel} from '../services/mtt_models';
+import {AuthorizationState, BuildChannel, isDefaultBuildChannel} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {assertRequiredInput, buildApiErrorMessage, delay} from '../shared/util';
 
@@ -28,7 +28,7 @@ import {assertRequiredInput, buildApiErrorMessage, delay} from '../shared/util';
   templateUrl: './build_channel_item.ng.html',
 })
 export class BuildChannelItem implements OnInit {
-  isBuildChannelAvailable = isBuildChannelAvailable;
+  readonly AuthorizationState = AuthorizationState;
   isDefault = true;
 
   @Input() buildChannel!: BuildChannel;

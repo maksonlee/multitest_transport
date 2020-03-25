@@ -21,7 +21,7 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf, throwError} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
-import {BuildChannel, BuildChannelAuthState} from '../services/mtt_models';
+import {AuthorizationState, BuildChannel} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {getEl, hasEl} from '../testing/jasmine_util';
 
@@ -65,17 +65,17 @@ describe('BuildChannelItem', () => {
   }
 
   it('can display an authorized build channel', () => {
-    reload({need_auth: true, auth_state: BuildChannelAuthState.AUTHORIZED});
+    reload({auth_state: AuthorizationState.AUTHORIZED});
     expect(hasEl(element, '.auth-button')).toBeFalsy();
   });
 
   it('can display an unauthorized build channel', () => {
-    reload({need_auth: true, auth_state: BuildChannelAuthState.NOT_AUTHORIZED});
+    reload({auth_state: AuthorizationState.UNAUTHORIZED});
     expect(hasEl(element, '.auth-button')).toBeTruthy();
   });
 
   it('can display a build channel without authorization', () => {
-    reload({need_auth: false});
+    reload({auth_state: AuthorizationState.NOT_APPLICABLE});
     expect(hasEl(element, '.auth-button')).toBeFalsy();
   });
 
@@ -108,11 +108,7 @@ describe('BuildChannelItem', () => {
 
   it('can authorize a build channel', fakeAsync(() => {
        mtt.authorizeBuildChannel.and.returnValue(observableOf(null));
-       reload({
-         id: 'bc_id',
-         need_auth: true,
-         auth_state: BuildChannelAuthState.NOT_AUTHORIZED
-       });
+       reload({id: 'bc_id', auth_state: AuthorizationState.UNAUTHORIZED});
        getEl(element, '.auth-button').click();
        tick(500);
        // authorizes build channel and notifies parent
@@ -124,11 +120,7 @@ describe('BuildChannelItem', () => {
 
   it('can handle errors when authorizing', () => {
     mtt.authorizeBuildChannel.and.returnValue(throwError('authorize failed'));
-    reload({
-      id: 'bc_id',
-      need_auth: true,
-      auth_state: BuildChannelAuthState.NOT_AUTHORIZED
-    });
+    reload({id: 'bc_id', auth_state: AuthorizationState.UNAUTHORIZED});
     getEl(element, '.auth-button').click();
     // displays error and doesn't notify parent
     expect(notifier.showError).toHaveBeenCalled();

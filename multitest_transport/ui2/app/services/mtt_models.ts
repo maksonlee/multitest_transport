@@ -93,14 +93,6 @@ export declare interface BuildItemList {
 }
 
 /**
- * Build channel authorization states
- */
-export enum BuildChannelAuthState {
-  NOT_AUTHORIZED = 'NOT_AUTHORIZED',
-  AUTHORIZED = 'AUTHORIZED'
-}
-
-/**
  * A build channel, which combines channel config and provider properties.
  *
  * id: build channel id
@@ -111,8 +103,7 @@ export declare interface BuildChannel {
   id: string;
   name: string;
   provider_name: string;
-  auth_state: BuildChannelAuthState;
-  need_auth: boolean;
+  auth_state: AuthorizationState;
 }
 
 /**
@@ -125,9 +116,7 @@ export const DEFAULT_BUILD_CHANNEL_IDS =
  * Check whether a build channel is available
  */
 export function isBuildChannelAvailable(buildChannel: BuildChannel): boolean {
-  return !(
-      buildChannel.need_auth &&
-      buildChannel.auth_state === BuildChannelAuthState.NOT_AUTHORIZED);
+  return buildChannel.auth_state !== AuthorizationState.UNAUTHORIZED;
 }
 
 /**

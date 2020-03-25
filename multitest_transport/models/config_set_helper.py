@@ -59,7 +59,7 @@ def GetRemoteConfigSetInfos():
   # Get build items from MTT GCS bucket
   build_channel = build.GetBuildChannel(GCS_BUILD_CHANNEL_ID)
   if (not build_channel) or (build_channel.auth_state ==
-                             ndb_models.BuildChannelAuthState.NOT_AUTHORIZED):
+                             ndb_models.AuthorizationState.UNAUTHORIZED):
     return []
 
   try:

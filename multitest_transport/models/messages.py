@@ -317,19 +317,16 @@ class BuildChannel(messages.Message):
   name = messages.StringField(2, required=True)
   provider_name = messages.StringField(3, required=True)
   auth_state = messages.EnumField(
-      ndb_models.BuildChannelAuthState, 4, required=True)
-  need_auth = messages.BooleanField(5, required=True)
+      ndb_models.AuthorizationState, 4, required=True)
 
 
 @Converter(build.BuildChannel, BuildChannel)
 def _BuildChannelConverter(obj):
-  authorizable = True if obj.oauth2_config else False
   return BuildChannel(
       id=str(obj.id),
       name=obj.name,
       provider_name=obj.provider_name,
-      auth_state=obj.auth_state,
-      need_auth=authorizable)
+      auth_state=obj.auth_state)
 
 
 class BuildChannelList(messages.Message):

@@ -21,33 +21,35 @@
   </h3>
 
   <div>
-    <status-button [style.visibility]="buildChannel.need_auth ? 'visible' : 'hidden'"
-        [state]='isBuildChannelAvailable(buildChannel) ? "Authorized" : "Unauthorized"'>
+    <status-button
+        *ngIf="buildChannel.auth_state && buildChannel.auth_state !== AuthorizationState.NOT_APPLICABLE"
+        [state]='buildChannel.auth_state'>
     </status-button>
 
     <div class="actions">
       <!-- TODO: Add logout option -->
-      <button mat-button color='accent' *ngIf="!isBuildChannelAvailable(buildChannel)"
-            (click)="authorize()"
-            aria-label="Authorize"
-            class="auth-button">
+      <button *ngIf="buildChannel.auth_state === AuthorizationState.UNAUTHORIZED"
+              mat-button color='accent'
+              (click)="authorize()"
+              aria-label="Authorize"
+              class="auth-button">
         Authorize
       </button>
       <button *ngIf="edit"
-        class="edit-button"
-        aria-label="Edit"
-        matTooltip="Edit"
-        mat-button
-        [routerLink]="['/build_channels', buildChannel.id]">
-          <mat-icon>edit</mat-icon>
+              class="edit-button"
+              aria-label="Edit"
+              matTooltip="Edit"
+              mat-button
+              [routerLink]="['/build_channels', buildChannel.id]">
+        <mat-icon>edit</mat-icon>
       </button>
       <button *ngIf="!isDefault && edit"
-        class="delete-button"
-        aria-label="Delete"
-        matTooltip="Delete"
-        mat-button
-        (click)="deleteItem.emit(buildChannel)">
-          <mat-icon>delete</mat-icon>
+              class="delete-button"
+              aria-label="Delete"
+              matTooltip="Delete"
+              mat-button
+              (click)="deleteItem.emit(buildChannel)">
+        <mat-icon>delete</mat-icon>
       </button>
     </div>
   </div>
