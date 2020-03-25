@@ -46,6 +46,7 @@ export class BuildChannelItem implements OnInit {
     this.isDefault = isDefaultBuildChannel(this.buildChannel);
   }
 
+  /** Authorize a build channel. */
   authorize(): void {
     this.mtt.authorizeBuildChannel(this.buildChannel.id)
         .pipe(delay(500))  // delay for data to be persisted
@@ -56,6 +57,42 @@ export class BuildChannelItem implements OnInit {
             error => {
               this.notifier.showError(
                   `Failed to authorize build channel '${
+                      this.buildChannel.name}'.`,
+                  buildApiErrorMessage(error));
+            });
+  }
+
+  /** Authorize a build channel with a service account JSON key. */
+  uploadKeyfile(keyFile?: File) {
+    if (!keyFile) {
+      return;
+    }
+    this.mtt
+        .authorizeBuildChannelWithServiceAccount(this.buildChannel.id, keyFile)
+        .pipe(delay(500))  // Delay for data to be persisted
+        .subscribe(
+            () => {
+              this.authChange.emit(this.buildChannel);
+            },
+            error => {
+              this.notifier.showError(
+                  `Failed to authorize build channel '${
+                      this.buildChannel.name}'.`,
+                  buildApiErrorMessage(error));
+            });
+  }
+
+  /** Revoke a build channel's authorization. */
+  revokeAuthorization() {
+    this.mtt.unauthorizeBuildChannel(this.buildChannel.id)
+        .pipe(delay(500))  // Delay for data to be persisted
+        .subscribe(
+            () => {
+              this.authChange.emit(this.buildChannel);
+            },
+            error => {
+              this.notifier.showError(
+                  `Failed to revoke authorization for build channel '${
                       this.buildChannel.name}'.`,
                   buildApiErrorMessage(error));
             });

@@ -16,26 +16,26 @@
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
-h3 {
-  font-size: 16px;
-  font-weight: normal;
-}
+.mat-card {
+  margin-bottom: 20px;
+  min-height: 68px;
 
-mat-card {
-  min-height: 67.313px;
-}
+  .build-channel-header {
+    align-items: baseline;
+  }
 
-.actions {
-  float: right;
-}
+  h3 {
+    display: inline-block;
+    font-size: 16px;
+    font-weight: normal;
+    margin: 0 12px 0 0;
+  }
 
-.info {
-  color: $text-primary;
-  vertical-align: middle;
-  font-size: 14px;
-}
+  input[type=file] {
+    display: none;
+  }
 
-.info-icon {
-  font-size: 24px;
-  margin: 0 8px 0 20px;
+  .mat-stroked-button {
+    margin: 0 3px;
+  }
 }

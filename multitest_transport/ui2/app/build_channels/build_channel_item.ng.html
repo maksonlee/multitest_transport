@@ -14,43 +14,59 @@
  limitations under the License.
 -->
 
+<mat-card class="hover-mat-card">
+  <div class="build-channel-header">
+    <span fxFlex>
+      <h3>{{buildChannel.name}}</h3>
+      <status-button
+          *ngIf="buildChannel.auth_state && buildChannel.auth_state !== AuthorizationState.NOT_APPLICABLE"
+          [state]='buildChannel.auth_state'>
+      </status-button>
+    </span>
 
-<mat-card class="hover-mat-card margin-bottom">
-  <h3>
-    {{buildChannel.name}}
-  </h3>
-
-  <div>
-    <status-button
-        *ngIf="buildChannel.auth_state && buildChannel.auth_state !== AuthorizationState.NOT_APPLICABLE"
-        [state]='buildChannel.auth_state'>
-    </status-button>
-
-    <div class="actions">
-      <!-- TODO: Add logout option -->
-      <button *ngIf="buildChannel.auth_state === AuthorizationState.UNAUTHORIZED"
-              mat-button color='accent'
-              (click)="authorize()"
-              aria-label="Authorize"
-              class="auth-button">
-        Authorize
-      </button>
-      <button *ngIf="edit"
-              class="edit-button"
-              aria-label="Edit"
-              matTooltip="Edit"
-              mat-button
-              [routerLink]="['/build_channels', buildChannel.id]">
-        <mat-icon>edit</mat-icon>
-      </button>
-      <button *ngIf="!isDefault && edit"
-              class="delete-button"
-              aria-label="Delete"
-              matTooltip="Delete"
-              mat-button
-              (click)="deleteItem.emit(buildChannel)">
-        <mat-icon>delete</mat-icon>
-      </button>
-    </div>
+    <button *ngIf="buildChannel.auth_state === AuthorizationState.UNAUTHORIZED"
+            class="auth-button"
+            mat-stroked-button
+            aria-label="Authorize"
+            color='accent'
+            (click)="authorize()">
+      Authorize
+    </button>
+    <input type="file" #keyfileInput
+           (change)="uploadKeyfile($event.target.files[0]); keyfileInput.value = ''"/>
+    <button *ngIf="buildChannel.auth_state === AuthorizationState.UNAUTHORIZED"
+            class="keyfile-button"
+            mat-stroked-button
+            aria-label="Upload Keyfile"
+            color='accent'
+            (click)="keyfileInput.click()">
+      Upload Service Account Key
+    </button>
+    <button *ngIf="buildChannel.auth_state === AuthorizationState.AUTHORIZED"
+            class="revoke-button"
+            mat-stroked-button
+            aria-label="Revoke Authorization"
+            color='accent'
+            (click)="revokeAuthorization()">
+      Revoke Authorization
+    </button>
+    <button *ngIf="edit"
+            class="edit-button"
+            mat-icon-button
+            aria-label="Edit"
+            matTooltip="Edit"
+            [routerLink]="['/build_channels', buildChannel.id]">
+      <mat-icon>edit</mat-icon>
+    </button>
+    <button *ngIf="!isDefault && edit"
+            class="delete-button"
+            mat-icon-button
+            aria-label="Delete"
+            matTooltip="Delete"
+            (click)="deleteItem.emit(buildChannel)">
+      <mat-icon>delete</mat-icon>
+    </button>
   </div>
+
+  <!-- TODO: add build channel description -->
 </mat-card>

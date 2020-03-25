@@ -39,7 +39,10 @@ describe('BuildChannelItem', () => {
 
   beforeEach(() => {
     notifier = jasmine.createSpyObj(['showError']);
-    mtt = jasmine.createSpyObj(['authorizeBuildChannel']);
+    mtt = jasmine.createSpyObj([
+      'authorizeBuildChannel', 'authorizeBuildChannelWithServiceAccount',
+      'unauthorizeBuildChannel'
+    ]);
 
     TestBed.configureTestingModule({
       imports: [BuildChannelsModule, NoopAnimationsModule, RouterTestingModule],
@@ -67,16 +70,22 @@ describe('BuildChannelItem', () => {
   it('can display an authorized build channel', () => {
     reload({auth_state: AuthorizationState.AUTHORIZED});
     expect(hasEl(element, '.auth-button')).toBeFalsy();
+    expect(hasEl(element, '.keyfile-button')).toBeFalsy();
+    expect(hasEl(element, '.revoke-button')).toBeTruthy();
   });
 
   it('can display an unauthorized build channel', () => {
     reload({auth_state: AuthorizationState.UNAUTHORIZED});
     expect(hasEl(element, '.auth-button')).toBeTruthy();
+    expect(hasEl(element, '.keyfile-button')).toBeTruthy();
+    expect(hasEl(element, '.revoke-button')).toBeFalsy();
   });
 
   it('can display a build channel without authorization', () => {
     reload({auth_state: AuthorizationState.NOT_APPLICABLE});
     expect(hasEl(element, '.auth-button')).toBeFalsy();
+    expect(hasEl(element, '.keyfile-button')).toBeFalsy();
+    expect(hasEl(element, '.revoke-button')).toBeFalsy();
   });
 
   it('can enable editing', () => {
@@ -122,6 +131,57 @@ describe('BuildChannelItem', () => {
     mtt.authorizeBuildChannel.and.returnValue(throwError('authorize failed'));
     reload({id: 'bc_id', auth_state: AuthorizationState.UNAUTHORIZED});
     getEl(element, '.auth-button').click();
+    // displays error and doesn't notify parent
+    expect(notifier.showError).toHaveBeenCalled();
+    expect(component.authChange.emit).not.toHaveBeenCalled();
+  });
+
+  it('can authorize a build channel with a service account', fakeAsync(() => {
+       mtt.authorizeBuildChannelWithServiceAccount.and.returnValue(
+           observableOf(null));
+       reload({id: 'bc_id', auth_state: AuthorizationState.UNAUTHORIZED});
+       const file = new File([], 'file');
+       const fileInput = getEl<HTMLInputElement>(element, 'input[type=file]');
+       spyOnProperty(fileInput, 'files').and.returnValue([file]);
+       fileInput.dispatchEvent(new Event('change'));  // Select a key file
+       tick(500);
+       // authorizes build channel and notifies parent
+       expect(mtt.authorizeBuildChannelWithServiceAccount)
+           .toHaveBeenCalledWith('bc_id', file);
+       expect(notifier.showError).not.toHaveBeenCalled();
+       expect(component.authChange.emit)
+           .toHaveBeenCalledWith(jasmine.objectContaining({id: 'bc_id'}));
+     }));
+
+  it('can handle errors when authorizing with a service account', () => {
+    mtt.authorizeBuildChannelWithServiceAccount.and.returnValue(
+        throwError('authorize failed'));
+    reload({id: 'bc_id', auth_state: AuthorizationState.UNAUTHORIZED});
+    const fileInput = getEl<HTMLInputElement>(element, 'input[type=file]');
+    spyOnProperty(fileInput, 'files').and.returnValue([new File([], 'file')]);
+    fileInput.dispatchEvent(new Event('change'));  // Select a key file
+    // displays error and doesn't notify parent
+    expect(notifier.showError).toHaveBeenCalled();
+    expect(component.authChange.emit).not.toHaveBeenCalled();
+  });
+
+  it('can revoke a build channel\'s authorization', fakeAsync(() => {
+       mtt.unauthorizeBuildChannel.and.returnValue(observableOf(null));
+       reload({id: 'bc_id', auth_state: AuthorizationState.AUTHORIZED});
+       getEl(element, '.revoke-button').click();
+       tick(500);
+       // revokes authorization and notifies parent
+       expect(mtt.unauthorizeBuildChannel).toHaveBeenCalledWith('bc_id');
+       expect(notifier.showError).not.toHaveBeenCalled();
+       expect(component.authChange.emit)
+           .toHaveBeenCalledWith(jasmine.objectContaining({id: 'bc_id'}));
+     }));
+
+  it('can handle errors when revoking authorization', () => {
+    mtt.unauthorizeBuildChannel.and.returnValue(
+        throwError('unauthorize failed'));
+    reload({id: 'bc_id', auth_state: AuthorizationState.AUTHORIZED});
+    getEl(element, '.revoke-button').click();
     // displays error and doesn't notify parent
     expect(notifier.showError).toHaveBeenCalled();
     expect(component.authChange.emit).not.toHaveBeenCalled();
