@@ -1,7 +1,14 @@
-load("//multitest_transport:adapter.bzl", "karma_web_test_suite", "ng_module", "third_party_js", "ts_development_sources")
-load("//testing/karma/karma_scuba_framework:karma_scuba.bzl", "karma_scuba_plugins")
+load("//multitest_transport:adapter.bzl", "ng_module", "third_party_js")
+load("//multitest_transport/ui2/scuba_tests:build_defs.bzl", "karma_scuba_test")
 
 licenses(["notice"])
+
+karma_scuba_test(
+    name = "scuba_tests",
+    deps = [
+        ":build_channels_scuba_tests",
+    ],
+)
 
 ng_module(
     name = "build_channels_scuba_tests",
@@ -26,28 +33,4 @@ ng_module(
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/scuba_tests/testing:karma",
     ],
-)
-
-ts_development_sources(
-    name = "dev_sources_for_test",
-    testonly = 1,
-    deps = [
-        ":build_channels_scuba_tests",
-    ],
-)
-
-karma_web_test_suite(
-    name = "scuba_tests",
-    browsers = [
-        "//multitest_transport/ui2/scuba_tests:chrome-linux",
-    ],
-    data = [
-        "//javascript/angular2/components/testing:google_sans.css",
-        "//javascript/angular2/components/testing:material_icons.css",
-        "//javascript/angular2/components/testing:product_sans.css",
-        "//javascript/angular2/components/testing:roboto.css",
-        "//multitest_transport/ui2:styles.css",
-    ],
-    karma_plugins = karma_scuba_plugins(),
-    manifest = ":dev_sources_for_test",
 )

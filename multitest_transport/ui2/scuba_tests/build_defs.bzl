@@ -1,7 +1,7 @@
 """Common Scuba build rules"""
 
 load("//testing/karma/karma_scuba_framework:karma_scuba.bzl", "karma_scuba_plugins")
-load("//third_party/py/multitest_transport:adapter.bzl", "karma_web_test_suite", "ts_development_sources")
+load("//third_party/py/multitest_transport:adapter.bzl", "karma_web_test_suite", "third_party_js", "ts_development_sources")
 
 _DEFAULT_BROWSER_LIST = ["//third_party/py/multitest_transport/ui2/scuba_tests:chrome-linux"]
 _DEFAULT_KARMA_DATA_LIST = [
@@ -29,6 +29,10 @@ def karma_scuba_test(
         name = name + "_sources",
         testonly = 1,
         deps = deps,
+        runtime_deps = [
+            third_party_js("moment:moment_minified"),
+            third_party_js("moment_duration_format"),
+        ],
     )
 
     karma_web_test_suite(
