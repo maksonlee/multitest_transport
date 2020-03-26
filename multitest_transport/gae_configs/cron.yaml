@@ -18,6 +18,11 @@ cron:
   target: default
   schedule: every 1 hours
 
+- description: Server analytics heartbeat
+  url: /sidekicks/heartbeat_sender
+  target: default
+  schedule: every 1 hours
+
 - description: Clean up resource download trackers
   url: /sidekicks/test_resource_tracker_cleaner
   target: default

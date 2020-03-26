@@ -37,5 +37,7 @@ py_appengine_library(
     visibility = ["//multitest_transport"],
     deps = [
         ":gcs_cleaner_lib",
+        "//multitest_transport/test_scheduler",
+        "//multitest_transport/util",
     ],
 )

@@ -13,11 +13,11 @@
 # limitations under the License.
 
 """A main app for sidekick modules."""
-
 import webapp2
 
 from multitest_transport.sidekicks import gcs_cleaner
 from multitest_transport.test_scheduler import download_util
+from multitest_transport.util import analytics
 
 
 class GcsCleanerHandler(webapp2.RequestHandler):
@@ -29,6 +29,7 @@ class GcsCleanerHandler(webapp2.RequestHandler):
 
 APP = webapp2.WSGIApplication([
     ('/sidekicks/gcs_cleaner', GcsCleanerHandler),
+    ('/sidekicks/heartbeat_sender', analytics.HeartbeatSender),
     ('/sidekicks/test_resource_tracker_cleaner',
      download_util.TestResourceTrackerCleaner),
 ], debug=True)

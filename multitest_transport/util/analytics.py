@@ -16,6 +16,7 @@
 import logging
 from six.moves import urllib
 
+import webapp2
 from google.appengine.ext import deferred
 
 from multitest_transport.models import ndb_models
@@ -28,7 +29,9 @@ _EVENT_TYPE = 'event'
 _TRACKING_ID = 'UA-140187490-2'
 
 # GA categories and actions
+SYSTEM_CATEGORY = 'system'
 TEST_RUN_CATEGORY = 'test_run'
+HEARTBEAT_ACTION = 'heartbeat'
 START_ACTION = 'start'
 END_ACTION = 'end'
 
@@ -93,3 +96,10 @@ class _Event(object):
 
   def __ne__(self, other):
     return not self.__eq__(other)
+
+
+class HeartbeatSender(webapp2.RequestHandler):
+  """Request handler which periodically logs that this instance is up."""
+
+  def get(self):
+    Log(SYSTEM_CATEGORY, HEARTBEAT_ACTION)
