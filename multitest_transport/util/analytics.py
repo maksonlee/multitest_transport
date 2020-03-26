@@ -14,6 +14,7 @@
 
 """Utilities for tracking Google Analytics events."""
 import logging
+import six
 from six.moves import urllib
 
 import webapp2
@@ -36,17 +37,20 @@ START_ACTION = 'start'
 END_ACTION = 'end'
 
 # GA custom metrics definitions
-_METRIC_KEYS = {'app_version': 'cd1',
-                'test_name': 'cd2',
-                'test_version': 'cd3',
-                'state': 'cd4',
-                'is_rerun': 'cd5',
-                'duration_seconds': 'cm1',
-                'device_count': 'cm2',
-                'attempt_count': 'cm3',
-                'failed_module_count': 'cm4',
-                'test_count': 'cm5',
-                'failed_test_count': 'cm6'}
+_METRIC_KEYS = {
+    'app_version': 'cd1',
+    'test_name': 'cd2',
+    'test_version': 'cd3',
+    'state': 'cd4',
+    'is_rerun': 'cd5',
+    'is_google': 'cd6',
+    'duration_seconds': 'cm1',
+    'device_count': 'cm2',
+    'attempt_count': 'cm3',
+    'failed_module_count': 'cm4',
+    'test_count': 'cm5',
+    'failed_test_count': 'cm6',
+}
 
 
 def Log(category, action, **kwargs):
@@ -63,7 +67,9 @@ def _Send(event):
   """Send event to GA."""
   try:
     data = urllib.parse.urlencode(dict(event))
-    urllib.request.urlopen(_GA_ENDPOINT, data).read()
+    request = urllib.request.Request(
+        url=_GA_ENDPOINT, data=data, headers={'User-Agent': 'MTT'})
+    urllib.request.urlopen(request)
   except Exception as e:      logging.debug('Failed to send analytics: %s', e)
 
 
@@ -80,14 +86,15 @@ class _Event(object):
     self.ea = action  # Event action
     # Custom dimensions and metrics
     setattr(self, _METRIC_KEYS['app_version'], env.VERSION)
-    for key, value in kwargs.iteritems():
+    setattr(self, _METRIC_KEYS['is_google'], env.IS_GOOGLE)
+    for key, value in six.iteritems(kwargs):
       if not _METRIC_KEYS[key]:
-        logging.warn('Unknown metric key: %s', key)
+        logging.warning('Unknown metric key: %s', key)
         continue
       setattr(self, _METRIC_KEYS[key], value)
 
   def __iter__(self):
-    for key, value in self.__dict__.iteritems():
+    for key, value in six.iteritems(self.__dict__):
       if value is not None:
         yield key, value
 
