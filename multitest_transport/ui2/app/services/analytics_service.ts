@@ -26,10 +26,14 @@ declare let gtag: Function;
 /** Records Google Analytics page views, events, and timing information. */
 @Injectable({providedIn: 'root'})
 export class AnalyticsService {
+  // Google Analytics tracking ID
   private readonly trackingId?: string;
+  // Metrics added to all events
+  private readonly baseMetrics: object;
 
   constructor(@Inject(APP_DATA) data: AppData) {
     this.trackingId = data && data.analyticsTrackingId;
+    this.baseMetrics = {'is_google': data && data.isGoogle ? 'True' : 'False'};
   }
 
   /**
@@ -40,8 +44,10 @@ export class AnalyticsService {
   trackLocation(path: string, title?: string) {
     if (!this.trackingId) return;
     gtag('config', this.trackingId, {
+      ...this.baseMetrics,
       'page_path': path,
       'page_title': title || '',
+      'custom_map': {'dimension1': 'is_google'},
     });
   }
 
@@ -52,7 +58,10 @@ export class AnalyticsService {
    */
   trackEvent(category: string, action: string) {
     if (!this.trackingId) return;
-    gtag('event', action, {'event_category': category});
+    gtag('event', action, {
+      ...this.baseMetrics,
+      'event_category': category,
+    });
   }
 
   /**
@@ -61,7 +70,10 @@ export class AnalyticsService {
    */
   trackError(description: string) {
     if (!this.trackingId) return;
-    gtag('event', 'exception', {'description': description});
+    gtag('event', 'exception', {
+      ...this.baseMetrics,
+      'description': description,
+    });
   }
 
   /**
@@ -73,6 +85,7 @@ export class AnalyticsService {
   trackTiming(category: string, action: string, millis: number) {
     if (!this.trackingId) return;
     gtag('event', 'timing_complete', {
+      ...this.baseMetrics,
       'event_category': category,
       'name': action,
       'value': millis,

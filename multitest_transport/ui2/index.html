@@ -37,19 +37,18 @@
 <body>
 <mtt></mtt>
 <script>
-  // Determine hostname (handling proxy encoded names)
+  // Determine hostname
   var hostname = location.hostname;
-  // Set environment variables for typescript to use
+  // Set general application data
   window.APP_DATA = {
     adbVersion: "{{env.ADB_VERSION}}",
     analyticsTrackingId: "{{analytics_tracking_id}}",
     fileBrowseUrl: "{{env.FILE_BROWSE_URL_FORMAT}}".replace("{hostname}", hostname),
     fileOpenUrl: "{{env.FILE_OPEN_URL_FORMAT}}".replace("{hostname}", hostname),
     fileServerRoot: "{{env.FILE_SERVER_ROOT}}",
-    fileUploadUrl: "/_ah/gcs{{env.GCS_DATA_PATH}}/local_file_store/",
+    isGoogle: "{{env.IS_GOOGLE}}" === "True",
     mttVersion: "{{env.VERSION}}",
-    setupWizardCompleted: "{{private_node_config.setup_wizard_completed}}" === 'True',
-    tempUploadUrl: "/_ah/gcs{{env.GCS_TEMP_PATH}}/",
+    setupWizardCompleted: "{{private_node_config.setup_wizard_completed}}" === "True",
   };
 </script>
 <script src="{{app_js}}"></script>

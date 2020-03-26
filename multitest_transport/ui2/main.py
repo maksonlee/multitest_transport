@@ -19,8 +19,6 @@ import javascript_sources
 import jinja2
 import webapp2
 
-from google.appengine.api import modules
-
 from multitest_transport.models import ndb_models
 from multitest_transport.util import env
 
@@ -41,7 +39,6 @@ class BaseHandler(webapp2.RequestHandler):
     super(BaseHandler, self).__init__(request, response)
     self.context = {}
     self.context['env'] = env
-    self.context['hostname'] = modules.get_hostname('default').split(':', 2)[0]
 
     private_node_config = ndb_models.GetPrivateNodeConfig()
     self.context['private_node_config'] = private_node_config

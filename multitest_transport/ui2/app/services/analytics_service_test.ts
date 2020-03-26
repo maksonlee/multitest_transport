@@ -16,7 +16,6 @@
 
 import {HTTP_INTERCEPTORS, HttpClient} from '@angular/common/http';
 import {HttpClientTestingModule, HttpTestingController} from '@angular/common/http/testing';
-import {Type} from '@angular/core';
 import {TestBed} from '@angular/core/testing';
 
 import {AnalyticsInterceptor, AnalyticsParams, AnalyticsService} from './analytics_service';
@@ -42,7 +41,7 @@ describe('AnalyticsService', () => {
   beforeEach(() => {
     // tslint:disable-next-line:no-any mock gtag function
     (window as any).gtag = jasmine.createSpy('gtag');
-    const data: AppData = {analyticsTrackingId: TRACKING_ID};
+    const data: AppData = {analyticsTrackingId: TRACKING_ID, isGoogle: true};
     analytics = new AnalyticsService(data);
     disabledAnalytics = new AnalyticsService({});  // disabled w/o tracking ID
   });
@@ -55,8 +54,12 @@ describe('AnalyticsService', () => {
   describe('trackLocation', () => {
     it('calls gtag config', () => {
       analytics.trackLocation(PATH, TITLE);
-      expect(gtag).toHaveBeenCalledWith(
-          'config', TRACKING_ID, {page_path: PATH, page_title: TITLE});
+      expect(gtag).toHaveBeenCalledWith('config', TRACKING_ID, {
+        is_google: 'True',
+        page_path: PATH,
+        page_title: TITLE,
+        custom_map: {dimension1: 'is_google'}
+      });
     });
 
     it('does nothing without tracking ID', () => {
@@ -69,7 +72,7 @@ describe('AnalyticsService', () => {
     it('calls gtag custom event', () => {
       analytics.trackEvent(CATEGORY, ACTION);
       expect(gtag).toHaveBeenCalledWith(
-          'event', ACTION, {event_category: CATEGORY});
+          'event', ACTION, {is_google: 'True', event_category: CATEGORY});
     });
 
     it('does nothing without tracking ID', () => {
@@ -82,7 +85,7 @@ describe('AnalyticsService', () => {
     it('calls gtag exception event', () => {
       analytics.trackError(ERROR);
       expect(gtag).toHaveBeenCalledWith(
-          'event', 'exception', {description: ERROR});
+          'event', 'exception', {is_google: 'True', description: ERROR});
     });
 
     it('does nothing without tracking ID', () => {
@@ -95,6 +98,7 @@ describe('AnalyticsService', () => {
     it('calls gtag timing_complete event', () => {
       analytics.trackTiming(CATEGORY, ACTION, MILLIS);
       expect(gtag).toHaveBeenCalledWith('event', 'timing_complete', {
+        is_google: 'True',
         event_category: CATEGORY,
         name: ACTION,
         value: MILLIS,
