@@ -18,6 +18,7 @@ import cStringIO
 import datetime
 import logging
 import os
+import re
 import urllib2
 import xml.etree.cElementTree as ElementTree
 import zipfile
@@ -86,8 +87,8 @@ class FileHandle(object):
     """
     if url.startswith('gs://'):
       return GCSFileHandle(url)  # Google cloud storage URL
-    if url.startswith('file://' + env.STORAGE_PATH):
-      return BrowsepyFileHandle(url)  # Local file server URL
+    if url.startswith('file://'):
+      return LocalFileServerHandle(url)  # Local file server URL
     return HttpFileHandle(url)  # Any other URL defaults to HTTP handling
 
   def Info(self):
@@ -221,13 +222,13 @@ class HttpFileHandle(FileHandle):
     return data
 
 
-class BrowsepyFileHandle(HttpFileHandle):
-  """Reads file metadata and content from a local Browsepy file server."""
+class LocalFileServerHandle(HttpFileHandle):
+  """Reads file metadata and content from a local file server."""
 
   def __init__(self, url):
-    super(BrowsepyFileHandle, self).__init__(url)
-    self.file_path = url[len('file://' + env.STORAGE_PATH):]
-    self.request_url = '%sopen%s' % (env.FILE_SERVER_URL, self.file_path)
+    super(LocalFileServerHandle, self).__init__(url)
+    self.file_path = re.sub('^file://(' + env.STORAGE_PATH + ')?', '', url)
+    self.request_url = '%sfile%s' % (env.FILE_SERVER_URL2, self.file_path)
 
   def _Request(self, **kwargs):
     return urllib2.Request(self.request_url, **kwargs)

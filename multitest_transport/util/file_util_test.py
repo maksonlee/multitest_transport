@@ -34,7 +34,7 @@ class FileUtilTest(absltest.TestCase):
 
   def setUp(self):
     super(FileUtilTest, self).setUp()
-    env.FILE_SERVER_URL = 'browsepy/'
+    env.FILE_SERVER_URL2 = 'file_server/'
     env.STORAGE_PATH = 'root'
 
   def testFileHandle_Get(self):
@@ -43,11 +43,11 @@ class FileUtilTest(absltest.TestCase):
     self.assertIsInstance(handle, file_util.GCSFileHandle)
     self.assertEqual(handle.file_path, '/bucket/filename')
 
-    # Browsepy URL
+    # Local file server URL
     handle = file_util.FileHandle.Get('file://root/path')
-    self.assertIsInstance(handle, file_util.BrowsepyFileHandle)
+    self.assertIsInstance(handle, file_util.LocalFileServerHandle)
     self.assertEqual(handle.file_path, '/path')
-    self.assertEqual(handle.request_url, 'browsepy/open/path')
+    self.assertEqual(handle.request_url, 'file_server/file/path')
 
     # Default URL
     handle = file_util.FileHandle.Get('http://localhost:8000/path')
