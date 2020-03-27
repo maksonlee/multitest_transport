@@ -2,5 +2,5 @@
 # "pip freeze > requirements.txt" to generate the requirements.
 google-auth==1.6.3
 google-cloud-storage==1.14.0
-fabric==2.4.0
+fabric==2.5.0
 PyYAML==3.13
