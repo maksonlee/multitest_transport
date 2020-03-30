@@ -44,10 +44,7 @@ def _GetClient(credentials):
   http = httplib2.Http(timeout=constant.HTTP_TIMEOUT_SECONDS)
   http = oauth2_util.AuthorizeHttp(http, credentials, scopes=_GCS_OAUTH2_SCOPES)
   return apiclient.discovery.build(
-      _GCS_BUILD_API_NAME,
-      _GCS_BUILD_API_VERSION,
-      http=http,
-      developerKey=env.GOOGLE_API_KEY)
+      _GCS_BUILD_API_NAME, _GCS_BUILD_API_VERSION, http=http)
 
 
 def _ParsePath(path):

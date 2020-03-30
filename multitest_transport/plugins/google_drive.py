@@ -127,8 +127,7 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     self._client = apiclient.discovery.build(
         _GOOGLE_DRIVE_BUILD_API_NAME,
         _GOOGLE_DRIVE_BUILD_API_VERSION,
-        http=http,
-        developerKey=env.GOOGLE_API_KEY)
+        http=http)
     return self._client
 
   def GetOAuth2Config(self):

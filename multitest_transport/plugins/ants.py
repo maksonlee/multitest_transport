@@ -80,10 +80,7 @@ class AntsHook(base.TestRunHook):
     http = oauth2_util.AuthorizeHttp(
         http, self._credentials, scopes=OAUTH2_SCOPES)
     return apiclient.discovery.build(
-        ANDROID_BUILD_API_NAME,
-        ANDROID_BUILD_API_VERSION,
-        http=http,
-        developerKey=env.GOOGLE_API_KEY)
+        ANDROID_BUILD_API_NAME, ANDROID_BUILD_API_VERSION, http=http)
 
   def Execute(self, context):
     """Create or update AnTS invocation and work units."""

@@ -115,7 +115,6 @@ exec dev_appserver.py \
     --env_var "MTT_FILE_BROWSE_URL_FORMAT=http://{hostname}:$FILE_SERVER_PORT/browse/" \
     --env_var "MTT_FILE_OPEN_URL_FORMAT=http://{hostname}:$FILE_SERVER_PORT/open/" \
     --env_var MTT_FILE_SERVER_URL2="http://$MTT_HOSTNAME:$FILE_SERVER_PORT2/" \
-    --env_var MTT_GOOGLE_API_KEY="$GOOGLE_API_KEY" \
     --env_var MTT_GOOGLE_OAUTH2_CLIENT_ID="$GOOGLE_OAUTH2_CLIENT_ID" \
     --env_var MTT_GOOGLE_OAUTH2_CLIENT_SECRET="$GOOGLE_OAUTH2_CLIENT_SECRET" \
     --env_var MTT_VERSION="$MTT_VERSION" \
