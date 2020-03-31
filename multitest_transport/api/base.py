@@ -19,7 +19,7 @@ import json
 import sys
 import traceback
 
-import endpoints
+from google3.third_party.apphosting.python.endpoints.v1_1 import endpoints
 
 DEFAULT_MAX_RESULTS = 25  # The default number of max results per page.
 

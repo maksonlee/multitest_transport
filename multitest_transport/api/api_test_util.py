@@ -18,7 +18,7 @@ from absl.testing import absltest
 import webtest
 
 from google.appengine.ext import testbed
-import endpoints
+from google3.third_party.apphosting.python.endpoints.v1_1 import endpoints
 
 
 class TestCase(absltest.TestCase):

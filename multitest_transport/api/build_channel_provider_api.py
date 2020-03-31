@@ -19,7 +19,7 @@ from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
 
-import endpoints
+from google3.third_party.apphosting.python.endpoints.v1_1 import endpoints
 
 from multitest_transport.api import base
 from multitest_transport.models import build

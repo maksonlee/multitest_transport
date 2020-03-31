@@ -309,7 +309,7 @@ class TestKickerTest(absltest.TestCase):
     test_kicker.KickTestRun(test_run_id)
 
     mock_download_resource.assert_has_calls([
-        mock.call(r.url) for r in test_run.test_resources
+        mock.call(r.url, test_run=test_run) for r in test_run.test_resources
     ])
     mock_new_request.assert_called()
     msg = mock_new_request.call_args[0][0]
@@ -339,7 +339,7 @@ class TestKickerTest(absltest.TestCase):
     test_kicker.KickTestRun(test_run_id)
 
     mock_download_resource.assert_has_calls([
-        mock.call(r.url) for r in test_run.test_resources
+        mock.call(r.url, test_run=test_run) for r in test_run.test_resources
     ])
     mock_new_request.assert_called()
     msg = mock_new_request.call_args[0][0]
@@ -367,7 +367,7 @@ class TestKickerTest(absltest.TestCase):
     test_kicker.KickTestRun(test_run_id)
 
     mock_download_resource.assert_has_calls([
-        mock.call(r.url) for r in test_run.test_resources
+        mock.call(r.url, test_run=test_run) for r in test_run.test_resources
     ])
     mock_new_request.assert_called()
     msg = mock_new_request.call_args[0][0]
@@ -402,7 +402,7 @@ class TestKickerTest(absltest.TestCase):
     test_kicker.KickTestRun(test_run_id)
 
     mock_download_resource.assert_has_calls([
-        mock.call(r.url) for r in test_run.test_resources
+        mock.call(r.url, test_run=test_run) for r in test_run.test_resources
     ])
     mock_new_request.assert_called()
     msg = mock_new_request.call_args[0][0]
@@ -505,30 +505,27 @@ class TestKickerTest(absltest.TestCase):
     ]
     test_run.put()
     test_run_id = test_run.key.id()
-    mock_download_resource.return_value = 'foo_cache_url'
+    mock_download_resource.return_value = 'cache_url'
     mock_file_handle.Get.return_value = 'filehandle'
     test_suite_info = file_util.TestSuiteInfo(
-        'build_number', 'target_architecture', 'name', 'fullname', 'version')
+        'build_number', 'architecture', 'name', 'fullname', 'version')
     mock_get_suite_info.return_value = test_suite_info
 
     test_kicker._PrepareTestResources(test_run_id)
-    test_run = ndb_models.TestRun.get_by_id(test_run.key.id())
+    updated_test_run = ndb_models.TestRun.get_by_id(test_run.key.id())
 
-    # Resource downloaded and cached, and its test package info was read
-    mock_download_resource.assert_called_with('http://foo_origin_url')
-    self.assertEqual(test_run.test_resources[0].cache_url, 'foo_cache_url')
-    mock_file_handle.Get.assert_called_with('foo_cache_url')
-    self.assertEqual(
-        test_run.test_package_info.build_number, test_suite_info.build_number)
-    self.assertEqual(
-        test_run.test_package_info.target_architecture,
-        test_suite_info.target_architecture)
-    self.assertEqual(
-        test_run.test_package_info.name, test_suite_info.name)
-    self.assertEqual(
-        test_run.test_package_info.fullname, test_suite_info.fullname)
-    self.assertEqual(
-        test_run.test_package_info.version, test_suite_info.version)
+    # Resource downloaded and cached
+    mock_download_resource.assert_called_with(
+        'http://foo_origin_url', test_run=test_run)
+    self.assertEqual(updated_test_run.test_resources[0].cache_url, 'cache_url')
+    mock_file_handle.Get.assert_called_with('cache_url')
+    # Test package info was updated
+    test_package_info = updated_test_run.test_package_info
+    self.assertEqual(test_package_info.build_number, 'build_number')
+    self.assertEqual(test_package_info.target_architecture, 'architecture')
+    self.assertEqual(test_package_info.name, 'name')
+    self.assertEqual(test_package_info.fullname, 'fullname')
+    self.assertEqual(test_package_info.version, 'version')
 
   @mock.patch.object(analytics, 'Log')
   def testTrackTestRun(self, mock_log):

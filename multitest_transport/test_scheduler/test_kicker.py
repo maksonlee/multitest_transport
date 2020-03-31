@@ -225,7 +225,7 @@ def _PrepareTestResources(test_run_id):
                  num_test_resources)
     # If the resource is already downloaded and still up-to-date, this will
     # simply return its cache URL. Otherwise, it will be (re-)downloaded.
-    cache_url = download_util.DownloadResource(r.url)
+    cache_url = download_util.DownloadResource(r.url, test_run=test_run)
     test_package_info = None
     if r.test_resource_type == ndb_models.TestResourceType.TEST_PACKAGE:
       test_package_info = _GetTestPackageInfo(cache_url)

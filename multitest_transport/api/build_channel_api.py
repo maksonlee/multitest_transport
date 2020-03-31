@@ -22,7 +22,7 @@ from protorpc import messages
 from protorpc import remote
 
 from google.oauth2 import service_account
-import endpoints
+from google3.third_party.apphosting.python.endpoints.v1_1 import endpoints
 
 from multitest_transport.api import base
 from multitest_transport.models import build
