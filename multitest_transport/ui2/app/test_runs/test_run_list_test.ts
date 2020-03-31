@@ -15,7 +15,7 @@
  */
 
 import {DebugElement} from '@angular/core';
-import {inject, ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {Router} from '@angular/router';
 import {RouterTestingModule} from '@angular/router/testing';
@@ -26,15 +26,13 @@ import {TestPackageInfo, TestRunState, TestRunSummary} from '../services/mtt_mod
 import {DeviceInfo} from '../services/tfc_models';
 import {DEFAULT_PAGE_SIZE} from '../shared/paginator';
 import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
-import {newMockDevice, newMockTestPackageInfo} from '../testing/test_util';
-import {toTitleCase} from '../testing/test_util';
+import {newMockDevice, newMockTestPackageInfo, toTitleCase} from '../testing/test_util';
 
 import {TestRunList} from './test_run_list';
 import {TestRunsModule} from './test_runs_module';
 import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('TestRunList', () => {
-
   let testRunList: TestRunList;
   let testRunListFixture: ComponentFixture<TestRunList>;
   let mttClient: jasmine.SpyObj<MttClient>;
@@ -83,7 +81,6 @@ describe('TestRunList', () => {
     testRunListFixture.detectChanges();
     el = testRunListFixture.debugElement;
     testRunList = testRunListFixture.componentInstance;
-    testRunList.filters = [];
   });
 
   it('gets initialized', () => {
@@ -118,9 +115,7 @@ describe('TestRunList', () => {
     testRunList.nextPageToken = 'next';
     testRunList.load(true);
     expect(mttClient.getTestRuns)
-        .toHaveBeenCalledWith(
-            DEFAULT_PAGE_SIZE, 'prev', true, testRunList.filters,
-            testRunList.selectedStates);
+        .toHaveBeenCalledWith(DEFAULT_PAGE_SIZE, 'prev', true, [], []);
   });
 
   it('can load next page of test runs', () => {
@@ -128,9 +123,7 @@ describe('TestRunList', () => {
     testRunList.nextPageToken = 'next';
     testRunList.load(false);
     expect(mttClient.getTestRuns)
-        .toHaveBeenCalledWith(
-            DEFAULT_PAGE_SIZE, 'next', false, testRunList.filters,
-            testRunList.selectedStates);
+        .toHaveBeenCalledWith(DEFAULT_PAGE_SIZE, 'next', false, [], []);
   });
 
   it('can handle page size change', () => {
@@ -138,25 +131,23 @@ describe('TestRunList', () => {
     testRunList.nextPageToken = 'next';
     testRunList.paginator.changePageSize(20);
     expect(mttClient.getTestRuns)
-        .toHaveBeenCalledWith(
-            20, undefined, false, testRunList.filters,
-            testRunList.selectedStates);
+        .toHaveBeenCalledWith(20, undefined, false, [], []);
   });
 
   it('can update pagination parameters', inject([Router], (router: Router) => {
-    spyOn(router, 'navigate');
-    mttClient.getTestRuns.and.returnValue(observableOf(
-        {test_runs: [], prev_page_token: 'prev', next_page_token: 'next'}));
+       spyOn(router, 'navigate');
+       mttClient.getTestRuns.and.returnValue(observableOf(
+           {test_runs: [], prev_page_token: 'prev', next_page_token: 'next'}));
 
-    testRunList.load();
-    expect(testRunList.prevPageToken).toEqual('prev');
-    expect(testRunList.nextPageToken).toEqual('next');
-    expect(testRunList.paginator.hasPrevious).toBeTruthy();
-    expect(testRunList.paginator.hasNext).toBeTruthy();
-    expect(router.navigate).toHaveBeenCalledWith([], {
-      queryParams: {page: 'prev', size: null, filter: null}
-    });
-  }));
+       testRunList.load();
+       expect(testRunList.prevPageToken).toEqual('prev');
+       expect(testRunList.nextPageToken).toEqual('next');
+       expect(testRunList.paginator.hasPrevious).toBeTruthy();
+       expect(testRunList.paginator.hasNext).toBeTruthy();
+       expect(router.navigate).toHaveBeenCalledWith([], {
+         queryParams: {page: 'prev', size: null, filter: null, state: null}
+       });
+     }));
 
   it('should hide column on view_columns dropdown menu button clicked', () => {
     getEl(el, '#view_columns_btn').click();
@@ -167,7 +158,7 @@ describe('TestRunList', () => {
     testRunListFixture.detectChanges();
     el = testRunListFixture.debugElement;
     expect(getEls(el, 'mat-header-cell').length)
-        .toBe(testRunList.columns.length - 2);  // Select column also not shown
+        .toBe(testRunList.columns.length - 1);
   });
 
   it('can handle filter function', () => {
@@ -175,18 +166,44 @@ describe('TestRunList', () => {
     testRunList.load(false);
     expect(mttClient.getTestRuns)
         .toHaveBeenCalledWith(
-            testRunList.PAGE_SIZE_OPTIONS[0], undefined, false,
-            testRunList.filters, testRunList.selectedStates);
+            testRunList.PAGE_SIZE_OPTIONS[0], undefined, false, ['device_id'],
+            []);
   });
 
   it('can update filter parameters', inject([Router], (router: Router) => {
-    spyOn(router, 'navigate');
-    mttClient.getTestRuns.and.returnValue(observableOf(
-        {test_runs: [], prev_page_token: 'prev', next_page_token: 'next'}));
-    testRunList.filters = ['device_id'];
-    testRunList.load();
-    expect(router.navigate).toHaveBeenCalledWith([], {
-      queryParams: {page: 'prev', size: null, filter: testRunList.filters}
-    });
-  }));
+       spyOn(router, 'navigate');
+       mttClient.getTestRuns.and.returnValue(observableOf(
+           {test_runs: [], prev_page_token: 'prev', next_page_token: 'next'}));
+       testRunList.filters = ['device_id'];
+       testRunList.load();
+       expect(router.navigate).toHaveBeenCalledWith([], {
+         queryParams:
+             {page: 'prev', size: null, filter: ['device_id'], state: null}
+       });
+     }));
+
+  it('can handle states', () => {
+    testRunList.states = [TestRunState.COMPLETED];
+    testRunList.load(false);
+    expect(mttClient.getTestRuns)
+        .toHaveBeenCalledWith(
+            testRunList.PAGE_SIZE_OPTIONS[0], undefined, false, [],
+            [TestRunState.COMPLETED]);
+  });
+
+  it('can update filter parameters', inject([Router], (router: Router) => {
+       spyOn(router, 'navigate');
+       mttClient.getTestRuns.and.returnValue(observableOf(
+           {test_runs: [], prev_page_token: 'prev', next_page_token: 'next'}));
+       testRunList.states = [TestRunState.COMPLETED];
+       testRunList.load();
+       expect(router.navigate).toHaveBeenCalledWith([], {
+         queryParams: {
+           page: 'prev',
+           size: null,
+           filter: null,
+           state: [TestRunState.COMPLETED]
+         }
+       });
+     }));
 });

@@ -18,7 +18,7 @@
 
 <mat-toolbar>
   <mat-toolbar-row fxLayoutAlign="space-between center">
-    <h1>{{ headerTitle }}</h1>
+    <h1>Test Runs</h1>
   </mat-toolbar-row>
 </mat-toolbar>
 
@@ -29,19 +29,19 @@
       <mat-icon matPrefix class="filter-icon">filter_list</mat-icon>
       <mat-chip-list #chipList aria-label="Filter">
         <mat-chip
-          *ngFor="let filter of filters"
-          [selectable]="true"
-          [removable]="true"
-          (removed)="removeFilter(filter)">
+            *ngFor="let filter of filters"
+            [selectable]="true"
+            [removable]="true"
+            (removed)="removeFilter(filter)">
           {{ filter }}
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
         <input
-          placeholder="Filter"
-          [matChipInputFor]="chipList"
-          [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-          [matChipInputAddOnBlur]="true"
-          (matChipInputTokenEnd)="addFilter($event)"/>
+            placeholder="Filter"
+            [matChipInputFor]="chipList"
+            [matChipInputSeparatorKeyCodes]="SEPARATOR_KEYCODES"
+            [matChipInputAddOnBlur]="true"
+            (matChipInputTokenEnd)="addFilter($event)"/>
       </mat-chip-list>
     </mat-form-field>
 
@@ -49,9 +49,9 @@
 
     <mat-form-field fxFlex="300px">
       <mat-label>Status</mat-label>
-      <mat-select multiple [(ngModel)]="selectedStates"
+      <mat-select multiple [(ngModel)]="states"
                   (selectionChange)="resetPageTokenAndReload()">
-        <mat-option *ngFor="let state of allStates" [value]="state">
+        <mat-option *ngFor="let state of TEST_RUN_STATES" [value]="state">
           {{state | titlecase}}
         </mat-option>
       </mat-select>
@@ -82,25 +82,9 @@
              (scroll)="checkTableScrolled()"
              [class.scrolled]="isTableScrolled"
              aria-label="Test run list">
-   <!-- Checkbox Column -->
-    <ng-container matColumnDef="select">
-      <mat-header-cell *matHeaderCellDef fxFlex="60px">
-        <mat-checkbox (change)="$event ? toggleSelected() : null"
-                      [checked]="selection.hasValue() && isAllSelected()"
-                      [indeterminate]="selection.hasValue() && !isAllSelected()">
-        </mat-checkbox>
-      </mat-header-cell>
-      <mat-cell *matCellDef="let row" fxFlex="60px">
-        <mat-checkbox (click)="$event.stopPropagation()"
-                      (change)="$event ? selection.toggle(row) : null"
-                      [checked]="selection.isSelected(row)">
-        </mat-checkbox>
-      </mat-cell>
-    </ng-container>
-
     <!-- Test Name -->
     <ng-container matColumnDef="test_name">
-      <mat-header-cell *matHeaderCellDef fxFlex class="test-name-column"> Test </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef fxFlex class="test-name-column">Test</mat-header-cell>
       <mat-cell *matCellDef="let testRun" fxFlex class="test-name-column">
         {{testRun.test_name}}
       </mat-cell>
@@ -108,16 +92,15 @@
 
     <!-- Test Package Version -->
     <ng-container matColumnDef="test_package">
-      <mat-header-cell *matHeaderCellDef fxFlex="100px"> Test Package </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef fxFlex="100px">Test Package</mat-header-cell>
       <mat-cell *matCellDef="let testRun" fxFlex="100px">
         {{testRun.test_package_info | testPackageInfo}}
       </mat-cell>
     </ng-container>
 
     <!-- Run Targets -->
-    <!-- TODO: switch to overflow list -->
     <ng-container matColumnDef="run_target">
-      <mat-header-cell *matHeaderCellDef fxFlex="160px"> Run Targets </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef fxFlex="160px">Run Targets</mat-header-cell>
       <mat-cell *matCellDef="let testRun" fxFlex="160px">
         <overflow-list [data]="testRun.run_target ?
                                testRun.run_target.split(';') : []"
@@ -128,7 +111,7 @@
 
     <!-- Device Build -->
     <ng-container matColumnDef="device_build">
-      <mat-header-cell *matHeaderCellDef fxFlex="160px"> Device Build </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef fxFlex="160px">Device Build</mat-header-cell>
       <mat-cell *matCellDef="let testRun" fxFlex="160px">
         <overflow-list [data]="testRun.test_devices | mapListField: 'build_id'"
                        [overflowListType]="OverflowListType.BUTTON">
@@ -138,7 +121,7 @@
 
     <!-- Device Product -->
     <ng-container matColumnDef="device_product">
-      <mat-header-cell *matHeaderCellDef fxFlex="120px"> Product </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef fxFlex="120px">Product</mat-header-cell>
       <mat-cell *matCellDef="let testRun" fxFlex="120px">
         <overflow-list [data]="testRun.test_devices | mapListField: 'product'"
                        [overflowListType]="OverflowListType.BUTTON">
@@ -149,7 +132,7 @@
     <!-- Test Run Labels -->
     <!-- TODO: add filtering -->
     <ng-container matColumnDef="labels">
-      <mat-header-cell *matHeaderCellDef fxFlex="200px"> Labels </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef fxFlex="200px">Labels</mat-header-cell>
       <mat-cell *matCellDef="let testRun" fxFlex="200px">
         <overflow-list [data]="testRun.labels || []" [overflowListType]="OverflowListType.CHIP">
         </overflow-list>
@@ -158,7 +141,7 @@
 
     <!-- Test Run Created Date -->
     <ng-container matColumnDef="create_time">
-      <mat-header-cell *matHeaderCellDef fxFlex="120px"> Created </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef fxFlex="120px">Created</mat-header-cell>
       <mat-cell *matCellDef="let testRun" fxFlex="120px"
                 [title]="testRun.create_time | utc | date:'MM/dd/yyyy h:mma'">
         {{testRun.create_time | utc | fromNow}}
@@ -167,7 +150,7 @@
 
     <!-- Test Run Status -->
     <ng-container matColumnDef="status">
-      <mat-header-cell *matHeaderCellDef fxFlex="120px"> Status </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef fxFlex="120px">Status</mat-header-cell>
       <mat-cell *matCellDef="let testRun" fxFlex="120px">
         <status-button [state]="testRun.state">
         </status-button>
@@ -176,7 +159,7 @@
 
     <!-- Test Run Failures -->
     <ng-container matColumnDef="failures">
-      <mat-header-cell *matHeaderCellDef fxFlex="150px"> Test Failures </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef fxFlex="150px">Test Failures</mat-header-cell>
       <mat-cell *matCellDef="let testRun" fxFlex="150px">
         <test-run-failures [state]="testRun.state"
                            [numFailedTests]="testRun.failed_test_count"
@@ -196,15 +179,14 @@
     </ng-container>
 
     <mat-header-row *matHeaderRowDef="displayColumns"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayColumns;"
-             [class.selected]="selection.isSelected(row)"></mat-row>
+    <mat-row *matRowDef="let row; columns: displayColumns;"></mat-row>
   </mat-table>
 
   <paginator
-    [pageSizeOptions]="PAGE_SIZE_OPTIONS"
-    (sizeChange)="resetPageTokenAndReload()"
-    (previous)="load(true)"
-    (next)="load(false)"
+      [pageSizeOptions]="PAGE_SIZE_OPTIONS"
+      (sizeChange)="resetPageTokenAndReload()"
+      (previous)="load(true)"
+      (next)="load(false)"
   ></paginator>
 
   <div class="empty" *ngIf="!dataSource.data.length">
