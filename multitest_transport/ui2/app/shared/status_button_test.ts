@@ -20,11 +20,11 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {DeviceInfo} from '../services/tfc_models';
 import {getTextContent} from '../testing/jasmine_util';
-import {newMockDevice} from '../testing/test_util';
+import {newMockDeviceInfo} from '../testing/mtt_lab_mocks';
 
-import {StatusButton} from './status_button';
 import {SharedModule} from './shared_module';
 import {SharedModuleNgSummary} from './shared_module.ngsummary';
+import {StatusButton} from './status_button';
 
 describe('DeviceState', () => {
   let statusButton: StatusButton;
@@ -34,7 +34,7 @@ describe('DeviceState', () => {
   let deviceInfo: DeviceInfo;
 
   beforeEach(() => {
-    deviceInfo = newMockDevice();
+    deviceInfo = newMockDeviceInfo();
 
     TestBed.configureTestingModule({
       imports: [
@@ -53,6 +53,7 @@ describe('DeviceState', () => {
   });
 
   it('displays the state', () => {
-    expect(getTextContent(el)).toContain(deviceInfo.state);
+    expect(getTextContent(el).toLowerCase())
+        .toContain(deviceInfo.state.toLowerCase());
   });
 });

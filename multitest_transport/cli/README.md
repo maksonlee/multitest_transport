@@ -42,7 +42,7 @@ $ [sudo] mtt stop [<host_config.yaml>] [--wait]
 *  `service_account_json_key_path` is optional, apply this for account key verifications, and it can be configured in the config as well.
 *  `force_update` updates the current available docker image, even if the local version is up-to-date already.
 *  `wait` let the CLI wait until all the running tests finish.
-*  `port` specify a customized value to MTT_MASTER_PORT.
+*  `port` specify a customized value to the control server port.
 
 ##### Example of host_config.yaml
 ```yaml

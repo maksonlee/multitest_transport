@@ -1,0 +1,59 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="host-details-device-count-summaries-container">
+  <mat-table #table [dataSource]="data">
+    <!-- Run Target -->
+    <ng-container matColumnDef="run_target">
+      <mat-header-cell *matHeaderCellDef fxFlex="500px"> Run Target </mat-header-cell>
+      <mat-cell *matCellDef="let runTarget" fxFlex="500px"> {{ runTarget.run_target }} </mat-cell>
+    </ng-container>
+
+    <!-- Total -->
+    <ng-container matColumnDef="total">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px"> Total </mat-header-cell>
+      <mat-cell *matCellDef="let runTarget" fxFlex="150px"> {{ runTarget.total }} </mat-cell>
+    </ng-container>
+
+    <!-- Offline -->
+    <ng-container matColumnDef="offline">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px"> Offline </mat-header-cell>
+      <mat-cell *matCellDef="let runTarget" fxFlex="150px">
+        {{ runTarget.offline }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Available -->
+    <ng-container matColumnDef="available">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px"> Available </mat-header-cell>
+      <mat-cell *matCellDef="let runTarget" fxFlex="150px"> {{ runTarget.available }} </mat-cell>
+    </ng-container>
+
+    <!-- Allocated -->
+    <ng-container matColumnDef="allocated">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px"> Allocated </mat-header-cell>
+      <mat-cell *matCellDef="let runTarget" fxFlex="150px">
+        {{ runTarget.allocated }}
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+  </mat-table>
+  <div class="empty" *ngIf="data && data.length === 0">
+    No device count summaries found.
+  </div>
+</div>

@@ -82,11 +82,10 @@ export class ConfigSetPicker implements OnInit {
             finalize(() => {
               this.isLoading = false;
             }),
-            )
+        )
         .subscribe(
             res => {
               this.liveAnnouncer.announce('Loading complete', 'assertive');
-              // TODO: Hide configs that have already been imported
               this.configs = res.config_set_infos;
             },
             error => {

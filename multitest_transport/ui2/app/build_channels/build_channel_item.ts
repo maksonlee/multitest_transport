@@ -17,7 +17,7 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 
 import {MttClient} from '../services/mtt_client';
-import {AuthorizationState, BuildChannel, isDefaultBuildChannel} from '../services/mtt_models';
+import {AuthorizationMethod, AuthorizationState, BuildChannel, isDefaultBuildChannel} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {assertRequiredInput, buildApiErrorMessage, delay} from '../shared/util';
 
@@ -28,7 +28,9 @@ import {assertRequiredInput, buildApiErrorMessage, delay} from '../shared/util';
   templateUrl: './build_channel_item.ng.html',
 })
 export class BuildChannelItem implements OnInit {
+  readonly AuthorizationMethod = AuthorizationMethod;
   readonly AuthorizationState = AuthorizationState;
+
   isDefault = true;
 
   @Input() buildChannel!: BuildChannel;
@@ -44,6 +46,11 @@ export class BuildChannelItem implements OnInit {
     assertRequiredInput(
         this.buildChannel, 'buildChannel', 'build_channel_item');
     this.isDefault = isDefaultBuildChannel(this.buildChannel);
+  }
+
+  canAuthWith(method: AuthorizationMethod): boolean {
+    return !!this.buildChannel.auth_methods &&
+        this.buildChannel.auth_methods.includes(method);
   }
 
   /** Authorize a build channel. */

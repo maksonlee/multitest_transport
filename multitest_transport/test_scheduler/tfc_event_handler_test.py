@@ -19,9 +19,9 @@ from absl.testing import absltest
 import mock
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
-
-from google.appengine.ext import deferred
-from google.appengine.ext import testbed
+from tradefed_cluster import testbed_dependent_test
+from tradefed_cluster.services import task_scheduler
+from tradefed_cluster.util import ndb_shim as ndb
 
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
@@ -31,13 +31,10 @@ from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
 
 
-class TfcEventHandlerTest(absltest.TestCase):
+class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
 
   def setUp(self):
     super(TfcEventHandlerTest, self).setUp()
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
     self.mock_test = ndb_models.Test(
         name='test', command='command', result_file='result_file')
     self.mock_test.put()
@@ -46,18 +43,17 @@ class TfcEventHandlerTest(absltest.TestCase):
     self.mock_test_run = ndb_models.TestRun(
         test_plan_key=self.mock_test_plan.key,
         test_run_config=ndb_models.TestRunConfig(
-            test_key=self.mock_test.key, run_target='run_target'),
+            test_key=self.mock_test.key,
+            run_target='run_target',
+            command='mock test run command',
+            retry_command='mock test run retry command'),
         test=self.mock_test,
         request_id='request_id',
         state=ndb_models.TestRunState.UNKNOWN)
     self.mock_test_run.put()
 
-  def tearDown(self):
-    super(TfcEventHandlerTest, self).tearDown()
-    self.testbed.deactivate()
-
   def CreateMockRequestEvent(self, timedelta, state=None):
-    """Create a dummy TFC request change event."""
+    """Create a placeholder TFC request change event."""
     return api_messages.RequestEventMessage(
         type=common.ObjectEventType.REQUEST_STATE_CHANGED,
         request_id=self.mock_test_run.request_id,
@@ -65,7 +61,7 @@ class TfcEventHandlerTest(absltest.TestCase):
         event_time=self.mock_test_run.update_time + timedelta)
 
   def CreateMockCommandAttemptEvent(self, timedelta, state=None, serials=None):
-    """Create a dummy TFC command attempt change event."""
+    """Create a placeholder TFC command attempt change event."""
     return api_messages.CommandAttemptEventMessage(
         type=common.ObjectEventType.COMMAND_ATTEMPT_STATE_CHANGED,
         attempt=api_messages.CommandAttemptMessage(
@@ -152,7 +148,8 @@ class TfcEventHandlerTest(absltest.TestCase):
     self.assertEqual(mock_event.event_time, self.mock_test_run.update_time)
     expected_device = ndb_models.TestDeviceInfo(
         device_serial='SERIAL', build_id='TEST')
-    self.assertEqual(self.mock_test_run.test_devices, [expected_device])
+    self.assertEqual([d.to_dict() for d in self.mock_test_run.test_devices],
+                     [expected_device.to_dict()])
 
   @mock.patch.object(tfc_client, 'GetDeviceInfo')
   def testProcessCommandAttemptEvent_skipOldEvent(self, mock_get_device):
@@ -168,11 +165,15 @@ class TfcEventHandlerTest(absltest.TestCase):
     self.assertEqual(self.mock_test_run.test_devices, [])
     mock_get_device.assert_not_called()
 
+  @mock.patch.object(task_scheduler, 'AddCallableTask')
   @mock.patch.object(file_util, 'GetXtsTestResultSummary')
-  def testProcessCommandAttemptEvent_summary(self, mock_get_summary):
+  @mock.patch.object(file_util, 'OpenFile')
+  def testProcessCommandAttemptEvent_summary(self, mock_open, mock_get_summary,
+                                             mock_add_task):
     # COMPLETED attempt, will attempt to update test result counts
     mock_event = self.CreateMockCommandAttemptEvent(
         datetime.timedelta(hours=1), state=common.CommandState.COMPLETED)
+    mock_open.return_value = mock.MagicMock()
     mock_get_summary.return_value = file_util.XtsTestResultSummary(
         passed=12, failed=34, modules_done=56, modules_total=78)
 
@@ -185,11 +186,17 @@ class TfcEventHandlerTest(absltest.TestCase):
     self.assertEqual(34, self.mock_test_run.failed_test_count)
     self.assertEqual(78 - 56, self.mock_test_run.failed_test_run_count)
 
-  @mock.patch.object(deferred, 'defer')
+    # after attempt hook executed
+    mock_add_task.assert_called_with(
+        test_run_hook.ExecuteHooks, self.mock_test_run.key.id(),
+        ndb_models.TestRunPhase.AFTER_ATTEMPT, attempt_id=mock.ANY,
+        _transactional=True)
+
+  @mock.patch.object(task_scheduler, 'AddCallableTask')
   @mock.patch.object(tfc_client, 'GetTestContext')
   @mock.patch.object(tfc_client, 'GetRequest')
   def testAfterTestRunHandler(self, mock_get_request, mock_get_test_context,
-                              mock_defer):
+                              mock_add_task):
     # configure mock TFC request
     request_id = self.mock_test_run.request_id
     mock_request = api_messages.RequestMessage(id=request_id)
@@ -201,14 +208,17 @@ class TfcEventHandlerTest(absltest.TestCase):
         command_line='command_line',
         env_vars=[api_messages.KeyValuePair(key='key', value='value')],
         test_resources=[
-            api_messages.TestResource(url='url', name='name', path='path')
+            api_messages.TestResource(
+                url='url', name='name', path='path', decompress=True,
+                decompress_dir='dir')
         ])
     mock_get_test_context.return_value = mock_test_context
     expected_test_context = ndb_models.TestContextObj(
         command_line='command_line',
         env_vars=[ndb_models.NameValuePair(name='key', value='value')],
         test_resources=[
-            ndb_models.TestResourceObj(url='url', name='name')
+            ndb_models.TestResourceObj(
+                url='url', name='name', decompress=True, decompress_dir='dir')
         ])
 
     tfc_event_handler._AfterTestRunHandler(self.mock_test_run)
@@ -218,7 +228,7 @@ class TfcEventHandlerTest(absltest.TestCase):
     mock_get_test_context.assert_called_with(request_id, 'bar')
     self.assertEqual(expected_test_context,
                      self.mock_test_run.next_test_context)
-    mock_defer.assert_has_calls([
+    mock_add_task.assert_has_calls([
         mock.call(test_run_hook.ExecuteHooks, self.mock_test_run.key.id(),
                   ndb_models.TestRunPhase.AFTER_RUN, _transactional=True),
         mock.call(tfc_event_handler._TrackTestRun,
@@ -237,7 +247,9 @@ class TfcEventHandlerTest(absltest.TestCase):
     request_id = self.mock_test_run.request_id
     mock_request = api_messages.RequestMessage(id=request_id)
     mock_request.command_attempts.append(
-        api_messages.CommandAttemptMessage(device_serials=['1', '2']))
+        api_messages.CommandAttemptMessage(
+            device_serials=['1', '2'], start_time=now, end_time=now,
+            state=common.CommandState.COMPLETED))
     mock_get_request.return_value = mock_request
 
     # update mock test run
@@ -248,6 +260,7 @@ class TfcEventHandlerTest(absltest.TestCase):
     self.mock_test_run.failed_test_run_count = 1
     self.mock_test_run.total_test_count = 2
     self.mock_test_run.failed_test_count = 3
+    self.mock_test_run.put()
 
     # check that right data was logged
     tfc_event_handler._TrackTestRun(self.mock_test_run.key.id())
@@ -255,7 +268,7 @@ class TfcEventHandlerTest(absltest.TestCase):
                                 analytics.END_ACTION,
                                 test_name='name',
                                 test_version='version',
-                                state=ndb_models.TestRunState.COMPLETED,
+                                state='COMPLETED',
                                 is_rerun=False,
                                 duration_seconds=123,
                                 device_count=2,
@@ -263,6 +276,149 @@ class TfcEventHandlerTest(absltest.TestCase):
                                 failed_module_count=1,
                                 test_count=2,
                                 failed_test_count=3)
+
+  @mock.patch.object(analytics, 'Log')
+  @mock.patch.object(tfc_event_handler, '_GetCurrentTime')
+  def testTrackTestInvocation(self, mock_time, mock_log):
+    # mock current time
+    now = datetime.datetime.now()
+    mock_time.return_value = now
+
+    # configure mock TFC request with 2 attempts
+    request_id = self.mock_test_run.request_id
+    mock_request = api_messages.RequestMessage(id=request_id,
+                                               command_line='command')
+    mock_request.command_attempts.append(
+        api_messages.CommandAttemptMessage(
+            state=common.CommandState.COMPLETED,
+            device_serials=['1', '2'],
+            start_time=now - datetime.timedelta(seconds=400),
+            end_time=now-datetime.timedelta(seconds=300),
+            total_test_count=60, failed_test_run_count=50,
+            failed_test_count=40))
+    mock_request.command_attempts.append(
+        api_messages.CommandAttemptMessage(
+            state=common.CommandState.COMPLETED,
+            device_serials=['2'],
+            start_time=now - datetime.timedelta(seconds=200),
+            end_time=now - datetime.timedelta(seconds=100),
+            total_test_count=3, failed_test_run_count=2, failed_test_count=1))
+
+    # set test id
+    self.mock_test.key = ndb.Key(ndb_models.Test, 'some.test.id')
+    self.mock_test.put()
+    self.mock_test_run.test_run_config.test_key = self.mock_test.key
+
+    # update mock test run
+    self.mock_test_run.test_package_info = ndb_models.TestPackageInfo(
+        name='name', version='version')
+    self.mock_test_run.state = ndb_models.TestRunState.COMPLETED
+    self.mock_test_run.create_time = now - datetime.timedelta(seconds=1000)
+    self.mock_test_run.failed_test_count = 1
+    self.mock_test_run.sequence_id = 'abc-def-ghi'
+
+    # check that right data was logged
+    tfc_event_handler._TrackTestInvocations(mock_request, self.mock_test_run)
+    mock_log.assert_called_with(
+        analytics.INVOCATION_CATEGORY,
+        analytics.END_ACTION,
+        command='command',
+        test_run_command='mock test run command',
+        test_run_retry_command='mock test run retry command',
+        test_id='some.test.id',
+        test_name='name',
+        test_version='version',
+        state='COMPLETED',
+        failed_test_count_threshold='10',
+        duration_seconds=100,
+        elapsed_time_seconds=900,
+        device_count=1,
+        test_count=3,
+        failed_module_count=2,
+        failed_test_count=1,
+        prev_total_test_count=60,
+        prev_failed_module_count=50,
+        prev_failed_test_count=40,
+        missing_previous_run=False,
+        is_sequence_run=True)
+
+  @mock.patch.object(analytics, 'Log')
+  @mock.patch.object(tfc_event_handler, '_GetCurrentTime')
+  def testTrackTestInvocation_manualRetry(self, mock_time, mock_log):
+    # mock current time
+    now = datetime.datetime.now()
+    mock_time.return_value = now
+
+    # configure mock TFC request with 1 attempt
+    request_id = self.mock_test_run.request_id
+    mock_request = api_messages.RequestMessage(id=request_id,
+                                               command_line='command')
+    mock_request.command_attempts.append(
+        api_messages.CommandAttemptMessage(
+            state=common.CommandState.COMPLETED,
+            device_serials=['2'],
+            start_time=now - datetime.timedelta(seconds=200),
+            end_time=now - datetime.timedelta(seconds=100),
+            total_test_count=3, failed_test_run_count=2, failed_test_count=1))
+
+    # create previous test runs
+    first_test_run = ndb_models.TestRun(
+        test_run_config=ndb_models.TestRunConfig(
+            test_key=self.mock_test.key, run_target='run_target'),
+        test=self.mock_test,
+        request_id='request_id1',
+        state=ndb_models.TestRunState.UNKNOWN,
+        create_time=now - datetime.timedelta(seconds=5000),
+        total_test_count=100,
+        failed_test_run_count=90,
+        failed_test_count=80,
+        prev_test_context=ndb_models.TestContextObj())
+    first_test_run.put()
+    second_test_run = ndb_models.TestRun(
+        test_run_config=ndb_models.TestRunConfig(
+            test_key=self.mock_test.key, run_target='run_target'),
+        test=self.mock_test,
+        request_id='request_id2',
+        state=ndb_models.TestRunState.UNKNOWN,
+        create_time=now - datetime.timedelta(seconds=2000),
+        total_test_count=10,
+        failed_test_run_count=9,
+        failed_test_count=8,
+        prev_test_run_key=first_test_run.key)
+    second_test_run.put()
+
+    # update mock test run
+    self.mock_test_run.test_package_info = ndb_models.TestPackageInfo(
+        name='name', version='version')
+    self.mock_test_run.state = ndb_models.TestRunState.COMPLETED
+    self.mock_test_run.create_time = now - datetime.timedelta(seconds=1000)
+    self.mock_test_run.failed_test_count = 1
+    self.mock_test_run.prev_test_run_key = second_test_run.key
+
+    # check that right data was logged
+    tfc_event_handler._TrackTestInvocations(mock_request, self.mock_test_run)
+    mock_log.assert_called_with(
+        analytics.INVOCATION_CATEGORY,
+        analytics.END_ACTION,
+        command='command',
+        test_run_command='mock test run command',
+        test_run_retry_command='mock test run retry command',
+        test_id=tfc_event_handler.LOCAL_ID_TAG,
+        test_name='name',
+        test_version='version',
+        state='COMPLETED',
+        failed_test_count_threshold=None,
+        duration_seconds=100,
+        elapsed_time_seconds=4900,
+        device_count=1,
+        test_count=3,
+        failed_module_count=2,
+        failed_test_count=1,
+        prev_total_test_count=10,
+        prev_failed_module_count=9,
+        prev_failed_test_count=8,
+        missing_previous_run=True,
+        is_sequence_run=False)
 
 
 if __name__ == '__main__':

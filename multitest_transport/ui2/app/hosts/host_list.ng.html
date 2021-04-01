@@ -1,0 +1,321 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+
+<mat-toolbar class="host-list-toolbar">
+  <mat-toolbar-row>
+    <h1>Hosts</h1>
+    <span class="toolbar-spacer"></span>
+    <mat-form-field appearance="outline" fxFlex="300px">
+      <mat-select placeholder="Lab" [(ngModel)]="selectedLab" (selectionChange)="load()">
+        <mat-option *ngFor="let lab of labs" [value]="lab">
+          {{ lab }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <button
+        mat-button
+        color="accent"
+        aria-label="Hosts Update"
+        [disabled]="selectedLab === ''"
+        (click)="openHostUpdateDialog()"
+      >
+        Hosts Update
+    </button>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<div class="filter">
+  <form [formGroup]="formGroup">
+    <mat-form-field class="form-field" fxFlex>
+      <mat-icon matPrefix class="filter-icon">filter_list</mat-icon>
+      <input
+        matInput
+        #valueInput
+        placeholder="Filter..."
+        formControlName="valueControl"
+        [matAutocomplete]="auto"
+        (keydown.tab)="toggleByKeyPressed($event)"
+        (keydown.enter)="submit($event)"
+        type="text"
+        tabindex="0"
+      />
+      <button
+        *ngIf="hasFilter"
+        mat-button
+        matSuffix
+        mat-icon-button
+        aria-label="clear filter"
+        (click)="resetSelection()"
+        type="button"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+      <mat-autocomplete #auto="matAutocomplete" (closed)="renderSelectedOptionsAndResetFilterbar()">
+        <div>
+          <mat-option [value]="back" *ngIf="filterBarUtility.selectedColumn">
+            <div class="back" (click)="backToRoot($event)">
+              <mat-icon matPrefix class="back-button-icon">arrow_back</mat-icon>
+              Back
+            </div>
+          </mat-option>
+          <mat-option
+            [value]="all"
+            *ngIf="filterBarUtility.selectedColumn && filteredOptions.length; else noMatch"
+          >
+            <div (click)="toggleSelectAll($event)">
+              <mat-checkbox [checked]="isAllSelected">
+                Select {{ filteredOptions?.length }} filtered results
+              </mat-checkbox>
+            </div>
+          </mat-option>
+          <ng-template #noMatch>
+            <div
+              *ngIf="
+                filterBarUtility.selectedColumn &&
+                !filteredOptions.length &&
+                filterBarUtility.selectedColumn !== extraInfoDisplay
+              "
+              class="no-match"
+            >
+              No matches for <b>{{ inputValue }}</b>
+            </div>
+          </ng-template>
+        </div>
+        <mat-option *ngFor="let option of filteredOptions" [value]="option.value">
+          <div (click)="toggleSelection($event, option)">
+            <mat-checkbox *ngIf="option.showCheckbox" [checked]="option.selected"> </mat-checkbox>
+            {{ option.value }}
+          </div>
+        </mat-option>
+        <mat-option
+          *ngIf="filterBarUtility.selectedColumn === extraInfoDisplay"
+          [value]="inputValue"
+        >
+          <div (click)="addInputOption(extraInfo)">
+            Search on {{ filterHintType }}: &quot;<b>{{ clearInputValue }}</b
+            >&quot;
+          </div>
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <button
+      mat-icon-button
+      class="refresh-button"
+      matTooltip="Refresh the data"
+      aria-label="Refresh the data"
+      (click)="load(0, true)"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
+
+    <mat-divider vertical></mat-divider>
+
+    <button
+      mat-icon-button
+      id="view-columns-btn"
+      class="view-columns"
+      aria-label="View columns"
+      matTooltip="View columns"
+      [matMenuTriggerFor]="view_column_menu"
+      type="button"
+    >
+      <mat-icon>view_column</mat-icon>
+    </button>
+    <mat-menu #view_column_menu="matMenu">
+      <ng-container *ngFor="let column of columns; let i = index">
+        <ng-container *ngIf="column.removable">
+          <button
+            [attr.id]="column.fieldName + '-menu-btn'"
+            (click)="toggleDisplayColumn($event, column.show, i)"
+            mat-menu-item
+            type="button"
+          >
+            <mat-icon>{{ column.show ? "check_box" : "check_box_outline_blank" }}</mat-icon>
+            <span class="menu-item">{{ column.displayName }}</span>
+          </button>
+        </ng-container>
+      </ng-container>
+    </mat-menu>
+  </form>
+</div>
+<div [class.loading-mask]="isLoading">
+  <mat-table
+    #table
+    [dataSource]="dataSource"
+    class="selectable"
+    (scroll)="checkTableScrolled()"
+    [class.scrolled]="isTableScrolled"
+    aria-label="Host list"
+  >
+    <!-- Host Name -->
+    <ng-container matColumnDef="hostname">
+      <mat-header-cell *matHeaderCellDef fxFlex="260px">
+        Hostname
+      </mat-header-cell>
+      <mat-cell *matCellDef="let host" [matTooltip]="host.hostname" fxFlex="260px">
+        <div class="host-name">
+          <a (click)="openHostDetails(host.hostname)">
+            {{ host.hostname }}
+          </a>
+        </div>
+        <a
+          mat-icon-button
+          [href]="getHostDetailsUrl(host.hostname)"
+          (click)="storeHostNamesInLocalStorage()"
+          target="_blank"
+        >
+          <mat-icon>launch</mat-icon>
+        </a>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Host Group -->
+    <ng-container matColumnDef="host_group">
+      <mat-header-cell *matHeaderCellDef fxFlex="300px">
+        Host Group
+      </mat-header-cell>
+      <mat-cell *matCellDef="let host" [matTooltip]="host.host_group" fxFlex="300px">
+        <div class="host-group">{{ host.host_group }}</div>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Host State -->
+    <ng-container matColumnDef="host_state">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px"> Host State </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="150px">
+        <status-button class="host" [state]="host.host_state"></status-button>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Run Targets -->
+    <ng-container matColumnDef="run_target">
+      <mat-header-cell *matHeaderCellDef fxFlex="220px"> Run Targets </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="220px">
+        <overflow-list [data]="getRunTargets(host)" [overflowListType]="overflowListType.BUTTON">
+        </overflow-list>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Pools -->
+    <ng-container matColumnDef="pools">
+      <mat-header-cell *matHeaderCellDef fxFlex="220px"> Pools </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="220px">
+        <overflow-list [data]="getPools(host)" [overflowListType]="overflowListType.BUTTON">
+        </overflow-list>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Test Harness -->
+    <ng-container matColumnDef="testHarness">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px">
+        Test Harness
+      </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="120px"> {{ host.testHarness }} </mat-cell>
+    </ng-container>
+
+    <!-- Test Harness Version-->
+    <ng-container matColumnDef="testHarnessVersion">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px">
+        Test Harness Version
+      </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="120px"> {{ host.testHarnessVersion }} </mat-cell>
+    </ng-container>
+
+    <!-- Host Update State -->
+    <ng-container matColumnDef="updateState">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px"> Update State </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="150px">
+        <status-button *ngIf="host.updateState" [state]="host.updateState"></status-button>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Lab -->
+    <ng-container matColumnDef="lab">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px"> Lab </mat-header-cell>
+      <mat-cell *matCellDef="let host" [matTooltip]="host.lab_name" fxFlex="150px">
+        <div class="lab-name">{{ host.lab_name }}</div>
+      </mat-cell>
+    </ng-container>
+
+    <!-- TODO:Merge header for total, online, available and utilization. -->
+    <!-- Total -->
+    <ng-container matColumnDef="total">
+      <mat-header-cell *matHeaderCellDef fxFlex="50px"> Total </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="50px">
+        {{ host.extraInfo | deviceCountInfo: "total" }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Online -->
+    <ng-container matColumnDef="online">
+      <mat-header-cell *matHeaderCellDef fxFlex="90px"> Online </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="90px">
+        {{ host.extraInfo | deviceCountInfo: "available" }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Available -->
+    <ng-container matColumnDef="available">
+      <mat-header-cell *matHeaderCellDef fxFlex="100px"> Available </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="100px">
+        {{ host.extraInfo | deviceCountInfo: "online" }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Utilization -->
+    <ng-container matColumnDef="utilization">
+      <mat-header-cell *matHeaderCellDef fxFlex="100px"> Utilization </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="100px">
+        {{ host.extraInfo | deviceCountInfo: "allocated" }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Actions: Remove for a single host -->
+    <ng-container matColumnDef="actions" stickyEnd>
+      <mat-header-cell *matHeaderCellDef fxFlex="100px"></mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="100px">
+        <button
+          *ngIf="host?.host_state === 'GONE' && host.testHarness === testHarness.TF"
+          mat-button
+          color="accent"
+          type="button"
+          aria-label="Remove host"
+          [disabled]="!(host.lab_name | permissionCheck)"
+          (click)="removeHost(host.hostname)"
+        >
+          Remove
+        </button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayColumns"></mat-row>
+  </mat-table>
+
+  <paginator
+    [pageSizeOptions]="pageSizeOptions"
+    (sizeChange)="resetPageTokenAndReload()"
+    (previous)="load(-1)"
+    (next)="load(1)"
+  ></paginator>
+
+  <div class="empty" *ngIf="!dataSource.length">
+    No hosts found.
+  </div>
+</div>

@@ -13,13 +13,11 @@
 # limitations under the License.
 
 """A module to provide config set APIs."""
-
-
+# Non-standard docstrings are used to generate the API documentation.
+import endpoints
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
-
-from google3.third_party.apphosting.python.endpoints.v1_1 import endpoints
 
 from multitest_transport.api import base
 from multitest_transport.models import build
@@ -33,30 +31,22 @@ from multitest_transport.models import ndb_models
 class ConfigSetApi(remote.Service):
   """A handler for Config Set API."""
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,),
       mtt_messages.BuildChannelList,
       path='build_channels', http_method='GET',
       name='build_channels')
   def ListBuildChannels(self, request):
-    """Returns a list of requested build channels.
-
-    Args:
-      request: an API request object.
-    Returns:
-      a mtt_messages.ConfigSetStatusList object.
-    """
+    """Fetches a list of build channels used for importing config sets."""
     channels = []
     for channel_id in config_set_helper.CONFIG_SET_BUILD_CHANNEL_IDS:
       channels.append(build.GetBuildChannel(channel_id))
     return mtt_messages.BuildChannelList(
-        build_channels=mtt_messages.Convert(channels,
-                                            mtt_messages.BuildChannel))
+        build_channels=mtt_messages.ConvertList(
+            channels, mtt_messages.BuildChannel))
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           include_remote=messages.BooleanField(1),
@@ -65,16 +55,13 @@ class ConfigSetApi(remote.Service):
       mtt_messages.ConfigSetInfoList,
       path='/config_sets', http_method='GET', name='list')
   def List(self, request):
-    """Returns a list of ConfigSetInfos.
+    """Fetches a list of config sets.
 
-    If include_remote is false, returns only the imported infos
-    If include_remote is true, downloads the available configs from the MTT GCS
-      bucket and checks if any currently imported configs can be updated.
-
-    Args:
-      request: an API request object.
-    Returns:
-      a mtt_messages.ConfigSetInfoList object.
+    Parameters:
+      include_remote: True to check remote config sets and determine the
+        imported config sets are updatable, False to only return imported
+        config sets
+      statuses: config set statuses to include
     """
     imported_infos = config_set_helper.GetLocalConfigSetInfos()
 
@@ -91,25 +78,38 @@ class ConfigSetApi(remote.Service):
     return mtt_messages.ConfigSetInfoList(
         config_set_infos=info_message_list)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           url=messages.StringField(1),
           content=messages.StringField(2)),
       mtt_messages.ConfigSetInfo,
-      path='import',
+      path='import/{url}',
       http_method='POST',
       name='import')
   def Import(self, request):
-    """Downloads and reads a file from GCS and imports it.
+    """Downloads and imports a config set.
 
-    Args:
-      request: an API request object containing either a url to a config file or
-               the contents of a config file
-    Returns:
-      a mtt_essages.ConfigSetInfo object
+    Parameters:
+      url: URL from which to download a config file
+      content: contents of a config file, only used if url is not provided
     """
-    content = (config_set_helper.ReadRemoteFile(request.url) if request.url
-               else request.content)
+    content = (request.content if request.content else
+               config_set_helper.ReadRemoteFile(request.url))
     return config_set_helper.Import(content)
+
+  @base.ApiMethod(
+      endpoints.ResourceContainer(message_types.VoidMessage,
+                                  url=messages.StringField(1)),
+      message_types.VoidMessage,
+      path='{url}',
+      http_method='DELETE',
+      name='delete')
+  def Delete(self, request):
+    """Removes a config set and all associated objects (tests, etc).
+
+    Parameters:
+      url: the url of the config set to remove
+    """
+    config_set_helper.Delete(request.url)
+    return message_types.VoidMessage()

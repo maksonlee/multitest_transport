@@ -18,10 +18,12 @@ This tool is supposed to be bootstrapped by 'mtt' script and expects the current
 working directory to be the root of MTT package.
 """
 import argparse
+import enum
 import logging
 import os
 import os.path
 import re
+import shlex
 import shutil
 import socket
 import sys
@@ -29,6 +31,7 @@ import tempfile
 import time
 import zipfile
 
+from packaging import version
 import six
 
 from multitest_transport.cli import cli_util
@@ -36,7 +39,10 @@ from multitest_transport.cli import command_util
 from multitest_transport.cli import host_util
 
 _MTT_CONTAINER_NAME = 'mtt'
+# The port must be consistent with those in init.sh and serve.sh.
+_MTT_CONTROL_SERVER_PORT = 8000
 _MTT_SERVER_WAIT_TIME_SECONDS = 120
+_MTT_SERVER_LOG_PATH = '/data/log/server/current'
 
 _MTT_LIB_DIR = '/var/lib/mtt'
 _MTT_LOG_DIR = '/var/log/mtt'
@@ -52,6 +58,13 @@ _CONFIG_ROOT = 'config'
 _VERSION_FILE = 'VERSION'
 _UNKNOWN_VERSION = 'unknown'
 _DAEMON_UPDATE_INTERVAL_SEC = 60
+_ADB_SERVER_PORT = 5037
+# Docker networking arguments.
+_DOCKER_BRIDGE_NETWORK = 'bridge'
+_DOCKER_HOST_NETWORK = 'host'
+# The device nodes required by local virtual devices.
+_LOCAL_VIRTUAL_DEVICE_NODES = ('/dev/kvm', '/dev/vhost-vsock', '/dev/net/tun',
+                               '/dev/vhost-net')
 
 # Tradefed accept TSTP signal as 'quit', which will wait all running tests
 # to finish.
@@ -62,9 +75,27 @@ _TF_KILL = 'TERM'
 _CONTAINER_SHUTDOWN_TIMEOUT_SEC = 60 * 60
 # The waiting interval to check mtt container liveliness
 _DETECT_INTERVAL_SEC = 30
+# The dict key name of test harness image from host metadata
+_TEST_HARNESS_IMAGE_KEY = 'testHarnessImage'
+
 
 PACKAGE_LOGGER_NAME = 'multitest_transport.cli'
 logger = logging.getLogger(__name__)
+
+
+class OperationMode(enum.Enum):
+  """Mode of ATS."""
+  CLOUD = 'cloud'
+  ON_PREMISE = 'on_premise'
+  STANDALONE = 'standalone'
+
+
+class ActionableError(Exception):
+  """Errors which can be corrected by user actions."""
+
+  def __init__(self, message):
+    super().__init__()
+    self.message = message
 
 
 def _WaitForServer(url, timeout):
@@ -77,13 +108,15 @@ def _WaitForServer(url, timeout):
     True if the service is ready. Otherwise False.
   """
   end_time = time.time() + timeout
-  while time.time() < end_time:
-    time.sleep(0.1)
+  while True:
+    remaining_time = end_time - time.time()
+    if remaining_time <= 0:
+      break
     try:
-      six.moves.urllib.request.urlopen(url, timeout=1)
+      six.moves.urllib.request.urlopen(url, timeout=remaining_time)
       return True
     except (socket.error, six.moves.urllib.error.URLError):
-      pass
+      time.sleep(0.1)
   return False
 
 
@@ -104,6 +137,26 @@ def _GetDockerImageName(image_name, tag=None):
   if tag:
     image_name = image_name.split(':', 2)[0] + ':' + tag
   return image_name
+
+
+def _GetMttServerPublicPorts(control_server_port):
+  """Get the ports that the container should publish.
+
+  The ports must be consistent with those in init.sh and serve.sh.
+
+  Args:
+    control_server_port: the control server port on the host.
+
+  Returns:
+    pairs of host ports and docker ports.
+  """
+  return (
+      (control_server_port, _MTT_CONTROL_SERVER_PORT),
+      (control_server_port + 5,
+       _MTT_CONTROL_SERVER_PORT + 5),  # FILE_BROWSER_PORT
+      (control_server_port + 6,
+       _MTT_CONTROL_SERVER_PORT + 6),  # FILE_SERVER_PORT
+  )
 
 
 def _GetAdbVersion():
@@ -170,7 +223,7 @@ def _SetupMTTRuntimeIntoLibPath(args, host):
   if host.config.service_account_json_key_path:
     host.context.CopyFile(
         host.config.service_account_json_key_path, _KEY_FILE)
-    host.config.service_account_json_key_path = _KEY_FILE
+    host.config = host.config.SetServiceAccountJsonKeyPath(_KEY_FILE)
   host.config.Save(_HOST_CONFIG)
 
 
@@ -182,6 +235,72 @@ def _GetHostTimezone():
   """
   with open('/etc/timezone') as f:
     return f.read().strip()
+
+
+def _CheckMttNodePrerequisites(args):
+  """Check whether the host is set up for mtt.
+
+  Args:
+    args: a parsed argparse.Namespace object.
+
+  Raises:
+    ActionableError: if any prerequisite is not met.
+  """
+  messages = []
+  # Make sure that no adb server is running on the host.
+  if not args.use_host_adb:
+    try:
+      with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as adb_socket:
+        adb_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        adb_socket.bind(('127.0.0.1', args.adb_server_port))
+    except OSError:
+      messages.append('Adb server port %d is not available. If adb is running, '
+                      'please run `adb kill-server` and try again.' %
+                      args.adb_server_port)
+  # Check the device nodes required by local virtual devices.
+  if (args.max_local_virtual_devices and
+      not all(os.path.exists(path) for path in _LOCAL_VIRTUAL_DEVICE_NODES)):
+    messages.append('Some required device nodes are missing. '
+                    'Try `sudo modprobe -a kvm tun vhost_net vhost_vsock`.')
+  if messages:
+    raise ActionableError('\n'.join(messages))
+
+
+def _CheckDockerImageVersion(cli_path, docker_helper, container_name):
+  """Check a Docker image is compatible with CLI.
+
+  Args:
+    cli_path: a CLI path.
+    docker_helper: a command_util.DockerHelper object.
+    container_name: a container name.
+  Raises:
+    ActionableError: if a Docker image is newer than CLI.
+  """
+  res = docker_helper.Exec(container_name, ['printenv', 'MTT_VERSION'])
+  cli_version, _ = cli_util.GetVersion(cli_path)
+  image_version = res.stdout
+  if (not cli_version or '_' not in cli_version or
+      not image_version or '_' not in image_version):
+    logger.debug(
+        'CLI or Docker image version is unrecognizable; '
+        'skipping version check: cli_version=%s, image_version=%s',
+        cli_version, image_version)
+    return
+  cli_build_env, cli_version = cli_version.strip().split('_', 1)
+  image_build_env, image_version = image_version.strip().split('_', 1)
+  cli_version_obj = version.parse(cli_version)
+  image_version_obj = version.parse(image_version)
+  if cli_build_env != image_build_env:
+    logger.warning(
+        'CLI and Docker image are from different release channels; '
+        'proceed with cautions (%s != %s)',
+        cli_build_env, image_build_env)
+  elif cli_version_obj < image_version_obj:
+    # Stop a started container.
+    docker_helper.Stop([container_name])
+    raise ActionableError(
+        'CLI is older than Docker image; please update CLI to a newer version'
+        '(%s < %s)' % (cli_version, image_version))
 
 
 def Start(args, host=None):
@@ -198,6 +317,11 @@ def Start(args, host=None):
   if host.config.enable_autoupdate:
     _StartMttDaemon(args, host)
     return
+  if host.config.enable_ui_update:
+    host.control_server_client.PatchTestHarnessImageToHostMetadata(
+        host.config.hostname, host.config.docker_image)
+    _StartMttDaemon(args, host)
+    return
   _StartMttNode(args, host)
 
 
@@ -208,14 +332,19 @@ def _StartMttNode(args, host):
     args: a parsed argparse.Namespace object.
     host: an instance of host_util.Host.
   Raises:
+    ActionableError: if a MTT node fails to start due to user errors.
     RuntimeError: if a MTT node fails to start.
   """
-  master_url = host.config.master_url
+  host.control_server_client.SubmitHostUpdateStateChangedEvent(
+      host.config.hostname, host_util.HostUpdateState.RESTARTING)
+  control_server_url = args.control_server_url or host.config.control_server_url
   image_name = _GetDockerImageName(
       args.image_name or host.config.docker_image, tag=args.tag)
+  docker_server = args.docker_server or host.config.docker_server
   logger.info('Using image %s.', image_name)
   docker_context = command_util.DockerContext(
       host.context,
+      docker_server=docker_server,
       service_account_json_key_path=host.config.service_account_json_key_path)
   docker_helper = command_util.DockerHelper(docker_context, image_name)
 
@@ -223,18 +352,43 @@ def _StartMttNode(args, host):
     logger.error('MTT is already running.')
     return
 
-  if args.force_update:
+  _CheckMttNodePrerequisites(args)
+
+  if args.force_update or not docker_helper.DoesResourceExist(image_name):
     docker_helper.Pull()
 
-  if master_url:
-    docker_helper.AddEnv('MTT_MASTER_URL', master_url)
+  # TODO: Remove host network after a couple of releases.
+  if 'MTT_SUPPORT_BRIDGE_NETWORK=true' in docker_helper.GetEnv(image_name):
+    docker_helper.SetHostname(host.name)
+    network = _DOCKER_BRIDGE_NETWORK
   else:
-    logger.info('mtt_master_url is not set; starting a standalone node.')
-    docker_helper.AddEnv('MTT_MASTER_PORT', args.port)
+    network = _DOCKER_HOST_NETWORK
+  docker_helper.SetNetwork(network)
+
+  docker_helper.AddEnv('OPERATION_MODE', args.operation_mode)
+  docker_helper.AddEnv('MTT_CLI_VERSION', cli_util.GetVersion(args.cli_path)[0])
+  if control_server_url:
+    docker_helper.AddEnv('MTT_CONTROL_SERVER_URL', control_server_url)
+  else:
+    logger.info(
+        'The control_server_url is not set; starting a standalone node.')
+  # TODO: Use config to differentiate worker and controller.
+  if (control_server_url and
+      args.operation_mode == OperationMode.ON_PREMISE.value
+     ) or not control_server_url:
+    if network == _DOCKER_BRIDGE_NETWORK:
+      for host_port, docker_port in _GetMttServerPublicPorts(args.port):
+        docker_helper.AddPort(host_port, docker_port)
+    else:
+      # TODO: Remove the env variables after a couple of releases.
+      docker_helper.AddEnv('MTT_MASTER_PORT', args.port)
+      docker_helper.AddEnv('MTT_CONTROL_SERVER_PORT', args.port)
   if host.config.lab_name:
     docker_helper.AddEnv('LAB_NAME', host.config.lab_name)
   if host.config.cluster_name:
     docker_helper.AddEnv('CLUSTER', host.config.cluster_name)
+  docker_helper.AddEnv('IMAGE_NAME', image_name)
+
   if host.config.tf_global_config_path:
     docker_helper.AddEnv(
         'TF_GLOBAL_CONFIG_PATH',
@@ -250,9 +404,12 @@ def _StartMttNode(args, host):
   no_proxy = os.environ.get('NO_PROXY', os.environ.get('no_proxy'))
   if http_proxy or no_proxy:
     # Add localhost to NO_PROXY. This enables in-server API calls.
-    tokens = filter(None, ['127.0.0.1', host.name, no_proxy])
-    no_proxy = ','.join(tokens)
+    no_proxy_list = ['127.0.0.1', '::1', 'localhost', host.name]
+    if no_proxy:
+      no_proxy_list.append(no_proxy)
+    no_proxy = ','.join(no_proxy_list)
     os.environ['NO_PROXY'] = no_proxy
+    logger.debug('NO_PROXY=%s', no_proxy)
     docker_helper.AddEnv('NO_PROXY', no_proxy)
 
   if host.context.IsLocal():
@@ -284,6 +441,57 @@ def _StartMttNode(args, host):
     docker_helper.AddTmpfs(
         tmpfs_config.path, size=tmpfs_config.size, mode=tmpfs_config.mode)
 
+  extra_docker_args = (host.config.extra_docker_args +
+                       (args.extra_docker_args or []))
+  if extra_docker_args:
+    # Use shlex.split to properly remove quotes.
+    extra_docker_args = shlex.split(' '.join(extra_docker_args))
+    logger.debug('Add extra docker args: %s', extra_docker_args)
+    docker_helper.AddExtraArgs(extra_docker_args)
+
+  # Create user file store if necessary, and then mount it and any additional
+  # paths in the temporary volume. These files and directories will be linked
+  # into the local file store.
+  user_file_store = os.path.expanduser('~/.ats_storage')
+  host.context.Run(['mkdir', '-p', user_file_store])
+  mount_paths = [user_file_store]
+  mount_paths.extend(args.mount_local_path or [])
+  for mount_path in mount_paths:
+    local_path, remote_path = (mount_path.split(':', 1) + [None])[:2]
+    if not remote_path:
+      remote_path = os.path.basename(local_path)
+    remote_path = os.path.normpath('/tmp/.mnt/' + remote_path)
+    logger.debug('Mounting \'%s\' to \'%s\'', local_path, remote_path)
+    docker_helper.AddBind(local_path, remote_path)
+
+  docker_helper.AddEnv('MTT_SERVER_LOG_LEVEL', args.server_log_level)
+
+  if network == _DOCKER_BRIDGE_NETWORK:
+    network_info = docker_helper.GetBridgeNetworkInfo()
+    if network_info.get('EnableIPv6', False):
+      docker_helper.AddEnv('ENABLE_IPV6_BRIDGE_NETWORK', '1')
+
+    if args.use_host_adb:
+      docker_helper.AddEnv('MTT_USE_HOST_ADB', '1')
+      # If IPv6 is enabled, the network info contains both IPv4 and IPv6
+      # subnets. This tool finds the IPv4 gateway and shows the command to
+      # forward host adb connection.
+      network_configs = network_info['IPAM']['Config']
+      try:
+        host_ip = next(config['Gateway'] for config in network_configs
+                       if re.match(r'[\d.]+$', config.get('Gateway', '')))
+      except StopIteration:
+        raise ActionableError('Cannot get IPv4 gateway of bridge network. '
+                              'Please check /etc/docker/daemon.json and '
+                              'restart docker daemon.')
+      logger.info(
+          'Using host ADB; please forward %s:5037 to ADB server port '
+          '(e.g. run "socat tcp-listen:5037,bind=%s,reuseaddr,fork tcp-connect:127.0.0.1:5037 &")',
+          host_ip, host_ip)
+    else:
+      docker_helper.AddPort(
+          '127.0.0.1:%d' % args.adb_server_port, _ADB_SERVER_PORT)
+
   custom_sdk_dir = None
   if args.custom_adb_path:
     # Create temp directory for custom SDK tools, will be copied over to ensure
@@ -293,7 +501,22 @@ def _StartMttNode(args, host):
     # TODO: support GCS files
     shutil.copy(args.custom_adb_path, '%s/adb' % custom_sdk_dir)
 
+  if args.max_local_virtual_devices:
+    docker_helper.AddEnv('MAX_LOCAL_VIRTUAL_DEVICES',
+                         str(args.max_local_virtual_devices))
+    # Add the dependency of crosvm and qemu.
+    for device_node in _LOCAL_VIRTUAL_DEVICE_NODES:
+      docker_helper.AddDeviceNode(device_node)
+    # Allow crosvm to control the tun device.
+    docker_helper.AddCapability('net_admin')
+
+  if args.extra_ca_cert:
+    docker_helper.AddFile(
+        args.extra_ca_cert, '/usr/local/share/ca-certificates/')
+
   docker_helper.Run(args.name)
+
+  _CheckDockerImageVersion(args.cli_path, docker_helper, args.name)
 
   # Delete temp tools directory
   if custom_sdk_dir:
@@ -305,14 +528,16 @@ def _StartMttNode(args, host):
     # MTT's build channel authorization only works when accessed with
     # localhost URL.
     hostname = 'localhost'
-  if master_url:
-    logger.info('MTT slave is running.')
+  if control_server_url:
+    logger.info('ATS replica is running.')
   else:
     url = 'http://%s:%s' % (hostname, args.port)
     if not _WaitForServer(url, timeout=_MTT_SERVER_WAIT_TIME_SECONDS):
+      docker_helper.Logs(args.name)
+      docker_helper.Cat(args.name, _MTT_SERVER_LOG_PATH)
       raise RuntimeError(
-          'MTT server failed to start in %ss' % _MTT_SERVER_WAIT_TIME_SECONDS)
-    logger.info('MTT is serving at %s', url)
+          'ATS server failed to start in %ss' % _MTT_SERVER_WAIT_TIME_SECONDS)
+    logger.info('ATS is serving at %s', url)
 
 
 def _StartMttDaemon(args, host):
@@ -360,6 +585,8 @@ def _StopMttNode(args, host):
     args: a parsed argparse.Namespace object.
     host: an instance of host_util.Host.
   """
+  host.control_server_client.SubmitHostUpdateStateChangedEvent(
+      host.config.hostname, host_util.HostUpdateState.SHUTTING_DOWN)
   docker_context = command_util.DockerContext(host.context, login=False)
   docker_helper = command_util.DockerHelper(docker_context)
   # TODO: The kill logic should be more general and works for both
@@ -369,7 +596,7 @@ def _StopMttNode(args, host):
     if host.config.graceful_shutdown or args.wait:
       logger.info('Wait all tests to finish.')
       docker_helper.Kill([args.name], _TF_QUIT)
-    elif host.config.master_url:
+    elif host.config.control_server_url:
       # This send "kill" to TF inside the container.
       logger.info('Kill all tests.')
       docker_helper.Kill([args.name], _TF_KILL)
@@ -392,16 +619,19 @@ def _StopMttNode(args, host):
 
 def _DetectAndKillDeadContainer(host,
                                 docker_helper,
-                                container_name,
-                                total_wait_sec=_CONTAINER_SHUTDOWN_TIMEOUT_SEC):
+                                container_name):
   """Detect a dead MTT container, force kill it when detected or timed out.
 
   Args:
     host: an instance of host_util.Host.
     docker_helper: an instance of command_util.DockerHelper.
     container_name: string, the name of docker container to kill.
-    total_wait_sec: int, the total time to wait for docker container shutdown.
   """
+  total_wait_sec = _CONTAINER_SHUTDOWN_TIMEOUT_SEC
+  if host.config.shutdown_timeout_sec is not None:
+    total_wait_sec = host.config.shutdown_timeout_sec
+  logging.debug(
+      'Waiting %d sec for docker container shutdown.', total_wait_sec)
   wait_end_sec = time.time() + total_wait_sec
   while time.time() < wait_end_sec:
     if not docker_helper.IsContainerRunning(container_name):
@@ -476,9 +706,11 @@ def _PullUpdate(args, host):
     logger.info('force_update==True, updating.')
     return True
   image_name = _GetDockerImageName(args.image_name or host.config.docker_image)
+  docker_server = args.docker_server or host.config.docker_server
   logger.debug('Using image %s.', image_name)
   docker_context = command_util.DockerContext(
       host.context,
+      docker_server=docker_server,
       service_account_json_key_path=host.config.service_account_json_key_path)
   docker_helper = command_util.DockerHelper(docker_context, image_name)
   # docker doesn't provide a command to inspect remote image directly.
@@ -508,6 +740,8 @@ def _PullUpdate(args, host):
     logger.info('%s is already using the same image as remote, skip.',
                 args.name)
     return False
+  host.control_server_client.SubmitHostUpdateStateChangedEvent(
+      host.config.hostname, host_util.HostUpdateState.SYNCING)
   docker_helper.CleanupDanglingImages()
   logger.info(
       '%s != %s, should restart.',
@@ -523,7 +757,13 @@ def Update(args, host=None):
     host: an instance of host_util.Host.
   """
   host = host or host_util.CreateHost(args)
+  _StopMttDaemon(host)
   if host.config.enable_autoupdate:
+    _StartMttDaemon(args, host)
+    return
+  if host.config.enable_ui_update:
+    host.control_server_client.PatchTestHarnessImageToHostMetadata(
+        host.config.hostname, host.config.docker_image)
     _StartMttDaemon(args, host)
     return
   _UpdateMttNode(args, host)
@@ -539,8 +779,14 @@ def _UpdateMttNode(args, host):
   if not _PullUpdate(args, host):
     return
   logger.info('Restarting %s.', args.name)
-  _StopMttNode(args, host)
-  _StartMttNode(args, host)
+  try:
+    _StopMttNode(args, host)
+    _StartMttNode(args, host)
+  except Exception as e:      host.control_server_client.SubmitHostUpdateStateChangedEvent(
+        host.config.hostname, host_util.HostUpdateState.ERRORED)
+    raise e
+  host.control_server_client.SubmitHostUpdateStateChangedEvent(
+      host.config.hostname, host_util.HostUpdateState.SUCCEEDED)
 
 
 def Restart(args, host=None):
@@ -556,19 +802,61 @@ def Restart(args, host=None):
   if host.config.enable_autoupdate:
     _StartMttDaemon(args, host)
     return
+  if host.config.enable_ui_update:
+    host.control_server_client.PatchTestHarnessImageToHostMetadata(
+        host.config.hostname, host.config.docker_image)
+    _StartMttDaemon(args, host)
+    return
   _StartMttNode(args, host)
 
 
-def RunDaemon(args):
+def RunDaemon(args, host=None):
   """Run MTT daemon on the local host.
 
   Args:
     args: a parsed argparse.Namespace object.
+    host: an instance of host_util.Host.
   """
   while True:
-    host = host_util.CreateHost(args)
-    _UpdateMttNode(args, host)
+    _RunDaemonIteration(args, host=host)
     time.sleep(_DAEMON_UPDATE_INTERVAL_SEC)
+
+
+def _RunDaemonIteration(args, host=None):
+  """Run one iteration of daemon task.
+
+  Args:
+    args: a parsed argparse.Namespace object.
+    host: an instance of host_util.Host.
+  """
+  if not args.no_check_update:
+    try:
+      new_path = cli_util.CheckAndUpdateTool(
+          args.cli_path,
+          cli_update_url=args.cli_update_url)
+      if new_path:
+        logger.debug('CLI is updated.')
+        os.execv(new_path, [new_path] + sys.argv[1:])
+    except Exception as e:        logger.warning('Failed to check/update tool: %s', e)
+  host = host or host_util.CreateHost(args)
+  if host.config.enable_autoupdate:
+    logger.debug('Auto-update enabled.')
+    _UpdateMttNode(args, host)
+    return
+  if host.config.enable_ui_update:
+    logger.debug('Update from UI enabled.')
+    metadata = host.control_server_client.GetHostMetadata(
+        host.config.hostname)
+    test_harness_image = metadata.get(_TEST_HARNESS_IMAGE_KEY)
+    logger.debug('Found metadata: %s.', metadata)
+    if test_harness_image:
+      logger.debug('Pinned to image: %s.', test_harness_image)
+      host.config = host.config.SetDockerImage(test_harness_image)
+    else:
+      logger.warning(
+          'No test_harness_image is found in HostMetadata, updating with '
+          'image from lab config file.')
+    _UpdateMttNode(args, host)
 
 
 def _CreateImageArgParser():
@@ -591,11 +879,48 @@ def _CreateStartArgParser():
   """Create argparser for Start."""
   parser = argparse.ArgumentParser(add_help=False)
   parser.add_argument('--force_update', action='store_true')
-  parser.add_argument('--port', type=int, default=8000)
+  parser.add_argument('--port', type=int, default=_MTT_CONTROL_SERVER_PORT)
+  parser.add_argument(
+      '--server_log_level',
+      help='Server Log level',
+      default='info',
+      choices=['debug', 'info', 'warn', 'error', 'critical'])
+  parser.add_argument(
+      '--docker_server',
+      help='Docker server to login when using a service account.')
   # TODO: delete service_account_json_key_path arg.
   parser.add_argument(
       '--service_account_json_key_path', help='Service account json key path.')
   parser.add_argument('--custom_adb_path', help='Path to custom ADB tool')
+  parser.add_argument(
+      '--adb_server_port', type=int,
+      help='Adb server port exposed by the container',
+      default=_ADB_SERVER_PORT)
+  parser.add_argument(
+      '--max_local_virtual_devices', type=int, default=0,
+      help='Maximum number of virtual devices on local host (experimental).')
+  parser.add_argument(
+      '--extra_docker_args', action='append',
+      help='Extra docker args passing to container.')
+  parser.add_argument('--extra_ca_cert', help='Extra CA cert file for SSL.')
+  parser.add_argument('--mount_local_path', action='append',
+                      help='Additional path to mount in the local file store.')
+  parser.add_argument(
+      '--use_host_adb',
+      help=(
+          'Use host ADB server. This is useful when accessing virtual devices '
+          'running outside Docker container.'),
+      action='store_true')
+  parser.add_argument(
+      '--operation_mode',
+      default=OperationMode.STANDALONE.value,
+      choices=[s.value for s in OperationMode],
+      help='Run ATS in a certain operation mode.')
+  parser.add_argument(
+      '--control_server_url',
+      default=None,
+      help=('Control server url is required for workers in ON_PREMISE mode.'
+            'This field can also be set by yaml config.'))
   parser.set_defaults(func=Start)
   return parser
 
@@ -720,6 +1045,9 @@ def Main():
     sys.exit(-1)
   except host_util.ExecutionError:
     # The information should already be printed.
+    sys.exit(-1)
+  except ActionableError as e:
+    logger.error(e.message)
     sys.exit(-1)
 
 

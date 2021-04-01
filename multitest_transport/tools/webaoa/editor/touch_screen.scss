@@ -1,0 +1,42 @@
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+:host {
+  background: url(/webaoa/static/device.png);
+  display: block;
+  height: 736px;
+  position: relative;
+  width: 396px;
+}
+
+.target {
+  background-image: linear-gradient(45deg, #ccc 25%, transparent 25%,
+  transparent 75%, #ccc 75%, #ccc 100%),
+  linear-gradient(45deg, #ccc 25%, white 25%, white 75%, #ccc 75%, #ccc 100%);
+  background-position: 0 0, 10px 10px;
+  background-size: 20px 20px;
+  cursor: crosshair;
+  height: 640px;
+  left: 18px;
+  position: absolute;
+  top: 48px;
+  width: 360px;
+
+  .coordinates {
+    margin: 6px;
+    user-select: none;
+  }
+}

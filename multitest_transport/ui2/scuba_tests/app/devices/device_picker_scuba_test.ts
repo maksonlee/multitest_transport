@@ -1,0 +1,91 @@
+/**
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import {beforeEach, bootstrapTemplate, describe, it, setupModule} from 'google3/javascript/angular2/testing/catalyst';
+import {of as observableOf} from 'rxjs';
+
+import {DevicesModule} from 'google3/third_party/py/multitest_transport/ui2/app/devices/devices_module';
+import {DevicesModuleNgSummary} from 'google3/third_party/py/multitest_transport/ui2/app/devices/devices_module.ngsummary';
+import {TfcClient} from 'google3/third_party/py/multitest_transport/ui2/app/services/tfc_client';
+import {KarmaTestEnv} from 'google3/third_party/py/multitest_transport/ui2/scuba_tests/testing/karma_env';
+
+describe('DeviceList', () => {
+  const env = new KarmaTestEnv(module, {
+    scuba: true,
+    axe: true,
+  });
+  let tfcClient: jasmine.SpyObj<TfcClient>;
+
+  beforeEach(() => {
+    tfcClient = jasmine.createSpyObj('tfcClient', ['getDeviceInfos']);
+    setupModule({
+      imports: [DevicesModule],
+      summaries: [DevicesModuleNgSummary],
+      providers: [
+        {provide: TfcClient, useValue: tfcClient},
+      ],
+    });
+  });
+
+  it.async('can render page with device correctly', async () => {
+    const device = {
+      battery_level: '85',
+      build_id: 'QP1A.190416.002',
+      device_serial: '76397612763126391121',
+      hostname: 'test.hostname.com',
+      product_variant: 'Variant',
+      product: 'Product',
+      state: 'Available',
+    };
+
+    tfcClient.getDeviceInfos.and.returnValue(
+        observableOf({device_infos: [device]}));
+    bootstrapTemplate(`<device-picker></device-picker>`);
+    await env.verifyState(`device-picker_with_device`, 'device-picker');
+  });
+
+  it.async(
+      'can render page with devices in different battery level', async () => {
+        const devices = [
+          {
+            device_serial: 'Unknown',
+            battery_level: 'unknown',
+          },
+          {
+            device_serial: 'Low battery',
+            battery_level: '10',
+
+          },
+          {
+            device_serial: 'Fully charged',
+            battery_level: '100',
+          },
+        ];
+
+        tfcClient.getDeviceInfos.and.returnValue(
+            observableOf({device_infos: devices}));
+        bootstrapTemplate(`<device-picker></device-picker>`);
+        await env.verifyState(
+            `device-picker_devices_with_different_battery_level`,
+            'device-picker');
+      });
+
+  it.async('can render page with no device found', async () => {
+    tfcClient.getDeviceInfos.and.returnValue(observableOf({device_infos: []}));
+    bootstrapTemplate(`<device-picker></device-picker>`);
+    await env.verifyState(`device-picker_no_device_found`, 'device-picker');
+  });
+});

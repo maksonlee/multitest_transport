@@ -19,32 +19,30 @@ import apiclient
 import httplib2
 import six
 
+from multitest_transport.models import event_log
 from multitest_transport.plugins import base
 from multitest_transport.plugins import constant
 from multitest_transport.plugins import file_upload_hook
 from multitest_transport.util import env
+from multitest_transport.util import errors
 from multitest_transport.util import file_util
 from multitest_transport.util import oauth2_util
 
 _PATH_DELIMITER = '/'
 _EMPTY_FOLDER_CONTENT_TYPE = 'application/x-www-form-urlencoded;charset=UTF-8'
-_GCS_OAUTH2_SCOPES = ['https://www.googleapis.com/auth/devstorage.full_control']
-_GCS_OAUTH2_CONFIG = oauth2_util.OAuth2Config(
-    client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
-    client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
-    scopes=_GCS_OAUTH2_SCOPES)
-_GCS_BUILD_API_NAME = 'storage'
-_GCS_BUILD_API_VERSION = 'v1'
+_GCS_API_NAME = 'storage'
+_GCS_API_VERSION = 'v1'
 _PAGE_SIZE = 10
-_UPLOAD_BUFFER_SIZE = 1024 * 1024
+
+RO_SCOPES = ['https://www.googleapis.com/auth/devstorage.read_only']
+RW_SCOPES = ['https://www.googleapis.com/auth/devstorage.read_write']
 
 
-def _GetClient(credentials):
+def GetClient(credentials, scopes):
   """Constructs a client to access the Google Cloud Storage API."""
   http = httplib2.Http(timeout=constant.HTTP_TIMEOUT_SECONDS)
-  http = oauth2_util.AuthorizeHttp(http, credentials, scopes=_GCS_OAUTH2_SCOPES)
-  return apiclient.discovery.build(
-      _GCS_BUILD_API_NAME, _GCS_BUILD_API_VERSION, http=http)
+  http = oauth2_util.AuthorizeHttp(http, credentials, scopes=scopes)
+  return apiclient.discovery.build(_GCS_API_NAME, _GCS_API_VERSION, http=http)
 
 
 def _ParsePath(path):
@@ -72,7 +70,7 @@ def _ParseTimeStamp(timestamp):
   return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ')
 
 
-class GCSBucketNotFoundError(Exception):
+class GCSBucketNotFoundError(errors.FileNotFoundError):
   """A Google Cloud Storage Error indicating that bucket is not supplied."""
 
 
@@ -83,21 +81,38 @@ class GCSBuildProvider(base.BuildProvider):
   listing builds with pagination.
   """
   name = 'Google Cloud Storage'
+  url_patterns = [
+      base.UrlPattern(
+          r'gs://(?P<bucket>.*)/(?P<path>.*)',
+          '{bucket}/{path}'),
+  ]
+  auth_methods = [
+      base.AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
+      base.AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
+  ]
+  oauth2_config = oauth2_util.OAuth2Config(
+      client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
+      client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
+      scopes=RO_SCOPES)
 
   def __init__(self):
-    super(GCSBuildProvider, self).__init__(
-        url_patterns=[base.UrlPattern(r'gs://(?P<path>.*)', '{path}')])
+    super(GCSBuildProvider, self).__init__()
     self._client = None
 
   def _GetClient(self):
     """Initializes a GCS client if one was not already initialized."""
     if not self._client:
-      self._client = _GetClient(self.GetCredentials())
+      self._client = GetClient(self.GetCredentials(), RO_SCOPES)
     return self._client
 
   def GetOAuth2Config(self):
     """Provide base with params needed for OAuth2 authentication."""
-    return _GCS_OAUTH2_CONFIG
+    if not env.GOOGLE_OAUTH2_CLIENT_ID or not env.GOOGLE_OAUTH2_CLIENT_SECRET:
+      return None
+    return oauth2_util.OAuth2Config(
+        client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
+        client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
+        scopes=RO_SCOPES)
 
   def _GetGCSObject(self, bucket, object_name):
     """Get a Google Cloud Storage object from path.
@@ -114,7 +129,7 @@ class GCSBuildProvider(base.BuildProvider):
       return request.execute(num_retries=constant.NUM_RETRIES)
     except apiclient.errors.HttpError as e:
       if e.resp.status == 403:
-        raise base.FilePermissionError(
+        raise errors.FilePermissionError(
             'no permission to access file %s in GCS bucket %s'
             % (object_name, bucket))
       if e.resp.status == 404:
@@ -154,7 +169,7 @@ class GCSBuildProvider(base.BuildProvider):
         name=name,
         path=_PATH_DELIMITER.join([bucket, response['name']]),
         is_file=is_file,
-        size=long(response['size']),
+        size=int(response['size']),
         timestamp=_ParseTimeStamp(response['updated']))
 
   def _ListGCSObjects(self, bucket, prefix, page_token=None):
@@ -179,12 +194,13 @@ class GCSBuildProvider(base.BuildProvider):
           pageToken=page_token).execute(num_retries=constant.NUM_RETRIES)
     except apiclient.errors.HttpError as e:
       if e.resp.status == 403:
-        raise base.FilePermissionError('no permission to access GCS bucket %s'
-                                       % bucket)
+        raise errors.FilePermissionError('no permission to access GCS bucket %s'
+                                         % bucket)
       if e.resp.status == 404:
         raise GCSBucketNotFoundError('bucket %s does not exist' % bucket)
+      raise
 
-  def ListBuildItems(self, path, page_token=None, item_type=None):
+  def ListBuildItems(self, path=None, page_token=None, item_type=None):
     """List build items under a given path.
 
     Args:
@@ -212,7 +228,7 @@ class GCSBuildProvider(base.BuildProvider):
                 name=item['name'][prefix_len:],
                 path=_PATH_DELIMITER.join([bucket, item['name']]),
                 is_file=True,
-                size=long(item['size']),
+                size=int(item['size']),
                 timestamp=_ParseTimeStamp(item['updated'])))
     if not item_type or item_type == base.BuildItemType.DIRECTORY:
       for directory_prefix in directory_prefixes:
@@ -243,11 +259,11 @@ class GCSBuildProvider(base.BuildProvider):
     Yields:
       FileChunks (data read, current position, total file size)
     Raises:
-      base.FileNotFoundError: if a path is invalid
+      errors.FileNotFoundError: if a path is invalid
     """
     build_item = self.GetBuildItem(path)
     if (build_item is None) or (not build_item.is_file):
-      raise base.FileNotFoundError('Build item %s does not exist' % path)
+      raise errors.FileNotFoundError('Build item %s does not exist' % path)
 
     bucket, object_name = _ParsePath(path)
     buffer_ = six.StringIO()
@@ -266,7 +282,10 @@ class GCSBuildProvider(base.BuildProvider):
 class GCSFileUploadHook(file_upload_hook.AbstractFileUploadHook):
   """Hook which uploads files to Google Cloud Storage."""
   name = 'Google Cloud Storage File Upload'
-  oauth2_config = _GCS_OAUTH2_CONFIG
+  oauth2_config = oauth2_util.OAuth2Config(
+      client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
+      client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
+      scopes=RW_SCOPES)
 
   def __init__(self, _credentials=None, **_):      super(GCSFileUploadHook, self).__init__(**_)
     self._client = None
@@ -275,15 +294,15 @@ class GCSFileUploadHook(file_upload_hook.AbstractFileUploadHook):
   def _GetClient(self):
     """Initializes a GCS client if one was not already initialized."""
     if not self._client:
-      self._client = _GetClient(self._credentials)
+      self._client = GetClient(self._credentials, RW_SCOPES)
     return self._client
 
-  def UploadFile(self, source_url, dest_file_path):
+  def UploadFile(self, test_run, source_url, dest_file_path):
     """Uploads a file to GCS."""
     client = self._GetClient()
     file_handle = file_util.FileHandle.Get(source_url)
     media = file_util.FileHandleMediaUpload(
-        file_handle, chunksize=_UPLOAD_BUFFER_SIZE, resumable=True)
+        file_handle, chunksize=constant.UPLOAD_CHUNK_SIZE, resumable=True)
 
     bucket, object_name = _ParsePath(dest_file_path)
     request = client.objects().insert(
@@ -291,3 +310,5 @@ class GCSFileUploadHook(file_upload_hook.AbstractFileUploadHook):
     done = False
     while not done:
       _, done = request.next_chunk(num_retries=constant.NUM_RETRIES)
+    event_log.Info(test_run,
+                   '[GCS] Uploaded %s to %s.' % (source_url, dest_file_path))

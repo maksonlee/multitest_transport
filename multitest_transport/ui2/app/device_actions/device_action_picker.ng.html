@@ -45,19 +45,13 @@
   <div cdkTrapFocus (keydown.tab)="$event.stopPropagation()">
     <!-- checkboxes -->
     <div class="checkbox-wrapper">
-      <div mat-menu-item (click)="$event.stopPropagation()" (keydown.enter)="toggleSelection()">
-        <mat-checkbox tabindex="-1" (change)="$event ? toggleSelection() : null"
-                      [checked]="selection.hasValue() && isAllSelected()"
-                      [indeterminate]="selection.hasValue() && !isAllSelected()">
-          All {{deviceActions.length}} actions
-        </mat-checkbox>
-      </div>
       <div mat-menu-item *ngFor="let deviceAction of deviceActions"
-           (click)="$event.stopPropagation()" (keydown.enter)="selection.toggle(deviceAction)">
+           (click)="$event.stopPropagation()" (keydown.enter)="selection.toggle(deviceAction)"
+           [title]="name.offsetWidth < name.scrollWidth ? deviceAction.name : ''">
         <mat-checkbox tabindex="-1"
                       (change)="$event ? selection.toggle(deviceAction) : null"
                       [checked]="selection.isSelected(deviceAction)">
-          {{deviceAction.name}}
+          <div #name class="name">{{deviceAction.name}}</div>
         </mat-checkbox>
       </div>
     </div>

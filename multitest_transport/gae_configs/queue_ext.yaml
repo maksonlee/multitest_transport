@@ -13,8 +13,15 @@
 # limitations under the License.
 
 # Task queue configuration
-
 queue:
+- name: default
+  rate: 5/s
+  target: default
+
+- name: analytics-queue
+  rate: 20/s
+  target: default
+
 - name: cron-kicker-queue
   rate: 20/s
   target: core

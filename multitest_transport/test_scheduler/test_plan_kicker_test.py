@@ -21,62 +21,87 @@ import os.path
 from absl.testing import absltest
 import mock
 import pytz
+from tradefed_cluster import testbed_dependent_test
 
-from google.appengine.ext import testbed
-
-from multitest_transport.models import build
 from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import test_kicker
 from multitest_transport.test_scheduler import test_plan_kicker
+from multitest_transport.test_scheduler import test_run_manager
+
+GAE_CONFIGS_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), 'gae_configs')
 
 
-class TestPlanKickerTest(absltest.TestCase):
-
-  def setUp(self):
-    root_path = os.path.dirname(__file__)
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
-    self.testbed.init_taskqueue_stub(root_path=root_path)
-    self.taskqueue_stub = self.testbed.get_stub(testbed.TASKQUEUE_SERVICE_NAME)
-
-  def tearDown(self):
-    self.testbed.deactivate()
+class TestPlanKickerTest(testbed_dependent_test.TestbedDependentTest):
 
   @mock.patch.object(test_plan_kicker, '_GetCurrentTime', autospec=True)
   def testScheduleCronKick(self, get_current_time):
-    now = datetime.datetime(1970, 1, 1, 0, 30, 0)
-    get_current_time.return_value = now
-    test_plan = ndb_models.TestPlan(name='foo', cron_exp='0 0 * * *')
+    """Tests that test plans can be scheduled."""
+    # Create test plan that runs every day at midnight
+    test_plan = ndb_models.TestPlan(name='test_plan', cron_exp='0 0 * * *')
     test_plan.put()
     test_plan_id = test_plan.key.id()
-    next_run_time = datetime.datetime(1970, 1, 2, 0, 0, 0)
+    # Current time is 12:30 AM UTC and next run time is the following midnight
+    get_current_time.return_value = datetime.datetime(1970, 1, 1, 0, 30, 0)
+    next_run_time = pytz.UTC.localize(datetime.datetime(1970, 1, 2, 0, 0, 0))
 
     test_plan_kicker.ScheduleCronKick(test_plan_id)
 
-    tasks = self.taskqueue_stub.get_filtered_tasks(
+    tasks = self.mock_task_scheduler.GetTasks(
         queue_names=[test_plan_kicker.TEST_PLAN_KICKER_QUEUE])
-    self.assertEqual(1, len(tasks))
-    task = tasks[0]
-    self.assertEqual(pytz.UTC.localize(next_run_time), task.eta)
-    data = json.loads(task.payload)
+    self.assertLen(tasks, 1)
+    self.assertEqual(next_run_time, tasks[0].eta)
+    data = json.loads(tasks[0].payload)
     self.assertEqual(test_plan_id, data['test_plan_id'])
-    self.assertTrue(data['is_cron'])
 
-  @mock.patch.object(test_plan_kicker, 'ScheduleCronKick', autospec=True)
+  @mock.patch.object(test_plan_kicker, '_GetCurrentTime', autospec=True)
+  def testScheduleCronKick_withTimezone(self, get_current_time):
+    """Tests that test plans can be scheduled relative to a timezone."""
+    # Create test plan that runs every day at midnight in PT
+    test_plan = ndb_models.TestPlan(
+        name='test_plan',
+        cron_exp='0 0 * * *',
+        cron_exp_timezone='America/Los_Angeles')
+    test_plan.put()
+    # Current time is 12:30 AM UTC and next run time is midnight PT (8 AM UTC)
+    get_current_time.return_value = datetime.datetime(1970, 1, 1, 0, 30, 0)
+    next_run_time = pytz.UTC.localize(datetime.datetime(1970, 1, 1, 8, 0, 0))
+
+    test_plan_kicker.ScheduleCronKick(test_plan.key.id())
+
+    tasks = self.mock_task_scheduler.GetTasks(
+        queue_names=[test_plan_kicker.TEST_PLAN_KICKER_QUEUE])
+    self.assertLen(tasks, 1)
+    self.assertEqual(next_run_time, tasks[0].eta)
+
+  def testScheduleCronKick_noCronExpression(self):
+    """Tests that test plan without cron expressions do not get scheduled."""
+    test_plan = ndb_models.TestPlan(name='test_plan')
+    test_plan.put()
+    test_plan_kicker.ScheduleCronKick(test_plan.key.id())
+    # No tasks scheduled
+    tasks = self.mock_task_scheduler.GetTasks(
+        queue_names=[test_plan_kicker.TEST_PLAN_KICKER_QUEUE])
+    self.assertEmpty(tasks)
+
+  def testScheduleCronKick_invalidTimezone(self):
+    """Tests that test plan with invalid timezones do not get scheduled."""
+    test_plan = ndb_models.TestPlan(
+        name='test_plan', cron_exp='0 0 * * *', cron_exp_timezone='INVALID')
+    test_plan.put()
+    test_plan_kicker.ScheduleCronKick(test_plan.key.id())
+    # No tasks scheduled
+    tasks = self.mock_task_scheduler.GetTasks(
+        queue_names=[test_plan_kicker.TEST_PLAN_KICKER_QUEUE])
+    self.assertEmpty(tasks)
+
   @mock.patch.object(test_kicker, 'CreateTestRun', autospec=True)
-  def testKickTestPlan(self, create_test_run, schedule_cron_kick):
-    test = ndb_models.Test(
-        name='test',
-        command='command',
-        test_resource_defs=[
-            ndb_models.TestResourceDef(name='res_1')
-        ])
-    test.put()
-    test_device_action = ndb_models.DeviceAction(name='test_device_action')
-    test_device_action.put()
-    plan_device_action = ndb_models.DeviceAction(name='plan_device_action')
-    plan_device_action.put()
+  def testKickTestPlan(self, create_test_run):
+    """Tests that a test plan can be kicked off."""
+    test = ndb_models.Test(id='test_id')
+    test_device_action = ndb_models.DeviceAction(id='test_device_action')
+    test_run_action = ndb_models.TestRunAction(id='test_run_action')
+    # Create a test plan with multiple resources and actions
     test_plan = ndb_models.TestPlan(
         name='test_plan',
         labels=['label'],
@@ -86,87 +111,108 @@ class TestPlanKickerTest(absltest.TestCase):
                 test_key=test.key,
                 cluster='cluster',
                 run_target='run_target',
-                before_device_action_keys=[test_device_action.key]),
-        ],
-        test_resource_pipes=[
-            ndb_models.TestResourcePipe(name='res_1', url='url_1'),
-            ndb_models.TestResourcePipe(name='res_2', url='url_2'),
-        ],
-        before_device_action_keys=[plan_device_action.key])
+                before_device_action_keys=[test_device_action.key],
+                test_run_action_refs=[
+                    ndb_models.TestRunActionRef(action_key=test_run_action.key),
+                ],
+                test_resource_objs=[
+                    ndb_models.TestResourceObj(name='res_1', url='url_1')]),
+        ])
     test_plan.put()
+    # Test run will be created successfully
+    test_run = ndb_models.TestRun(id='test_run_id')
+    create_test_run.return_value = test_run
 
-    test_plan_kicker.KickTestPlan(test_plan.key.id())
+    executed = test_plan_kicker.KickTestPlan(test_plan.key.id())
+    self.assertTrue(executed)
 
+    # Test run is created with the right test and test plan components
     create_test_run.assert_called_with(
         labels=['label'],
         test_plan_key=test_plan.key,
         test_run_config=ndb_models.TestRunConfig(
-            test_key=test_plan.test_run_configs[0].test_key,
-            cluster=test_plan.test_run_configs[0].cluster,
-            run_target=test_plan.test_run_configs[0].run_target,
-            before_device_action_keys=[
-                plan_device_action.key, test_device_action.key
+            test_key=test.key,
+            cluster='cluster',
+            run_target='run_target',
+            before_device_action_keys=[test_device_action.key],
+            test_run_action_refs=[
+                ndb_models.TestRunActionRef(action_key=test_run_action.key),
+            ],
+            test_resource_objs=[
+                ndb_models.TestResourceObj(name='res_1', url='url_1')
             ]),
-        test_resources=[
-            ndb_models.TestResourceObj(name='res_1', url='url_1'),
-            ndb_models.TestResourceObj(name='res_2', url='url_2'),
-        ])
-    schedule_cron_kick.assert_not_called()
+        )
+    # Test run key is stored in the test plan status
+    status = ndb_models.TestPlanStatus.query(ancestor=test_plan.key).get()
+    self.assertEqual(status.last_run_keys, [test_run.key])
 
-  @mock.patch.object(test_plan_kicker, 'ScheduleCronKick', autospec=True)
+  @mock.patch.object(test_run_manager, 'SetTestRunState', autospec=True)
   @mock.patch.object(test_kicker, 'CreateTestRun', autospec=True)
-  @mock.patch.object(build, 'GetBuildChannel', autospec=True)
-  def testKickTestPlan_withWildcardFilenames(
-      self, get_build_channel, create_test_run, schedule_cron_kick):
-    test = ndb_models.Test(
-        name='test',
-        command='command',
-        test_resource_defs=[
-            ndb_models.TestResourceDef(name='res_1')
-        ])
-    test.put()
+  def testKickTestPlan_withError(self, create_test_run, set_test_run_state):
+    """Tests that errors are handled when kicking off a test plan."""
+    test = ndb_models.Test(id='test_id')
+    test_run_config = ndb_models.TestRunConfig(
+        test_key=test.key, cluster='cluster', run_target='run_target')
     test_plan = ndb_models.TestPlan(
-        name='test_plan',
-        labels=['label'],
-        cron_exp='0 0 * * *',
-        test_run_configs=[
-            ndb_models.TestRunConfig(
-                test_key=test.key, cluster='cluster', run_target='run_target'),
-        ],
-        test_resource_pipes=[
-            ndb_models.TestResourcePipe(
-                name='res_1', url='mtt:///foo/bar/*.zip'),
-        ])
+        name='test_plan', test_run_configs=[test_run_config, test_run_config])
     test_plan.put()
-    mock_build_channel = mock.MagicMock()
-    get_build_channel.return_value = mock_build_channel
-    mock_build_item = build.BuildItem(name='bar', path='bar', is_file=False)
-    mock_build_channel.GetBuildItem.return_value = mock_build_item
-    mock_build_channel.ListBuildItems.return_value = ([
-        build.BuildItem(name='zzz.dat', path='bar/zzz.dat', is_file=True),
-        build.BuildItem(name='zzz.txt', path='bar/zzz.txt', is_file=True),
-        build.BuildItem(name='zzz.zip', path='bar/zzz.zip', is_file=True),
-    ], None)
+    # First test run created successfully, but second fails even with retries
+    test_run = ndb_models.TestRun(id='test_run_id')
+    create_test_run.side_effect = (
+        [test_run] +
+        test_plan_kicker.MAX_RETRY_COUNT * [RuntimeError('test_run_error')])
 
-    test_plan_kicker.KickTestPlan(test_plan.key.id())
+    # Retries a few times before canceling test run and raising exception
+    with self.assertRaises(RuntimeError):
+      test_plan_kicker.KickTestPlan(test_plan.key.id())
+    self.assertEqual(create_test_run.call_count,
+                     1 + test_plan_kicker.MAX_RETRY_COUNT)
+    set_test_run_state.assert_called_once_with('test_run_id',
+                                               ndb_models.TestRunState.CANCELED)
+    # Stores the canceled test run key and the error message
+    status = ndb_models.TestPlanStatus.query(ancestor=test_plan.key).get()
+    self.assertEqual(status.last_run_keys, [test_run.key])
+    self.assertEqual(status.last_run_error, 'test_run_error')
 
-    get_build_channel.assert_called_with('foo')
-    mock_build_channel.GetBuildItem.assert_called_with('bar')
-    mock_build_channel.ListBuildItems.assert_called_with(
-        'bar', page_token=None, item_type=build.BuildItemType.FILE)
-    create_test_run.assert_called_with(
-        labels=['label'],
-        test_plan_key=test_plan.key,
-        test_run_config=ndb_models.TestRunConfig(
-            test_key=test_plan.test_run_configs[0].test_key,
-            cluster=test_plan.test_run_configs[0].cluster,
-            run_target=test_plan.test_run_configs[0].run_target),
-        test_resources=[
-            ndb_models.TestResourceObj(
-                name='res_1',
-                url='mtt:///foo/bar/zzz.zip'),
-        ])
-    schedule_cron_kick.assert_not_called()
+  @mock.patch.object(test_kicker, 'CreateTestRun', autospec=True)
+  def testKickTestPlan_withRetry(self, create_test_run):
+    """Tests that a test plan kick operations can be retried."""
+    test = ndb_models.Test(id='test_id')
+    test_run_config = ndb_models.TestRunConfig(
+        test_key=test.key, cluster='cluster', run_target='run_target')
+    test_plan = ndb_models.TestPlan(
+        name='test_plan', test_run_configs=[test_run_config])
+    test_plan.put()
+    # First test run creation fails, but second attempt succeeds
+    test_run = ndb_models.TestRun(id='test_run_id')
+    create_test_run.side_effect = [RuntimeError('test_run_error'), test_run]
+
+    executed = test_plan_kicker.KickTestPlan(test_plan.key.id())
+    self.assertTrue(executed)
+
+    # Create test run operation retried until successful
+    self.assertEqual(create_test_run.call_count, 2)
+    status = ndb_models.TestPlanStatus.query(ancestor=test_plan.key).get()
+    # Test run key stored and error message is empty
+    self.assertEqual(status.last_run_keys, [test_run.key])
+    self.assertIsNone(status.last_run_error)
+
+  def testKickTestPlan_notFound(self):
+    """Tests that a test plan kick is skipped if the plan is not found."""
+    test_plan = ndb_models.TestPlan(id='unknown')
+    executed = test_plan_kicker.KickTestPlan(test_plan.key.id())
+    self.assertFalse(executed)
+
+  def testKickTestPlan_invalidTask(self):
+    """Tests that a test plan kick is skipped if the task is invalid."""
+    test_plan = ndb_models.TestPlan(name='test_plan')
+    test_plan.put()
+    ndb_models.TestPlanStatus(
+        parent=test_plan.key, next_run_task_name='task_name').put()
+
+    executed = test_plan_kicker.KickTestPlan(
+        test_plan.key.id(), task_name='invalid_task_name')
+    self.assertFalse(executed)
 
   @mock.patch.object(test_plan_kicker, 'ScheduleCronKick', autospec=True)
   @mock.patch.object(test_plan_kicker, '_GetCurrentTime', autospec=True)
@@ -183,6 +229,7 @@ class TestPlanKickerTest(absltest.TestCase):
     test_plan_kicker.CheckTestPlanNextRuns()
 
     schedule_cron_kick.assert_called_with(test_plan.key.id(), next_run_time=now)
+
 
 if __name__ == '__main__':
   absltest.main()

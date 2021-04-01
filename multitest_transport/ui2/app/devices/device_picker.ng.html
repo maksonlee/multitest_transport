@@ -1,0 +1,116 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+<div [class.loading-mask]="isLoading" class="container">
+  <mat-table [dataSource]="deviceInfos" class="selectable" aria-label="Device Picker">
+    <!-- Checkbox Column -->
+    <ng-container matColumnDef="select">
+      <mat-header-cell *matHeaderCellDef>
+        <mat-checkbox
+          (change)="$event ? toggleSelection() : null"
+          [checked]="hasSelectedSerial() && isAllSelected()"
+          [indeterminate]="hasSelectedSerial() && !isAllSelected()"
+          [disabled]="selectDisabled"
+          aria-label="Check all devices"
+        >
+        </mat-checkbox>
+      </mat-header-cell>
+      <mat-cell *matCellDef="let row">
+        <mat-checkbox
+          (click)="$event.stopPropagation()"
+          (change)="$event ? onSelectionChange(row) : null"
+          [checked]="selection.isSelected(row.device_serial)"
+          [disabled]="selectDisabled"
+          [aria-label]="'Device with serial' + row.device_serial"
+        >
+        </mat-checkbox>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Serial Column -->
+    <ng-container matColumnDef="device_serial">
+      <mat-header-cell *matHeaderCellDef> Serial </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        <div class="overflow" [title]="element.device_serial">
+          {{ element.device_serial }}
+        </div>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Hostname Column -->
+    <ng-container matColumnDef="hostname">
+      <mat-header-cell *matHeaderCellDef> Hostname </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{ element.hostname }} </mat-cell>
+    </ng-container>
+
+    <!-- Product Column -->
+    <ng-container matColumnDef="product">
+      <mat-header-cell *matHeaderCellDef> Product </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{ element.product }} </mat-cell>
+    </ng-container>
+
+    <!-- Variant Column -->
+    <ng-container matColumnDef="product_variant">
+      <mat-header-cell *matHeaderCellDef> Variant </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{ element.product_variant }} </mat-cell>
+    </ng-container>
+
+    <!-- SIM Status Column -->
+    <ng-container matColumnDef="sim_status">
+      <mat-header-cell *matHeaderCellDef> SIM Status </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        {{ element.sim_operator || element.sim_state }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Build Column -->
+    <ng-container matColumnDef="build_id">
+      <mat-header-cell *matHeaderCellDef> Build ID </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{ element.build_id }} </mat-cell>
+    </ng-container>
+
+    <!-- Battery Column -->
+    <ng-container matColumnDef="battery_level">
+      <mat-header-cell *matHeaderCellDef> Battery (%) </mat-header-cell>
+      <mat-cell
+        [ngClass]="{
+          'battery-danger': element.battery_level === 'unknown' || +element.battery_level <= 25
+        }"
+        *matCellDef="let element"
+      >
+        {{ element.battery_level }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- State Column -->
+    <ng-container matColumnDef="state">
+      <mat-header-cell *matHeaderCellDef> State </mat-header-cell>
+      <mat-cell *matCellDef="let element">
+        <status-button [state]="element.state || 'unknown'"></status-button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedDeviceInfoColumns; sticky: true"></mat-header-row>
+    <mat-row
+      *matRowDef="let row; columns: displayedDeviceInfoColumns"
+      [class.selected]="selection.isSelected(row.device_serial)"
+    ></mat-row>
+  </mat-table>
+
+  <div class="empty" *ngIf="deviceInfos && deviceInfos.length === 0">
+    No devices found.
+  </div>
+</div>

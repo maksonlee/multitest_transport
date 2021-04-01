@@ -16,11 +16,11 @@
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {beforeEach, bootstrapTemplate, describe, it, setupModule} from 'google3/javascript/angular2/testing/catalyst';
-
 import {BuildChannelsModule} from 'google3/third_party/py/multitest_transport/ui2/app/build_channels/build_channels_module';
 import {BuildChannelsModuleNgSummary} from 'google3/third_party/py/multitest_transport/ui2/app/build_channels/build_channels_module.ngsummary';
 import {MttClient} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_client';
-import {AuthorizationState} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_models';
+import {AuthorizationMethod, AuthorizationState} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_models';
+import {newMockCredentialsInfo} from 'google3/third_party/py/multitest_transport/ui2/app/testing/mtt_mocks';
 import {KarmaTestEnv} from 'google3/third_party/py/multitest_transport/ui2/scuba_tests/testing/karma_env';
 
 describe('BuildChannelItem', () => {
@@ -43,6 +43,10 @@ describe('BuildChannelItem', () => {
     const unauthorizedChannel = {
       name: 'Unauthorized Build Channel',
       auth_state: AuthorizationState.UNAUTHORIZED,
+      auth_methods: [
+        AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
+        AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
+      ]
     };
 
     bootstrapTemplate(
@@ -57,6 +61,7 @@ describe('BuildChannelItem', () => {
     const authorizedChannel = {
       name: 'Authorized Build Channel',
       auth_state: AuthorizationState.AUTHORIZED,
+      credentials: newMockCredentialsInfo(),
     };
 
     bootstrapTemplate(

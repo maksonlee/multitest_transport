@@ -50,8 +50,8 @@ export class TestRunList implements AfterViewInit, OnDestroy {
   nextPageToken?: string;
 
   displayColumns = [
-    'test_name', 'test_package', 'run_target', 'device_build', 'device_product',
-    'labels', 'create_time', 'status', 'view'
+    'test_name', 'test_package', 'device_product', 'device_build',
+    'device_specs', 'labels', 'create_time', 'status', 'view'
   ];
 
   columns: TableColumn[] = [
@@ -63,8 +63,8 @@ export class TestRunList implements AfterViewInit, OnDestroy {
       show: true
     },
     {
-      fieldName: 'run_target',
-      displayName: 'Run Targets',
+      fieldName: 'device_product',
+      displayName: 'Product',
       removable: true,
       show: true
     },
@@ -75,8 +75,8 @@ export class TestRunList implements AfterViewInit, OnDestroy {
       show: true
     },
     {
-      fieldName: 'device_product',
-      displayName: 'Product',
+      fieldName: 'device_specs',
+      displayName: 'Device Specs',
       removable: true,
       show: true
     },
@@ -107,7 +107,7 @@ export class TestRunList implements AfterViewInit, OnDestroy {
 
   @ViewChild(Paginator, {static: false}) paginator!: Paginator;
 
-  private readonly destroy = new ReplaySubject();
+  private readonly destroy = new ReplaySubject<void>();
 
   constructor(
       private readonly notifier: Notifier, private readonly mtt: MttClient,
@@ -237,7 +237,7 @@ export class TestRunList implements AfterViewInit, OnDestroy {
     const storedData = window.localStorage.getItem(COLUMN_DISPLAY_STORAGE_KEY);
 
     if (storedData) {
-      const storedTableColumns: TableColumn[] = JSON.parse(storedData);
+      const storedTableColumns = JSON.parse(storedData) as TableColumn[];
       this.columns = this.columns.map((c) => {
         const storedColumn =
             storedTableColumns.find((s) => s.fieldName === c.fieldName);

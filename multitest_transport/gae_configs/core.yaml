@@ -29,12 +29,25 @@ builtins:
 - deferred: on
 
 handlers:
-- url: /_ah/start
-  script: multitest_transport.core.app.APP
-
-- url: /_ah/queue/cron-kicker-queue
-  script: multitest_transport.core.cron_kicker.APP
+- url: /.*
+  script: multitest_transport.server.CORE
 
 libraries:
-- name: webapp2
+- name: grpcio
   version: latest
+- name: six
+  version: latest
+
+skip_files:
+# Default patterns skipped by App Engine, which must be repeated since
+# specifying skip_files overrides them otherwise.  See
+# https://developers.google.com/appengine/docs/python/config/appconfig#Skipping_Files.
+- ^(.*/)?app\.yaml
+- ^(.*/)?app\.yml
+- ^(.*/)?index\.yaml
+- ^(.*/)?index\.yml
+- ^(.*/)?#.*#
+- ^(.*/)?.*~
+- ^(.*/)?.*\.pyo
+- ^(.*/)?.*/RCS/.*
+- ^(.*/)?\..*

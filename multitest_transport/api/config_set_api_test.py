@@ -28,6 +28,8 @@ from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base as plugins
 
+from tradefed_cluster.util import ndb_shim as ndb
+
 
 class GCSBuildProvider(plugins.BuildProvider):
   """Dummy build provider for testing."""
@@ -37,7 +39,7 @@ class GCSBuildProvider(plugins.BuildProvider):
 class ConfigSetApiTest(api_test_util.TestCase):
   """Unit tests for config set APIs."""
 
-  MOCK_FILE = 'info:\n- name: test_name\n  url: url/test'
+  MOCK_FILE = 'info:\n- name: test_name\n  url: url/test.yaml'
 
   def setUp(self):
     super(ConfigSetApiTest, self).setUp(config_set_api.ConfigSetApi)
@@ -48,7 +50,9 @@ class ConfigSetApiTest(api_test_util.TestCase):
 
   def _CreateConfigSetInfo(self, name='Test Config',
                            url='some.url/some.bucket', hash_value='123'):
-    return ndb_models.ConfigSetInfo(name=name, url=url, hash=hash_value)
+    return ndb_models.ConfigSetInfo(
+        key=ndb.Key(ndb_models.ConfigSetInfo, url),
+        name=name, url=url, hash=hash_value)
 
   def _CreateConfigSetInfoMessage(self, info, status):
     message = messages.Convert(info, messages.ConfigSetInfo)
@@ -170,10 +174,18 @@ class ConfigSetApiTest(api_test_util.TestCase):
     data = {
         'content': self.MOCK_FILE,
     }
-    res = self.app.post_json('/_ah/api/mtt/v1/config_sets/import', data)
+    res = self.app.post_json(
+        '/_ah/api/mtt/v1/config_sets/import/local', data)
     msg = protojson.decode_message(messages.ConfigSetInfo, res.body)
     self.assertEqual(msg.name, 'test_name')
-    self.assertEqual(msg.url, 'url/test')
+    self.assertEqual(msg.url, 'url/test.yaml')
+
+  def testDelete(self):
+    config_set = self._CreateImportedConfig()
+    self.app.delete_json('/_ah/api/mtt/v1/config_sets/import%252Fconfig.yaml')
+
+    config_set = config_set.key.get()
+    self.assertIsNone(config_set)
 
 
 if __name__ == '__main__':

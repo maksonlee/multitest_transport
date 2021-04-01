@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {SelectionModel} from '@angular/cdk/collections';
-import {Component, Inject, OnDestroy, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
+import {Component, EventEmitter, Inject, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {MatTable} from '@angular/material/table';
 import {MatTabChangeEvent} from '@angular/material/tabs';
@@ -25,16 +25,25 @@ import {debounceTime, delay, finalize, first, takeUntil} from 'rxjs/operators';
 
 import {joinPath} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
-import {BuildChannel, BuildItem, isBuildChannelAvailable} from '../services/mtt_models';
+import {AuthorizationMethod, BuildChannel, BuildItem, isBuildChannelAvailable} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {InfiniteScrollLoadEvent} from '../shared/infinite_scroll';
 import {buildApiErrorMessage, isFnmatchPattern} from '../shared/util';
 
-/** Number of static tabs (which do not correspond to a build channel). */
-const NUM_STATIC_TABS = 2;
 /** Build provider names. */
 const LOCAL_FILE_PROVIDER = 'Local File Store';
 const GCS_PROVIDER = 'Google Cloud Storage';
+
+/**
+ * Actions the build picker should allow
+ *
+ * VIEW: View each build channel (no url), can upload files to local file store
+ * SELECT: Select a file from the available build channels to return
+ */
+export enum BuildPickerMode {
+  VIEW,
+  SELECT,
+}
 
 /**
  * Data passed when opening the build picker.
@@ -43,6 +52,7 @@ const GCS_PROVIDER = 'Google Cloud Storage';
  */
 export interface BuildPickerData {
   buildChannels: BuildChannel[];
+  mode: BuildPickerMode;
   resourceUrl?: string;
 }
 
@@ -64,25 +74,33 @@ export interface BuildPickerTabState {
   selector: 'build-picker',
   styleUrls: ['build_picker.css'],
   templateUrl: './build_picker.ng.html',
-  encapsulation: ViewEncapsulation.None,
 })
 export class BuildPicker implements OnInit, OnDestroy {
+  readonly AuthorizationMethod = AuthorizationMethod;
   readonly isBuildChannelAvailable = isBuildChannelAvailable;
   readonly isFnmatchPattern = isFnmatchPattern;
 
   private readonly destroy = new ReplaySubject<void>();
 
+  /** Update build channels in parent after authorization. */
+  @Output() buildChannelsChange = new EventEmitter<BuildChannel[]>();
+
+  readonly BuildPickerMode = BuildPickerMode;
+  mode = BuildPickerMode.SELECT;
+
   /** Tab related variable */
   buildChannels: BuildChannel[];
   selectedTabIndex = 0;
   selectedBuildChannel?: BuildChannel;
+  /** Number of static tabs (which do not correspond to a build channel). */
+  numStaticTabs = 2;
 
   /** Table related variable */
   buildItems: BuildItem[] = [];
   buildItemsSubscription?: Subscription;
   nextPageToken: string = '';
   isLoadingBuildItems = false;
-  columnsToDisplay = ['name', 'description', 'timestamp', 'size', 'navIcon'];
+  columnsToDisplay = ['name', 'timestamp', 'size', 'navIcon'];
   @ViewChild(MatTable, {static: false}) table!: MatTable<{}>;
   selection = new SelectionModel<BuildItem>(
       /*allow multi select*/ false, []);
@@ -111,7 +129,14 @@ export class BuildPicker implements OnInit, OnDestroy {
     // TODO: remove local file provider
     this.buildChannels = data.buildChannels
         .filter(c => c.provider_name !== LOCAL_FILE_PROVIDER);
+    this.mode = data.mode;
     this.decodeResourceUrl(data.resourceUrl);
+
+    if (this.mode === BuildPickerMode.VIEW) {
+      this.numStaticTabs = 1;  // Local File Store only
+    } else {
+      this.numStaticTabs = 2;  // Url and Local File Store
+    }
     // When search updated, reload the current build list
     this.searchUpdated.asObservable()
         .pipe(debounceTime(200), takeUntil(this.destroy))
@@ -151,7 +176,7 @@ export class BuildPicker implements OnInit, OnDestroy {
     const channelId = match[1];
     const channelIndex = this.buildChannels.findIndex(c => c.id === channelId);
     this.selectedBuildChannel = this.buildChannels[channelIndex];
-    this.selectedTabIndex = channelIndex + NUM_STATIC_TABS;
+    this.selectedTabIndex = channelIndex + this.numStaticTabs;
     // Set search bar parameters
     this.searchBarUrlValue = match[2] || '';
     this.searchBarFilenameValue = decodeURIComponent(match[3] || match[4]);
@@ -159,27 +184,29 @@ export class BuildPicker implements OnInit, OnDestroy {
 
   /** Encode the search bar parameters into a resource URL. */
   private encodeResourceUrl(): string {
-    let url = this.searchBarUrlValue;
+    let url = this.searchBarUrlValue.trim();
     if (this.selectedBuildChannel) {
       url = `mtt:///${this.selectedBuildChannel.id}/${url}`;
     }
     if (this.searchBarFilenameValue) {
-      url = joinPath(url, encodeURIComponent(this.searchBarFilenameValue));
+      url =
+          joinPath(url, encodeURIComponent(this.searchBarFilenameValue.trim()));
     }
     return url;
   }
 
-  loadBuildChannels() {
+  private loadBuildChannels() {
     this.mttClient.getBuildChannels().pipe(first()).subscribe(
         result => {
           this.buildChannels = result.build_channels || [];
+          this.buildChannelsChange.emit(this.buildChannels);
           this.selectedBuildChannel =
-              this.buildChannels[this.selectedTabIndex - NUM_STATIC_TABS];
+              this.buildChannels[this.selectedTabIndex - this.numStaticTabs];
           this.loadBuildList();
         },
         error => {
           this.notifier.showError(
-              'Failed to load build channels.', buildApiErrorMessage(error));
+              'Failed to load build channels', buildApiErrorMessage(error));
         });
   }
 
@@ -219,7 +246,7 @@ export class BuildPicker implements OnInit, OnDestroy {
     this.selection.clear();
 
     this.selectedBuildChannel =
-        this.buildChannels[tabEvent.index - NUM_STATIC_TABS];
+        this.buildChannels[tabEvent.index - this.numStaticTabs];
     this.loadBuildList();
   }
 
@@ -254,6 +281,9 @@ export class BuildPicker implements OnInit, OnDestroy {
     // Load build item
     const path = this.searchBarUrlValue;
 
+    if (this.buildItemsSubscription) {
+      this.buildItemsSubscription.unsubscribe();
+    }
     this.isLoadingBuildItems = true;
     this.liveAnnouncer.announce('Loading', 'polite');
     this.buildItemsSubscription =
@@ -275,9 +305,14 @@ export class BuildPicker implements OnInit, OnDestroy {
                       'Build items loaded', 'assertive');
                 },
                 error => {
-                  // TODO: Refine error handling in build picker
                   this.buildItems.length = 0;
-                  console.error(error);
+                  if (error.status !== 404) {
+                    // Display all errors except not found errors which may just
+                    // indicate the user is still typing the filename.
+                    // TODO: show errors in the build picker dialog
+                    this.notifier.showError(
+                        'Failed to load files.', buildApiErrorMessage(error));
+                  }
                 });
   }
 
@@ -351,6 +386,25 @@ export class BuildPicker implements OnInit, OnDestroy {
             error => {
               this.notifier.showError(
                   'Failed to authorize build channel.',
+                  buildApiErrorMessage(error));
+            });
+  }
+
+  /** Authorize a build channel with a service account JSON key. */
+  uploadKeyfile(buildChannelId: string, keyFile?: File) {
+    if (!keyFile) {
+      return;
+    }
+    this.mttClient
+        .authorizeBuildChannelWithServiceAccount(buildChannelId, keyFile)
+        .pipe(delay(500))  // Delay for data to be persisted
+        .subscribe(
+            () => {
+              this.loadBuildChannels();
+            },
+            error => {
+              this.notifier.showError(
+                  `Failed to authorize build channel '${buildChannelId}'.`,
                   buildApiErrorMessage(error));
             });
   }

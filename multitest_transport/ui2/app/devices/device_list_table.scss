@@ -1,0 +1,74 @@
+/**
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import 'third_party/py/multitest_transport/ui2/constants';
+
+.device-list-table-container {
+  overflow: auto;
+}
+
+.device-serial,
+.host-group,
+.host-name,
+.notes-info {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+mat-table {
+  margin-top: 10px;
+  overflow-x: auto;
+  width: 100%;
+
+  mat-cell,
+  mat-header-cell {
+    margin-right: 10px;
+  }
+
+  mat-header-row {
+    position: sticky;
+    z-index: 100;
+  }
+
+  mat-header-row,
+  mat-row {
+    display: inline-flex;
+    min-width: 100%;
+    width: max-content;
+  }
+
+  mat-header-cell.mat-table-sticky:last-of-type,
+  mat-cell.mat-table-sticky:last-of-type {
+    padding: 0 0 0 1px;
+  }
+
+  mat-row {
+    cursor: pointer;
+  }
+
+  &:not(.scrolled) {
+    mat-header-cell.mat-table-sticky:last-of-type,
+    mat-cell.mat-table-sticky:last-of-type {
+      border-left: 1px solid $primary-less;
+      padding: 0;
+    }
+  }
+}
+
+mat-icon.lighter {
+  opacity: 0.3;
+}

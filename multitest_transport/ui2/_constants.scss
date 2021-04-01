@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-// Color themes taken from https://standards.google/guidelines/google-material/color/palettes.html#brand-palette
-// [Internal link, needs to be removed before open sourcing]
 // Lower numbers refer to lighter colors, higher number refer to darker colors
 
 // Colors
+$blue-50: #e8f0fe;
 $blue-100: #d2e3fc;
 $blue-300: #8ab4f8;
 $blue-500: #4285f4;
@@ -27,8 +26,10 @@ $blue-700: #1967d2;
 
 $cyan-500: #24c1e0;
 
+$green-50: #e6f4ea;
 $green-100: #ceead6;
 $green-500: #34a853;
+$green-600: #1e8e3e;
 $green-900: #0d652d;
 
 $grey-100: #f1f3f4;
@@ -38,13 +39,17 @@ $grey-700: #5f6368;
 $grey-800: #3c4043;
 $grey-900: #202124;
 
+$red-50: #fce8e6;
 $red-100: #fad2cf;
 $red-400: #ea4335;
+$red-600: #d93025;
 $red-700: #c5221f;
 
+$yellow-50: #fef7e0;
 $yellow-100: #feefc3;
 $yellow-400: #fcc934;
 $yellow-800: #f9a825;
+$yellow-900: #e37400;
 
 $white: #fff;
 

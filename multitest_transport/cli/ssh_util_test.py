@@ -1,0 +1,138 @@
+"""Tests for multitest_transport.cli.ssh_util."""
+from absl.testing import absltest
+import mock
+
+from multitest_transport.cli import ssh_util
+
+
+class SshUtilTest(absltest.TestCase):
+  """Unit test for ssh util."""
+
+  def setUp(self):
+    super(SshUtilTest, self).setUp()
+    self.subprocess_patcher = mock.patch('__main__.ssh_util.subprocess')
+    self.mock_subprocess_pkg = self.subprocess_patcher.start()
+    self.mock_process = mock.MagicMock(returncode=0)
+    self.mock_subprocess_pkg.Popen.return_value = self.mock_process
+    self.mock_process.communicate.return_value = ('stdout', 'stderr')
+
+  def tearDown(self):
+    super(SshUtilTest, self).tearDown()
+    self.subprocess_patcher.stop()
+
+  def testRun(self):
+    """Test run."""
+    c = ssh_util.Context(ssh_util.SshConfig(user='auser', hostname='ahost'))
+    res = c.run('/tmp/mtt start /tmp/lab.yaml')
+    self.mock_subprocess_pkg.Popen.assert_called_once_with(
+        ['ssh', '-o', 'User=auser', 'ahost',
+         '/bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
+        stdin=self.mock_subprocess_pkg.DEVNULL)
+    self.assertEqual(0, res.return_code)
+
+  def testRun_withSshArgs(self):
+    """Test run with ssh args."""
+    c = ssh_util.Context(ssh_util.SshConfig(
+        user='auser', hostname='ahost',
+        ssh_args=['-o', 'StrictHostKeyChecking=no',
+                  '-o', 'UserKnownHostsFile=/dev/null']))
+    res = c.run('/tmp/mtt start /tmp/lab.yaml')
+    self.mock_subprocess_pkg.Popen.assert_called_once_with(
+        ['ssh',
+         '-o', 'StrictHostKeyChecking=no',
+         '-o', 'UserKnownHostsFile=/dev/null',
+         '-o', 'User=auser', 'ahost',
+         '/bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
+        stdin=self.mock_subprocess_pkg.DEVNULL)
+    self.assertEqual(0, res.return_code)
+
+  def testRun_withSshArgs_notTokenized(self):
+    """Test run with ssh args."""
+    c = ssh_util.Context(
+        ssh_util.SshConfig(
+            user='auser', hostname='ahost',
+            ssh_args=['-o StrictHostKeyChecking=no '
+                      '-o UserKnownHostsFile=/dev/null']))
+    res = c.run('/tmp/mtt start /tmp/lab.yaml')
+    self.mock_subprocess_pkg.Popen.assert_called_once_with(
+        ['ssh',
+         '-o', 'StrictHostKeyChecking=no',
+         '-o', 'UserKnownHostsFile=/dev/null',
+         '-o', 'User=auser', 'ahost',
+         '/bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
+        stdin=self.mock_subprocess_pkg.DEVNULL)
+    self.assertEqual(0, res.return_code)
+
+  def testSudo(self):
+    """Test run."""
+    c = ssh_util.Context(ssh_util.SshConfig(user='auser', hostname='ahost'))
+    res = c.sudo('/tmp/mtt start /tmp/lab.yaml')
+    self.mock_subprocess_pkg.Popen.assert_called_once_with(
+        ['ssh', '-o', 'User=auser', 'ahost',
+         'sudo /bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
+        stdin=self.mock_subprocess_pkg.DEVNULL)
+    self.assertEqual(0, res.return_code)
+
+  def testSudo_withSshArgs(self):
+    """Test run with ssh args."""
+    c = ssh_util.Context(ssh_util.SshConfig(
+        user='auser', hostname='ahost',
+        ssh_args=['-o', 'StrictHostKeyChecking=no',
+                  '-o', 'UserKnownHostsFile=/dev/null']))
+    res = c.sudo('/tmp/mtt start /tmp/lab.yaml')
+    self.mock_subprocess_pkg.Popen.assert_called_once_with(
+        ['ssh',
+         '-o', 'StrictHostKeyChecking=no',
+         '-o', 'UserKnownHostsFile=/dev/null',
+         '-o', 'User=auser', 'ahost',
+         'sudo /bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
+        stdin=self.mock_subprocess_pkg.DEVNULL)
+    self.assertEqual(0, res.return_code)
+
+  def testPut(self):
+    """Test put."""
+    c = ssh_util.Context(ssh_util.SshConfig(user='auser', hostname='ahost'))
+    c.put('/path/to/local/file', '/path/to/remote/file')
+    self.mock_subprocess_pkg.Popen.assert_called_once_with(
+        ['rsync', '/path/to/local/file', 'auser@ahost:/path/to/remote/file'])
+    self.assertTrue(self.mock_process.communicate.called)
+
+  def testPut_withSshArgs(self):
+    """Test put with ssh args."""
+    c = ssh_util.Context(ssh_util.SshConfig(
+        user='auser', hostname='ahost',
+        ssh_args=['-o', 'StrictHostKeyChecking=no',
+                  '-o', 'UserKnownHostsFile=/dev/null']))
+    c.put('/path/to/local/file', '/path/to/remote/file')
+    self.mock_subprocess_pkg.Popen.assert_called_once_with(
+        ['rsync', '-e',
+         'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null',
+         '/path/to/local/file', 'auser@ahost:/path/to/remote/file'])
+    self.assertTrue(self.mock_process.communicate.called)
+
+  def testBuildRemoteSshStr(self):
+    """Test _build_remote_ssh_str."""
+    self.assertEqual(
+        '/bin/sh -c \'echo test\'',
+        ssh_util._build_remote_ssh_str('echo test'))
+
+    self.assertEqual(
+        'sudo /bin/sh -c \'echo test\'',
+        ssh_util._build_remote_ssh_str('echo test', sudo=True))
+
+  def testTokenizeSshArgs(self):
+    """Test _tokenize_ssh_args."""
+    self.assertEqual(
+        ['-o', 'StrictHostKeyChecking=no',
+         '-o', 'UserKnownHostsFile=/dev/null'],
+        ssh_util._tokenize_ssh_args(
+            ['-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null']))
+    self.assertEqual(
+        ['-o', 'StrictHostKeyChecking=no',
+         '-o', 'UserKnownHostsFile=/dev/null'],
+        ssh_util._tokenize_ssh_args(
+            ['-o StrictHostKeyChecking=no', '-o UserKnownHostsFile=/dev/null']))
+
+
+if __name__ == '__main__':
+  absltest.main()

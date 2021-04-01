@@ -17,19 +17,34 @@
 import hashlib
 import logging
 
+import six
+
 from multitest_transport.models import build
 from multitest_transport.models import config_encoder
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
-from multitest_transport.plugins import base as plugins_base
 from multitest_transport.test_scheduler import download_util
+from multitest_transport.util import errors
 from multitest_transport.util import file_util
+from tradefed_cluster.util import ndb_shim as ndb
+
+CONFIG_SET_BUILD_CHANNEL_IDS = ['google_cloud_storage']
+CONFIG_SET_URL = 'mtt:///google_cloud_storage/android-test-catalog/prod'
 
 
-MTT_CONFIG_SET_PATH = 'android-test-catalog/prod'
-GCS_BUILD_CHANNEL_ID = 'google_cloud_storage'
-CONFIG_SET_URL = 'mtt:///%s/%s' % (GCS_BUILD_CHANNEL_ID, MTT_CONFIG_SET_PATH)
-CONFIG_SET_BUILD_CHANNEL_IDS = [GCS_BUILD_CHANNEL_ID]
+def _GetEntityKeysByPrefix(model, prefix):
+  """Gets keys for all entities of the given model whose id starts with prefix.
+
+  Args:
+    model: The type of entity to query for
+    prefix: Only keys whose id starts with the prefix will be returned
+
+  Returns:
+    a list of entity keys that match the prefix
+  """
+  return model.query().filter(
+      model.key >= ndb.Key(model, prefix),
+      model.key < ndb.Key(model, prefix + u'ufffd')).fetch(keys_only=True)
 
 
 def GetLocalConfigSetInfos():
@@ -57,40 +72,38 @@ def GetRemoteConfigSetInfos():
   """
   # TODO: Allow for multiple config set sources
   # Get build items from MTT GCS bucket
-  build_channel = build.GetBuildChannel(GCS_BUILD_CHANNEL_ID)
+  locator = build.BuildLocator.ParseUrl(CONFIG_SET_URL)
+  if not locator:
+    raise ValueError('Invalid URL: %s' % CONFIG_SET_URL)
+  build_channel = build.GetBuildChannel(locator.build_channel_id)
   if (not build_channel) or (build_channel.auth_state ==
                              ndb_models.AuthorizationState.UNAUTHORIZED):
     return []
 
   try:
-    build_items, _ = build_channel.ListBuildItems(
-        path=MTT_CONFIG_SET_PATH)
-  except plugins_base.FilePermissionError as err:
-    logging.info('No permission to access build channel %s: %s',
-                 build_channel, err)
+    build_items, _ = build_channel.ListBuildItems(path=locator.path)
+  except errors.FilePermissionError as err:
+    logging.info('No permission to access %s: %s', CONFIG_SET_URL, err)
     return []
-
-  build_item_list = [mtt_messages.BuildItem(**b.__dict__)
-                     for b in build_items]
 
   # Parse build items to config set infos
   info_messages = []
-  for build_item in build_item_list:
+  for build_item in build_items:
     if (not build_item.is_file or not build_item.name or
         not build_item.name.endswith('.yaml')):
       continue
 
     # Read file
-    gcs_url = '%s/%s' % (CONFIG_SET_URL, build_item.name)
+    file_url = '%s/%s' % (CONFIG_SET_URL, build_item.name)
     try:
-      contents = ReadRemoteFile(gcs_url)
+      contents = ReadRemoteFile(file_url)
       info = _ParseConfigSet(contents).info
       if info:
         info_message = mtt_messages.Convert(info, mtt_messages.ConfigSetInfo)
         info_message.status = ndb_models.ConfigSetStatus.NOT_IMPORTED
         info_messages.append(info_message)
-    except plugins_base.FilePermissionError as err:
-      logging.warning('No permission to access %s: %s', gcs_url, err)
+    except errors.FilePermissionError as err:
+      logging.warning('No permission to access %s: %s', file_url, err)
       continue  # Ignore files users don't have access to
   return info_messages
 
@@ -126,23 +139,64 @@ def UpdateConfigSetInfos(imported_infos, remote_infos):
 
 
 def Import(content):
+  """Parses the content and adds all configs in the config set.
+
+  Any data from an older version of the config set will be removed.
+
+  Args:
+    content: the text content of a config set file
+  Returns:
+    the parsed ConfigSetInfo
+  """
   config_set = _ParseConfigSet(content)
+
+  # Remove any older data
+  info = config_set.info
+  if info and info.key.get():
+    Delete(info.url)
+
   config_encoder.Load(config_set)
-  config_set.info.put()
-  return mtt_messages.Convert(config_set.info, mtt_messages.ConfigSetInfo)
+  info.put()
+  return mtt_messages.Convert(info, mtt_messages.ConfigSetInfo)
+
+
+def Delete(url):
+  """Removes a config set info and its related objects.
+
+  Args:
+    url: source url of the config set to remove
+  """
+
+  prefix = ''.join([url, config_encoder.NAMESPACE_SEPARATOR])
+
+  # Remove Test Suites
+  test_keys = _GetEntityKeysByPrefix(ndb_models.Test, prefix)
+  ndb.delete_multi(test_keys)
+
+  # Remove Device Actions
+  device_action_keys = _GetEntityKeysByPrefix(ndb_models.DeviceAction, prefix)
+  ndb.delete_multi(device_action_keys)
+
+  # Remove Test Run Actions
+  test_run_action_keys = _GetEntityKeysByPrefix(
+      ndb_models.TestRunAction, prefix)
+  ndb.delete_multi(test_run_action_keys)
+
+  # Remove Config Set Info
+  config_set_info_key = mtt_messages.ConvertToKey(ndb_models.ConfigSetInfo, url)
+  config_set_info_key.delete()
 
 
 def ReadRemoteFile(url):
-  """Downloads a file from GCS and returns the contents.
+  """Downloads a config set file and returns the contents.
 
   Args:
-    url: An MTT GCS built item url, e.g. mtt:///google_cloud_storage/...
+    url: A MTT-compatible URL for a config set file.
   Returns:
     A string of the contents of the file
   """
   local_url = download_util.DownloadResource(url)
-  file_data = file_util.ReadFile(local_url, split_lines=False)
-  return file_data.lines
+  return file_util.OpenFile(local_url).read()
 
 
 def _ParseConfigSet(content):
@@ -169,4 +223,4 @@ def _Hash(content):
   Returns:
     A string representing the SHA256 hash
   """
-  return hashlib.sha256(content).hexdigest()
+  return hashlib.sha256(six.ensure_binary(content)).hexdigest()

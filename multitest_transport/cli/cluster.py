@@ -14,7 +14,7 @@
 
 """A module to handle cluster commands.
 
-Cluster commands use Docker Swarm to manage multiple MTT slave nodes. However,
+Cluster commands use Docker Swarm to manage multiple MTT replica nodes. However,
 this feature is currently not working because Docker Swarm does not support
 --privilege option when creating a service. See the link below for details:
 https://github.com/docker/swarmkit/issues/1030
@@ -97,10 +97,10 @@ class ClusterCommandHandler(object):
     Args:
       args: an argparse.ArgumentParser object.
     Raises:
-      ValueError: if mtt_master_url or host is not set.
+      ValueError: if mtt_control_server_url or host is not set.
     """
-    if not config.config.mtt_master_url:
-      raise ValueError('mtt_master_url must be set.')
+    if not config.config.mtt_control_server_url:
+      raise ValueError('mtt_control_server_url must be set.')
     if not args.host:
       raise ValueError('--host option must be set')
     context = command_util.CommandContext(host=args.host, user=args.ssh_user)
@@ -108,13 +108,11 @@ class ClusterCommandHandler(object):
     cluster_config = self._registry.GetConfig(args.name)
     docker_context.Run(['swarm', 'init'])
     # TODO: get token ID and store it.
-    docker_context.Run(
-        [
-            'service', 'create',
-            '--name', 'mtt',
-            '--env', 'MTT_MASTER_URL=%s' % config.config.mtt_master_url,
-            '--mode', 'global',
-            'gcr.io/android-mtt/mtt'])
+    docker_context.Run([
+        'service', 'create', '--name', 'mtt', '--env',
+        'MTT_CONTROL_SERVER_URL=%s' % config.config.mtt_control_server_url,
+        '--mode', 'global', 'gcr.io/android-mtt/mtt'
+    ])
     cluster_config.manager_host = args.host
     cluster_config.Save()
 

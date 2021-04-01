@@ -13,38 +13,45 @@
 # limitations under the License.
 
 """Service environment variables."""
+import enum
 import os
 import re
+
+
+class OperationMode(enum.Enum):
+  CLOUD = 'cloud'
+  ON_PREMISE = 'on_premise'
+  STANDALONE = 'standalone'
+  UNKNOWN = 'unknown'
 
 # Constants and default values
 UNKNOWN = 'UNKNOWN'
 DEFAULT_QUEUE_TIMEOUT_SECONDS = 86400  # one day
+DEFAULT_INVOCATION_TIMEOUT_SECONDS = 0  # no timeout
 DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS = 3600  # one hour
 
 # General application parameters
 USER = os.environ.get('MTT_USER', UNKNOWN)
 HOSTNAME = os.environ.get('MTT_HOSTNAME', UNKNOWN)
 VERSION = os.environ.get('MTT_VERSION', UNKNOWN)
+CLI_VERSION = os.environ.get('MTT_CLI_VERSION', UNKNOWN)
 ADB_VERSION = os.environ.get('ADB_VERSION', UNKNOWN)
 IS_DEV_MODE = os.environ.get('DEV_MODE') == 'true'
+IS_LAB_MODE = os.environ.get('LAB_MODE') == 'true'
+OPERATION_MODE = OperationMode(
+    os.environ.get('OPERATION_MODE', OperationMode.UNKNOWN))
 IS_GOOGLE = bool(re.search(r'\.google\.com$', HOSTNAME))
+SQL_DATABASE_URI = os.environ.get('MTT_SQL_DATABASE_URI')
 
 # Google Cloud Storage parameters
 APPLICATION_ID = os.environ.get('APPLICATION_ID')
 GCS_BUCKET_NAME = os.environ.get('BUCKET_NAME', 'app_default_bucket')
-GCS_FETCH_DEADLINE_SECONDS = 60
-GCS_ROOT_PATH = '/%s' % GCS_BUCKET_NAME
-GCS_TEMP_PATH = '/%s/tmp' % GCS_BUCKET_NAME
-GCS_DATA_PATH = '/%s/data' % GCS_BUCKET_NAME
-BLOBSTORE_PATH = os.environ.get('MTT_BLOBSTORE_PATH')
 
 # File storage parameters
 STORAGE_PATH = os.environ.get('MTT_STORAGE_PATH')
 FILE_SERVER_ROOT = os.environ.get('MTT_FILE_SERVER_ROOT')
 FILE_SERVER_URL = os.environ.get('MTT_FILE_SERVER_URL')
-FILE_BROWSE_URL_FORMAT = os.environ.get('MTT_FILE_BROWSE_URL_FORMAT')
-FILE_OPEN_URL_FORMAT = os.environ.get('MTT_FILE_OPEN_URL_FORMAT')
-FILE_SERVER_URL2 = os.environ.get('MTT_FILE_SERVER_URL2')
+FILE_BROWSER_URL = os.environ.get('MTT_FILE_BROWSER_URL')
 
 # Google OAuth2 parameters
 GOOGLE_OAUTH2_CLIENT_ID = os.environ.get('MTT_GOOGLE_OAUTH2_CLIENT_ID', UNKNOWN)

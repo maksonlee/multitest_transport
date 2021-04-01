@@ -12,24 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Unit tests for config."""
-
+"""Unit tests for config_encoder."""
 from absl.testing import absltest
-
-from google.appengine.ext import ndb
-from google.appengine.ext import testbed
+from tradefed_cluster import testbed_dependent_test
+from tradefed_cluster.util import ndb_shim as ndb
 
 from multitest_transport.models import config_encoder
 from multitest_transport.models import ndb_models
 
 
-class ConfigTest(absltest.TestCase):
-
-  def setUp(self):
-    super(ConfigTest, self).setUp()
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
+class ConfigTest(testbed_dependent_test.TestbedDependentTest):
 
   def CreateNodeConfig(self, env_vars=None):
     return ndb_models.NodeConfig(

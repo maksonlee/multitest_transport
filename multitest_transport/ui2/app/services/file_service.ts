@@ -15,7 +15,7 @@
  */
 
 import {HttpClient} from '@angular/common/http';
-import {Inject, Injectable} from '@angular/core';
+import {Inject, Injectable, InjectionToken} from '@angular/core';
 import {Observable} from 'rxjs';
 
 import {APP_DATA, AppData} from './app_data';
@@ -24,15 +24,42 @@ import {CommandAttempt, isFinalCommandState} from './tfc_models';
 
 /** File server proxy path. */
 export const PROXY_PATH = '/fs_proxy';
-/** Default upload chunk size. */
-export const CHUNK_SIZE = 16 * 1024 * 1024;  // 16MB
+/** Default file upload configuration. */
+export const DEFAULT_UPLOAD_CONFIG: FileUploadConfig = {
+  initialChunkSize: 4 * 1024 * 1024,  // 4MB
+  minChunkSize: 512 * 1024,           // 512KB
+  maxChunkSize: 16 * 1024 * 1024,     // 16MB
+  minChunkUploadTime: 500,            // 500ms
+  maxChunkUploadTime: 2 * 1000,       // 2s
+};
+/** Injection token for the file upload configuration. */
+export const UPLOAD_CONFIG =
+    new InjectionToken<FileUploadConfig>('UPLOAD_CONFIG', {
+      providedIn: 'root',
+      factory: () => DEFAULT_UPLOAD_CONFIG,
+    });
 
 /** Performs file operations related to a local file server and its proxy. */
 @Injectable({providedIn: 'root'})
 export class FileService {
+  /** Current upload chunk size, adjusted according to upload time. */
+  private chunkSize: number;
+  /** Base URL of the file browser. */
+  private readonly fileBrowserUrl: string = '';
+
   constructor(
       @Inject(APP_DATA) private readonly appData: AppData,
-      private readonly http: HttpClient) {}
+      private readonly http: HttpClient,
+      @Inject(UPLOAD_CONFIG) private readonly uploadConfig: FileUploadConfig) {
+    this.chunkSize = uploadConfig.initialChunkSize;
+    if (!appData.fileBrowserUrl) {
+      return;
+    }
+    const fileBrowserUrl = new URL(appData.fileBrowserUrl);
+    fileBrowserUrl.protocol = location.protocol;
+    fileBrowserUrl.hostname = location.hostname;
+    this.fileBrowserUrl = fileBrowserUrl.toString();
+  }
 
   /**
    * Generate an absolute file URL.
@@ -68,7 +95,7 @@ export class FileService {
    */
   getFileBrowseUrl(dirUrl: string): string {
     const relativePath = this.getRelativePath(dirUrl);
-    return joinPath(this.appData.fileBrowseUrl || '', relativePath);
+    return joinPath(this.fileBrowserUrl, 'browse', relativePath);
   }
 
   /**
@@ -78,7 +105,7 @@ export class FileService {
    */
   getFileOpenUrl(fileUrl: string): string {
     const relativePath = this.getRelativePath(fileUrl);
-    return joinPath(this.appData.fileOpenUrl || '', relativePath);
+    return joinPath(this.fileBrowserUrl, 'open', relativePath);
   }
 
   /**
@@ -97,18 +124,16 @@ export class FileService {
    * @return list of file nodes
    */
   listFiles(path: string): Observable<FileNode[]> {
-    return this.http.get<FileNode[]>(`${PROXY_PATH}/dir/${path}`);
+    return this.http.get<FileNode[]>(`${PROXY_PATH}/dir/${encodePath(path)}`);
   }
 
   /**
-   * Upload a file to local storage.
+   * Upload a file to local storage with adaptive chunk sizes.
    * @param file file to upload
    * @param path destination relative to file server root
-   * @param chunkSize maximum request size
    * @return upload progress events
    */
-  uploadFile(file: Blob, path: string, chunkSize = CHUNK_SIZE):
-      Observable<FileUploadEvent> {
+  uploadFile(file: Blob, path: string): Observable<FileUploadEvent> {
     const self = this;
     let cancelled = false;
 
@@ -118,7 +143,8 @@ export class FileService {
           return;
         }
         const reader = new FileReader();
-        const endByte = startByte + chunkSize;
+        const endByte = startByte + self.chunkSize;
+        const startTime = Date.now();
         const chunk = file.slice(startByte, endByte);
         reader.onloadend = () => {
           if (reader.error) {
@@ -134,6 +160,8 @@ export class FileService {
                       observer.complete();
                     } else {
                       observer.next(new FileUploadEvent(file, endByte));
+                      const uploadTime = Date.now() - startTime;
+                      self.adjustChunkSize(uploadTime);
                       readChunk(endByte);
                     }
                   },
@@ -149,6 +177,17 @@ export class FileService {
     });
   }
 
+  /** Adjust chunk size depending on the latest chunk upload time. */
+  private adjustChunkSize(uploadTime: number) {
+    if (uploadTime < this.uploadConfig.minChunkUploadTime) {
+      this.chunkSize =
+          Math.min(this.chunkSize * 2, this.uploadConfig.maxChunkSize);
+    } else if (uploadTime > this.uploadConfig.maxChunkUploadTime) {
+      this.chunkSize =
+          Math.max(this.chunkSize / 2, this.uploadConfig.minChunkSize);
+    }
+  }
+
   /** Upload a single file chunk. */
   private uploadChunk(
       data: ArrayBuffer, path: string, startByte: number,
@@ -159,7 +198,8 @@ export class FileService {
       const endByte = Math.min(totalSize, startByte + data.byteLength) - 1;
       headers['Content-Range'] = `bytes ${startByte}-${endByte}/${totalSize}`;
     }
-    return this.http.put<void>(`${PROXY_PATH}/file/${path}`, data, {headers});
+    return this.http.put<void>(
+        `${PROXY_PATH}/file/${encodePath(path)}`, data, {headers});
   }
 
   /**
@@ -167,7 +207,7 @@ export class FileService {
    * @param path path relative to the file server root
    */
   deleteFile(path: string): Observable<void> {
-    return this.http.delete<void>(`${PROXY_PATH}/file/${path}`);
+    return this.http.delete<void>(`${PROXY_PATH}/file/${encodePath(path)}`);
   }
 }
 
@@ -190,6 +230,15 @@ export interface FileNode {
 }
 // tslint:enable:enforce-name-casing
 
+/** File upload configuration, used to determine the chunk size. */
+export interface FileUploadConfig {
+  readonly initialChunkSize: number;
+  readonly minChunkSize: number;
+  readonly maxChunkSize: number;
+  readonly minChunkUploadTime: number;
+  readonly maxChunkUploadTime: number;
+}
+
 /** File upload progress event. */
 export class FileUploadEvent {
   readonly done: boolean;
@@ -201,10 +250,21 @@ export class FileUploadEvent {
   }
 }
 
+/** Encode the segments of a file path. */
+export function encodePath(path: string): string {
+  return path.split('/').map(encodeURIComponent).join('/');
+}
+
 /** Join multiple file path substrings. */
 export function joinPath(...parts: string[]): string {
-  // Remove leading and trailing slashes and join.
-  return parts.map(p => p.replace(/^\/|\/$/g, '')).join('/');
+  // Remove empty segments, remove leading/trailing slashes, and join.
+  return parts.filter(Boolean).map(p => p.replace(/^\/|\/$/g, '')).join('/');
+}
+
+/** Returns the directory path, i.e. everything before the last "/". */
+export function getDirectoryPath(path: string): string {
+  const index = path.lastIndexOf('/');
+  return index === 0 ? '/' : path.substring(0, index);
 }
 
 /** Read a blob as text. */

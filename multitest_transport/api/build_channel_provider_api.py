@@ -13,13 +13,11 @@
 # limitations under the License.
 
 """A module to provide build channel provider APIs."""
-
-
+# Non-standard docstrings are used to generate the API documentation.
+import endpoints
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
-
-from google3.third_party.apphosting.python.endpoints.v1_1 import endpoints
 
 from multitest_transport.api import base
 from multitest_transport.models import build
@@ -31,36 +29,29 @@ from multitest_transport.models import messages as mtt_messages
 class BuildChannelProviderApi(remote.Service):
   """A handler for Build Channel Provider API."""
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       message_types.VoidMessage,
       mtt_messages.BuildChannelProviderList,
       path='/build_channel_providers',
       http_method='GET',
       name='list')
   def List(self, request):
-    """List registered build channel providers.
-
-    Args:
-      request: an API request object.
-
-    Returns:
-      a mtt_messages.BuildChannelProviderList object.
-    """
+    """Lists registered build channel providers."""
     provider_names = build.ListBuildProviderNames()
     build_channel_providers = []
     for name in provider_names:
-      option_defs = build.GetBuildProviderClass(name)().GetOptionDefs()
+      cls = build.GetBuildProviderClass(name)
+      assert cls
+      option_defs = cls().GetOptionDefs()
       build_channel_providers.append(
           mtt_messages.BuildChannelProvider(
               name=name,
-              option_defs=mtt_messages.Convert(option_defs,
-                                               mtt_messages.OptionDef)))
+              option_defs=mtt_messages.ConvertList(
+                  option_defs, mtt_messages.OptionDef)))
     return mtt_messages.BuildChannelProviderList(
         build_channel_providers=build_channel_providers)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           build_channel_provider_id=messages.StringField(1, required=True)),
@@ -69,17 +60,19 @@ class BuildChannelProviderApi(remote.Service):
       http_method='GET',
       name='get')
   def Get(self, request):
-    """Returns a build channel provider.
+    """Fetches a build channel provider.
 
-    Args:
-      request: an API request object.
-
-    Returns:
-      a mtt_messages.BuildChannelProvider object.
+    Parameters:
+      build_channel_provider_id: Build channel provider ID
     """
     provider_id = request.build_channel_provider_id
-    provider = build.GetBuildProviderClass(provider_id)()
+    cls = build.GetBuildProviderClass(provider_id)
+    if not cls:
+      raise endpoints.NotFoundException(
+          'Build channel provider %s not found' % provider_id)
+    provider = cls()
     option_defs = provider.GetOptionDefs()
     return mtt_messages.BuildChannelProvider(
         name=provider_id,
-        option_defs=mtt_messages.Convert(option_defs, mtt_messages.OptionDef))
+        option_defs=mtt_messages.ConvertList(
+            option_defs, mtt_messages.OptionDef))

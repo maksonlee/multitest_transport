@@ -29,14 +29,14 @@ import {DeviceActionEditPage} from './device_action_edit_page';
 import {DeviceActionList} from './device_action_list';
 import {DeviceActionPicker} from './device_action_picker';
 import {TargetPreparerForm} from './target_preparer_form';
-import {TargetPreparerOptionForm} from './target_preparer_option_form';
+import {TradefedConfigOptionForm} from './tradefed_config_option_form';
 
 const COMPONENTS = [
   DeviceActionEditPage,
   DeviceActionList,
   DeviceActionPicker,
   TargetPreparerForm,
-  TargetPreparerOptionForm,
+  TradefedConfigOptionForm,
 ];
 
 @NgModule({

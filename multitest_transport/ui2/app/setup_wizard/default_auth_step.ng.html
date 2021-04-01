@@ -1,0 +1,38 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+
+<div class="info-text margin-bottom">
+  Upload a Google service account key for accessing Google-provided APIs. The account will be used
+  access Android partner test suites and resources.
+</div>
+
+<div [class.loading-mask]="isLoading" class="container">
+  <input type="file" #fileUploadInput
+    (change)="onKeyUpload($event.target.files[0]); fileUploadInput.value = ''" />
+  <button color="accent" mat-stroked-button (click)="fileUploadInput.click()"
+          aria-label="Upload File" class="upload-button" disabled="{{!!defaultCredentials}}">
+    <!-- TODO: Uploading a file should automatically move to the next step -->
+    {{defaultCredentials ? ('Authenticated as ' + (defaultCredentials.email || 'unknown')) :
+                            'Upload Service Account Key'}}
+  </button>
+</div>
+
+<div class="info-text margin-bottom">
+  The default service account can be removed or changed in the top right corner of the page. Custom
+  accounts can be set for each service in the Settings Page.
+</div>

@@ -15,6 +15,7 @@
 """MTT end-to-end tests."""
 import logging
 import os
+import socket
 
 from absl import flags
 from absl.testing import absltest
@@ -30,9 +31,23 @@ flags.DEFINE_string('architecture', 'arm', 'Device architecture (arm or x86)')
 
 CTS_DOWNLOAD_URL = 'https://dl.google.com/dl/android/cts/android-cts-10_r2-linux_x86-%s.zip'
 
+# TODO: Replace /url with ?alt=media when it works
+_ARTIFACTS_DOWNLOAD_URL = ('https://www.googleapis.com/android/internal/build/'
+                           'v3/builds/%s/%s/attempts/latest/artifacts/%s/url')
+_CVD_HOST_PACKAGE_URL = _ARTIFACTS_DOWNLOAD_URL % (
+    '7087482', 'aosp_cf_x86_64_phone-userdebug', 'cvd-host_package.tar.gz')
+_IMG_ZIP_URL = _ARTIFACTS_DOWNLOAD_URL % (
+    '7087482', 'aosp_cf_x86_64_phone-userdebug',
+    'aosp_cf_x86_64_phone-img-7087482.zip')
+
 
 class E2eIntegrationTest(integration_util.DockerContainerTest):
   """"Tests that TF is running and can handle test run information from MTT."""
+
+  @classmethod
+  def GetContainer(cls):
+    """Factory method to construct a container that supports virtualization."""
+    return integration_util.MttContainer(max_local_virtual_devices=1)
 
   @classmethod
   def setUpClass(cls):
@@ -52,6 +67,16 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
     """Checks if a path (optionally with wildcards) matches any files."""
     # ls will return a non-zero exit code if no matching file(s) found
     self.container.Exec('bash', '-c', 'ls ' + path)
+
+  def _GetLocalDeviceSerial(self, serial):
+    if ':' in serial:
+      return serial.split(':', 2)[1]
+    return serial
+
+  @staticmethod
+  def _GetGlobalDeviceSerial(serial):
+    """Combines the host name and the device serial."""
+    return socket.gethostname() + ':' + serial
 
   def testRunTest(self):
     """Tests executing a test (send command, lease device, manage files)."""
@@ -105,18 +130,19 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
     test_run = self.container.GetTestRun(test_run_id)
     output_dir = self._GetOutputDir(test_run)
     host_log = self.container.Exec('cat', output_dir + 'tool-logs/host_log.txt')
+    local_device_serial = self._GetLocalDeviceSerial(FLAGS.serial_number)
     self.assertIn(
-        'Executing e2e_log_action on device ' + FLAGS.serial_number, host_log)
+        'Executing e2e_log_action on device %s' % local_device_serial, host_log)
 
   def testRunCtsModule(self):
     """Tests executing a CTS module (use test package, handle results)."""
-    self.container.Exec('curl', '-o', '/data/cts.zip',
+    self.container.Exec('wget', '--retry-connrefused', '-O', '/data/cts.zip',
                         CTS_DOWNLOAD_URL % FLAGS.architecture)
     test_run_id = self.container.ScheduleTestRun(
         FLAGS.serial_number,
         test_id='android.cts.10_0.arm',
         extra_args='-m Gesture',  # arbitrary small module
-        test_resource_pipes=[{
+        test_resource_objs=[{
             'name': 'android-cts.zip',
             'url': 'file:///data/cts.zip',
         }])['id']
@@ -129,6 +155,34 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
     self._AssertFileExists(output_dir + '*.zip')  # Test results zip file
     self._AssertFileExists(output_dir + 'test_result.xml')
     self._AssertFileExists(output_dir + 'test_result_failures_suite.html')
+
+  def testLocalVirtualDevice(self):
+    """Tests executing a test on a local virtual device."""
+    self.container.Exec('wget', '--retry-connrefused', '-O', '/data/img.zip',
+                        _IMG_ZIP_URL)
+    self.container.Exec('wget', '--retry-connrefused', '-O', '/data/cvd.tar.gz',
+                        _CVD_HOST_PACKAGE_URL)
+    test_run_id = self.container.ScheduleTestRun(
+        self._GetGlobalDeviceSerial('local-virtual-device-0'),
+        before_device_action_ids=['lvd_setup'],
+        test_resource_objs=[{
+            'name': 'device',
+            'url': 'file:///data/img.zip',
+            'decompress': True,
+            'decompress_dir': 'lvd-images',
+        }, {
+            'name': 'cvd-host_package.tar.gz',
+            'url': 'file:///data/cvd.tar.gz',
+            'decompress': True,
+            'decompress_dir': 'lvd-tools',
+        }],
+    )['id']
+    self.container.WaitForState(test_run_id, 'COMPLETED', timeout=12 * 60)
+    # Verify that the logs were generated
+    test_run = self.container.GetTestRun(test_run_id)
+    output_dir = self._GetOutputDir(test_run)
+    self._AssertFileExists(output_dir + 'tool-logs/host_log.txt')
+    self._AssertFileExists(output_dir + 'tool-logs/launcher.log*')
 
 
 if __name__ == '__main__':

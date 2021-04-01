@@ -15,7 +15,6 @@
  */
 
 import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
-import {BuildChannel} from '../services/mtt_models';
 import {assertRequiredInput} from './util';
 
 /**
@@ -27,7 +26,7 @@ import {assertRequiredInput} from './util';
   templateUrl: './breadcrumb.ng.html',
 })
 export class Breadcrumb implements OnChanges, OnInit {
-  @Input() data?: BuildChannel;
+  @Input() prefix?: string;
   @Input() path!: string;
   @Output() pathChange = new EventEmitter<string>();
 
@@ -39,7 +38,7 @@ export class Breadcrumb implements OnChanges, OnInit {
    */
   ngOnChanges(changes: SimpleChanges) {
     if ('path' in changes) {
-      this.pathArray = this.path ? this.path.split('/') : [];
+      this.pathArray = this.path ? this.path.split('/').filter(Boolean) : [];
     }
   }
 

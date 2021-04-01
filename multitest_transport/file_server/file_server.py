@@ -15,6 +15,7 @@
 
 """Android Test Station local file server."""
 import enum
+import hashlib
 import http
 import logging
 import os
@@ -22,25 +23,14 @@ import re
 import shutil
 import stat
 import tempfile
-import threading
-
 from typing import List
-from absl import app
-from absl import flags
 
+from absl import app as absl_app
+from absl import flags
 import attr
-import cachetools
 import flask
 
-FLAGS = flags.FLAGS
-flags.DEFINE_boolean('debug', False, 'Run file server in debug mode.')
-flags.DEFINE_integer('port', 8006, 'File server\'s port.')
-flags.DEFINE_string('root_path', None, 'File server\'s base directory.')
-flags.DEFINE_integer('max_uploads', 128, 'Maximum number of resumable uploads.')
-flags.DEFINE_integer('upload_ttl', 24 * 60 * 60,
-                     'Resumable upload expiration time (seconds).')
-
-DEFAULT_CHUNK_SIZE = 4 * 1024  # 4 MB
+DEFAULT_CHUNK_SIZE = 4 * 1024  # Default chunk size when writing to file (4 MB)
 
 flask_app = flask.Flask(__name__, static_folder=None)
 
@@ -48,7 +38,7 @@ flask_app = flask.Flask(__name__, static_folder=None)
 @flask_app.errorhandler(Exception)
 def HandleException(error):
   """Converts all exceptions into JSON error responses."""
-  logging.error(error)
+  flask_app.logger.error(error)
   code = getattr(error, 'code', http.HTTPStatus.INTERNAL_SERVER_ERROR)
   message = getattr(error, 'description', None)
   return flask.jsonify({'code': code, 'message': message}), code
@@ -61,28 +51,6 @@ def DownloadFile(path: str) -> flask.Response:
   if not os.path.isfile(resolved_path):
     flask.abort(http.HTTPStatus.NOT_FOUND, 'File \'%s\' not found' % path)
   return flask.send_file(resolved_path, conditional=True)
-
-
-class UploadCache(cachetools.TTLCache):
-  """Cache of temporary upload files."""
-
-  def __init__(self, *args, **kwargs):
-    super(UploadCache, self).__init__(*args, **kwargs)
-    self._lock = threading.Lock()
-
-  def GetFile(self, key):
-    """Finds or creates a temporary upload file."""
-    with self._lock:
-      if key not in self or not os.path.isfile(self[key]):
-        _, value = tempfile.mkstemp()
-        self[key] = value
-      return self[key]
-
-  def popitem(self):
-    """Overrides eviction to delete temporary upload files."""
-    _, value = super(UploadCache, self).popitem()
-    if os.path.isfile(value):
-      os.remove(value)
 
 
 def _GetContentRange():
@@ -111,13 +79,13 @@ def _WriteStreamToFile(file, chunk_size=DEFAULT_CHUNK_SIZE):
     file.write(chunk)
 
 
-@flask_app.route('/file/<path:path>', methods=['PUT'])
+@flask_app.route('/file/<path:path>', methods=['PUT', 'POST'])
 def UploadFile(path: str) -> flask.Response:
   """Upload a file to a path."""
   resolved_path = flask.safe_join(flask.current_app.root_path, path)
   # Find or create a temporary upload file
-  upload_cache = flask.current_app.upload_cache
-  tmp_path = upload_cache.GetFile(resolved_path)
+  tmp_name = hashlib.sha512(resolved_path.encode()).hexdigest()
+  tmp_path = os.path.join(flask.current_app.tmp_upload_dir, tmp_name)
 
   # Write or append the content to the temporary file
   start_byte, is_final_chunk = _GetContentRange()
@@ -127,7 +95,11 @@ def UploadFile(path: str) -> flask.Response:
       _WriteStreamToFile(tmp_file)
   else:
     # Resume existing upload, append content if the offsets match
-    next_byte = os.path.getsize(tmp_path)
+    try:
+      next_byte = os.path.getsize(tmp_path)
+    except OSError as e:
+      flask_app.logger.warning('Failed to calculate offset: %s', e)
+      next_byte = 0
     if start_byte != next_byte:
       flask.abort(http.HTTPStatus.BAD_REQUEST,
                   'Invalid offset %d (expected %d)' % (start_byte, next_byte))
@@ -136,7 +108,7 @@ def UploadFile(path: str) -> flask.Response:
 
   # If this is the last chunk, then move the file to its final destination
   if is_final_chunk:
-    logging.info('Finished uploading \'%s\'', resolved_path)
+    flask_app.logger.info('Finished uploading \'%s\'', resolved_path)
     os.makedirs(os.path.dirname(resolved_path), exist_ok=True)
     shutil.move(tmp_path, resolved_path)
     return flask.Response(status=http.HTTPStatus.CREATED)
@@ -221,15 +193,23 @@ def ListDirectory(path: str = '') -> flask.Response:
   return flask.jsonify([child.__dict__ for child in sorted(nodes)])
 
 
+# Development server flags
+FLAGS = flags.FLAGS
+flags.DEFINE_boolean('debug', False, 'Run server in debug mode (live reload).')
+flags.DEFINE_integer('port', 8006, 'File server\'s port.')
+flags.DEFINE_string('root_path', None, 'File server\'s base directory.')
+
+
 def main(_: List[str]):
-  """Configure and start server."""
-  flask_app.root_path = os.path.abspath(os.path.expanduser(FLAGS.root_path))
-  if not os.path.isdir(flask_app.root_path):
-    raise ValueError('Root path must be an existing directory')
-  flask_app.upload_cache = UploadCache(FLAGS.max_uploads, ttl=FLAGS.upload_ttl)
-  flask_app.run(host='0.0.0.0', port=FLAGS.port, debug=FLAGS.debug)
+  """Initializes the application and starts the development server."""
+  with tempfile.TemporaryDirectory() as tmp_upload_dir:
+    flask_app.logger = logging
+    flask_app.root_path = FLAGS.root_path
+    flask_app.tmp_upload_dir = tmp_upload_dir
+    flask_app.run(host='0.0.0.0', port=FLAGS.port, debug=FLAGS.debug)
 
 
 if __name__ == '__main__':
+  # Entrypoint for the development server.
   flags.mark_flag_as_required('root_path')
-  app.run(main)
+  absl_app.run(main)

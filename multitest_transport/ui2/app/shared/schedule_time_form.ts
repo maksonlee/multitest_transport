@@ -15,242 +15,207 @@
  */
 
 import {WeekDay} from '@angular/common';
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {MatSelectChange} from '@angular/material/select';
+import {Component, EventEmitter, forwardRef, Input, OnChanges, Output} from '@angular/core';
+import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
 
-import {PeriodicTimeType, ScheduleTimeType} from '../services/mtt_models';
-import {continuousNumberArray} from './util';
+/** Schedule types. */
+export enum ScheduleType {
+  MANUAL = 'Manual',      // No cron expression (manually triggered)
+  PERIODIC = 'Periodic',  // Simple cron expression
+  CUSTOM = 'Custom'       // Complex cron expression
+}
 
-const periodicRegExps: Array<[PeriodicTimeType, RegExp]> = [
-  [PeriodicTimeType.MINUTE, /^(\*\s){4}(\*){1}$/],
-  [PeriodicTimeType.HOUR, /^\d{1,2}\s(\*\s){3}(\*){1}$/],
-  [PeriodicTimeType.DAY, /^(\d{1,2}\s){2}(\*\s){2}(\*){1}$/],
-  [PeriodicTimeType.WEEK, /^(\d{1,2}\s){2}(\*\s){2}\d{1,2}$/],
-  [PeriodicTimeType.MONTH, /^(\d{1,2}\s){3}(\*\s){1}(\*){1}$/],
-  [PeriodicTimeType.YEAR, /^(\d{1,2}\s){4}(\*){1}$/],
-];
+/** Simple period types. */
+export enum PeriodicType {
+  HOUR = 'Hour',    // Triggered once per hour
+  DAY = 'Day',      // Triggered once per day
+  WEEK = 'Week',    // Triggered once per week
+  MONTH = 'Month',  // Triggered once per month
+}
 
-/**
- * This component takes user's input schedule time and generate cron expression.
- */
+/** Regular expressions corresponding to each periodic type. */
+const PERIODIC_TYPE_REGEXPS = new Map<PeriodicType, RegExp>();
+PERIODIC_TYPE_REGEXPS.set(
+    PeriodicType.HOUR, /^([0-9]|[1-5][0-9])\s(\*\s){3}\*$/);
+PERIODIC_TYPE_REGEXPS.set(
+    PeriodicType.DAY,
+    /^([0-9]|[1-5][0-9])\s([0-9]|1[0-9]|2[0-3])\s(\*\s){2}\*$/);
+PERIODIC_TYPE_REGEXPS.set(
+    PeriodicType.WEEK,
+    /^([0-9]|[1-5][0-9])\s([0-9]|1[0-9]|2[0-3])\s(\*\s){2}[0-6]$/);
+PERIODIC_TYPE_REGEXPS.set(
+    PeriodicType.MONTH,
+    /^([0-9]|[1-5][0-9])\s([0-9]|1[0-9]|2[0-3])\s([1-9]|[1-2][0-9]|3[0-1])\s\*\s\*$/);
+
+/** Find periodic type which matches a cron expression. */
+export function getPeriodicType(cron: string): undefined|PeriodicType {
+  for (const [type, regex] of PERIODIC_TYPE_REGEXPS.entries()) {
+    if (regex.test(cron)) {
+      return type;
+    }
+  }
+  return undefined;
+}
+
+/** Client-side local timezone. */
+const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+/** Manages scheduling times using simple fields or cron expressions. */
 @Component({
   selector: 'schedule-time-form',
   styleUrls: ['schedule_time_form.css'],
   templateUrl: './schedule_time_form.ng.html',
+  providers: [{
+    provide: NG_VALUE_ACCESSOR,
+    useExisting: forwardRef(() => ScheduleTimeForm),
+    multi: true
+  }]
 })
-export class ScheduleTimeForm implements OnInit {
-  @Input() cronExpression!: string;
-  @Output() cronExpressionChange = new EventEmitter<string>();
-  // Store a reference to the enum
-  readonly ScheduleTimeType = ScheduleTimeType;
-  readonly PeriodicTimeType = PeriodicTimeType;
+export class ScheduleTimeForm implements ControlValueAccessor, OnChanges {
+  readonly ScheduleTimeType = ScheduleType;
+  readonly PeriodicTimeType = PeriodicType;
+  readonly scheduleOptions = Object.values(ScheduleType);
+  readonly periodicOptions = Object.values(PeriodicType);
+  readonly weekDayOptions = Array.from({length: 7}, (v, i) => WeekDay[i]);
 
-  readonly scheduleOptions = Object.values(ScheduleTimeType);
-  readonly periodicTimeOptions = Object.values(PeriodicTimeType);
-  readonly monthOptions = [
-    'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-    'September', 'October', 'November', 'December'
-  ];
-  readonly monthDayOptions = continuousNumberArray(31, 1);
-  readonly weekDayOptions = [
-    WeekDay[0], WeekDay[1], WeekDay[2], WeekDay[3], WeekDay[4], WeekDay[5],
-    WeekDay[6]
-  ];
-  readonly hourOptions = continuousNumberArray(24);
-  readonly minuteOptions = continuousNumberArray(60);
+  // Managed model and change callback (to handle external changes separately)
+  cronExpression!: string;
+  onChange = (value: string) => {};
 
-  selectedScheduleTimeType = ScheduleTimeType.MANUAL;
-  selectedPeriodicTimeType = PeriodicTimeType.HOUR;
-  selectedMonth = 1;
+  // Timezone value and options
+  @Input() timezone = LOCAL_TZ;
+  @Output() timezoneChange = new EventEmitter<string>();
+  timezoneOptions: string[] = [];
+
+  // Selected parameters
+  selectedScheduleType = ScheduleType.MANUAL;
+  selectedPeriodicType = PeriodicType.HOUR;
   selectedMonthDay = 1;
   selectedWeekDay = WeekDay.Monday;
   selectedHour = 0;
   selectedMinute = 0;
 
-  ngOnInit() {
-    this.initInputSelector(this.cronExpression);
+  /** Registers a change callback. */
+  registerOnChange(fn: (value: string) => void): void {
+    this.onChange = fn;
   }
 
-  /**
-   * On component init, update selector default value.
-   */
-  initInputSelector(cronExpression: string) {
-    this.cronExpression = cronExpression;
-    if (this.cronExpression) {
-      const initPeriodicType =
-          this.getCronPeriodicTimeType(this.cronExpression);
-      if (initPeriodicType) {
-        this.selectedScheduleTimeType = ScheduleTimeType.PERIODIC;
-        this.selectedPeriodicTimeType = initPeriodicType;
-        this.setInitPeriodicValue(initPeriodicType, this.cronExpression);
-      } else {
-        this.selectedScheduleTimeType = ScheduleTimeType.CUSTOM;
-      }
-    } else {
-      this.selectedScheduleTimeType = ScheduleTimeType.MANUAL;
+  /** Unused ControlValueAccessor method. */
+  registerOnTouched(fn: () => void): void {}
+
+  /** Re-initializes the managed cron expression. */
+  writeValue(value: string): void {
+    this.cronExpression = value;
+    if (!this.cronExpression) {
+      // No expression, will have to be triggered manually
+      this.selectedScheduleType = ScheduleType.MANUAL;
+      return;
+    }
+    this.selectedScheduleType = ScheduleType.CUSTOM;
+    const periodicType = getPeriodicType(this.cronExpression);
+    if (periodicType) {
+      // Matches a periodic type, initialize periodic parameters
+      this.selectedScheduleType = ScheduleType.PERIODIC;
+      this.selectedPeriodicType = periodicType;
+      this.setPeriodicParameters(periodicType, this.cronExpression);
     }
   }
 
-  /**
-   * On schedule time type selector value change.
-   */
-  scheduleSelectChange(event: MatSelectChange) {
-    switch (event.value) {
-      case ScheduleTimeType.MANUAL: {
-        this.cronExpressionChange.emit('');
+  /** Recalculates possible timezone options when the timezone changes. */
+  ngOnChanges(): void {
+    this.timezone = this.timezone || LOCAL_TZ;
+    const timezones = ['UTC', LOCAL_TZ, this.timezone].filter(tz => !!tz);
+    this.timezoneOptions = [...new Set(timezones)];
+  }
+
+  /** Change schedule type and update cron expression. */
+  changeScheduleType(scheduleType: ScheduleType) {
+    switch (scheduleType) {
+      case ScheduleType.MANUAL: {
+        this.onChange('');
         break;
       }
-      case ScheduleTimeType.PERIODIC: {
-        const initPeriodicType =
-            this.getCronPeriodicTimeType(this.cronExpression);
-        if (initPeriodicType) {
-          this.setInitPeriodicValue(initPeriodicType, this.cronExpression);
+      case ScheduleType.PERIODIC: {
+        const periodicType = getPeriodicType(this.cronExpression);
+        if (periodicType) {
+          this.setPeriodicParameters(periodicType, this.cronExpression);
         }
-        this.getCronExpression();
+        this.updatePeriodicCron();
         break;
       }
-      case ScheduleTimeType.CUSTOM: {
-        this.cronExpressionChange.emit(this.cronExpression);
+      case ScheduleType.CUSTOM: {
+        this.onChange(this.cronExpression);
         break;
       }
       default: {
-        throw new Error(`unexpected value ${event.value}!`);
-        break;
+        throw new Error(`unexpected value ${scheduleType}!`);
       }
     }
   }
 
-  /**
-   * Output cron expression base on current selectors value.
-   */
-  getCronExpression() {
+  /** Update cron expression using current periodic parameters. */
+  updatePeriodicCron() {
     const cronArray: string[] = Array.from<string>({length: 5}).fill('*');
-    switch (this.selectedPeriodicTimeType) {
-      case PeriodicTimeType.MINUTE: {
-        break;
-      }
-      case PeriodicTimeType.HOUR: {
+    switch (this.selectedPeriodicType) {
+      case PeriodicType.HOUR: {
         cronArray[0] = String(this.selectedMinute);
         break;
       }
-      case PeriodicTimeType.DAY: {
+      case PeriodicType.DAY: {
         cronArray[0] = String(this.selectedMinute);
         cronArray[1] = String(this.selectedHour);
         break;
       }
-      case PeriodicTimeType.WEEK: {
+      case PeriodicType.WEEK: {
         cronArray[0] = String(this.selectedMinute);
         cronArray[1] = String(this.selectedHour);
         cronArray[4] = String(this.selectedWeekDay);
         break;
       }
-      case PeriodicTimeType.MONTH: {
+      case PeriodicType.MONTH: {
         cronArray[0] = String(this.selectedMinute);
         cronArray[1] = String(this.selectedHour);
         cronArray[2] = String(this.selectedMonthDay);
-        break;
-      }
-      case PeriodicTimeType.YEAR: {
-        cronArray[0] = String(this.selectedMinute);
-        cronArray[1] = String(this.selectedHour);
-        cronArray[2] = String(this.selectedMonthDay);
-        cronArray[3] = String(this.selectedMonth);
         break;
       }
       default: {
-        throw new Error(`unexpected value ${this.selectedPeriodicTimeType}!`);
-        break;
+        throw new Error(`unexpected value ${this.selectedPeriodicType}!`);
       }
     }
 
     this.cronExpression = cronArray.join(' ');
-    this.cronExpressionChange.emit(this.cronExpression);
+    this.onChange(this.cronExpression);
   }
 
-  /**
-   * Check format of initial cron value
-   */
-  getCronPeriodicTimeType(cronStr: string): PeriodicTimeType|undefined {
-    const validCron =
-        /^((\d{1,2}|\*)\s){2}((\d{1,2}|\*|\?)\s){1}((\d|\*)\s){1}(\d{1,2}|\*|\?){1}$/;
-    if (!validCron.test(cronStr)) {
-      return undefined;
-    }
-    // check actual cron values
-    const cronArray = cronStr.split(' ');
-    // mm, hh, DD, MM, DOW
-    const minval = [0, 0, 1, 1, 0];
-    const maxval = [59, 23, 31, 12, 6];
-    for (let i = 0; i < cronArray.length; i++) {
-      if (cronArray[i] === '*' || cronArray[i] === '?') continue;
-      let v = Number(cronArray[i]);
-      if (isNaN(v)) {
-        return undefined;
-      }
-      v = Math.floor(v);
-      if (v !== undefined && v <= maxval[i] && v >= minval[i]) continue;
-      return undefined;
-    }
-    return this.testCronString(cronStr);
-  }
-
-  /**
-   * Set selector value by given periodic time type and corn expression.
-   */
-  setInitPeriodicValue(type: PeriodicTimeType, cronExpression: string) {
-    const cronArray: string[] = cronExpression.split(' ');
-    this.selectedPeriodicTimeType = type;
-    switch (this.selectedPeriodicTimeType) {
-      case PeriodicTimeType.MINUTE: {
-        break;
-      }
-      case PeriodicTimeType.HOUR: {
+  /** Set periodic parameters from a cron expression. */
+  private setPeriodicParameters(type: PeriodicType, cron: string) {
+    const cronArray: string[] = cron.split(' ');
+    this.selectedPeriodicType = type;
+    switch (this.selectedPeriodicType) {
+      case PeriodicType.HOUR: {
         this.selectedMinute = Number(cronArray[0]) || 0;
         break;
       }
-      case PeriodicTimeType.DAY: {
+      case PeriodicType.DAY: {
         this.selectedMinute = Number(cronArray[0]) || 0;
         this.selectedHour = Number(cronArray[1]) || 0;
         break;
       }
-      case PeriodicTimeType.WEEK: {
+      case PeriodicType.WEEK: {
         this.selectedMinute = Number(cronArray[0]) || 0;
         this.selectedHour = Number(cronArray[1]) || 0;
         this.selectedWeekDay = Number(cronArray[4]) || WeekDay.Monday;
         break;
       }
-      case PeriodicTimeType.MONTH: {
+      case PeriodicType.MONTH: {
         this.selectedMinute = Number(cronArray[0]) || 0;
         this.selectedHour = Number(cronArray[1]) || 0;
         this.selectedMonthDay = Number(cronArray[2]) || 1;
-        break;
-      }
-      case PeriodicTimeType.YEAR: {
-        this.selectedMinute = Number(cronArray[0]) || 0;
-        this.selectedHour = Number(cronArray[1]) || 0;
-        this.selectedMonthDay = Number(cronArray[2]) || 1;
-        this.selectedMonth = Number(cronArray[3]) || 1;
         break;
       }
       default: {
-        throw new Error(`unexpected value ${this.selectedPeriodicTimeType}!`);
-        break;
+        throw new Error(`unexpected value ${this.selectedPeriodicType}!`);
       }
     }
-  }
-
-  customInputChange(value: string) {
-    this.cronExpressionChange.emit(value);
-  }
-
-  private testCronString(cronStr: string): PeriodicTimeType|undefined {
-    let result = undefined;
-    for (let i = 0; i < periodicRegExps.length; i++) {
-      if ((periodicRegExps[i][1]).test(cronStr)) {
-        result = periodicRegExps[i][0];
-        break;
-      }
-    }
-    return result;
   }
 }

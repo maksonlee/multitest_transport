@@ -13,20 +13,21 @@
 # limitations under the License.
 
 """Unit tests for run_hook."""
-import multitest_transport.google_import_fixer  
 from absl.testing import absltest
 import mock
 
+from tradefed_cluster import testbed_dependent_test
 from tradefed_cluster.api_messages import CommandState
 from tradefed_cluster.command_task_api import CommandTask
-from google.appengine.ext import testbed
+
 from google.oauth2 import credentials as authorized_user
 
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
 from multitest_transport.plugins import base as plugins
-from multitest_transport.util import tfc_client
+from multitest_transport.util import analytics
 from multitest_transport.util import oauth2_util
+from multitest_transport.util import tfc_client
 
 
 class SimpleHook(plugins.TestRunHook):
@@ -40,13 +41,7 @@ class OAuth2Hook(plugins.TestRunHook):
   oauth2_config = oauth2_util.OAuth2Config('id', 'secret', ['scope'])
 
 
-class TestRunHookTest(absltest.TestCase):
-
-  def setUp(self):
-    super(TestRunHookTest, self).setUp()
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
+class TestRunHookTest(testbed_dependent_test.TestbedDependentTest):
 
   @mock.patch.object(test_run_hook, '_ExecuteHook')
   @mock.patch.object(test_run_hook, '_GetLatestAttempt')
@@ -73,6 +68,21 @@ class TestRunHookTest(absltest.TestCase):
         test_run=test_run, latest_attempt=attempt,
         phase=ndb_models.TestRunPhase.AFTER_RUN)
     mock_execute_hook.assert_called_once_with(after_action, hook_context)
+
+  def testApplyOptionsFromDeviceActions(self):
+    """Tests that device actions can be found and executed."""
+    device_action = ndb_models.DeviceAction(
+        name='unit test',
+        tradefed_options=[
+            ndb_models.NameMultiValuePair(
+                name='device-type', values=['LOCAL_VIRTUAL_DEVICE'])
+        ])
+    test_run = ndb_models.TestRun(before_device_actions=[device_action])
+    test_run.put()
+    task = mock.MagicMock(extra_options={})
+    test_run_hook._ApplyOptionsFromDeviceActions(test_run.key.id(), task)
+    self.assertEqual(task.extra_options,
+                     {'device-type': ['LOCAL_VIRTUAL_DEVICE']})
 
   @mock.patch.object(test_run_hook, '_ExecuteHook')
   def testExecuteHooks_notFound(self, mock_execute_hook):
@@ -111,8 +121,9 @@ class TestRunHookTest(absltest.TestCase):
                      test_run_hook._GetLatestAttempt(test_run, None))
 
   @mock.patch.object(SimpleHook, 'Execute')
+  @mock.patch.object(analytics, 'Log')
   @mock.patch.object(SimpleHook, '__init__')
-  def testExecuteHook(self, mock_init, mock_execute):
+  def testExecuteHook(self, mock_init, mock_log, mock_execute):
     """Tests that a hook can be constructed and executed."""
     mock_init.return_value = None
     hook_context = mock.MagicMock()
@@ -124,6 +135,61 @@ class TestRunHookTest(absltest.TestCase):
     )
     test_run_hook._ExecuteHook(action, hook_context)
     mock_init.assert_called_with(_credentials=credentials, ham='eggs')
+    mock_log.assert_called()
+    mock_execute.assert_called_with(hook_context)
+
+  @mock.patch.object(SimpleHook, 'Execute')
+  @mock.patch.object(analytics, 'Log')
+  @mock.patch.object(SimpleHook, '__init__')
+  def testExecuteHook_withContextVariables(
+      self, mock_init, mock_log, mock_execute):
+    """Tests that a hook can be constructed and executed."""
+    test = ndb_models.Test(name='test', command='command')
+    test.put()
+    test_run = ndb_models.TestRun(
+        test=test,
+        test_run_config=ndb_models.TestRunConfig(test_key=test.key),
+        test_resources=[
+            ndb_models.TestResourceObj(
+                name='device_image',
+                url='mtt:///android_ci/branch/target/build_id/image.zip',
+                test_resource_type=ndb_models.TestResourceType.DEVICE_IMAGE)
+        ])
+    test_run.put()
+    mock_init.return_value = None
+    hook_context = mock.MagicMock()
+    hook_context.test_run = test_run
+    credentials = authorized_user.Credentials(None)
+    action = ndb_models.TestRunAction(
+        name='Test', hook_class_name='simple',
+        options=[
+            ndb_models.NameValuePair(name='ham', value='eggs'),
+            ndb_models.NameValuePair(
+                name='test_run_id', value='${MTT_TEST_RUN_ID}'),
+            ndb_models.NameValuePair(
+                name='device_image_url', value='${MTT_DEVICE_IMAGE_URL}'),
+            ndb_models.NameValuePair(
+                name='device_image_branch', value='${MTT_DEVICE_IMAGE_BRANCH}'),
+            ndb_models.NameValuePair(
+                name='device_image_target', value='${MTT_DEVICE_IMAGE_TARGET}'),
+            ndb_models.NameValuePair(
+                name='device_image_build_id',
+                value='${MTT_DEVICE_IMAGE_BUILD_ID}'),
+        ],
+        credentials=credentials,
+    )
+
+    test_run_hook._ExecuteHook(action, hook_context)
+
+    mock_init.assert_called_with(
+        _credentials=credentials,
+        ham='eggs',
+        test_run_id=str(test_run.key.id()),
+        device_image_url='mtt:///android_ci/branch/target/build_id/image.zip',
+        device_image_branch='branch',
+        device_image_target='target',
+        device_image_build_id='build_id')
+    mock_log.assert_called()
     mock_execute.assert_called_with(hook_context)
 
   def testGetOAuth2Config_notFound(self):
@@ -165,7 +231,9 @@ class TestRunHookTest(absltest.TestCase):
 
   @mock.patch.object(test_run_hook.TfcTaskInterceptor, 'UpdateCommandTask')
   @mock.patch.object(test_run_hook, 'ExecuteHooks')
-  def testTfcTaskInterceptor(self, mock_execute_hooks, mock_update_task):
+  @mock.patch.object(test_run_hook, '_ApplyOptionsFromDeviceActions')
+  def testTfcTaskInterceptor(self, mock_apply_options, mock_execute_hooks,
+                             mock_update_task):
     """Tests that TFC tasks can be intercepted and passed to run hooks."""
     test_run = ndb_models.TestRun(request_id='request_id')
     test_run.put()
@@ -176,6 +244,8 @@ class TestRunHookTest(absltest.TestCase):
     plugin = test_run_hook.TfcTaskInterceptor()
     converted_task = plugin.ConvertCommandTask(expected_task)
     plugin.OnCommandTasksLease([unknown_task, expected_task])
+    mock_apply_options.assert_called_once_with(
+        test_run.key.id(), converted_task)
     mock_execute_hooks.assert_called_once_with(
         test_run.key.id(),
         ndb_models.TestRunPhase.BEFORE_ATTEMPT,

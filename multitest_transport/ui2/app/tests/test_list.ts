@@ -14,39 +14,35 @@
  * limitations under the License.
  */
 
-/**
- * @fileoverview A test list component,
- */
-
 import {LiveAnnouncer} from '@angular/cdk/a11y';
-import {Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MatTable, MatTableDataSource} from '@angular/material/table';
+import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
-import {Test} from '../services/mtt_models';
+import {ConfigSetInfo, getNamespaceFromId, Test} from '../services/mtt_models';
+import {MttObjectMapService} from '../services/mtt_object_map';
 import {Notifier} from '../services/notifier';
-
+import {buildApiErrorMessage} from '../shared/util';
 
 /** A component for displaying a list of test runs. */
 @Component({
   selector: 'test-list',
+  styleUrls: ['test_list.css'],
   templateUrl: './test_list.ng.html',
 })
 export class TestList implements OnInit, OnDestroy {
   @Input() columnsToDisplay = ['name', 'description', 'actions'];
 
   isLoading = false;
-  tests: Test[] = [];
-  dataSource = new MatTableDataSource<Test>(this.tests);
+  testsByNamespaceMap: {[namespace: string]: Test[]} = {};
+  configSetInfoMap: {[id: string]: ConfigSetInfo} = {};
 
-  @ViewChild(MatTable, {static: false}) table!: MatTable<{}>;
-
-  private readonly destroy = new ReplaySubject();
+  private readonly destroy = new ReplaySubject<void>();
 
   constructor(
       private readonly mttClient: MttClient,
+      private readonly mttObjectMapService: MttObjectMapService,
       private readonly notifier: Notifier,
       private readonly liveAnnouncer: LiveAnnouncer,
   ) {}
@@ -63,25 +59,48 @@ export class TestList implements OnInit, OnDestroy {
   load() {
     this.isLoading = true;
     this.liveAnnouncer.announce('Loading', 'polite');
-    setTimeout(() => {
-      this.mttClient.getTests()
-          .pipe(
-              takeUntil(this.destroy),
-              finalize(() => {
-                this.isLoading = false;
-              }),
-              )
-          .subscribe(
-              result => {
-                this.tests = result.tests || [];
-                this.dataSource.data = this.tests;
-                this.liveAnnouncer.announce('Tests loaded', 'assertive');
-              },
-              error => {
-                this.notifier.showError('Unable to get test suites.');
-              },
-          );
-    }, 100);
+
+    this.mttObjectMapService.getMttObjectMap(true /* forceUpdate */)
+        .pipe(
+            takeUntil(this.destroy),
+            finalize(() => {
+              this.isLoading = false;
+            }),
+            )
+        .subscribe(
+            objectMap => {
+              this.configSetInfoMap = objectMap.configSetInfoMap;
+              this.testsByNamespaceMap = {};
+
+              for (const test of Object.values(objectMap.testMap)) {
+                const namespace = getNamespaceFromId(test.id || '');
+                if (!(namespace in this.testsByNamespaceMap)) {
+                  this.testsByNamespaceMap[namespace] = [];
+                }
+                this.testsByNamespaceMap[namespace].push(test);
+              }
+
+              this.liveAnnouncer.announce('Tests loaded', 'assertive');
+            },
+            error => {
+              this.notifier.showError(
+                  'Unable to get test suites.', buildApiErrorMessage(error));
+            },
+        );
+  }
+
+  isNamespaceSectionEditable(namespace: string): boolean {
+    return !namespace || !(namespace in this.configSetInfoMap);
+  }
+
+  getNamespaceTitle(namespace: string): string {
+    if (!namespace) {
+      return 'Default/Custom Test Suites';
+    }
+    if (namespace in this.configSetInfoMap) {
+      return this.configSetInfoMap[namespace].name;
+    }
+    return `Unknown Config Set (${namespace})`;
   }
 
   deleteTest(test: Test) {
@@ -93,16 +112,46 @@ export class TestList implements OnInit, OnDestroy {
             return;
           }
           this.mttClient.deleteTest(test.id!).subscribe(
-              result => {
+              () => {
                 this.notifier.showMessage(`Test '${test.name}' deleted`);
-                // Remove the test from this.tests.
-                const index = this.tests.findIndex(o => o === test);
-                this.tests.splice(index, 1);
-                this.table.renderRows();
+                this.load();
               },
               error => {
-                this.notifier.showError(`Failed to delete ${test.name}`);
+                this.notifier.showError(
+                    `Failed to delete ${test.name}`,
+                    buildApiErrorMessage(error));
               });
+        });
+  }
+
+  confirmDeleteConfigSet(namespace: string) {
+    const configSetName = this.getNamespaceTitle(namespace);
+    // TODO: List affected tests/actions
+    this.notifier
+        .confirm(
+            `Do you really want to delete config set '${
+                configSetName}'? This will remove all test suites and actions` +
+                ` associated with the config set.`,
+            'Delete config set')
+        .subscribe(result => {
+          if (!result) {
+            return;
+          }
+          this.deleteConfigSet(namespace);
+        });
+  }
+
+  deleteConfigSet(namespace: string) {
+    const configSetName = this.getNamespaceTitle(namespace);
+    this.mttClient.deleteConfigSet(namespace).subscribe(
+        () => {
+          this.notifier.showMessage(`Config set '${configSetName}' deleted`);
+          this.load();
+        },
+        error => {
+          this.notifier.showError(
+              `Failed to delete config set ${configSetName}`,
+              buildApiErrorMessage(error));
         });
   }
 }

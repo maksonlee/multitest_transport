@@ -19,7 +19,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
-import {newMockDeviceActionList} from '../testing/test_util';
+import {newMockDeviceActionList} from '../testing/mtt_mocks';
 
 import {DeviceActionPicker} from './device_action_picker';
 import {DeviceActionsModule} from './device_actions_module';

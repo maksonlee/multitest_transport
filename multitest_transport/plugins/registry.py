@@ -40,7 +40,7 @@ class PluginRegistry(object):
 
   def ListPluginNames(self):
     """Lists all registered plugin names."""
-    return self._plugins_by_name.keys()
+    return list(self._plugins_by_name.keys())
 
   def GetMetaclass(self):
     """Generates a metaclass to automatically registers subclasses."""

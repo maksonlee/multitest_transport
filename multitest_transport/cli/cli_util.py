@@ -15,13 +15,17 @@
 """Utils for cli."""
 from __future__ import print_function
 import argparse
+import getpass
 import logging
 import logging.handlers
 import os
+import socket
 import zipfile
 
+import requests
 import six
 
+from google.cloud import logging as gcloud_logging
 from multitest_transport.cli import command_util
 from multitest_transport.cli import gcs_file_util
 from multitest_transport.cli import google_auth_util
@@ -29,13 +33,19 @@ from multitest_transport.cli import google_auth_util
 logger = logging.getLogger(__name__)
 _UNKNOWN = 'unknown'
 _VERSION_FILE = 'VERSION'
-_LOG_FORMAT = '%(asctime)s |%(levelname)s| %(module)s:%(lineno)s| %(message)s'
+_DEFAULT_LOCAL_LOG_PATH_FORMAT = '/tmp/%s/mtt_cli.log'
+_LOG_FORMAT = '%(asctime)s|%(levelname)s|%(module)s:%(lineno)s|%(message)s'
+_SIMPLE_LOG_FORMAT = '%(levelname)s|%(message)s'
+_STACKDRIVER_LOG_FORMAT = '%(module)s:%(lineno)s|%(message)s'
 _LOG_MAX_BYTES = 50 * 10 ** 6  # 50MB
 _LOG_BACKUPS = 5
-_SIMPLE_LOG_FORMAT = '%(levelname)s| %(message)s'
 _PACKAGE_LOGGER_NAME = 'multitest_transport.cli'
-_CLI_UPDATE_URL_TEMPLATE = 'gs://android-mtt.appspot.com/%s/%s'
+_CLI_UPDATE_URL_TEMPLATE = (
+    'https://storage.googleapis.com/android-mtt.appspot.com/%s/%s')
+_CLI_DOWNLOAD_CHUNK_SIZE_IN_BYTES = 1024 * 1024
 _MTT_PROJECT = 'android-mtt'
+_STACKDRIVER_CLOUD_PROJECT = 'tradefed-satellite-lab'
+_GCLOUD_LOGGING_WRITE_SCOPE = 'https://www.googleapis.com/auth/logging.write'
 
 
 def PrintVersion(args):
@@ -65,16 +75,21 @@ def GetVersion(cli_path):
 def CreateLoggingArgParser():
   """Create argparser for logging."""
   parser = argparse.ArgumentParser(add_help=False)
-  parser.add_argument('--logtostderr', action='store_true')
   parser.add_argument(
       '-v', dest='verbose', action='store_true',
       help='Log logs from multitest_transport.cli package at DEBUG level.')
   parser.add_argument(
       '-vv', dest='very_verbose', action='store_true',
       help='Log all logs from all package at DEBUG level.')
+  default_log_file = _DEFAULT_LOCAL_LOG_PATH_FORMAT % getpass.getuser()
   parser.add_argument(
-      '--log_file', dest='log_file', type=str, default=None,
+      '--log_file', dest='log_file', type=str, default=default_log_file,
       help='Path to log file.')
+  parser.add_argument(
+      '--cli_stackdriver_logging_key_path',
+      dest='cli_stackdriver_logging_key_path',
+      type=str,
+      help='Path to service account key file to write cloud logging.')
   return parser
 
 
@@ -98,27 +113,44 @@ def CreateLogger(args):
       for handler in new_logger.root.handlers[:] or []:
         new_logger.root.removeHandler(handler)
       new_logger.root.addHandler(logging.NullHandler())
+  # Remove existing handler, we will add customized handlers.
+  for handler in new_logger.handlers[:] or []:
+    new_logger.removeHandler(handler)
 
   logger_level = (logging.DEBUG if args.verbose or args.very_verbose
                   else logging.INFO)
+  new_logger.setLevel(logger_level)
   log_format = (_LOG_FORMAT if args.verbose or args.very_verbose
                 else _SIMPLE_LOG_FORMAT)
-  new_logger.setLevel(logger_level)
 
-  if args.logtostderr and not new_logger.handlers:
-    new_logger.addHandler(logging.StreamHandler())
   if args.log_file:
-    new_logger.addHandler(
-        logging.handlers.RotatingFileHandler(
-            filename=args.log_file,
-            maxBytes=_LOG_MAX_BYTES,
-            backupCount=_LOG_BACKUPS))
-  if not new_logger.handlers:
-    new_logger.addHandler(logging.StreamHandler())
-
-  log_formatter = logging.Formatter(log_format)
-  for handler in new_logger.handlers:
+    log_dir = os.path.dirname(args.log_file)
+    os.makedirs(log_dir, exist_ok=True)
+    handler = logging.handlers.RotatingFileHandler(
+        filename=args.log_file,
+        maxBytes=_LOG_MAX_BYTES,
+        backupCount=_LOG_BACKUPS)
+    log_formatter = logging.Formatter(log_format)
     handler.setFormatter(log_formatter)
+    new_logger.addHandler(handler)
+
+  if args.cli_stackdriver_logging_key_path:
+    cloud_logging_client = gcloud_logging.client.Client(
+        project=_STACKDRIVER_CLOUD_PROJECT,
+        credentials=google_auth_util.CreateCredentialFromServiceAccount(
+            args.cli_stackdriver_logging_key_path,
+            scopes=[_GCLOUD_LOGGING_WRITE_SCOPE]))
+    handler = cloud_logging_client.get_default_handler()
+    cloud_log_format = socket.getfqdn() + '|' + _STACKDRIVER_LOG_FORMAT
+    cloud_log_formatter = logging.Formatter(cloud_log_format)
+    handler.setFormatter(cloud_log_formatter)
+    new_logger.addHandler(handler)
+
+  handler = logging.StreamHandler()
+  log_formatter = logging.Formatter(log_format)
+  handler.setFormatter(log_formatter)
+  new_logger.addHandler(handler)
+
   return new_logger
 
 
@@ -153,6 +185,13 @@ def CreateSSHArgParser():
   parser.add_argument(
       '--sudo_user', dest='sudo_user',
       help='Sudo user to use on the host.')
+  parser.add_argument(
+      '--use_native_ssh', default=False,
+      action='store_true', dest='use_native_ssh',
+      help='Use native ssh instead of fabric.')
+  parser.add_argument(
+      '--ssh_arg', action='append',
+      help='ssh args passed to native ssh and rsync.')
   return parser
 
 
@@ -183,17 +222,70 @@ def CheckAndUpdateTool(local_path, cli_update_url=None):
                  'Using the default: %s.', cli_update_url)
   cli_update_url = cli_update_url.strip()
   remote_filename = os.path.basename(cli_update_url)
-  if not cli_update_url.startswith('gs://'):
-    logger.warning('cli_update_url only Support Google Cloud Storage path.')
-    return None
   if local_filename != remote_filename:
     logger.debug(
         '%s is not %s, skip updating.', local_filename, remote_filename)
     return None
+  if not os.access(os.path.dirname(local_path), os.W_OK):
+    logger.warning('No write access to %s, skip updating.',
+                   os.path.dirname(local_path))
+    return None
+
+  if cli_update_url.startswith('gs://'):
+    return _DownloadToolFromGCS(cli_update_url, local_path)
+  return _DownloadToolFromHttp(cli_update_url, local_path)
+
+
+def _DownloadToolFromHttp(url, local_path):
+  """Update local cli to remote cli with http."""
+  try:
+    r = requests.head(url)
+  except requests.ConnectionError as e:
+    logger.warning('Can not access %s, skip updating: %s',
+                   url, str(e))
+    return None
+  # x-goog-hash is a head for GCS links which includes md5 hash.
+  hashes = r.headers.get('x-goog-hash')
+  if not hashes or 'md5=' not in hashes:
+    logger.warning(
+        'No md5 hash from %s, skip updating.', url)
+    return None
+  remote_md5hash = None
+  for hash_str in hashes.split(','):
+    hash_str = hash_str.strip()
+    hash_type, hash_value = hash_str.split('=', 1)
+    if hash_type == 'md5':
+      remote_md5hash = six.ensure_text(hash_value)
+  local_md5hash = gcs_file_util.CalculateMd5Hash(local_path)
+  if remote_md5hash == local_md5hash:
+    logger.debug('Local is the same as remote, skip updating.')
+    return None
+  logger.info(
+      'There is a newer version %s on %s, updating.',
+      os.path.basename(local_path), url)
+  os.rename(
+      local_path,
+      gcs_file_util.CreateBackupFilePath(local_path))
+  r = requests.get(url, stream=True)
+  _WriteResponseToFile(r, local_path)
+  os.chmod(local_path, 0o770)
+  return local_path
+
+
+def _WriteResponseToFile(response, local_path):
+  """Write http response to file, used for test."""
+  with open(local_path, 'wb') as fd:
+    for chunk in response.iter_content(
+        chunk_size=_CLI_DOWNLOAD_CHUNK_SIZE_IN_BYTES):
+      fd.write(chunk)
+
+
+def _DownloadToolFromGCS(gcs_url, local_path):
+  """Update local cli to remote cli with gcs."""
   try:
     cred = google_auth_util.GetGCloudCredential(command_util.CommandContext())
     gcs_client = gcs_file_util.CreateGCSClient(_MTT_PROJECT, cred)
-    blob = gcs_file_util.GetGCSBlob(gcs_client, cli_update_url)
+    blob = gcs_file_util.GetGCSBlob(gcs_client, gcs_url)
   except gcs_file_util.GCSError as e:
     logger.warning(e)
     return None
@@ -203,13 +295,10 @@ def CheckAndUpdateTool(local_path, cli_update_url=None):
     return None
   logger.info(
       'There is a newer version %s on %s, updating.',
-      local_filename, cli_update_url)
-  try:
-    os.rename(
-        local_path,
-        gcs_file_util.CreateBackupFilePath(local_path))
-    blob.download_to_filename(local_path)
-    os.chmod(local_path, 0o770)
-    return local_path
-  except OSError as e:
-    logger.warning('No write access to %s: %s.', os.path.dirname(local_path), e)
+      os.path.basename(local_path), gcs_url)
+  os.rename(
+      local_path,
+      gcs_file_util.CreateBackupFilePath(local_path))
+  blob.download_to_filename(local_path)
+  os.chmod(local_path, 0o770)
+  return local_path

@@ -1,4 +1,32 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
 <Result>
   <Summary pass="12" failed="34" modules_done="56" modules_total="78" />
+
+  <Module name="SimpleModule" abi="abi">
+    <TestCase name="Passing">
+      <Test result="pass" name="test" />
+    </TestCase>
+  </Module>
+
+  <Module name="ComplexModule" abi="abi">
+    <TestCase name="Failing">
+      <Test result="fail" name="test">
+        <Failure message="Failure message">
+          <StackTrace>Failure stacktrace</StackTrace>
+        </Failure>
+      </Test>
+    </TestCase>
+    <TestCase name="Skipped">
+      <Test result="ignored" name="ignored"/>
+      <Test result="assumption_failure" name="assumption">
+        <Failure message="Assumption failure message">
+          <StackTrace>Assumption failure stacktrace</StackTrace>
+        </Failure>
+      </Test>
+    </TestCase>
+  </Module>
+
+  <Module name="IncompleteModule" abi="abi">
+    <Reason message="Incomplete module message"/>
+  </Module>
 </Result>

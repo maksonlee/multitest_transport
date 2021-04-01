@@ -16,12 +16,22 @@
 import logging
 
 import google.auth.transport.requests
+from google.cloud import secretmanager
 import google.oauth2.credentials
 import google.oauth2.service_account
+
 
 logger = logging.getLogger(__name__)
 
 GCS_READ_SCOPE = 'https://www.googleapis.com/auth/devstorage.read_only'
+ANDROID_TEST_API_SCOPE = 'https://www.googleapis.com/auth/android-test.internal'
+
+LATEST_SECRET_VERSION = 'latest'
+
+
+class AuthError(Exception):
+  """Authentication error."""
+  pass
 
 
 def CreateCredentialFromServiceAccount(
@@ -72,3 +82,22 @@ def GetGCloudCredential(command_context, scopes=None):
   if credential and scopes:
     credential = credential.with_scopes_if_required(credential, scopes)
   return credential
+
+
+def GetSecret(
+    project_id, secret_id, credentials, version_id=LATEST_SECRET_VERSION):
+  """Get secret from Google Cloud Secret Manager.
+
+  Args:
+    project_id: Google Cloud project id.
+    secret_id: secret_id.
+    credentials: credentials to access secret manager.
+    version_id: version of the secret.
+  Returns:
+    a bytearray represent the secret.
+  """
+  logger.debug('Get secret %s(%s) from %s.', secret_id, version_id, project_id)
+  client = secretmanager.SecretManagerServiceClient(credentials=credentials)
+  name = client.secret_version_path(project_id, secret_id, version_id)
+  response = client.access_secret_version(name)
+  return response.payload.data

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """Tests for test_run_action_api."""
-import multitest_transport.google_import_fixer  
+import tradefed_cluster.util.google_import_fixer  
 from absl.testing import absltest
 import mock
 from protorpc import protojson
@@ -174,7 +174,7 @@ class TestRunActionApiTest(api_test_util.TestCase):
   @mock.patch.object(oauth2_util, 'GetOAuth2Flow')
   def testAuthorize(self, mock_get_flow):
     """Tests that an action can be authorized."""
-    action_id = str(self.test_run_actions[1].key.id())  # unauthorized
+    action_id = self.test_run_actions[1].key.id()  # unauthorized
     # Mock getting credentials from OAuth2 utilities
     oauth2_flow = mock.MagicMock(credentials=authorized_user.Credentials(None))
     mock_get_flow.return_value = oauth2_flow
@@ -183,7 +183,8 @@ class TestRunActionApiTest(api_test_util.TestCase):
         '/_ah/api/mtt/v1/test_run_actions/%s/auth?redirect_uri=%s&code=%s'
         % (action_id, 'redirect_uri', 'code'))
     oauth2_flow.fetch_token.assert_called_once_with(code='code')
-    self.assertIsNotNone(self.test_run_actions[1].credentials)
+    action = ndb_models.TestRunAction.get_by_id(action_id)
+    self.assertIsNotNone(action.credentials)
 
   def testAuthorize_notFound(self):
     """Tests that an error occurs when an action is not found."""
@@ -196,13 +197,14 @@ class TestRunActionApiTest(api_test_util.TestCase):
   @mock.patch.object(service_account.Credentials, 'from_service_account_info')
   def testAuthorizeWithServiceAccount(self, mock_parse_key):
     """Tests that an action can be authorized with a service account."""
-    action_id = str(self.test_run_actions[1].key.id())  # unauthorized
+    action_id = self.test_run_actions[1].key.id()  # unauthorized
     # Mock parsing service account JSON key
     mock_parse_key.return_value = service_account.Credentials(None, None, None)
     # Verify that credentials were obtained and stored
     self.app.put_json(
         '/_ah/api/mtt/v1/test_run_actions/%s/auth' % action_id, {'value': '{}'})
-    self.assertIsNotNone(self.test_run_actions[1].credentials)
+    action = ndb_models.TestRunAction.get_by_id(action_id)
+    self.assertIsNotNone(action.credentials)
 
   def testAuthorizeWithServiceAccount_notFound(self):
     """Tests that an error occurs when an action is not found."""
@@ -213,10 +215,11 @@ class TestRunActionApiTest(api_test_util.TestCase):
 
   def testUnauthorize(self):
     """Tests that an action can be unauthorized."""
-    action_id = str(self.test_run_actions[2].key.id())  # authorized
+    action_id = self.test_run_actions[2].key.id()  # authorized
     # Verify that credentials were removed
     self.app.delete('/_ah/api/mtt/v1/test_run_actions/%s/auth' % action_id)
-    self.assertIsNone(self.test_run_actions[2].credentials)
+    action = ndb_models.TestRunAction.get_by_id(action_id)
+    self.assertIsNone(action.credentials)
 
   def testUnauthorize_notFound(self):
     """Tests that an error occurs when an action is not found."""

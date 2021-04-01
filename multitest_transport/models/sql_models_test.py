@@ -1,0 +1,123 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Unit tests for sql_models."""
+import uuid
+
+from absl.testing import absltest
+from absl.testing import parameterized
+import sqlalchemy as sa
+
+from multitest_transport.models import sql_models
+from multitest_transport.util import xts_result
+
+
+class SqlModelsTest(parameterized.TestCase):
+
+  def setUp(self):
+    super(SqlModelsTest, self).setUp()
+    sql_models.db.uri = 'sqlite:///:memory:'
+    sql_models.db.CreateTables()
+    # Track executed statements
+    self.statements = []
+    sa.event.listen(
+        sql_models.db.engine, 'before_cursor_execute',
+        lambda *args: self.statements.append(args[2]))
+
+  def tearDown(self):
+    sql_models.db.DropTables()
+    super(SqlModelsTest, self).tearDown()
+
+  def testEntities(self):
+    """Tests that entities can be inserted and queried."""
+    with sql_models.db.Session() as session:
+      # Insert a module and a nested test case
+      module_id = str(uuid.uuid4())
+      session.add(sql_models.TestModuleResult(
+          id=module_id,
+          attempt_id='attempt',
+          name='module',
+          test_cases=[
+              sql_models.TestCaseResult(
+                  name='test_case',
+                  status=xts_result.TestStatus.PASS,
+              ),
+          ],
+          passed_tests=1,
+          failed_tests=0,
+          total_tests=1,
+      ))
+
+    with sql_models.db.Session() as session:
+      # One module and test case inserted
+      self.assertEqual(session.query(sql_models.TestModuleResult).count(), 1)
+      self.assertEqual(session.query(sql_models.TestCaseResult).count(), 1)
+      # Can fetch module by ID
+      module = session.query(sql_models.TestModuleResult).get(module_id)
+      self.assertIsNotNone(module)
+      self.assertEqual(module.name, 'module')
+      self.assertLen(module.test_cases, 1)
+      # Can fetch test cases by relation
+      test_cases = session.query(
+          sql_models.TestCaseResult).with_parent(module).all()
+      self.assertEqual(test_cases, module.test_cases)
+      self.assertEqual(test_cases[0].module, module)
+      self.assertEqual(test_cases[0].name, 'test_case')
+
+  @parameterized.parameters((100, 2), (3, 4), (2, 6))
+  def testInsertTestResults(self, batch_size, num_statements):
+    """Tests that *TS test results can be inserted efficiently."""
+    sql_models.InsertTestResults('attempt', [
+        xts_result.Module(
+            name='module_1',
+            test_cases=[
+                xts_result.TestCase(
+                    name='test_1', status=xts_result.TestStatus.PASS),
+                xts_result.TestCase(
+                    name='test_2', status=xts_result.TestStatus.PASS),
+            ],
+        ),
+        xts_result.Module(
+            name='module_2',
+            test_cases=[
+                xts_result.TestCase(
+                    name='fail', status=xts_result.TestStatus.FAIL),
+                xts_result.TestCase(
+                    name='ignored', status=xts_result.TestStatus.IGNORED),
+                xts_result.TestCase(
+                    name='assumption',
+                    status=xts_result.TestStatus.ASSUMPTION_FAILURE),
+            ],
+        )
+    ], batch_size=batch_size)
+
+    with sql_models.db.Session() as session:
+      # At most 3 statements per batch (1-2 for modules and 1 for test cases)
+      self.assertLen(self.statements, num_statements)
+      # All entities inserted
+      self.assertEqual(session.query(sql_models.TestModuleResult).count(), 2)
+      self.assertEqual(session.query(sql_models.TestCaseResult).count(), 5)
+      # Modules are associated with test cases and track pass/fail counts
+      modules = session.query(sql_models.TestModuleResult).order_by(
+          sql_models.TestModuleResult.name).all()
+      self.assertLen(modules[0].test_cases, 2)
+      self.assertEqual(modules[0].passed_tests, 2)
+      self.assertEqual(modules[0].failed_tests, 0)
+      self.assertLen(modules[1].test_cases, 3)
+      self.assertEqual(modules[1].passed_tests, 0)
+      self.assertEqual(modules[1].failed_tests, 1)
+
+
+if __name__ == '__main__':
+  absltest.main()

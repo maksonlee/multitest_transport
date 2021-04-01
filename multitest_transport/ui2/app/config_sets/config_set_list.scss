@@ -23,12 +23,8 @@ input[type='file'] {
 }
 
 .header-section {
+  display: flex;
   margin: 20px;
-}
-
-.import-actions {
-  display: inline-block;
-  float: right;
 }
 
 .mat-button, .mat-flat-button {

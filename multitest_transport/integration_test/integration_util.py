@@ -13,7 +13,10 @@
 # limitations under the License.
 
 """MTT integration tests utilities."""
+
+import logging
 import os
+import socket
 import tarfile
 import tempfile
 import time
@@ -29,6 +32,13 @@ import retry
 FLAGS = flags.FLAGS
 flags.DEFINE_string('docker_image', None, 'MTT docker image to use.')
 flags.mark_flag_as_required('docker_image')
+flags.DEFINE_multi_string('env', [],
+                          'Environment variables in the format of NAME=VALUE.')
+flags.DEFINE_enum(
+    'server_log_level',
+    'info',
+    ['debug', 'info', 'warn', 'error', 'critical'],
+    'Server log level')
 
 # Retry parameters for API calls (retry after 2, 4, and 8 seconds)
 RETRY_PARAMS = {'tries': 4, 'delay': 2, 'backoff': 2}
@@ -40,27 +50,50 @@ CLUSTER = 'default'
 class MttContainer(object):
   """Wrapper around an MTT docker container."""
 
-  def __init__(self, image=None):
+  def __init__(self, image=None, max_local_virtual_devices=0):
     self._image = image or FLAGS.docker_image
+    self._max_local_virtual_devices = max_local_virtual_devices
 
   def __enter__(self):
     """Start the MTT docker container."""
-    self._port = portpicker.pick_unused_port()
+    self._control_server_port = portpicker.pick_unused_port()
+    self._file_server_port = portpicker.pick_unused_port()
+    kwargs = {
+        'stdin_open': True, 'tty': True,  # interactive
+        'hostname': socket.gethostname(),
+        'network_mode': 'bridge',
+        'ports': {'8000/tcp': self._control_server_port,
+                  '8005/tcp': self._file_server_port},
+        'environment': {
+            'MTT_SERVER_LOG_LEVEL': FLAGS.server_log_level,
+        },
+    }
+    if self._max_local_virtual_devices:
+      kwargs['environment']['MAX_LOCAL_VIRTUAL_DEVICES'] = str(
+          self._max_local_virtual_devices)
+      kwargs['devices'] = ['/dev/kvm', '/dev/vhost-vsock', '/dev/net/tun',
+                           '/dev/vhost-net']
+      kwargs['cap_add'] = ['net_admin']
+    for env in FLAGS.env:
+      pair = env.split('=', 1)
+      kwargs['environment'][pair[0]] = (pair[1] if len(pair) > 1 else '')
+
     # Create and start the docker container
     docker_client = docker.from_env()
-    self._delegate = docker_client.containers.create(
-        self._image,
-        stdin_open=True, tty=True,  # interactive
-        network_mode='host',  # share host network
-        environment={'MTT_MASTER_PORT': self._port})
+    self._delegate = docker_client.containers.create(self._image, **kwargs)
     self._delegate.start()
     # Determine the base URLs
-    self.base_url = 'http://localhost:%d' % self._port
-    self.file_server_url = 'http://localhost:%d' % (self._port + 5)
+    self.base_url = 'http://localhost:%d' % self._control_server_port
+    self.file_server_url = 'http://localhost:%d' % self._file_server_port
     self.mtt_api_url = '%s/_ah/api/mtt/v1' % self.base_url
     self.tfc_api_url = '%s/_ah/api/tradefed_cluster/v1' % self.base_url
     # Wait for application start
-    self._WaitForServer()
+    try:
+      self._WaitForServer()
+    except:
+      # If a server fails to start, dump server logs.
+      self.DumpLogs()
+      raise
     time.sleep(5)  # Additional delay for initialization to complete
     return self
 
@@ -89,10 +122,12 @@ class MttContainer(object):
       raise RuntimeError(output[1])
     return output[0].decode() if output[0] else None
 
-  def DumpServerLogs(self):
+  def DumpLogs(self):
     """Output the server logs for debugging."""
+    output = self._delegate.logs()
+    logging.info('Logs: %s', output.decode('utf8'))
     _, output = self._delegate.exec_run(['cat', '/data/log/server/current'])
-    print('\nServer logs:\n', output.decode())
+    logging.info('Server logs: %s', output.decode('utf8'))
 
   def CopyFile(self, src_path, dest_path):
     """Copy a file into the container."""
@@ -105,9 +140,8 @@ class MttContainer(object):
       return self._delegate.put_archive(path=dest_dir, data=archive)
 
   def UploadFile(self, src_path, dest_path):
-    """Upload a file to the container's local file store."""
-    url = '%s/_ah/gcs/app_default_bucket/data/local_file_store/%s' % (
-        self.base_url, dest_path)
+    """Upload a file to the container's local file server."""
+    url = '%s/fs_proxy/file/%s' % (self.base_url, dest_path)
     with open(src_path, 'rb') as f:
       content = f.read()
       content_range = 'bytes 0-%d/%d' % (len(content) - 1, len(content))
@@ -116,18 +150,18 @@ class MttContainer(object):
   # MTT API
 
   @retry.retry(**RETRY_PARAMS)
-  def ScheduleTestRun(self, run_target, test_resource_pipes=None, **kwargs):
+  def ScheduleTestRun(self, device_serial, test_resource_objs=None, **kwargs):
     """Schedule a new test run using the MTT API."""
     test_run_config = {
         'test_id': 'noop',
-        'run_target': run_target,
         'cluster': CLUSTER,
+        'device_specs': ['device_serial:%s' % device_serial],
         'max_retry_on_test_failures': 1,
+        'test_resource_objs': test_resource_objs,
     }
     test_run_config.update(kwargs)
     request = {
         'test_run_config': test_run_config,
-        'test_resource_pipes': test_resource_pipes
     }
     response = requests.post('%s/test_runs' % self.mtt_api_url, json=request)
     response.raise_for_status()
@@ -214,11 +248,11 @@ class MttContainer(object):
     return event
 
 
-def DeviceInfo(serial, run_target=None, state='Available'):
+def DeviceInfo(serial, state='Available'):
   """Create device information."""
   return {
       'device_serial': serial,
-      'run_target': run_target or serial,
+      'run_target': '*',
       'state': state,
   }
 
@@ -240,16 +274,25 @@ class DockerContainerTest(absltest.TestCase):
     cls.container = cls.GetContainer()
     cls.container.Start()
 
+  def setUp(self):
+    """Track whether a failure has occurred."""
+    super(DockerContainerTest, self).setUp()
+    if hasattr(self, '_tear_down') and not self._tear_down:
+      # If tearDown doesn't get called in a case of test errors.
+      self.__class__.has_failure = True
+    self._tear_down = False
+
   def tearDown(self):
     """Track whether a failure has occurred."""
     super(DockerContainerTest, self).tearDown()
     if not self._ran_and_passed():
       self.__class__.has_failure = True
+    self._tear_down = True
 
   @classmethod
   def tearDownClass(cls):
     """Stop the container and dump server logs for debugging if necessary."""
     super(DockerContainerTest, cls).tearDownClass()
     if cls.has_failure:
-      cls.container.DumpServerLogs()
+      cls.container.DumpLogs()
     cls.container.Stop()

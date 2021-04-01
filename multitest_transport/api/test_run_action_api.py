@@ -13,14 +13,15 @@
 # limitations under the License.
 
 """Test run action APIs."""
-import multitest_transport.google_import_fixer  
+# Non-standard docstrings are used to generate the API documentation.
+import tradefed_cluster.util.google_import_fixer  
 import json
+
+import endpoints
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
 from google.oauth2 import service_account
-
-from google3.third_party.apphosting.python.endpoints.v1_1 import endpoints
 
 from multitest_transport.api import base
 from multitest_transport.models import messages as mtt_messages
@@ -56,72 +57,84 @@ class TestRunActionApi(remote.Service):
     return mtt_messages.Convert(
         msg, ndb_models.TestRunAction, from_cls=mtt_messages.TestRunAction)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       message_types.VoidMessage,
       mtt_messages.TestRunActionList,
       path='test_run_actions', http_method='GET', name='list')
   def List(self, _):
-    """List test run actions."""
+    """Lists test run actions."""
     actions = [
         self._ConvertToMessage(action)
         for action in ndb_models.TestRunAction.query().fetch()
     ]
     return mtt_messages.TestRunActionList(actions=actions)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           action_id=messages.StringField(1, required=True)),
       mtt_messages.TestRunAction,
       path='test_run_actions/{action_id}', http_method='GET', name='get')
   def Get(self, request):
-    """Fetches a test run action."""
+    """Fetches a test run action.
+
+    Parameters:
+      action_id: Test run action ID
+    """
     action = self._GetTestRunAction(request.action_id)
     return self._ConvertToMessage(action)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(mtt_messages.TestRunAction),
       mtt_messages.TestRunAction,
       path='test_run_actions', http_method='POST', name='create')
   def Create(self, request):
-    """Create a new test run action."""
+    """Creates a new test run action.
+
+    Body:
+      Test run action data
+    """
     action = self._ConvertFromMessage(request)
     action.key = None
     action.put()
     return self._ConvertToMessage(action)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           mtt_messages.TestRunAction,
           action_id=messages.StringField(1, required=True)),
       mtt_messages.TestRunAction,
       path='test_run_actions/{action_id}', http_method='PUT', name='update')
   def Update(self, request):
-    """Updates an existing test run action."""
+    """Updates an existing test run action.
+
+    Body:
+      Test run action data
+    Parameters:
+      action_id: Test run action ID
+    """
     existing_action = self._GetTestRunAction(request.action_id)
     updated_action = self._ConvertFromMessage(request)
     updated_action.key = existing_action.key
     updated_action.put()
     return self._ConvertToMessage(updated_action)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           action_id=messages.StringField(1, required=True)),
       message_types.VoidMessage,
       path='test_run_actions/{action_id}', http_method='DELETE', name='delete')
   def Delete(self, request):
-    """Deletes a test run action if it exists."""
+    """Deletes a test run action if it exists.
+
+    Parameters:
+      action_id: Test run action ID
+    """
     self._GetTestRunActionKey(request.action_id).delete()
     return message_types.VoidMessage()
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           action_id=messages.StringField(1, required=True),
@@ -131,7 +144,12 @@ class TestRunActionApi(remote.Service):
       http_method='GET',
       name='get_auth_info')
   def GetAuthorizationInfo(self, request):
-    """Determine a test run action's authorization information."""
+    """Determine a test run action's authorization information.
+
+    Parameters:
+      action_id: Test run action ID
+      redirect_uri: URL to redirect to after authorization
+    """
     action = self._GetTestRunAction(request.action_id)
     redirect_uri, is_manual = oauth2_util.GetRedirectUri(request.redirect_uri)
     oauth2_config = test_run_hook.GetOAuth2Config(action)
@@ -139,8 +157,7 @@ class TestRunActionApi(remote.Service):
     auth_url, _ = flow.authorization_url()
     return mtt_messages.AuthorizationInfo(url=auth_url, is_manual=is_manual)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           action_id=messages.StringField(1, required=True),
@@ -151,7 +168,13 @@ class TestRunActionApi(remote.Service):
       http_method='POST',
       name='authorize')
   def Authorize(self, request):
-    """Authorize a test run action with an authorization code."""
+    """Authorize a test run action with an authorization code.
+
+    Parameters:
+      action_id: Test run action ID
+      redirect_uri: URL to redirect to after authorization
+      code: Authorization code
+    """
     action = self._GetTestRunAction(request.action_id)
     redirect_uri, _ = oauth2_util.GetRedirectUri(request.redirect_uri)
     oauth2_config = test_run_hook.GetOAuth2Config(action)
@@ -161,8 +184,7 @@ class TestRunActionApi(remote.Service):
     action.put()
     return message_types.VoidMessage()
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           mtt_messages.SimpleMessage,
           action_id=messages.StringField(1, required=True)),
@@ -171,7 +193,13 @@ class TestRunActionApi(remote.Service):
       http_method='PUT',
       name='authorize_with_service_account')
   def AuthorizeWithServiceAccount(self, request):
-    """Authorize a test run action with an service account JSON key."""
+    """Authorize a test run action with a service account key.
+
+    Body:
+      Service account JSON key file data
+    Parameters:
+      action_id: Test run action ID
+    """
     action = self._GetTestRunAction(request.action_id)
     data = json.loads(request.value)
     credentials = service_account.Credentials.from_service_account_info(data)
@@ -179,8 +207,7 @@ class TestRunActionApi(remote.Service):
     action.put()
     return message_types.VoidMessage()
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           action_id=messages.StringField(1, required=True)),
@@ -189,7 +216,11 @@ class TestRunActionApi(remote.Service):
       http_method='DELETE',
       name='unauthorize')
   def Unauthorize(self, request):
-    """Revoke a test run action's authorization."""
+    """Revoke a test run action's authorization.
+
+    Parameters:
+      action_id: Test run action ID
+    """
     action = self._GetTestRunAction(request.action_id)
     action.credentials = None
     action.put()

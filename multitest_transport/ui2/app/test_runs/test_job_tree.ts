@@ -19,7 +19,7 @@ import * as moment from 'moment';
 
 import {FileService} from '../services/file_service';
 import {TestRun} from '../services/mtt_models';
-import {Command, CommandAttempt, Request} from '../services/tfc_models';
+import {Command, CommandAttempt, isFinalCommandState, Request} from '../services/tfc_models';
 import {TreeNode} from '../shared/tree_table';
 import {assertRequiredInput, millisToDuration} from '../shared/util';
 
@@ -150,13 +150,19 @@ export class TestJobTree implements OnInit, OnChanges {
   createSummaryNode(attempt: CommandAttempt): TreeNode {
     // TODO: Add material components and styling
     const fileLink = this.getFileLink(attempt);
-    let content = `<a href='${fileLink}' target='_blank'>View Output Files</a>`;
+    const outputText = isFinalCommandState(attempt.state) ?
+        'View Output Files' :
+        'View Working Directory';
+    let content = `<a href='${fileLink}' target='_blank'>${outputText}</a>`;
 
     if (attempt.summary) {
       content += '<br><br>Summary: ' + attempt.summary;
     }
-    if (attempt.error) {
-      content += '<br><br>Error: ' + attempt.error;
+    if (attempt.error || attempt.subprocess_command_error) {
+      const message = attempt.subprocess_command_error ?
+          'Test failed to run' : 'Tool failed to start';
+      const extraInfo = attempt.subprocess_command_error || attempt.error;
+      content += `<br><br>${message}: ${extraInfo}`;
     }
 
     return {content: [content], children: [], level: 2};

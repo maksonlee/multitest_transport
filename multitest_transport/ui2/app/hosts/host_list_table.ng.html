@@ -1,0 +1,220 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+<div class="host-list-container" [class.loading-mask]="isLoading">
+  <mat-table
+    #table
+    [dataSource]="tableDataSource"
+    matSort
+    aria-label="Host list"
+    (matSortChange)="changeSort($event)"
+    tableRowsSelectManager
+    (selectionChange)="selectionChange.emit($event)"
+  >
+    <mat-header-row
+      *matHeaderRowDef="displayedColumns; sticky: true"
+      [style.top.px]="headerRowTop"
+    ></mat-header-row>
+    <mat-row
+      *matRowDef="let row; columns: displayedColumns; let rowIndex = index"
+      tableRowSelect
+      [rowIdFieldValue]="row.hostname"
+      [rowIndex]="rowIndex"
+    >
+    </mat-row>
+
+    <!-- Checkbox Column -->
+    <ng-container matColumnDef="select">
+      <mat-header-cell *matHeaderCellDef fxFlex="60px">
+        <mat-checkbox
+          aria-label="Select all hosts"
+          tableRowsSelectCheckbox
+          #tableRowsSelectCheckbox="tableRowsSelectCheckbox"
+          [checked]="tableRowsSelectCheckbox.isAllRowsSelected"
+          [indeterminate]="tableRowsSelectCheckbox.isPartialRowsSelected"
+        >
+        </mat-checkbox>
+      </mat-header-cell>
+      <mat-cell *matCellDef="let row; let rowIndex = index" fxFlex="60px">
+        <mat-checkbox
+          [aria-label]="'Host' + row.hostname"
+          tableRowSelectCheckbox
+          #tableRowSelectCheckbox="tableRowSelectCheckbox"
+          [rowIdFieldValue]="row.hostname"
+          [rowIndex]="rowIndex"
+          [checked]="tableRowSelectCheckbox.isSelected"
+        >
+        </mat-checkbox>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Host Name -->
+    <ng-container matColumnDef="hostname">
+      <mat-header-cell *matHeaderCellDef fxFlex="260px" mat-sort-header>
+        Host Name
+      </mat-header-cell>
+      <mat-cell *matCellDef="let host" [matTooltip]="host.hostname" fxFlex="260px">
+        <div class="host-name">
+          <a (click)="openHostDetails(host.hostname, $event)">
+            {{ host.hostname }}
+          </a>
+        </div>
+        <a
+          mat-icon-button
+          [href]="getHostDetailsUrl(host.hostname)"
+          (click)="storeHostNamesInLocalStorage()"
+          target="_blank"
+        >
+          <mat-icon>launch</mat-icon>
+        </a>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Host Group -->
+    <ng-container matColumnDef="host_group">
+      <mat-header-cell *matHeaderCellDef fxFlex="300px" mat-sort-header>
+        Host Group
+      </mat-header-cell>
+      <mat-cell *matCellDef="let host" [matTooltip]="host.host_group" fxFlex="300px">
+        <div class="host-group">{{ host.host_group }}</div>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Host Overall State -->
+    <ng-container matColumnDef="hostOverallState">
+      <mat-header-cell *matHeaderCellDef fxFlex="70px" mat-sort-header class="host-overall-state">
+        Overall
+      </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="70px">
+        <div class="offline-overall-host">
+          <mat-icon [className]="'mat-icon material-icons ' + getHostOverallAlertIcon(host)">
+            {{ getHostOverallAlertIcon(host) }}
+          </mat-icon>
+        </div>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Host State -->
+    <ng-container matColumnDef="host_state">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px" mat-sort-header>
+        Host State
+      </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="150px">
+        <status-button class="host" [state]="host.host_state"></status-button>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Run Targets -->
+    <ng-container matColumnDef="run_target">
+      <mat-header-cell *matHeaderCellDef fxFlex="220px"> Run Targets </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="220px">
+        <overflow-list [data]="getRunTargets(host)" [overflowListType]="OverflowListType.BUTTON">
+        </overflow-list>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Offline Devices -->
+    <ng-container matColumnDef="offline_devices">
+      <mat-header-cell *matHeaderCellDef fxFlex="100px"> Offline Devices </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="100px">
+        <p class="offline-devices-count">
+          <!-- TODO:Replace the round yellow error icon with a square warning one. -->
+          <mat-icon [className]="'mat-icon material-icons ' + getOfflineDevicesAlertIcon(host)">
+            {{ getOfflineDevicesAlertIcon(host) }}
+          </mat-icon>
+          {{ host.extraInfo?.offline_devices }} of {{ host.extraInfo?.total_devices }}
+        </p>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Last Check-in -->
+    <ng-container matColumnDef="last_checkin">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px" mat-sort-header>
+        Last Check-in
+      </mat-header-cell>
+      <mat-cell
+        *matCellDef="let host"
+        [matTooltip]="host.timestamp | utc | date: 'MM/dd/yyyy h:mma'"
+        fxFlex="150px"
+      >
+        {{ host.timestamp | utc | fromNow }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Last Recovery Time -->
+    <ng-container matColumnDef="lastRecoveryTime">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px" mat-sort-header>
+        Last Recovery
+      </mat-header-cell>
+      <mat-cell
+        *matCellDef="let host"
+        [matTooltip]="host.lastRecoveryTime | utc | date: 'MM/dd/yyyy h:mma'"
+        fxFlex="150px"
+      >
+        {{ host.lastRecoveryTime | utc | fromNow }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Test Harness -->
+    <ng-container matColumnDef="testHarness">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px" mat-sort-header>
+        Test Harness
+      </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="120px"> {{ host.testHarness }} </mat-cell>
+    </ng-container>
+
+    <!-- Assignee -->
+    <ng-container matColumnDef="assignee">
+      <mat-header-cell *matHeaderCellDef fxFlex="200px" mat-sort-header> Assignee </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="200px"> {{ host.assignee }} </mat-cell>
+    </ng-container>
+
+    <!-- Host Recovery State -->
+    <ng-container matColumnDef="recoveryState">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px" mat-sort-header>
+        Recovery State
+      </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="150px">
+        <status-button class="host" [state]="host.recoveryState"></status-button>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Actions: Mark the host as fixed -->
+    <ng-container matColumnDef="actions" stickyEnd>
+      <mat-header-cell *matHeaderCellDef fxFlex="50px"></mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="50px">
+        <button
+          mat-icon-button
+          [matTooltip]="
+            host.recoveryState === RecoveryState.FIXED
+              ? 'Click to undo fixed'
+              : 'Click to mark as fixed'
+          "
+          aria-label="Mark as fixed"
+          [color]="host.recoveryState === RecoveryState.FIXED ? 'accent' : 'primary'"
+          [disabled]="!(host.lab_name | permissionCheck)"
+          (click)="toggleHostFixedState(host, $event)"
+        >
+          <mat-icon [class.lighter]="!(host.recoveryState === RecoveryState.FIXED)">done</mat-icon>
+        </button>
+      </mat-cell>
+    </ng-container>
+  </mat-table>
+  <div class="empty" *ngIf="dataSource && dataSource.length === 0">
+    No hosts found.
+  </div>
+</div>

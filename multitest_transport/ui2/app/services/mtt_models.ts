@@ -21,6 +21,11 @@ import {DeviceInfo} from './tfc_models';
 /** Default queue timeout seconds, used in new test plan, and new test run */
 export const DEFAULT_QUEUE_TIMEOUT_SECONDS = 24 * 60 * 60;  // one day
 /**
+ * Default invocation timeout seconds, used in new test plan, and new test
+ * run pages
+ */
+export const DEFAULT_INVOCATION_TIMEOUT_SECONDS = 0;  // no timeout
+/**
  * Default output idle timeout seconds, used in new test plan, and new test
  * run pages
  */
@@ -55,6 +60,12 @@ export enum AuthorizationState {
   UNAUTHORIZED = 'UNAUTHORIZED',
 }
 
+/** Authorization methods. */
+export enum AuthorizationMethod {
+  OAUTH2_AUTHORIZATION_CODE = 'OAUTH2_AUTHORIZATION_CODE',
+  OAUTH2_SERVICE_ACCOUNT = 'OAUTH2_SERVICE_ACCOUNT',
+}
+
 /**
  * A Simple String Message containing a value
  */
@@ -76,8 +87,6 @@ export declare interface BuildItem {
   size: number;
   /** Created time of this build item */
   timestamp: string;
-  /** The url for this build item */
-  origin_url: string;
   /** The description of this build item */
   description: string;
 }
@@ -93,6 +102,14 @@ export declare interface BuildItemList {
 }
 
 /**
+ * Information for user or service account credentials
+ */
+export declare interface CredentialsInfo {
+  /** Email for the user or service account */
+  email?: string;
+}
+
+/**
  * A build channel, which combines channel config and provider properties.
  *
  * id: build channel id
@@ -104,13 +121,15 @@ export declare interface BuildChannel {
   name: string;
   provider_name: string;
   auth_state: AuthorizationState;
+  auth_methods?: AuthorizationMethod[];
+  credentials?: CredentialsInfo;
 }
 
 /**
  * A list of the IDs for the default build channels that shouldn't be editable
  */
 export const DEFAULT_BUILD_CHANNEL_IDS =
-    ['android_ci', 'google_cloud_storage', 'google_drive', 'local_file_store'];
+    ['android_ci', 'google_cloud_storage', 'google_drive'];
 
 /**
  * Check whether a build channel is available
@@ -203,6 +222,22 @@ export declare interface ConfigSetInfoList {
 }
 
 /**
+ * Separates the config set namespace from the object id
+ */
+export const NAMESPACE_SEPARATOR = '::';
+
+/**
+ * Returns the namespace from a given id, or empty string if no namespace
+ */
+export function getNamespaceFromId(id: string): string {
+  const split = id.split(NAMESPACE_SEPARATOR);
+  if (split.length < 2) {
+    return '';
+  }
+  return split[0];
+}
+
+/**
  * A device action.
  *
  * id: a device action id
@@ -210,6 +245,8 @@ export declare interface ConfigSetInfoList {
  * description: a description.
  * test_resource_defs: a list of test resource definitions.
  * tradefed_target_preparers: a list of Tradefed target preparers.
+ * device_type: the type of the devices that require the device action.
+ * tradefed_options: key-value pairs to be added to Tradefed configuration.
  */
 export declare interface DeviceAction {
   id: string;
@@ -217,6 +254,8 @@ export declare interface DeviceAction {
   description?: string;
   test_resource_defs?: TestResourceDef[];
   tradefed_target_preparers?: TradefedConfigObject[];
+  device_type?: string;
+  tradefed_options?: NameMultiValuePair[];
 }
 
 /** initialize a device action */
@@ -224,6 +263,7 @@ export function newDeviceAction(): Partial<DeviceAction> {
   return {
     test_resource_defs: [],
     tradefed_target_preparers: [],
+    tradefed_options: [],
   };
 }
 
@@ -232,6 +272,34 @@ export function newDeviceAction(): Partial<DeviceAction> {
  */
 export declare interface DeviceActionList {
   device_actions: DeviceAction[];
+}
+
+/** Add or remove the device actions according to the device types */
+export function updateSelectedDeviceActions(
+    selectedDeviceActions: readonly DeviceAction[],
+    allDeviceActions: readonly DeviceAction[],
+    deviceTypes: Set<string>): DeviceAction[] {
+  const updatedDeviceActions: DeviceAction[] = [];
+
+  // Exclude the auto-selected DeviceActions that have device type field but do
+  // not match any device.
+  for (const selectedAction of selectedDeviceActions) {
+    const deviceType = selectedAction.device_type;
+    if (!deviceType || deviceTypes.has(deviceType)) {
+      updatedDeviceActions.push(selectedAction);
+    }
+  }
+
+  // Add the DeviceActions that match any device.
+  for (const action of allDeviceActions) {
+    const deviceType = action.device_type;
+    if (deviceType && deviceTypes.has(deviceType) &&
+        !updatedDeviceActions.some(
+            (selectedAction) => selectedAction === action)) {
+      updatedDeviceActions.push(action);
+    }
+  }
+  return updatedDeviceActions;
 }
 
 /** Event log levels. */
@@ -272,6 +340,8 @@ export declare interface NewTestRunRequest {
   test_resource_pipes?: TestResourcePipe[];
   /** Previous Test Run's Id */
   rerun_context?: RerunContext;
+  /** List of configs to retry with */
+  rerun_configs?: TestRunConfig[];
 }
 
 /**
@@ -302,25 +372,14 @@ export declare interface OptionDef {
   default?: string;
 }
 
-/**
- * A list of periodic time type use in ScheduleTimeForm component as dropdown
- * options.
- */
-export enum PeriodicTimeType {
-  MINUTE = 'Minute',
-  HOUR = 'Hour',
-  DAY = 'Day',
-  WEEK = 'Week',
-  MONTH = 'Month',
-  YEAR = 'Year'
-}
-
 /** Non-shareable node configs */
 export declare interface PrivateNodeConfig {
   /** True to collect usage metrics. */
   metrics_enabled?: boolean;
   /** If false, trigger the setup wizard */
   setup_wizard_completed?: boolean;
+  /** default service account credentials */
+  default_credentials?: CredentialsInfo;
 }
 
 /**
@@ -339,13 +398,15 @@ export declare interface RerunContext {
 }
 
 /**
- * A list of schedule time type use in ScheduleTimeForm component as dropdown
- * options.
+ * Test run parameter.
  */
-export enum ScheduleTimeType {
-  MANUAL = 'Manual',
-  PERIODIC = 'Periodic',
-  CUSTOM = 'Custom'
+export declare interface TestRunParameters {
+  /** Default max retry on test failures. */
+  max_retry_on_test_failures?: number;
+  /** Default invocation timeout in seconds. */
+  invocation_timeout_seconds?: number;
+  /** Default output idle timeout in seconds. */
+  output_idle_timeout_seconds?: number;
 }
 
 /**
@@ -356,6 +417,8 @@ export declare interface Test {
   id?: string;
   /** Name for the Test */
   name: string;
+  /** Description for the Test */
+  description?: string;
   /** A list of test resource def obj */
   test_resource_defs?: TestResourceDef[];
   /** Command to execute the test run */
@@ -386,6 +449,8 @@ export declare interface Test {
   retry_command_line?: string;
   /** Sharding option */
   runner_sharding_args?: string;
+  /** Default test run parameter */
+  default_test_run_parameters?: TestRunParameters;
 }
 
 /** Initialize a test */
@@ -396,7 +461,7 @@ export function initTest(): Partial<Test> {
     output_file_patterns: [],
     setup_scripts: [],
     jvm_options: [],
-    java_properties: [],
+    java_properties: []
   };
 }
 
@@ -452,10 +517,14 @@ export declare interface TestPlan {
   name: string;
   labels?: string[];
   cron_exp?: string;
+  cron_exp_timezone?: string;
   test_run_configs?: TestRunConfig[];
   test_resource_pipes?: TestResourcePipe[];
   before_device_action_ids?: string[];
+  test_run_action_refs?: TestRunActionRef[];
   last_run_time?: string;
+  last_run_ids?: string[];
+  last_run_error?: string;
   next_run_time?: string;
 }
 
@@ -477,6 +546,8 @@ export declare interface TestResourcePipe {
  *  name: a test resource name. (e.g. bootloader.img)
  *  default_download_url: a default download URL.
  *  test_resource_type: a test resource type. (e.g. DEVICE_IMAGE)
+ *  decompress: whether the host should decompress the downloaded file.
+ *  decompress_dir: the directory where the host decompresses the file.
  */
 export declare interface TestResourceDef {
   /** a test resource name. (e.g. bootloader.img) */
@@ -485,6 +556,10 @@ export declare interface TestResourceDef {
   default_download_url?: string;
   /** a test resource type. (e.g. DEVICE_IMAGE) */
   test_resource_type: TestResourceType;
+  /** whether the host should decompress the downloaded file */
+  decompress?: boolean;
+  /** the directory where the host decompresses the file */
+  decompress_dir?: string;
 }
 
 /**
@@ -501,6 +576,10 @@ export declare interface TestResourceObj {
   cache_url?: string;
   /** a test resource type. */
   test_resource_type?: TestResourceType;
+  /** whether the host should decompress the downloaded file. */
+  decompress?: boolean;
+  /** the directory where the host decompresses the file. */
+  decompress_dir?: string;
 }
 
 /**
@@ -512,6 +591,7 @@ export function testResourceDefToObj(testResourceDef: TestResourceDef):
     name: testResourceDef.name,
     url: testResourceDef.default_download_url,
     test_resource_type: testResourceDef.test_resource_type,
+    decompress: testResourceDef.decompress,
   };
 }
 
@@ -521,6 +601,7 @@ export function testResourceDefToObj(testResourceDef: TestResourceDef):
 export enum TestResourceType {
   UNKNOWN = 'UNKNOWN',
   DEVICE_IMAGE = 'DEVICE_IMAGE',
+  SYSTEM_IMAGE = 'SYSTEM_IMAGE',
   TEST_PACKAGE = 'TEST_PACKAGE'
 }
 
@@ -542,8 +623,8 @@ export declare interface TestRunConfig {
   command: string;
   /** Command to retry a test run */
   retry_command: string;
-  /** Device selection rules */
-  run_target: string;
+  /** Device requirements */
+  device_specs?: string[];
   /** Number of times the test was run */
   run_count: number;
   /** Number of shards used */
@@ -552,31 +633,70 @@ export declare interface TestRunConfig {
   sharding_mode?: TFShardingMode;
   /** Max number of retries */
   max_retry_on_test_failures?: number;
-  /** Timeout second when waiting in queue */
-  queue_timeout_seconds: number;
+  /** Invocation timeout in seconds */
+  invocation_timeout_seconds?: number;
   /** how long a test run's output can be idle before attempting recovery */
   output_idle_timeout_seconds?: number;
+  /** Timeout second when waiting in queue */
+  queue_timeout_seconds: number;
   /** List of ids for the device actions */
   before_device_action_ids?: string[];
   /** List of test run action refs */
   test_run_action_refs?: TestRunActionRef[];
+  /** List of test resource pipes */
+  test_resource_objs?: TestResourceObj[];
+  /** Whether to setup devices in parallel */
+  use_parallel_setup?: boolean;
 }
 
 /** initialize a new test run config */
-export function initTestRunConfig(): Partial<TestRunConfig> {
-  return {
+export function initTestRunConfig(test?: Test): Partial<TestRunConfig> {
+  const config = {
+    test_id: '',
     cluster: DEFAULT_CLUSTER,
     run_count: DEFAULT_RUN_COUNT,
     command: '',
     retry_command: '',
-    run_target: '',
+    device_specs: [],
     shard_count: DEFAULT_SHARD_COUNT,
     sharding_mode: TFShardingMode.RUNNER,
     max_retry_on_test_failures: DEFAULT_MAX_RETRY_ON_TEST_FAILURES,
     queue_timeout_seconds: DEFAULT_QUEUE_TIMEOUT_SECONDS,
+    invocation_timeout_seconds: DEFAULT_INVOCATION_TIMEOUT_SECONDS,
     output_idle_timeout_seconds: DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS,
     before_device_action_ids: [],
+    test_resource_objs: [],
+    use_parallel_setup: true,
   };
+
+  if (test) {
+    // Load test defaults
+    config.test_id = test.id || '';
+    config.command = test.command || '';
+    config.retry_command = test.retry_command_line || '';
+
+    const parameters = test.default_test_run_parameters;
+    if (parameters) {
+      config.max_retry_on_test_failures =
+          parameters.max_retry_on_test_failures ||
+          DEFAULT_MAX_RETRY_ON_TEST_FAILURES;
+      config.invocation_timeout_seconds =
+          parameters.invocation_timeout_seconds ||
+          DEFAULT_INVOCATION_TIMEOUT_SECONDS;
+      config.output_idle_timeout_seconds =
+          parameters.output_idle_timeout_seconds ||
+          DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS;
+    }
+  }
+
+  return config;
+}
+
+/** A list of test run configs to be scheduled as retries. */
+export declare interface TestRunSequence {
+  id: string;
+  test_run_configs: TestRunConfig[];
+  finished_test_run_ids: string[];
 }
 
 /** States for Test Runs */
@@ -639,12 +759,16 @@ export declare interface TestRun {
   create_time?: string;
   /** Last time results were updated */
   update_time?: string;
+  /** Id for the previous test run */
+  prev_test_run_id?: string;
   /** test context from the previous test run */
   prev_test_context?: TestContextObj;
   /** test context generated from this test run */
   next_test_context?: TestContextObj;
   /** Test run log entries */
   log_entries?: EventLogEntry[];
+  /** Id of the TestRunSequence this config belongs to */
+  sequence_id?: string;
 }
 
 /** Partial test run information. */
@@ -653,8 +777,8 @@ export declare interface TestRunSummary {
   id?: string;
   /** Test run */
   test_name?: string;
-  /** Configs used for the run */
-  run_target?: string;
+  /** Device requirements */
+  device_specs?: string[];
   /** State of the test run */
   state: TestRunState;
   /** Information on the test package */
@@ -721,6 +845,52 @@ export declare interface TestRunActionList {
 export declare interface TestRunActionRef {
   action_id: string;
   options?: NameValuePair[];
+}
+
+/**
+ * Module-level results for a test run.
+ * Reference to /models/message.py:TestModuleResult
+ */
+export declare interface TestModuleResult {
+  id: string;
+  attempt_id: string;
+  name: string;
+  passed_tests: number;
+  failed_tests: number;
+  total_tests: number;
+  error_message?: string;
+}
+
+/** Paginated list of TestModuleResult. */
+export declare interface TestModuleResultList {
+  results?: TestModuleResult[];
+  next_page_token?: string;
+}
+
+/** Test outcome. */
+export enum TestStatus {
+  UNKNOWN = 'UNKNOWN',
+  PASS = 'PASS',
+  FAIL = 'FAIL',
+  IGNORED = 'IGNORED',
+  ASSUMPTION_FAILURE = 'ASSUMPTION_FAILURE',
+}
+
+/** TestCase-level results for a test run. */
+export declare interface TestCaseResult {
+  id: string;
+  module_id: string;
+  name: string;
+  status: TestStatus;
+  result: string;
+  error_message: string;
+  stack_trace: string;
+}
+
+/** Paginated list of TestCaseResult. */
+export declare interface TestCaseResultList {
+  results?: TestCaseResult[];
+  next_page_token?: string;
 }
 
 /**

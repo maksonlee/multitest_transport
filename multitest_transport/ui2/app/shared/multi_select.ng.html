@@ -1,0 +1,111 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<!-- TODO: Remove mat-form-field. -->
+<mat-form-field
+  [class.mat-select-filter]="appearance === 'outline'"
+  appearance="{{ appearance }}"
+  fxFlex="{{ formWidth }}"
+>
+  <mat-select
+    #matSelect
+    multiple
+    [placeholder]="placeholder"
+    [disabled]="disabled"
+    [(ngModel)]="selection"
+    (selectionChange)="selectionChange.emit(convertedSelection)"
+  >
+    <mat-select-trigger> {{ selection.length }} {{ itemName }}(s) selected </mat-select-trigger>
+    <div class="multi-select-filter-wrapper">
+      <mat-form-field floatLabel="never">
+        <span matPrefix>
+          <mat-icon class="filter-icon">filter_list</mat-icon>
+        </span>
+        <input
+          matInput
+          class="filter-input"
+          type="text"
+          placeholder="Type to filter"
+          autocomplete="off"
+          [(ngModel)]="filterText"
+          (input)="doFilter()"
+          (keydown)="filterKeydown($event)"
+        />
+
+        <button
+          mat-button
+          *ngIf="filterText"
+          matSuffix
+          mat-icon-button
+          aria-label="clear filter"
+          (click)="clearFilter()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+    </div>
+
+    <ng-container *ngIf="filterText && filteredItems().length > 0; else noMatchTmpl">
+      <div (click)="toggleFilteredSelection()">
+        <mat-checkbox
+          class="mat-option mat-focus-indicator mat-option-multiple"
+          [class.mat-selected]="isAllFilteredSelected()"
+          [checked]="filteredSetectedItems().length !== 0 && isAllFilteredSelected()"
+          [indeterminate]="filteredSetectedItems().length !== 0 && !isAllFilteredSelected()"
+          (click)="$event.preventDefault()"
+        >
+          <span> {{ filteredItems().length }} filtered results </span>
+        </mat-checkbox>
+      </div>
+    </ng-container>
+
+    <ng-template #noMatchTmpl>
+      <ng-container *ngIf="filterText && filteredItems().length === 0; else displayAllTmpl">
+        <div class="multi-select-no-match">No matches for "{{ filterText }}"</div>
+      </ng-container>
+    </ng-template>
+
+    <ng-template #displayAllTmpl>
+      <mat-checkbox
+        #selectAll
+        class="mat-option mat-focus-indicator mat-option-multiple"
+        [class.mat-selected]="isAllSelected()"
+        [checked]="selection.length !== 0 && isAllSelected()"
+        [indeterminate]="selection.length !== 0 && !isAllSelected()"
+        (change)="toggleAllSelection(selectAll.checked)"
+      >
+        <ng-container *ngIf="selection.length !== 0 && !isAllSelected(); else isAllSelectedTmpl">
+          <span> {{ selection.length }} of {{ items.length }} selected </span>
+        </ng-container>
+        <ng-template #isAllSelectedTmpl>
+          <ng-container *ngIf="selection.length !== 0 && isAllSelected(); else selectAllTmpl">
+            <span> All {{ items.length }} selected </span>
+          </ng-container>
+        </ng-template>
+        <ng-template #selectAllTmpl>
+          <span> Select all </span>
+        </ng-template>
+      </mat-checkbox>
+    </ng-template>
+
+    <mat-option
+      *ngFor="let item of multiSelectItems"
+      [value]="item.value"
+      [class.hidden]="item.hidden"
+      >{{ item.value }}</mat-option
+    >
+  </mat-select>
+</mat-form-field>

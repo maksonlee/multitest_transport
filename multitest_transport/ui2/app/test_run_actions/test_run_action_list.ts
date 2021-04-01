@@ -35,7 +35,7 @@ export class TestRunActionList implements OnInit, OnDestroy {
   isLoading = false;
   actions: TestRunAction[] = [];
 
-  private readonly destroy = new ReplaySubject();
+  private readonly destroy = new ReplaySubject<void>();
 
   constructor(
       private readonly liveAnnouncer: LiveAnnouncer,

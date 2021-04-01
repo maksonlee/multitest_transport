@@ -1,0 +1,150 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="host-details-history-container">
+  <mat-table #table [dataSource]="historyList" [class.scrolled]="isTableScrolled">
+    <!-- Time -->
+    <ng-container matColumnDef="timestamp">
+      <mat-header-cell *matHeaderCellDef fxFlex="160px"> Time </mat-header-cell>
+      <mat-cell
+        *matCellDef="let history"
+        [matTooltip]="history.timestamp | utc | date: 'MM/dd/yyyy h:mma'"
+        fxFlex="160px"
+      >
+        {{ history.timestamp | utc | fromNow }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- User -->
+    <ng-container matColumnDef="user">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px"> User </mat-header-cell>
+      <mat-cell *matCellDef="let history" fxFlex="120px">
+        <ng-container *ngIf="history.note">
+          {{ history.note.user }}
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Offline Reason -->
+    <ng-container matColumnDef="offline_reason">
+      <mat-header-cell *matHeaderCellDef fxFlex="160px"> Offline Reason </mat-header-cell>
+      <mat-cell
+        *matCellDef="let history"
+        [matTooltip]="history.note?.offline_reason"
+        fxFlex="160px"
+      >
+        <ng-container *ngIf="history.note">
+          <div class="offline-reason">{{ history.note.offline_reason }}</div>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Recovery Action -->
+    <ng-container matColumnDef="recovery_action">
+      <mat-header-cell *matHeaderCellDef fxFlex="160px"> Recovery Action </mat-header-cell>
+      <mat-cell
+        *matCellDef="let history"
+        [matTooltip]="history.note?.recovery_action"
+        fxFlex="160px"
+      >
+        <ng-container *ngIf="history.note">
+          <div class="recovery-action">{{ history.note.recovery_action }}</div>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Message -->
+    <ng-container matColumnDef="message">
+      <mat-header-cell *matHeaderCellDef fxFlex="160px"> Message </mat-header-cell>
+      <mat-cell *matCellDef="let history" [matTooltip]="history.note?.message" fxFlex="160px">
+        <ng-container *ngIf="history.note">
+          <div class="message">{{ history.note.message }}</div>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Device State -->
+    <ng-container matColumnDef="state">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px"> State </mat-header-cell>
+      <mat-cell *matCellDef="let history" fxFlex="120px">
+        <status-button [state]="history.host_state"></status-button>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Total -->
+    <ng-container matColumnDef="total">
+      <mat-header-cell *matHeaderCellDef fxFlex="50px"> Total </mat-header-cell>
+      <mat-cell *matCellDef="let history" fxFlex="50px">
+        {{ history.extraInfo | deviceCountInfo: "total" }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Online -->
+    <ng-container matColumnDef="online">
+      <mat-header-cell *matHeaderCellDef fxFlex="90px"> Online </mat-header-cell>
+      <mat-cell *matCellDef="let history" fxFlex="90px">
+        {{ history.extraInfo | deviceCountInfo: "available" }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Available -->
+    <ng-container matColumnDef="available">
+      <mat-header-cell *matHeaderCellDef fxFlex="100px"> Available </mat-header-cell>
+      <mat-cell *matCellDef="let history" fxFlex="100px">
+        {{ history.extraInfo | deviceCountInfo: "online" }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Utilization -->
+    <ng-container matColumnDef="utilization">
+      <mat-header-cell *matHeaderCellDef fxFlex="100px"> Utilization </mat-header-cell>
+      <mat-cell *matCellDef="let history" fxFlex="100px">
+        {{ history.extraInfo | deviceCountInfo: "allocated" }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Actions: Edit note -->
+    <ng-container matColumnDef="actions" stickyEnd>
+      <mat-header-cell *matHeaderCellDef fxFlex="100px"></mat-header-cell>
+      <mat-cell *matCellDef="let history" fxFlex="100px">
+        <ng-container *ngIf="history.extraInfo && history.extraInfo.host_note_id">
+          <button
+            mat-button
+            color="accent"
+            type="button"
+            aria-label="Edit note"
+            [disabled]="!(history.lab_name | permissionCheck)"
+            (click)="editNote(history.extraInfo.host_note_id)"
+          >
+            Edit Note
+          </button>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+  </mat-table>
+  <paginator
+    [pageSizeOptions]="PAGE_SIZE_OPTIONS"
+    (sizeChange)="resetPageTokenAndReload()"
+    (previous)="load(true)"
+    (next)="load(false)"
+  ></paginator>
+  <div class="empty" *ngIf="historyList && historyList.length === 0">
+    No host history found.
+  </div>
+</div>

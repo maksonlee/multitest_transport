@@ -13,12 +13,11 @@
 # limitations under the License.
 
 """A module to provide test APIs."""
-
+# Non-standard docstrings are used to generate the API documentation.
+import endpoints
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
-
-from google3.third_party.apphosting.python.endpoints.v1_1 import endpoints
 
 from multitest_transport.api import base
 from multitest_transport.models import messages as mtt_messages
@@ -29,39 +28,45 @@ from multitest_transport.models import ndb_models
 class TestApi(remote.Service):
   """A handler for Test API."""
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(message_types.VoidMessage),
       mtt_messages.TestList, path='/tests', http_method='GET',
       name='list')
   def List(self, request):
+    """Lists test suites."""
     tests = list(ndb_models.Test.query().order(ndb_models.Test.name))
-    test_msgs = mtt_messages.Convert(tests, mtt_messages.Test)
+    test_msgs = mtt_messages.ConvertList(tests, mtt_messages.Test)
     return mtt_messages.TestList(tests=test_msgs)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(mtt_messages.Test),
       mtt_messages.Test, path='/tests', http_method='POST',
       name='create')
   def Create(self, request):
+    """Creates a test suite.
+
+    Body:
+      Test suite data
+    """
     test = mtt_messages.Convert(
         request, ndb_models.Test, from_cls=mtt_messages.Test)
     test.put()
     return mtt_messages.Convert(test, mtt_messages.Test)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           test_id=messages.StringField(1, required=True)),
       mtt_messages.Test, path='{test_id}', http_method='GET',
       name='get')
   def Get(self, request):
-    test = None
-    # For test plan ID 0, it should return a default test plan object which can
-    # be used as a template in UI.
+    """Fetches a test suite.
+
+    Parameters:
+      test_id: Test ID, or zero for an empty test suite
+    """
     if request.test_id == '0':
+      # For ID 0, return an empty test object to use as a template in UI.
       test = ndb_models.Test(name='')
     else:
       test = mtt_messages.ConvertToKey(ndb_models.Test, request.test_id).get()
@@ -70,13 +75,19 @@ class TestApi(remote.Service):
           'no test found for ID %s' % request.test_id)
     return mtt_messages.Convert(test, mtt_messages.Test)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           mtt_messages.Test, test_id=messages.StringField(1, required=True)),
-      mtt_messages.Test, path='{test_id}', http_method='POST',
+      mtt_messages.Test, path='{test_id}', http_method='PUT',
       name='update')
   def Update(self, request):
+    """Updates a test suite.
+
+    Body:
+      Test suite data
+    Parameters:
+      test_id: Test ID
+    """
     test = mtt_messages.ConvertToKey(ndb_models.Test, request.test_id).get()
     if not test:
       raise endpoints.NotFoundException(
@@ -86,14 +97,18 @@ class TestApi(remote.Service):
     test.put()
     return mtt_messages.Convert(test, mtt_messages.Test)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           test_id=messages.StringField(1, required=True)),
-      message_types.VoidMessage, path='{test_id}/delete', http_method='POST',
+      message_types.VoidMessage, path='{test_id}', http_method='DELETE',
       name='delete')
   def Delete(self, request):
+    """Deletes a test suite.
+
+    Parameters:
+      test_id: Test ID
+    """
     test_key = mtt_messages.ConvertToKey(ndb_models.Test, request.test_id)
     test_key.delete()
     return message_types.VoidMessage()

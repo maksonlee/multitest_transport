@@ -17,8 +17,9 @@
 <mat-toolbar>
   <mat-toolbar-row fxLayoutAlign="space-between center">
     <h1>Test Plans</h1>
-    <!-- TODO: Implement new Test Plan page -->
-    <button routerLink='/test_plans/new' mat-flat-button color="accent"> Create a new test plan </button>
+    <button routerLink='/test_plans/new' mat-flat-button color="accent">
+      Create a new test plan
+    </button>
   </mat-toolbar-row>
 </mat-toolbar>
 
@@ -27,26 +28,41 @@
 <mat-table [dataSource]="dataSource" aria-label="Test plan list">
   <!-- Test plan name -->
   <ng-container matColumnDef="name">
-    <mat-header-cell *matHeaderCellDef> Test Plan Name </mat-header-cell>
-    <mat-cell *matCellDef="let testPlan"> {{testPlan.name}} </mat-cell>
+    <mat-header-cell *matHeaderCellDef fxFlex> Name </mat-header-cell>
+    <mat-cell *matCellDef="let testPlan" fxFlex> {{testPlan.name}} </mat-cell>
   </ng-container>
 
-  <!-- TODO: Display next scheduled time to 'X days from now' -->
   <!-- Test plan next scheduled run time -->
   <ng-container matColumnDef="next_run_time">
-    <mat-header-cell *matHeaderCellDef> Next Scheduled Run Time </mat-header-cell>
-    <mat-cell *matCellDef="let testPlan">
-      <ng-container *ngIf="testPlan.next_run_time">
-        {{testPlan.next_run_time | utc | date:'MM/dd/yyyy h:mma'}}
-      </ng-container>
+    <mat-header-cell *matHeaderCellDef fxFlex> Next Run </mat-header-cell>
+    <mat-cell *matCellDef="let testPlan" fxFlex>
+      <span *ngIf="testPlan.next_run_time"
+            [title]="testPlan.next_run_time | utc | date:'MM/dd/yyyy h:mma'">
+        {{testPlan.next_run_time | utc | fromNow}}
+      </span>
+    </mat-cell>
+  </ng-container>
+
+  <!-- Test plan last run information -->
+  <ng-container matColumnDef="last_run_info">
+    <mat-header-cell *matHeaderCellDef fxFlex> Last Run </mat-header-cell>
+    <mat-cell *matCellDef="let testPlan" fxFlex class="last-run-info">
+      <span *ngIf="testPlan.last_run_time"
+            [title]="testPlan.last_run_time | utc | date:'MM/dd/yyyy h:mma'">
+        {{testPlan.last_run_time | utc | fromNow}}
+      </span>
+      <a href="/test_runs/{{runId}}" *ngFor="let runId of testPlan.last_run_ids">{{runId}}</a>
+      <span *ngIf="testPlan.last_run_error">
+        <mat-icon>error</mat-icon>
+        {{testPlan.last_run_error}}
+      </span>
     </mat-cell>
   </ng-container>
 
   <!-- Test plan labels -->
-  <!-- TODO: switch to overflow list, add filtering -->
   <ng-container matColumnDef="labels">
-    <mat-header-cell *matHeaderCellDef> Labels </mat-header-cell>
-    <mat-cell *matCellDef="let testPlan">
+    <mat-header-cell *matHeaderCellDef fxFlex="200px"> Labels </mat-header-cell>
+    <mat-cell *matCellDef="let testPlan" fxFlex="200px">
       <overflow-list [data]="testPlan.labels || []"
       [overflowListType]="OverflowListType.CHIP">
       </overflow-list>
@@ -55,13 +71,12 @@
 
   <!-- Actions -->
   <ng-container matColumnDef="actions" stickyEnd>
-    <mat-header-cell *matHeaderCellDef></mat-header-cell>
-    <mat-cell *matCellDef="let testPlan">
+    <mat-header-cell *matHeaderCellDef fxFlex="240px"></mat-header-cell>
+    <mat-cell *matCellDef="let testPlan" fxFlex="240px">
       <a mat-stroked-button
          class="run-test-plan-button"
          color="accent"
          (click)="runTestPlan(testPlan)"> Run test plan </a>
-      <!-- TODO: Implement new Test Plan page -->
       <a mat-button color="accent"
         [routerLink]="['/test_plans', testPlan.id]"> Edit </a>
       <button

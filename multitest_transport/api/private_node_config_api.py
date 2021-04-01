@@ -13,11 +13,13 @@
 # limitations under the License.
 
 """A module to provide private node config APIs."""
-
+# Non-standard docstrings are used to generate the API documentation.
+import json
+import endpoints
 from protorpc import message_types
 from protorpc import remote
 
-from google3.third_party.apphosting.python.endpoints.v1_1 import endpoints
+from google.oauth2 import service_account
 
 from multitest_transport.api import base
 from multitest_transport.models import messages
@@ -29,19 +31,57 @@ from multitest_transport.models import ndb_models
 class PrivateNodeConfigApi(remote.Service):
   """A handler for User Settings API."""
 
-  @base.convert_exception
-  @endpoints.method(message_types.VoidMessage, messages.PrivateNodeConfig,
-                    http_method='GET', path='/private_node_config', name='get')
+  @base.ApiMethod(message_types.VoidMessage, messages.PrivateNodeConfig,
+                  http_method='GET', path='/private_node_config', name='get')
   def Get(self, request):
+    """Fetches the server's private node configuration."""
     private_node_config = ndb_models.GetPrivateNodeConfig()
     return messages.Convert(private_node_config, messages.PrivateNodeConfig)
 
-  @base.convert_exception
-  @endpoints.method(messages.PrivateNodeConfig, messages.PrivateNodeConfig,
-                    http_method='POST', path='/private_node_config',
-                    name='update')
+  @base.ApiMethod(messages.PrivateNodeConfig, messages.PrivateNodeConfig,
+                  http_method='PUT', path='/private_node_config',
+                  name='update')
   def Update(self, request):
+    """Updates the server's private node configuration.
+
+    Body:
+      Private node configuration data
+    """
     private_node_config = messages.Convert(
         request, ndb_models.PrivateNodeConfig, messages.PrivateNodeConfig)
     private_node_config.put()
     return messages.Convert(private_node_config, messages.PrivateNodeConfig)
+
+  @base.ApiMethod(
+      endpoints.ResourceContainer(
+          messages.SimpleMessage,),
+      message_types.VoidMessage,
+      path='/private_node_config/default_service_account',
+      http_method='PUT',
+      name='set_default_service_account')
+  def SetDefaultServiceAccount(self, request):
+    """Sets the default service account key to use for all services.
+
+    Body:
+      Service account JSON key file data
+    """
+    data = json.loads(request.value)
+    credentials = service_account.Credentials.from_service_account_info(data)
+
+    private_node_config = ndb_models.GetPrivateNodeConfig()
+    private_node_config.default_credentials = credentials
+    private_node_config.put()
+    return message_types.VoidMessage()
+
+  @base.ApiMethod(
+      message_types.VoidMessage,
+      message_types.VoidMessage,
+      path='/private_node_config/default_service_account',
+      http_method='DELETE',
+      name='remove_default_service_account')
+  def RemoveDefaultServiceAccount(self, request):
+    """Removes the default service account credentials."""
+    private_node_config = ndb_models.GetPrivateNodeConfig()
+    private_node_config.default_credentials = None
+    private_node_config.put()
+    return message_types.VoidMessage()

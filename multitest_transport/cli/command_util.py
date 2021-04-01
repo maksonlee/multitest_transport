@@ -15,6 +15,7 @@
 """A utility for running local/remote commands."""
 import collections
 import getpass
+import json
 import logging
 import os
 import pipes
@@ -26,7 +27,9 @@ import time
 
 import six
 
+from multitest_transport.cli import common
 from multitest_transport.cli import google_auth_util
+from multitest_transport.cli import ssh_util
 
 logger = logging.getLogger(__name__)
 
@@ -44,28 +47,28 @@ try:
   paramiko = None
   logging.warning('Failed to import fabric or paramiko')
 
+DEFAULT_DOCKER_SERVER = 'https://gcr.io'
+
 _GCLOUD_PATHS = ['gcloud', '/google/data/ro/teams/cloud-sdk/gcloud']
 _REMOTE_IMAGE_DIGEST_FORMAT = '{{index .RepoDigests 0}}'
 _IMAGE_ID_FORMAT = '{{.Image}}'
+_IMAGE_ENV_FORMAT = '{{json .Config.Env}}'
 _CONTAINER_STATUS_FORMAT = '{{.State.Status}}'
 _CONTAINER_PID_FORMAT = '{{.State.Pid}}'
 _CONTAINER_RUNNING_STATUS = 'running'
 _NO_SUCH_OBJECT_ERROR = 'No such object'
 _DEFAULT_TMPFS_SIZE_IN_BYTES = 10 * 2 ** 30  # 10G
-_DOCKER_SERVER = 'https://gcr.io'
 _DOCKER_STOP_CMD_TIMEOUT_SEC = 60 * 60
 _DOCKER_KILL_CMD_TIMEOUT_SEC = 60
 _DOCKER_WAIT_CMD_TIMEOUT_SEC = 2 * 60 * 60
 _DOCKER_LIVELINESS_CHECKING_MESSAGE = 'Checking container liveliness.'
+_DOCKER_LIVELINESS_CHECKING_TIMEOUT_SEC = 2 * 60
 # To exec command on a dead container, docker will output:
 # OCI runtime exec failed: exec failed: cannot exec a container that has
 # stopped: unknown
 # to the stdout.
 _DOCKER_CONTAINER_NOT_ALIVE_PATTERN = re.compile(
     '.*cannot exec a container that has stopped.*')
-
-CommandResult = collections.namedtuple(
-    'CommandResult', ['return_code', 'stdout', 'stderr'])
 
 
 CommandRunConfig = collections.namedtuple(
@@ -144,23 +147,51 @@ class HostCommandOutStream(object):
     logger.log(self.log_level, line)
 
 
+def _CreateFabricContext(ssh_config):
+  """Create a fabric context."""
+  # fabric has problems to understand complex ssh config.
+  # Point to a user config
+  fab_config = fabric.Config(system_ssh_path='~/.ssh/config')
+  connect_kwargs = {
+      'config': fab_config
+  }
+  if ssh_config.ssh_key or ssh_config.password:
+    connect_kwargs['connect_kwargs'] = {}
+  if ssh_config.ssh_key:
+    logger.debug(
+        'Use ssh key %s ssh %s@%s.', ssh_config.ssh_key,
+        ssh_config.user, ssh_config.hostname)
+    connect_kwargs['connect_kwargs']['key_filename'] = ssh_config.ssh_key
+  if ssh_config.password:
+    logger.debug('Use password to ssh %s@%s.',
+                 ssh_config.user, ssh_config.hostname)
+    connect_kwargs['connect_kwargs']['password'] = ssh_config.password
+  connect_kwargs['user'] = ssh_config.user
+  try:
+    wrapped_context = fabric.Connection(
+        host=ssh_config.hostname, **connect_kwargs)
+    wrapped_context.open()
+    return wrapped_context
+  except (paramiko.AuthenticationException, paramiko.SSHException) as e:
+    logger.debug(e)
+    raise AuthenticationError(e)
+
+
 class CommandContext(object):
   """Wrap around invoke.Context."""
 
-  def __init__(self, host=None, user=None, login_password=None,
-               wrapped_context=None, ssh_key=None, sudo_password=None,
-               sudo_user=None, remote_sudo_wrapped_context=None):
+  def __init__(self, host=None, user=None,
+               ssh_config=None, sudo_ssh_config=None,
+               wrapped_context=None, sudo_wrapped_context=None):
     """Create context that will be used to run command with.
 
     Args:
       host: a host name.
       user: username of the host.
-      login_password: password for user to login.
+      ssh_config: ssh_util.SshConfig for login to the host.
+      sudo_ssh_config: ssh_util.SshConfig for login to the host as sudo.
       wrapped_context: invoke context, used for test.
-      ssh_key: ssh key file to use.
-      sudo_password: Text or None, password to run sudo commands.
-      sudo_user: Text or None, user to run sudo commands.
-      remote_sudo_wrapped_context: invoke context, used for sudo test.
+      sudo_wrapped_context: invoke context, used for sudo test.
     Raises:
       FabricNotFoundError: fabric is not installed.
     """
@@ -169,37 +200,54 @@ class CommandContext(object):
     self._is_local = False
     self._tried_gcloud = False
     self._gcloud = None
-    if socket.gethostname() == self._host:
+    if socket.gethostname() == self._host or socket.getfqdn() == self._host:
       self._is_local = True
 
-    self._login_password = login_password
-    self._ssh_key = ssh_key
+    self._ssh_config = ssh_config or ssh_util.SshConfig(
+        user=user, hostname=host)
+    self._sudo_ssh_config = sudo_ssh_config
     self._closed = False
-    self._sudo_password = sudo_password
-    self._sudo_user = sudo_user or self._user
+    # TODO: We should make the subprocess's output configurable by
+    # parent process.
     self._out_stream = HostCommandOutStream(
         None if self._is_local else host, 'stdout')
     # We also output stderr to DEBUG level, if the command failed and
     # raise on failure, the raised exception will have the information.
     self._err_stream = HostCommandOutStream(
         None if self._is_local else host, 'stderr')
-    self.wrapped_context = None
-    self.remote_sudo_wrapped_context = remote_sudo_wrapped_context
-    if wrapped_context:
-      self.wrapped_context = wrapped_context
+
+    self._wrapped_context = wrapped_context
+    self._sudo_wrapped_context = sudo_wrapped_context
+    if self._wrapped_context:
       return
     if self._is_local:
       if invoke:
         # Use invoke context to running locally.
-        self.wrapped_context = invoke.Context()
+        self._wrapped_context = invoke.Context()
       # Else use _RunDirectly instead of using invoke.context.
       return
-    if not fabric:
-      raise FabricNotFoundError(
-          'Fabric is not installed. Can not run on remote host.')
-    self._CreateRemoteWrappedContext()
+    if self._ssh_config.use_native_ssh or not fabric:
+      if not self._ssh_config.use_native_ssh and not fabric:
+        logger.debug('No fabric package installed, using native ssh.')
+      self._CreateNativeSshContexts()
+      return
+    self._CreateFabricContexts()
 
-  def _CreateRemoteWrappedContext(self):
+  def _CreateNativeSshContexts(self):
+    """Create a native SSH context for a remote host.
+
+    This function creates two fabric connections, one for sudo commands, another
+    for regular commands.
+    """
+    self._wrapped_context = ssh_util.Context(self._ssh_config)
+    if self._sudo_wrapped_context:
+      return
+    if not self._sudo_ssh_config:
+      return
+    self._sudo_wrapped_context = ssh_util.Context(self._sudo_ssh_config)
+    self._TestSudoAccess()
+
+  def _CreateFabricContexts(self):
     """Create wrapped context for a remote host.
 
     This function creates two fabric connections, one for sudo commands, another
@@ -208,47 +256,22 @@ class CommandContext(object):
     Raises:
       AuthenticationError: failed to auth
     """
-    # fabric has problems to understand complex ssh config.
-    # Point to a user config
-    fab_config = fabric.Config(system_ssh_path='~/.ssh/config')
-    connect_kwargs = {
-        'config': fab_config
-    }
-    if self._ssh_key or self._login_password:
-      connect_kwargs['connect_kwargs'] = {}
-      if self._ssh_key:
-        logger.debug(
-            'Use ssh key %s ssh %s@%s.', self._ssh_key, self._user, self._host)
-        connect_kwargs['connect_kwargs']['key_filename'] = self._ssh_key
-      if self._login_password:
-        logger.debug('Use password to ssh %s@%s.', self._user, self._host)
-        connect_kwargs['connect_kwargs']['password'] = self._login_password
-    regular_connect_kwargs = connect_kwargs.copy()
-    regular_connect_kwargs['user'] = self._user
-    try:
-      self.wrapped_context = fabric.Connection(
-          host=self._host, **regular_connect_kwargs)
-      self.wrapped_context.open()
-      if (not self.remote_sudo_wrapped_context
-          and self._sudo_password is not None):
-        sudo_connect_kwargs = connect_kwargs.copy()
-        sudo_connect_kwargs['user'] = self._sudo_user
-        self.remote_sudo_wrapped_context = fabric.Connection(
-            host=self._host, **sudo_connect_kwargs)
-        self._TestSudoAccess()
-      logger.info('Connected to %s@%s.', self._user, self._host)
-    except (paramiko.AuthenticationException, paramiko.SSHException) as e:
-      logger.debug(e)
-      raise AuthenticationError(e)
+    self._wrapped_context = _CreateFabricContext(self._ssh_config)
+    if self._sudo_wrapped_context:
+      return
+    if not self._sudo_ssh_config:
+      return
+    self._sudo_wrapped_context = _CreateFabricContext(self._sudo_ssh_config)
+    self._TestSudoAccess()
 
   def _TestSudoAccess(self):
     """Test sudo access on a host."""
     logger.debug('Testing sudo access.')
     try:
-      self.remote_sudo_wrapped_context.sudo(
+      self._sudo_wrapped_context.sudo(
           'echo "Testing sudo access..."',
           hide=True,
-          password=self._sudo_password)
+          password=self._sudo_ssh_config.password)
     except invoke.exceptions.AuthFailure as e:
       logger.debug('Sudo access failed: %s', e)
       raise AuthenticationError(e)
@@ -299,7 +322,7 @@ class CommandContext(object):
       raise IOError('%s doesn\'t exist.' % local_file_path)
     self.Run(['mkdir', '-p', os.path.dirname(remote_file_path)])
     if not self.IsLocal():
-      self.wrapped_context.put(local_file_path, remote_file_path)
+      self._wrapped_context.put(local_file_path, remote_file_path)
       return
     if local_file_path != remote_file_path:
       self.Run(['cp', '-rf', local_file_path, remote_file_path])
@@ -311,11 +334,11 @@ class CommandContext(object):
       logger.debug('Connection to %s already closed.', self.host)
       return
     self._closed = True
-    if not self.IsLocal() and self.wrapped_context:
+    if not self.IsLocal() and self._wrapped_context:
       # Local wrapped context doesn't support close.
       # And also there is no need to close a local context.
-      self.wrapped_context.close()
-    self.wrapped_context = None
+      self._wrapped_context.close()
+    self._wrapped_context = None
 
   def Run(self,
           command,
@@ -334,7 +357,7 @@ class CommandContext(object):
         env: additional environment variables.
         timeout: int, the timeout to run the command, in seconds.
     Returns:
-        a CommandResult
+        a common.CommandResult
     Raises:
         CommandContextClosedError: run command on a closed context.
     """
@@ -345,7 +368,7 @@ class CommandContext(object):
     if not sync:
       CommandThread(self, command, run_config).start()
       return None
-    if self.wrapped_context:
+    if self._wrapped_context:
       return self._RunOnWrappedContext(command, run_config)
     return self._RunDirectly(command, run_config)
 
@@ -356,7 +379,7 @@ class CommandContext(object):
       command: a list of string.
       run_config: CommandRunConfig that config how to run the command.
     Returns:
-      a CommandResult
+      a common.CommandResult
     Raises:
       RuntimeError: failed to run command and raise_on_failure is true.
     """
@@ -377,22 +400,22 @@ class CommandContext(object):
     res = None
     try:
       if run_config.sudo:
-        res = self.remote_sudo_wrapped_context.sudo(
-            command_str, password=self._sudo_password, **run_kwargs)
+        res = self._sudo_wrapped_context.sudo(
+            command_str, password=self._sudo_ssh_config.password, **run_kwargs)
       else:
-        res = self.wrapped_context.run(command_str, **run_kwargs)
+        res = self._wrapped_context.run(command_str, **run_kwargs)
     except invoke.exceptions.CommandTimedOut as err:
       logger.warning(
           'The command <%s> fails to execute within given time <%s s>.',
           command_str, run_kwargs['timeout'])
-      return CommandResult(
+      return common.CommandResult(
           return_code=err.result.exited, stdout='', stderr=str(err))
 
     if run_config.raise_on_failure and res.return_code != 0:
       raise RuntimeError(
           'command returned %s: stdout=%s, stderr=%s' % (
               res.return_code, res.stdout, res.stderr))
-    return CommandResult(
+    return common.CommandResult(
         return_code=res.return_code,
         stdout=res.stdout,
         stderr=res.stderr)
@@ -404,7 +427,7 @@ class CommandContext(object):
       command: a list of string.
       run_config: CommandRunConfig that config how to run the command.
     Returns:
-      a CommandResult.
+      a common.CommandResult.
     Raises:
       RuntimeError: failed to run command and raise_on_failure=True
     """
@@ -431,7 +454,7 @@ class CommandContext(object):
       raise RuntimeError(
           'command returned %s: stdout=%s, stderr=%s' % (
               proc.returncode, stdout, stderr))
-    return CommandResult(
+    return common.CommandResult(
         return_code=proc.returncode, stdout=stdout, stderr=stderr)
 
 
@@ -452,26 +475,32 @@ class CommandThread(threading.Thread):
 class DockerContext(object):
   """Docker command context."""
 
-  def __init__(self, command_context, login=True,
-               service_account_json_key_path=None):
+  def __init__(
+      self,
+      command_context,
+      login=True,
+      docker_server=None,
+      service_account_json_key_path=None):
     self._context = command_context
     self._docker_client_version = None
     self._CheckDocker()
+    self._docker_server = docker_server or DEFAULT_DOCKER_SERVER
+    self._service_account_json_key_path = service_account_json_key_path
     if login:
-      self._DockerLogin(service_account_json_key_path)
+      self._DockerLogin()
 
-  def _DockerLogin(self, service_account_json_key_path):
+  def _DockerLogin(self):
     """Login docker server."""
-    if service_account_json_key_path:
+    if self._service_account_json_key_path:
       credential = google_auth_util.CreateCredentialFromServiceAccount(
-          service_account_json_key_path=service_account_json_key_path,
+          service_account_json_key_path=self._service_account_json_key_path,
           scopes=[google_auth_util.GCS_READ_SCOPE])
       self._context.Run(
           ['docker',
            'login',
            '-u', 'oauth2accesstoken',
            '-p', credential.token,
-           _DOCKER_SERVER],
+           self._docker_server],
           raise_on_failure=False)
       return
     if self._context.gcloud:
@@ -481,18 +510,18 @@ class DockerContext(object):
       logger.info('gcloud auth configure-docker')
       return
     logger.warning(
-        'No gcloud or service account json key file, can not login %s.',
-        _DOCKER_SERVER)
+        'No gcloud or service account json key file, can not login to %s.',
+        self._docker_server)
 
   def _CheckDocker(self):
     """Check if docker is installed."""
     try:
       res = self._context.Run(['docker', '-v'], raise_on_failure=False)
     except OSError as e:
-      logger.info('Failed to execute docker: %s', e)
+      logger.info('Failed to execute docker: %r', e)
       res = None
     if not res or res.return_code:
-      raise DockerNotFoundError('Failed to run docker: res=%s' % res)
+      raise DockerNotFoundError('Failed to run docker: res=%s' % str(res))
 
   def Run(self, command, **kwargs):
     """Run docker command. It's a wrap for context.run.
@@ -513,12 +542,17 @@ class DockerHelper(object):
   def __init__(self, docker_context, image_name=None):
     self._docker_context = docker_context
     self._image_name = image_name
+    self._hostname = None
+    self._network = None
     self._env = []
     self._binds = []
     self._volumes = []
     self._tmpfss = []
     self._ports = []
+    self._capabilities = []
+    self._device_nodes = []
     self._files = []
+    self._extra_args = []
 
   def Build(self, path, build_args=None):
     """Build the docker image from given path.
@@ -542,6 +576,22 @@ class DockerHelper(object):
     logger.info('Pulling %s from remote repository.',
                 self._image_name)
     self._docker_context.Run(['pull', self._image_name])
+
+  def SetHostname(self, hostname):
+    """Set the hostname of the container.
+
+    Args:
+      hostname: the hostname.
+    """
+    self._hostname = hostname
+
+  def SetNetwork(self, network):
+    """Set the network that the container connects to.
+
+    Args:
+      network: the network name.
+    """
+    self._network = network
 
   def AddEnv(self, key, value):
     """Add environment to inject into the docker container.
@@ -601,14 +651,38 @@ class DockerHelper(object):
     """
     self._binds.append((src, dst))
 
-  def AddPort(self, local_port, docker_port):
+  def AddPort(self, local_host_port, docker_port):
     """Map local port to docker port.
 
     Args:
-      local_port: local port
+      local_host_port: local port or local host:port.
       docker_port: the docker port that the local port map to.
     """
-    self._ports.append((local_port, docker_port))
+    self._ports.append((local_host_port, docker_port))
+
+  def AddCapability(self, cap):
+    """Grant a capability to the docker container.
+
+    Args:
+      cap: the capability name.
+    """
+    self._capabilities.append(cap)
+
+  def AddDeviceNode(self, path):
+    """Allow the docker container to access a device node.
+
+    Args:
+      path: the device node path.
+    """
+    self._device_nodes.append(path)
+
+  def AddExtraArgs(self, args):
+    """Add extra args to docker container.
+
+    Args:
+      args: a list of string
+    """
+    self._extra_args.extend(args)
 
   def AddFile(self, local_path, docker_path):
     """Copy a file to the docker container.
@@ -625,7 +699,7 @@ class DockerHelper(object):
     Args:
       container_name: the container name to use when start the container.
     Returns:
-      CommandResult
+      common.CommandResult
     """
     # Remove existing container if necessary
     self._docker_context.Run(['container', 'rm', container_name],
@@ -637,11 +711,13 @@ class DockerHelper(object):
         '--name', container_name,
         '-it',
         '-v', '/dev/bus/usb:/dev/bus/usb',  # Mount USB devices
-        '-v', '/run/udev/control:/run/udev/control',  # Receive udev events
         '--device-cgroup-rule', 'c 189:* rwm',  # Grant access to USB devices
-        '--net=host',  # Allow the container to share host network.
         '--cap-add', 'syslog',  # Enables host system logs (e.g. dmesg) access
     ]
+    if self._hostname:
+      args.extend(['--hostname', self._hostname])
+    if self._network:
+      args.extend(['--network', self._network])
     for key, value in self._env:
       args.extend(['-e', '%s=%s' % (key, value)])
     for volume_name, dst in self._volumes:
@@ -655,8 +731,13 @@ class DockerHelper(object):
       if mode:
         tmpfs_arg += ',tmpfs-mode=%s' % mode
       args.extend(['--mount', tmpfs_arg])
-    for local_port, docker_port in self._ports:
-      args.extend(['-p', '%r:%r' % (local_port, docker_port)])
+    for local_host_port, docker_port in self._ports:
+      args.extend(['-p', '%s:%s' % (local_host_port, docker_port)])
+    for cap in self._capabilities:
+      args.extend(['--cap-add', cap])
+    for path in self._device_nodes:
+      args.extend(['--device', path])
+    args.extend(self._extra_args)
     args.append(self._image_name)
     self._docker_context.Run(args)
 
@@ -668,13 +749,25 @@ class DockerHelper(object):
     # Start container
     return self._docker_context.Run(['start', container_name])
 
+  def Exec(self, container_name, args):
+    """Executes a command in a container.
+
+    Args:
+      container_name: a Docker container name.
+      args: command line args.
+    Returns:
+      common.CommandResult
+    """
+    return self._docker_context.Run(
+        ['exec', container_name, *args], raise_on_failure=False)
+
   def Stop(self, container_names):
     """Stop the given containers.
 
     Args:
       container_names: a list of container_names to stop
     Returns:
-      the CommandResult
+      the common.CommandResult
     """
     return self._docker_context.Run(
         ['stop'] + container_names, timeout=_DOCKER_STOP_CMD_TIMEOUT_SEC)
@@ -686,7 +779,7 @@ class DockerHelper(object):
       container_names: a list of container_names to stop
       signal: the signal send to the container.
     Returns:
-      the CommandResult
+      the common.CommandResult
     """
     return self._docker_context.Run(
         ['kill', '-s', signal] + container_names,
@@ -699,7 +792,7 @@ class DockerHelper(object):
       container_names: a list of container_names to stop
       timeout: int, max timeout to wait, in sec.
     Returns:
-      the CommandResult
+      the common.CommandResult
     """
     return self._docker_context.Run(
         ['container', 'wait'] + container_names, timeout=timeout)
@@ -712,12 +805,47 @@ class DockerHelper(object):
       output_format: --format value of inspect command.
       raise_on_failure: raise on failure or not.
     Returns:
-      CommandResult
+      common.CommandResult
     """
     cmd = ['inspect', resource_name]
     if output_format:
       cmd.extend(['--format', output_format])
     return self._docker_context.Run(cmd, raise_on_failure=raise_on_failure)
+
+  def DoesResourceExist(self, resource_name):
+    """Return whether the resource (image, container, network, etc.) exists."""
+    res = self.Inspect(
+        resource_name,
+        output_format='OK',
+        raise_on_failure=False)
+    if res.return_code != 0:
+      if res.stderr and _NO_SUCH_OBJECT_ERROR in res.stderr:
+        return False
+      raise DockerError(
+          'Failed to inpect %s:\nstderr:%s\nstdout:%s.' % (
+              resource_name, res.stderr, res.stdout))
+    return True
+
+  def GetEnv(self, image_id_or_name):
+    """Get image's environment variables.
+
+    Args:
+      image_id_or_name: the image to inspect.
+
+    Returns:
+      A list of strings in the format of 'NAME=VALUE'.
+
+    Raises:
+      DockerError: failed to inspect the image.
+    """
+    res = self.Inspect(
+        image_id_or_name,
+        output_format=_IMAGE_ENV_FORMAT,
+        raise_on_failure=False)
+    if res.return_code != 0:
+      raise DockerError('Failed to inpect %s:\nstderr: %s\nstdout: %s.' %
+                        (image_id_or_name, res.stderr, res.stdout))
+    return json.loads(res.stdout)
 
   def GetRemoteImageDigest(self, image_id_or_name):
     """Get image's remote image digest."""
@@ -745,7 +873,7 @@ class DockerHelper(object):
     """Clean up dangling docker images.
 
     Returns:
-      An instance of CommandResult.
+      An instance of common.CommandResult.
     """
     logging.info('Cleaning up dangling docker images...')
     return self._docker_context.Run(
@@ -781,7 +909,8 @@ class DockerHelper(object):
     """
     res = self._docker_context.Run(
         ['exec', container_name, 'echo', _DOCKER_LIVELINESS_CHECKING_MESSAGE],
-        raise_on_failure=False)
+        raise_on_failure=False,
+        timeout=_DOCKER_LIVELINESS_CHECKING_TIMEOUT_SEC)
     # The return code will be 126 when container is dead.
     if res.return_code:
       logger.info(
@@ -796,7 +925,7 @@ class DockerHelper(object):
         container_names: a list of container names to remove.
         raise_on_failure: raise an exception if an operation fails.
     Returns:
-      the CommandResult
+      the common.CommandResult
     """
     return self._docker_context.Run(
         ['container', 'rm'] + container_names,
@@ -809,7 +938,77 @@ class DockerHelper(object):
         volume_names: a list of volume names to remove.
         raise_on_failure: raise an exception if an operation fails.
     Returns:
-      the CommandResult
+      the common.CommandResult
     """
     return self._docker_context.Run(
         ['volume', 'rm'] + volume_names, raise_on_failure=raise_on_failure)
+
+  def Logs(self, container_name, raise_on_failure=False):
+    """Get logs from container's PID 1.
+
+    Args:
+      container_name: text, the docker container name.
+      raise_on_failure: raise error on failure or not.
+    Returns:
+      common.CommandResult
+    """
+    logger.debug('Get container %s logs.', container_name)
+    # If log is set to verbose, the subprocess prints to stdout as well.
+    # The res.stdout will also have the subprocess's stdout.
+    res = self._docker_context.Run(
+        ['logs', container_name], raise_on_failure=raise_on_failure)
+    return res.stdout
+
+  def Cat(self, container_name, file_name, raise_on_failure=False):
+    """Get content of file in the container.
+
+    Get file content in the container. Right now
+    only support files in self._volumes
+
+    Args:
+      container_name: name of the container.
+      file_name: the file's name to content from.
+      raise_on_failure: raise error on failure or not.
+    Returns:
+      the content of the file.
+    """
+    logger.debug('Cat %s:%s.', container_name, file_name)
+    if self.IsContainerRunning(container_name):
+      res = self._docker_context.Run(
+          ['exec', container_name, 'cat', file_name],
+          raise_on_failure=raise_on_failure)
+      return res.stdout
+    # If the container is stopped, we need to create a temporary container.
+    logger.debug('Container %s is stopped.', container_name)
+    args = [
+        'run',
+        '--rm',
+        '--entrypoint', 'cat']
+    for volume_name, dst in self._volumes:
+      args.extend(['--mount', 'type=volume,src=%s,dst=%s' % (volume_name, dst)])
+    args.append(self._image_name)
+    args.append(file_name)
+    # If log is set to verbose, the subprocess prints to stdout as well.
+    # The res.stdout will also have the subprocess's stdout.
+    res = self._docker_context.Run(args, raise_on_failure=raise_on_failure)
+    return res.stdout
+
+  def GetBridgeNetworkInfo(self):
+    """Get info on Docker bridge networks.
+
+    Returns:
+      a dict which contains the network info returned by "docker inspect".
+
+    Raises:
+      DockerError: if a Docker command fails.
+    """
+    args = [
+        'network',
+        'inspect',
+        'bridge',
+        '--format={{json .}}'
+    ]
+    res = self._docker_context.Run(args, raise_on_failure=False)
+    if res.return_code:
+      raise DockerError('Command "%s" failed: %s' % (args, res))
+    return json.loads(res.stdout.strip())

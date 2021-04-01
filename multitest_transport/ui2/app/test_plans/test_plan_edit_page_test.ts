@@ -23,10 +23,10 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf, Subject} from 'rxjs';
 
 import {APP_DATA} from '../services/app_data';
-import {MttClient} from '../services/mtt_client';
-import {DeviceAction, Test, TestResourceType} from '../services/mtt_models';
+import {MttClient, TestRunActionClient} from '../services/mtt_client';
+import {MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
 import {getEl} from '../testing/jasmine_util';
-import {newMockDeviceAction, newMockTest, newMockTestPlan, newMockTestResourceDef, newMockTestResourceDefs} from '../testing/test_util';
+import {newMockTestPlan} from '../testing/mtt_mocks';
 
 import {TestPlanEditPage} from './test_plan_edit_page';
 import {TestPlansModule} from './test_plans_module';
@@ -34,7 +34,6 @@ import {TestPlansModuleNgSummary} from './test_plans_module.ngsummary';
 
 describe('TestPlanEditPage', () => {
   const testPlan = newMockTestPlan('test_plan_id_1', 'test_plan_name_1');
-  let test: Test;
   let el: DebugElement;
   let testPlanEditPage: TestPlanEditPage;
   let testPlanEditPageFixture: ComponentFixture<TestPlanEditPage>;
@@ -42,30 +41,23 @@ describe('TestPlanEditPage', () => {
   let liveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
   let mttClient: jasmine.SpyObj<MttClient>;
   let routeParams: Subject<Params>;
-  let buildChannelsSpy: jasmine.Spy;
-  let deviceActionListSpy: jasmine.Spy;
-  let nodeConfigSpy: jasmine.Spy;
-  let testsSpy: jasmine.Spy;
-  let testPlanSpy: jasmine.Spy;
+  let mttObjectMapService: jasmine.SpyObj<MttObjectMapService>;
 
   beforeEach(() => {
     liveAnnouncer =
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
-    mttClient = jasmine.createSpyObj('mttClient', [
-      'getBuildChannels', 'getDeviceActionList', 'getNodeConfig', 'getTests',
-      'getTestPlan'
-    ]);
+    mttClient = {
+      ...jasmine.createSpyObj(['getNodeConfig', 'getTestPlan']),
+      testRunActions:
+          jasmine.createSpyObj<TestRunActionClient>({list: observableOf([])}),
+    } as jasmine.SpyObj<MttClient>;
     routeParams = new Subject<Params>();
 
-    buildChannelsSpy =
-        mttClient.getBuildChannels.and.returnValue(observableOf([]));
-    deviceActionListSpy =
-        mttClient.getDeviceActionList.and.returnValue(observableOf([]));
-    nodeConfigSpy = mttClient.getNodeConfig.and.returnValue(observableOf([]));
-    testsSpy = mttClient.getTests.and.returnValue(observableOf({}));
-    testPlanSpy = mttClient.getTestPlan.and.returnValue(observableOf(testPlan));
+    mttClient.getNodeConfig.and.returnValue(observableOf([]));
+    mttClient.getTestPlan.and.returnValue(observableOf(testPlan));
 
-    test = newMockTest();
+    mttObjectMapService = jasmine.createSpyObj(['getMttObjectMap']);
+    mttObjectMapService.getMttObjectMap.and.returnValue(observableOf(newMttObjectMap()));
 
     TestBed.configureTestingModule({
       imports: [
@@ -79,6 +71,7 @@ describe('TestPlanEditPage', () => {
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: MttClient, useValue: mttClient},
         {provide: ActivatedRoute, useValue: {params: routeParams}},
+        {provide: MttObjectMapService, useValue: mttObjectMapService},
       ],
     });
 
@@ -95,10 +88,7 @@ describe('TestPlanEditPage', () => {
   it('should call load data correctly', () => {
     routeParams.next({'id': testPlan.id});
     expect(testPlanEditPage.editMode).toBeTruthy();
-    expect(mttClient.getDeviceActionList).toHaveBeenCalledTimes(1);
-    expect(mttClient.getBuildChannels).toHaveBeenCalledTimes(1);
     expect(mttClient.getNodeConfig).toHaveBeenCalledTimes(1);
-    expect(mttClient.getTests).toHaveBeenCalledTimes(1);
     expect(mttClient.getTestPlan).toHaveBeenCalledWith(testPlan.id);
     expect(mttClient.getTestPlan).toHaveBeenCalledTimes(1);
   });
@@ -113,28 +103,6 @@ describe('TestPlanEditPage', () => {
   it('should set test plan correctly', () => {
     testPlanEditPage.loadTestPlan(testPlan);
     expect(testPlanEditPage.data).toEqual(testPlan);
-  });
-
-  it('should update and display test resource pipes correctly', () => {
-    test.test_resource_defs = newMockTestResourceDefs();
-
-    const deviceAction: DeviceAction = newMockDeviceAction();
-    deviceAction.test_resource_defs = newMockTestResourceDefs();
-    deviceAction.test_resource_defs.push(
-        newMockTestResourceDef('name3', 'url3', TestResourceType.DEVICE_IMAGE));
-
-    testPlanEditPage.nodeConfigTestResourceUrls =
-        [{name: 'name3', value: 'node_url'}];
-    testPlanEditPage.selectedDeviceActions = [deviceAction];
-
-    testPlanEditPage.data = testPlan;
-    testPlanEditPage.updateTestResources();
-    expect(testPlanEditPage.testResourceObjs.length).toEqual(3);
-
-    const lastTestResourceObj =
-        testPlanEditPage
-            .testResourceObjs[testPlanEditPage.testResourceObjs.length - 1];
-    expect(lastTestResourceObj.url).toEqual('node_url');
   });
 
   it('should add labels correctly', () => {

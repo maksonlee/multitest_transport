@@ -12,11 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A no-op web handler, responds to every request with a '204 No Content'."""
-import webapp2
+"""A no-op web handler, responds to every request with a '200 OK'."""
+import flask
+from tradefed_cluster import common
+
+APP = flask.Flask(__name__)
 
 
-def NoopHandler(_):
-  return webapp2.Response(status=204)
-
-APP = webapp2.WSGIApplication([(r'/.*', NoopHandler)], debug=True)
+@APP.route("/")
+# This matchs all path start with "/".
+@APP.route("/<path:fake>")
+def NoopHandler(fake):
+  del fake
+  return common.HTTP_OK

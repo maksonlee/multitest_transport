@@ -1,0 +1,138 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="action-row" fxLayout="row wrap" fxLayoutAlign="space-between center">
+  <button
+    mat-raised-button
+    id="recover-button"
+    class="recover-button"
+    matTooltip="Mark hosts as recovering"
+    aria-label="Mark hosts as recovering"
+    [disabled]="!(selectedLab | permissionCheck)"
+    (click)="startRecovering()"
+  >
+    Mark as Recovering
+  </button>
+  <span class="space-separator"></span>
+  <span class="devices-count">
+    Offline Devices:
+    <mat-icon
+      [className]="
+        'mat-icon material-icons ' +
+        (totalDeviceCountSummary?.offlineDevices
+          | totalOfflineDevicesAlertIcon
+            : totalDeviceCountSummary?.allDevices
+            : totalOfflineDevicesHighlightRatio)
+      "
+    >
+      {{
+        totalDeviceCountSummary?.offlineDevices
+          | totalOfflineDevicesAlertIcon
+            : totalDeviceCountSummary?.allDevices
+            : totalOfflineDevicesHighlightRatio
+      }}
+    </mat-icon>
+    <span class="offline-devices-count">{{ totalDeviceCountSummary?.offlineDevices }}</span> of
+    {{ totalDeviceCountSummary?.allDevices }}
+  </span>
+  <span class="hosts-count">
+    Selected Hosts: {{ hostList?.tableRowsSelectManager?.selection.selected.length }} of
+    {{ hostListDataSource.length }}
+  </span>
+</div>
+<div class="filter-row" fxLayout="row wrap" fxLayoutAlign="start center">
+  <mat-form-field fxFlex="300px">
+    <mat-select
+      #mylab
+      placeholder="Lab"
+      [(ngModel)]="selectedLab"
+      (selectionChange)="reloadHostsAndFilters()"
+    >
+      <mat-option *ngFor="let lab of labs" [value]="lab.labName">
+        {{ lab.labName }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <multi-select
+    #hostGroupSelect
+    [placeholder]="'Host Group'"
+    [inputSelection]="selectedHostGroups"
+    [items]="hostGroups"
+    [itemName]="'host group'"
+    (selectionChange)="setHostGroups(hostGroupSelect.convertedSelection); reloadHosts()"
+  ></multi-select>
+
+  <multi-select
+    #runTargetSelect
+    [placeholder]="'Run Target'"
+    [inputSelection]="selectedRunTargets"
+    [items]="runTargets"
+    [itemName]="'run target'"
+    (selectionChange)="setSelectedRunTargets(runTargetSelect.convertedSelection); reloadHosts()"
+  ></multi-select>
+
+  <mat-form-field fxFlex="300px">
+    <mat-select
+      [(ngModel)]="selectedTestHarness"
+      placeholder="Test Harness"
+      (selectionChange)="reloadHosts()"
+    >
+      <mat-option [value]="allOptionsValue">
+        {{ allOptionsValue }}
+      </mat-option>
+      <mat-option *ngFor="let testHarness of testHarnesses" [value]="testHarness">
+        {{ testHarness }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <time-input-filter
+    [label]="'Last check-in'"
+    [number]="lastCheckInHours"
+    [operator]="lastCheckInOperator"
+    [suffix]="'Hours'"
+    (timeFilterChange)="setLastCheckInTime($event); refresh(false)"
+  ></time-input-filter>
+
+  <button
+    mat-icon-button
+    id="refresh-button"
+    matTooltip="Refresh the data"
+    aria-label="Refresh the data"
+    (click)="refresh()"
+  >
+    <mat-icon>refresh</mat-icon>
+  </button>
+</div>
+<mat-spinner *ngIf="isLoading" class="loading-spinner" color="accent"></mat-spinner>
+<div class="list-row" fxLayoutAlign="start start">
+  <host-list-table
+    [dataSource]="hostListDataSource"
+    [headerRowTop]="listHeaderRowTop"
+    [navigatePageMode]="listTableNavigatePageMode"
+    [displayedColumns]="[
+      'hostname',
+      'host_group',
+      'host_state',
+      'run_target',
+      'offline_devices',
+      'last_checkin',
+      'lastRecoveryTime',
+      'testHarness'
+    ]"
+  ></host-list-table>
+</div>

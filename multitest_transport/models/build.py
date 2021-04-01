@@ -18,25 +18,17 @@ import fnmatch
 import logging
 import os
 import re
-import urllib
 import uuid
+
+from six.moves.urllib import parse
 
 from multitest_transport.plugins import base as plugins
 from multitest_transport.models import ndb_models
-from multitest_transport.util import env
+from multitest_transport.util import analytics
 from multitest_transport.util import errors
 
 BuildItem = plugins.BuildItem  BuildItemType = plugins.BuildItemType  UrlPattern = plugins.UrlPattern  
-
 WILDCARD_CHARS = '*?'
-
-
-class Error(Exception):
-  pass
-
-
-class NoBuildError(Error):
-  pass
 
 
 class BuildLocator(object):
@@ -72,11 +64,11 @@ class BuildLocator(object):
     idx = path.rfind('/')
     if idx == -1:
       # Only filename remain
-      filename = urllib.unquote(path.encode('utf-8')).decode('utf-8')
+      filename = parse.unquote(path)
       path = filename
     else:
       directory = path[:idx]
-      filename = urllib.unquote(path[idx + 1:].encode('utf-8')).decode('utf-8')
+      filename = parse.unquote(path[idx + 1:])
       path = os.path.join(directory, filename)
     return BuildLocator(build_channel_id, directory, filename, path)
 
@@ -142,17 +134,78 @@ class BuildChannel(object):
   def __init__(self, config):
     self.id = config.key.id()
     self.config = config
-    self.provider = GetBuildProviderClass(config.provider_name)()
-    self.provider.UpdateOptions(
+    # Find and instantiate provider
+    provider_class = GetBuildProviderClass(config.provider_name)
+    if not provider_class:
+      self.auth_state = ndb_models.AuthorizationState.NOT_APPLICABLE
+      return
+    self._provider = provider_class()
+    self._provider.UpdateOptions(
         **ndb_models.NameValuePair.ToDict(self.config.options))
     # Load credentials and set authorization state
-    self.oauth2_config = self.provider.GetOAuth2Config()
     self.auth_state = ndb_models.AuthorizationState.UNAUTHORIZED
-    if not self.oauth2_config:
+    private_node_config = ndb_models.GetPrivateNodeConfig()
+    if not self._provider.auth_methods:
       self.auth_state = ndb_models.AuthorizationState.NOT_APPLICABLE
-    elif config.credentials:
+    elif config.credentials or private_node_config.default_credentials:
       self.auth_state = ndb_models.AuthorizationState.AUTHORIZED
-      self.provider.UpdateCredentials(config.credentials)
+      self._provider.UpdateCredentials(
+          config.credentials or private_node_config.default_credentials)
+
+  @property
+  def is_valid(self):
+    return hasattr(self, '_provider')
+
+  @property
+  def provider(self):
+    if self.is_valid:
+      return getattr(self, '_provider')
+    raise errors.PluginError('Unknown provider %s' % self.config.provider_name)
+
+  @property
+  def name(self):
+    return self.config.name
+
+  @property
+  def provider_name(self):
+    return self.config.provider_name
+
+  @property
+  def options(self):
+    return self.config.options
+
+  @property
+  def credentials(self):
+    return self.config.credentials
+
+  @property
+  def auth_methods(self):
+    """Supported authorization methods."""
+    if not self.is_valid:
+      return []
+    # Convert plugins.AuthorizationMethods to ndb_models.AuthorizationMethod.
+    NdbAuthorizationMethod = ndb_models.AuthorizationMethod      auth_methods = [
+        getattr(NdbAuthorizationMethod, x.name)
+        for x in self._provider.auth_methods
+    ]
+    if NdbAuthorizationMethod.OAUTH2_AUTHORIZATION_CODE in auth_methods:
+      if not (self.oauth2_config and self.oauth2_config.is_valid):
+        # Remove OAUTH2_AUTHORIZATION_CODE if oauth2_config is not valid.
+        auth_methods.remove(NdbAuthorizationMethod.OAUTH2_AUTHORIZATION_CODE)
+    return auth_methods
+
+  @property
+  def oauth2_config(self):
+    if not self.is_valid:
+      return []
+    return self._provider.oauth2_config
+
+  @property
+  def url_patterns(self):
+    """File URL patterns."""
+    if not self.is_valid:
+      return []
+    return self._provider.url_patterns
 
   def ListBuildItems(self, path=None, page_token=None, item_type=None):
     """List build items.
@@ -194,6 +247,10 @@ class BuildChannel(object):
     Returns:
       FileChunk generator (yields data, current position, total file size)
     """
+    analytics.Log(
+        analytics.BUILD_CHANNEL_CATEGORY,
+        analytics.DOWNLOAD_ACTION,
+        label=self.provider_name)
     return self.provider.DownloadFile(path, offset=offset)
 
   def Update(self, name, provider_name, options):
@@ -206,34 +263,21 @@ class BuildChannel(object):
     Returns:
       an updated ndb_models.BuildChannelConfig object.
     """
-    provider = GetBuildProviderClass(provider_name)()
+    provider_class = GetBuildProviderClass(provider_name)
+    if not provider_class:
+      raise errors.PluginError(
+          'Unknown provider %s' % provider_name, http_status=400)
+    provider = provider_class()
     provider.UpdateOptions(**options)
     self.config.name = name
     self.config.provider_name = provider_name
     self.config.options = ndb_models.NameValuePair.FromDict(options)
     self.config.put()
-    self.provider = provider
+    self._provider = provider
     return self.config
 
   def FindBuildItemPath(self, url):
     return self.provider.FindBuildItemPath(url)
-
-  @property
-  def name(self):
-    return self.config.name
-
-  @property
-  def provider_name(self):
-    return self.config.provider_name
-
-  @property
-  def options(self):
-    return self.config.options
-
-  @property
-  def url_patterns(self):
-    """File URL patterns."""
-    return self.provider.url_patterns
 
 
 def AddBuildChannel(name, provider_name, options):
@@ -246,7 +290,11 @@ def AddBuildChannel(name, provider_name, options):
   Returns:
     a newly created ndb_models.BuildChannelConfig object.
   """
-  provider = GetBuildProviderClass(provider_name)()
+  provider_class = GetBuildProviderClass(provider_name)
+  if not provider_class:
+    raise errors.PluginError(
+        'Unknown provider %s' % provider_name, http_status=400)
+  provider = provider_class()
   # Validate options.
   provider.UpdateOptions(**options)
   new_config = ndb_models.BuildChannelConfig(
@@ -272,15 +320,6 @@ def GetBuildChannel(build_channel_id):
   return BuildChannel(config)
 
 
-def ListBuildChannelConfigs():
-  """Lists all build channel configs.
-
-  Returns:
-    a list of ndb_models.BuildChannelConfig objects.
-  """
-  return ndb_models.BuildChannelConfig.query().fetch()
-
-
 def ListBuildChannels():
   """Lists all build channels.
 
@@ -301,27 +340,29 @@ def FindBuildChannel(url):
   Returns:
     (a build channel, a build item path)
   Raises:
-    ValueError: if a build channel ID is not found.
+    errors.PluginError: if a build channel ID is not found.
   """
-  # Don't map local GCS path to any build channels.
-  if url.startswith('gs://' + env.GCS_BUCKET_NAME):
-    return None, None
-
+  # Try to handle a build channel specific URL (mtt:///<build_channel_id>/...)
   build_locator = BuildLocator.ParseUrl(url)
-
   if build_locator:
     config = ndb_models.BuildChannelConfig.get_by_id(
         build_locator.build_channel_id)
     if not config:
-      raise ValueError('Cannot find build channel: id=%s' %
-                       build_locator.build_channel_id)
+      raise errors.PluginError(
+          'Cannot find build channel %s' % build_locator.build_channel_id,
+          http_status=404)
     return BuildChannel(config), build_locator.path
 
+  # Iterate over all build channels to find one that supports this URL
   for config in ndb_models.BuildChannelConfig.query().fetch():
     build_channel = BuildChannel(config)
+    if not build_channel.is_valid:
+      continue  # skip invalid channels
     path = build_channel.FindBuildItemPath(url)
     if path:
       return build_channel, path
+
+  # No matching build channel found
   return None, None
 
 
@@ -342,7 +383,7 @@ def BuildUrl(build_channel_id, build_item):
   filename = build_item.name
   if not filename:
     return 'mtt:///%s/%s' % (build_channel_id, path)
-  encoded_filename = urllib.quote(filename.encode('utf-8'), safe='')
+  encoded_filename = parse.quote(filename.encode('utf-8'), safe='')
   if not path:
     return 'mtt:///%s/%s' % (build_channel_id, encoded_filename)
   else:
@@ -350,39 +391,42 @@ def BuildUrl(build_channel_id, build_item):
                              os.path.join(path, encoded_filename))
 
 
-def FindTestResources(test_resource_pipes):
-  """Convert TestResourcePipes to TestResourceObjs (may contains wildcard).
+def FindTestResources(test_resource_objs):
+  """Parses test resource obj urls (may include wildcards).
 
   Args:
-    test_resource_pipes: a list of TestResourcePipe
+    test_resource_objs: a list of TestResourceObjs
 
   Returns:
-    test_resource_objs: a list of TestResourceObj
+    parsed_objs: a list of TestResourceObj with urls parsed
   Raises:
-    NoBuildError: if a test resource pipe's url is invalid
-    TestResourceError: if a test resource pipe url is missing
+    FileNotFoundError: if no file matching the test resource obj url is found
+    TestResourceError: if a test resource obj url is missing
   """
-  # Convert test resource pipes (may contain wildcards) into test resources
   test_resource_map = {}
-  for pipe in test_resource_pipes:
-    build_locator = BuildLocator.ParseUrl(pipe.url)
+  for obj in test_resource_objs:
+    build_locator = BuildLocator.ParseUrl(obj.url)
     if build_locator:
       build_item = FindFile(build_locator.build_channel_id,
                             build_locator.directory, build_locator.filename)
       if not build_item:
-        raise NoBuildError('Cannot find build from %s' % pipe.url)
+        raise errors.FileNotFoundError('Cannot find file from %s' % obj.url)
       # Build a encoded url
       url = BuildUrl(build_locator.build_channel_id, build_item)
     else:
-      url = pipe.url
-    test_resource_map[pipe.name] = ndb_models.TestResourceObj(
-        name=pipe.name, url=url, test_resource_type=pipe.test_resource_type)
-  test_resource_objs = sorted(test_resource_map.values(), key=lambda x: x.name)
-  for r in test_resource_objs:
+      url = obj.url
+    test_resource_map[obj.name] = ndb_models.TestResourceObj(
+        name=obj.name,
+        url=url,
+        test_resource_type=obj.test_resource_type,
+        decompress=obj.decompress,
+        decompress_dir=obj.decompress_dir)
+  parsed_objs = sorted(test_resource_map.values(), key=lambda x: x.name)
+  for r in parsed_objs:
     logging.info('\t%s: %s', r.name, r.cache_url)
     if not r.url:
       raise errors.TestResourceError('No URL for test resource %s' % r.name)
-  return test_resource_objs
+  return parsed_objs
 
 
 def FindFile(build_channel_id, path, filename=None):
@@ -397,6 +441,8 @@ def FindFile(build_channel_id, path, filename=None):
     a plugins.BuildItem object.
   """
   build_channel = GetBuildChannel(build_channel_id)
+  if not build_channel:
+    raise ValueError('Build channel [%s] does not exist' % build_channel_id)
   if path:
     build_item = build_channel.GetBuildItem(path)
   else:
@@ -453,7 +499,7 @@ def _BuildItemIterator(build_channel, path, item_type=None):
       if (item_type and
           (item.is_file and item_type != BuildItemType.FILE) or
           (not item.is_file and item_type == BuildItemType.FILE)):
-        logging.warn(
+        logging.warning(
             'An item does not match an item type filter: item=%s, item_type=%s',
             item, item_type)
         continue

@@ -13,10 +13,14 @@
 # limitations under the License.
 
 """Tests for build_channel_api."""
-import multitest_transport.google_import_fixer  
+import tradefed_cluster.util.google_import_fixer  
+import datetime
+
 from absl.testing import absltest
 import mock
 from protorpc import protojson
+from six.moves import urllib
+
 from google.oauth2 import credentials as authorized_user
 from google.oauth2 import service_account
 
@@ -26,19 +30,24 @@ from multitest_transport.models import build
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base as plugins
+from multitest_transport.util import file_util
 from multitest_transport.util import oauth2_util
 
 
 class AndroidBuildProvider(plugins.BuildProvider):
   """Dummy build provider for testing."""
   name = 'Android'
+  mock = mock.MagicMock()
 
   def __init__(self):
     super(AndroidBuildProvider, self).__init__()
     self.AddOptionDef('mock_option')
 
+  def GetBuildItem(self, path):
+    return self.mock.GetBuildItem(path)
 
-class GoogleDriverBuildProvider(plugins.BuildProvider):
+
+class GoogleDriveBuildProvider(plugins.BuildProvider):
   """Dummy build provider for testing."""
   name = 'Google Drive'
 
@@ -87,7 +96,7 @@ class BuildChannelApiTest(api_test_util.TestCase):
 
   @mock.patch.object(build.BuildChannel, 'ListBuildItems')
   def testListBuildItems(self, mock_channel):
-    # create dummy build items to return from channel
+    # create placeholders build items to return from channel
     build_items = [
         plugins.BuildItem(name='item1', path=u'path1', is_file=True),
         plugins.BuildItem(name='item2', path=u'path2', is_file=True)
@@ -111,13 +120,58 @@ class BuildChannelApiTest(api_test_util.TestCase):
     # throws if channel not found
     self.assertEqual('404 Not Found', res.status)
 
+  def testLookupBuildItem(self):
+    config = self._CreateMockBuildChannel(name='android', provider='Android')
+    url = 'mtt:///%s/path/to/file.ext' % config.key.id()
+    build_item = plugins.BuildItem(
+        name='foo',
+        path='zzz/bar/foo',
+        is_file=True,
+        size=1234,
+        timestamp=datetime.datetime.utcnow())
+    AndroidBuildProvider.mock.GetBuildItem.return_value = build_item
+
+    res = self.app.get(
+        '/_ah/api/mtt/v1/build_channels/build_item_lookup?url=%s' % (
+            urllib.parse.quote(url)))
+    build_item_msg = protojson.decode_message(messages.BuildItem, res.body)
+
+    AndroidBuildProvider.mock.GetBuildItem.assert_called_once_with(
+        'path/to/file.ext')
+    self.assertEqual(
+        messages.Convert(build_item, messages.BuildItem), build_item_msg)
+
+  @mock.patch.object(file_util.FileHandle, 'Get')
+  def testLookupBuildItem_withHttpUrl(self, mock_find_handle_get):
+    url = 'http://foo.com/bar/zzz/file.ext?foo=bar'
+    mock_file_handle = mock.MagicMock()
+    mock_find_handle_get.return_value = mock_file_handle
+    mock_file_info = file_util.FileInfo(
+        url=url,
+        is_file=True,
+        total_size=1234,
+        timestamp=datetime.datetime.utcnow())
+    mock_file_handle.Info.return_value = mock_file_info
+
+    res = self.app.get(
+        '/_ah/api/mtt/v1/build_channels/build_item_lookup?url=%s' % (
+            urllib.parse.quote(url)))
+    build_item_msg = protojson.decode_message(messages.BuildItem, res.body)
+
+    mock_find_handle_get.assert_called_once_with(url)
+    mock_file_handle.Info.assert_called_once()
+    self.assertEqual('file.ext', build_item_msg.name)
+    self.assertEqual(mock_file_info.is_file, build_item_msg.is_file)
+    self.assertEqual(mock_file_info.total_size, build_item_msg.size)
+    self.assertEqual(mock_file_info.timestamp, build_item_msg.timestamp)
+
   def testDelete(self):
     # create build channel and confirm it exists
     config = self._CreateMockBuildChannel()
     self.assertIsNotNone(config.key.get())
 
     # delete channel and verify that it no longer exists
-    self.app.post('/_ah/api/mtt/v1/build_channels/%s/delete' % config.key.id())
+    self.app.delete('/_ah/api/mtt/v1/build_channels/%s' % config.key.id())
     self.assertIsNone(config.key.get())
 
   def testCreate(self):
@@ -197,6 +251,7 @@ class BuildChannelApiTest(api_test_util.TestCase):
         '/_ah/api/mtt/v1/build_channels/%s/auth?redirect_uri=%s&code=%s'
         % (config.key.id(), 'redirect_uri', 'code'))
     oauth2_flow.fetch_token.assert_called_once_with(code='code')
+    config = ndb_models.BuildChannelConfig.get_by_id(config.key.id())
     self.assertIsNotNone(config.credentials)
 
   def testAuthorizeConfig_notFound(self):
@@ -216,6 +271,7 @@ class BuildChannelApiTest(api_test_util.TestCase):
     self.app.put_json(
         '/_ah/api/mtt/v1/build_channels/%s/auth' % config.key.id(),
         {'value': '{}'})
+    config = ndb_models.BuildChannelConfig.get_by_id(config.key.id())
     self.assertIsNotNone(config.credentials)
 
   def testAuthorizeWithServiceAccount_notFound(self):
@@ -229,8 +285,10 @@ class BuildChannelApiTest(api_test_util.TestCase):
     """Tests that a build channel can be unauthorized."""
     config = self._CreateMockBuildChannel(name='android', provider='Android')
     config.credentials = authorized_user.Credentials(None)
+    config.put()
     # Verify that credentials were removed
     self.app.delete('/_ah/api/mtt/v1/build_channels/%s/auth' % config.key.id())
+    config = ndb_models.BuildChannelConfig.get_by_id(config.key.id())
     self.assertIsNone(config.credentials)
 
   def testUnauthorize_notFound(self):

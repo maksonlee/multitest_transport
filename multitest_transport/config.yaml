@@ -23,9 +23,6 @@ build_channels:
 - id: google_drive
   name: Google Drive
   provider_name: Google Drive
-- id: local_file_store
-  name: Local File Store
-  provider_name: Local File Store
 
 device_actions:
 - id: copy_cts_media
@@ -42,10 +39,10 @@ device_actions:
     option_values:
     - name: host-cmd-timeout
       values:
-      - 10m
+      - 30m
     - name: host-setup-command
       values:
-      - adb -s $SERIAL shell rm -rf /sdcard/*
+      - adb -s $SERIAL shell rm -rf /sdcard/test
       - chmod u+x copy_media.sh
       - ./copy_media.sh all -s $SERIAL
     - name: work-dir
@@ -119,15 +116,50 @@ device_actions:
     - name: host-setup-command
       values:
       - adb -s $SERIAL reboot-bootloader
+      - fastboot -s $SERIAL -w
       - fastboot -s $SERIAL flash bootloader bootloader.img
+      - fastboot -s $SERIAL reboot-bootloader
       - fastboot -s $SERIAL flash radio radio.img
       - fastboot -s $SERIAL reboot-bootloader
-      - fastboot -s $SERIAL -w update img.zip
+      - fastboot -s $SERIAL update img.zip
       - adb -s $SERIAL wait-for-device
       - sleep 60  # Ensure device fully booted up
     - name: host-cmd-timeout
       values:
       - 10m
+    - name: use-flashing-permit
+
+- id: lvd_setup
+  name: Local Virtual Device Setup
+  description: >
+    Setup a local virtual device. The device type is Cuttlefish:
+    https://source.android.com/setup/create/cuttlefish
+  device_type: LOCAL_VIRTUAL
+  tradefed_options:
+  - name: gce-driver-path
+    values:
+    - /bin/acloud_prebuilt
+  - name: gce-boot-timeout
+    values:
+    - 10m
+  - name: device-type
+    values:
+    - LOCAL_VIRTUAL_DEVICE
+  - name: gce-driver-param
+    values:
+    - --avd-type
+    - cuttlefish
+    - --boot-timeout
+    - '540'
+  test_resource_defs:
+  - name: cvd-host_package.tar.gz
+    test_resource_type: UNKNOWN
+    decompress: true
+    decompress_dir: lvd_tools
+  - name: device
+    test_resource_type: DEVICE_IMAGE
+    decompress: true
+    decompress_dir: lvd_images
 
 - id: reboot
   name: Reboot
@@ -142,103 +174,15 @@ device_actions:
 tests:
 - id: noop
   name: NOOP
+  description: Empty test suite used for device preparation or experimentation
   command: util/timewaster
-
-- id: android.cts.6_0.arm
-  name: CTS 6.0 (ARM)
-  test_resource_defs:
-  - name: android-cts.zip
-    default_download_url: https://dl.google.com/dl/android/cts/android-cts-6.0_r32-linux_x86-arm.zip
-    test_resource_type: TEST_PACKAGE
-  command: cts
-  env_vars:
-  - name: TF_PATH
-    value: ${TF_WORK_DIR}/android-cts/tools:${TF_WORK_DIR}/android-cts/testcases
-  - name: LD_LIBRARY_PATH
-    value: ${TF_WORK_DIR}/android-cts/lib:${TF_WORK_DIR}/android-cts/lib64
-  setup_scripts:
-  output_file_patterns:
-  - android-cts/logs/.*
-  - android-cts/results/[^/]+/[^/]+\.html
-  - android-cts/results/[^/]+/compatibility_result\..*
-  - android-cts/results/[^/]+/logo.png
-  - android-cts/results/[^/]+/test_result.xml
-  result_file: test_result.xml
-  jvm_options:
-  - '-Xmx6g'
-  java_properties:
-  - name: CTS_ROOT
-    value: ${TF_WORK_DIR}
-  context_file_dir: android-cts/results/
-  context_file_pattern: '[\d_\.]+\.zip'
-  retry_command_line: cts --retry 0
-  runner_sharding_args: --shards ${TF_SHARD_COUNT}
-
-- id: android.cts.7_0.arm
-  name: CTS 7.0 (ARM)
-  test_resource_defs:
-  - name: android-cts.zip
-    default_download_url: https://dl.google.com/dl/android/cts/android-cts-7.0_r33-linux_x86-arm.zip
-    test_resource_type: TEST_PACKAGE
-  command: cts
-  env_vars:
-  - name: TF_PATH
-    value: ${TF_WORK_DIR}/android-cts/tools:${TF_WORK_DIR}/android-cts/testcases
-  - name: LD_LIBRARY_PATH
-    value: ${TF_WORK_DIR}/android-cts/lib:${TF_WORK_DIR}/android-cts/lib64
-  setup_scripts:
-  output_file_patterns:
-  - android-cts/logs/.*
-  - android-cts/results/[^/]+/[^/]+\.html
-  - android-cts/results/[^/]+/compatibility_result\..*
-  - android-cts/results/[^/]+/logo.png
-  - android-cts/results/[^/]+/test_result.xml
-  result_file: test_result.xml
-  jvm_options:
-  - '-Xmx6g'
-  java_properties:
-  - name: CTS_ROOT
-    value: ${TF_WORK_DIR}
-  context_file_dir: android-cts/results/
-  context_file_pattern: '[\d_\.]+\.zip'
-  retry_command_line: cts --retry 0
-  runner_sharding_args: --shards ${TF_SHARD_COUNT}
-
-- id: android.cts.7_1.arm
-  name: CTS 7.1 (ARM)
-  test_resource_defs:
-  - name: android-cts.zip
-    default_download_url: https://dl.google.com/dl/android/cts/android-cts-7.1_r29-linux_x86-arm.zip
-    test_resource_type: TEST_PACKAGE
-  command: cts
-  env_vars:
-  - name: TF_PATH
-    value: ${TF_WORK_DIR}/android-cts/tools:${TF_WORK_DIR}/android-cts/testcases
-  - name: LD_LIBRARY_PATH
-    value: ${TF_WORK_DIR}/android-cts/lib:${TF_WORK_DIR}/android-cts/lib64
-  setup_scripts:
-  output_file_patterns:
-  - android-cts/logs/.*
-  - android-cts/results/[^/]+/[^/]+\.html
-  - android-cts/results/[^/]+/compatibility_result\..*
-  - android-cts/results/[^/]+/logo.png
-  - android-cts/results/[^/]+/test_result.xml
-  result_file: test_result.xml
-  jvm_options:
-  - '-Xmx6g'
-  java_properties:
-  - name: CTS_ROOT
-    value: ${TF_WORK_DIR}
-  context_file_dir: android-cts/results/
-  context_file_pattern: '[\d_\.]+\.zip'
-  retry_command_line: cts --retry 0
-  runner_sharding_args: --shards ${TF_SHARD_COUNT}
 
 - id: android.cts.8_0.arm
   name: CTS 8.0 (ARM)
+  description: Compatibility Test Suite 8.0 (ARM)
   test_resource_defs:
   - name: android-cts.zip
-    default_download_url: https://dl.google.com/dl/android/cts/android-cts-8.0_r21-linux_x86-arm.zip
+    default_download_url: https://dl.google.com/dl/android/cts/android-cts-8.0_r26-linux_x86-arm.zip
     test_resource_type: TEST_PACKAGE
   command: cts-suite
   env_vars:
@@ -263,12 +207,15 @@ tests:
   context_file_pattern: '[\d_\.]+\.zip'
   retry_command_line: cts --retry 0
   runner_sharding_args: --shard-count ${TF_SHARD_COUNT}
+  default_test_run_parameters:
+  - max_retry_on_test_failures: 3
 
 - id: android.cts.8_1.arm
   name: CTS 8.1 (ARM)
+  description: Compatibility Test Suite 8.1 (ARM)
   test_resource_defs:
   - name: android-cts.zip
-    default_download_url: https://dl.google.com/dl/android/cts/android-cts-8.1_r17-linux_x86-arm.zip
+    default_download_url: https://dl.google.com/dl/android/cts/android-cts-8.1_r22-linux_x86-arm.zip
     test_resource_type: TEST_PACKAGE
   command: cts-suite
   env_vars:
@@ -293,12 +240,15 @@ tests:
   context_file_pattern: '[\d_\.]+\.zip'
   retry_command_line: cts --retry 0
   runner_sharding_args: --shard-count ${TF_SHARD_COUNT}
+  default_test_run_parameters:
+  - max_retry_on_test_failures: 3
 
 - id : android.cts.9_0.arm
   name: CTS 9.0 (ARM)
+  description: Compatibility Test Suite 9.0 (ARM)
   test_resource_defs:
   - name: android-cts.zip
-    default_download_url: https://dl.google.com/dl/android/cts/android-cts-9.0_r10-linux_x86-arm.zip
+    default_download_url: https://dl.google.com/dl/android/cts/android-cts-9.0_r15-linux_x86-arm.zip
     test_resource_type: TEST_PACKAGE
   command: cts
   env_vars:
@@ -323,12 +273,15 @@ tests:
   context_file_pattern: '[\d_\.]+\.zip'
   retry_command_line: retry --retry 0
   runner_sharding_args: --shard-count ${TF_SHARD_COUNT}
+  default_test_run_parameters:
+  - max_retry_on_test_failures: 3
 
 - id : android.cts_instant.9_0.arm
   name: CTS for Instant Apps 9.0 (ARM)
+  description: Compatibility Test Suite for Instant Apps 9.0 (ARM)
   test_resource_defs:
   - name: android-cts_instant.zip
-    default_download_url: https://dl.google.com/dl/android/cts/android-cts_instant-9.0_r10-linux_x86-arm.zip
+    default_download_url: https://dl.google.com/dl/android/cts/android-cts_instant-9.0_r15-linux_x86-arm.zip
     test_resource_type: TEST_PACKAGE
   command: cts-instant
   env_vars:
@@ -351,14 +304,17 @@ tests:
   context_file_pattern: '[\d_\.]+\.zip'
   retry_command_line: retry --retry 0
   runner_sharding_args: --shard-count ${TF_SHARD_COUNT}
+  default_test_run_parameters:
+  - max_retry_on_test_failures: 3
 
 - id : android.cts.10_0.arm
   name: CTS 10.0 (ARM)
+  description: Compatibility Test Suite 10.0 (ARM)
   test_resource_defs:
   - name: android-cts.zip
-    default_download_url: https://dl.google.com/dl/android/cts/android-cts-10_r2-linux_x86-arm.zip
+    default_download_url: https://dl.google.com/dl/android/cts/android-cts-10_r7-linux_x86-arm.zip
     test_resource_type: TEST_PACKAGE
-  command: cts
+  command: cts --enable-token-sharding
   env_vars:
   - name: TF_PATH
     value: ${TF_WORK_DIR}/android-cts/tools:${TF_WORK_DIR}/android-cts/testcases
@@ -381,3 +337,38 @@ tests:
   context_file_pattern: '[\d_\.]+\.zip'
   retry_command_line: retry --retry 0
   runner_sharding_args: --shard-count ${TF_SHARD_COUNT}
+  default_test_run_parameters:
+  - max_retry_on_test_failures: 3
+
+- id : android.cts.11_0
+  name: CTS 11.0 (ARM)
+  description: Compatibility Test Suite 11.0 (ARM)
+  test_resource_defs:
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-11_r3-linux_x86-arm.zip
+    name: android-cts.zip
+    test_resource_type: TEST_PACKAGE
+  command: cts --enable-token-sharding
+  env_vars:
+  - name: TF_PATH
+    value: ${TF_WORK_DIR}/android-cts/tools:${TF_WORK_DIR}/android-cts/testcases
+  - name: LD_LIBRARY_PATH
+    value: ${TF_WORK_DIR}/android-cts/lib:${TF_WORK_DIR}/android-cts/lib64
+  setup_scripts:
+  output_file_patterns:
+  - android-cts/logs/.*
+  - android-cts/results/[^/]+/[^/]+\.html
+  - android-cts/results/[^/]+/compatibility_result\..*
+  - android-cts/results/[^/]+/logo.png
+  - android-cts/results/[^/]+/test_result.xml
+  result_file: test_result.xml
+  jvm_options:
+  - '-Xmx6g'
+  java_properties:
+  - name: CTS_ROOT
+    value: ${TF_WORK_DIR}
+  context_file_dir: android-cts/results/
+  context_file_pattern: '[\d_\.]+\.zip'
+  retry_command_line: retry --retry 0
+  runner_sharding_args: --shard-count ${TF_SHARD_COUNT}
+  default_test_run_parameters:
+  - max_retry_on_test_failures: 3

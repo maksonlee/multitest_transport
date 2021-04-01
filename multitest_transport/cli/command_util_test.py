@@ -21,6 +21,8 @@ from absl.testing import absltest
 import mock
 
 from multitest_transport.cli import command_util
+from multitest_transport.cli import common
+from multitest_transport.cli import ssh_util
 
 
 class CommandContextTest(absltest.TestCase):
@@ -28,27 +30,36 @@ class CommandContextTest(absltest.TestCase):
 
   def setUp(self):
     super(CommandContextTest, self).setUp()
+    self.fabric_patcher = mock.patch('__main__.command_util.fabric')
+    self.mock_fabric_pkg = self.fabric_patcher.start()
+    self.ssh_context_patcher = mock.patch('__main__.ssh_util.Context')
+    self.mock_ssh_context = mock.MagicMock()
+    self.mock_ssh_context_creator = self.ssh_context_patcher.start()
+    self.mock_ssh_context_creator.return_value = self.mock_ssh_context
     self.wrapped_context = mock.MagicMock()
-    self.remote_sudo_wrapped_context = mock.MagicMock()
     self.wrapped_context.run.return_value = mock.MagicMock(return_code=0)
-    self.remote_sudo_wrapped_context.sudo.return_value = mock.MagicMock(
+    self.sudo_wrapped_context = mock.MagicMock()
+    self.sudo_wrapped_context.sudo.return_value = mock.MagicMock(
         return_code=0)
     self.remote_context = command_util.CommandContext(
         'remotehost', 'remoteuser',
+        ssh_config=ssh_util.SshConfig(hostname='remotehost', user='remoteuser'),
+        sudo_ssh_config=ssh_util.SshConfig(
+            hostname='remotehost', user='remotesudouser',
+            password='sudopwd'),
         wrapped_context=self.wrapped_context,
-        remote_sudo_wrapped_context=self.remote_sudo_wrapped_context,
-        sudo_password='sudopwd')
+        sudo_wrapped_context=self.sudo_wrapped_context)
 
-  def testRun(self):
-    res = self.remote_context.Run(['cmd'])
-    self.wrapped_context.assert_has_calls([
-        mock.call.run(
-            'cmd', warn=True, out_stream=mock.ANY, err_stream=mock.ANY)])
-    self.assertEqual(0, res.return_code)
+  def tearDown(self):
+    super(CommandContextTest, self).tearDown()
+    self.fabric_patcher.stop()
+    self.ssh_context_patcher.stop()
 
   def testCreateCommandContext(self):
     context = command_util.CommandContext()
     self.assertTrue(context.IsLocal())
+    self.assertFalse(self.mock_fabric_pkg.Connection.called)
+    self.assertFalse(self.mock_ssh_context_creator.called)
 
   @mock.patch.object(getpass, 'getuser')
   @mock.patch.object(socket, 'gethostname')
@@ -60,45 +71,119 @@ class CommandContextTest(absltest.TestCase):
     self.assertTrue(context.IsLocal())
     self.assertEqual('ahost', context.host)
     self.assertEqual('auser', context.user)
+    self.assertFalse(self.mock_fabric_pkg.Connection.called)
+    self.assertFalse(self.mock_ssh_context_creator.called)
 
-  @mock.patch.object(command_util, 'fabric')
-  def testCreateCommandContext_remote(self, mock_fabric):
-    fabric_config = mock.MagicMock()
-    mock_fabric.Config.return_value = fabric_config
-    context = command_util.CommandContext(
-        'remotehost', 'remoteuser')
+  def testCreateCommandContext_remote(self):
+    context = command_util.CommandContext('remotehost', 'remoteuser')
     self.assertFalse(context.IsLocal())
     self.assertEqual('remotehost', context.host)
     self.assertEqual('remoteuser', context.user)
-    mock_fabric.Config.assert_called_once_with(
-        system_ssh_path='~/.ssh/config')
-    mock_fabric.Connection.assert_called_once_with(
-        host='remotehost',
-        user='remoteuser',
-        config=fabric_config)
+    self.assertFalse(self.mock_ssh_context_creator.called)
+    self.mock_fabric_pkg.Connection.assert_called_once_with(
+        host='remotehost', user='remoteuser', config=mock.ANY)
 
-  @mock.patch.object(command_util, 'fabric')
-  @mock.patch.object(command_util, 'invoke')
-  @mock.patch.object(command_util, 'paramiko')
-  def testCreateCommandContext_withSudoPwd(
-      self, unused_paramiko, unused_invoke, mock_fabric):
-    fabric_config = mock.MagicMock()
-    mock_fabric.Config.return_value = fabric_config
+  def testCreateCommandContext_withSshConfig(self):
     context = command_util.CommandContext(
-        'host1', 'user1', login_password=None, ssh_key=None,
-        sudo_password='sudopwd', sudo_user='sudo_user0')
-    self.assertEqual('host1', context.host)
-    self.assertEqual('user1', context.user)
-    mock_fabric.Config.assert_called_once_with(
+        host='host1', user='user1', ssh_config=ssh_util.SshConfig(
+            hostname='host1', user='user1'))
+    self.assertIsNotNone(context)
+    self.assertFalse(context.IsLocal())
+    self.assertFalse(self.mock_ssh_context_creator.called)
+    self.mock_fabric_pkg.Connection.assert_called_once_with(
+        host='host1', user='user1', config=mock.ANY)
+
+  def testCreateCommandContext_useNativeSsh(self):
+    ssh_config = ssh_util.SshConfig(
+        hostname='host1', user='user1', use_native_ssh=True)
+    context = command_util.CommandContext(
+        host='host1', user='user1', ssh_config=ssh_config)
+    self.assertIsNotNone(context)
+    self.assertFalse(context.IsLocal())
+    self.mock_ssh_context_creator.assert_called_once_with(ssh_config)
+    self.assertFalse(self.mock_fabric_pkg.Connection.called)
+
+  def testCreateCommandContext_withSudo(self):
+    ssh_config = ssh_util.SshConfig(
+        hostname='host1', user='user1', password='login_pwd')
+    sudo_ssh_config = ssh_util.SshConfig(
+        hostname='host1', user='sudo_user1', password='sudo_pwd')
+
+    context = command_util.CommandContext(
+        host='host1', user='user1',
+        ssh_config=ssh_config, sudo_ssh_config=sudo_ssh_config)
+    self.assertIsNotNone(context)
+    self.assertFalse(context.IsLocal())
+    self.assertFalse(self.mock_ssh_context_creator.called)
+
+    self.mock_fabric_pkg.Connection.assert_has_calls([
+        mock.call(host='host1', user='user1', config=mock.ANY,
+                  connect_kwargs={'password': 'login_pwd'}),
+        mock.call().open(),
+        mock.call(host='host1', user='sudo_user1', config=mock.ANY,
+                  connect_kwargs={'password': 'sudo_pwd'}),
+        mock.call().open(),
+        mock.call().sudo('echo "Testing sudo access..."',
+                         hide=True, password='sudo_pwd')])
+
+  def testCreateCommandContext_useNativeSsh_withSudo(self):
+    ssh_config = ssh_util.SshConfig(
+        hostname='host1', user='user1', use_native_ssh=True)
+    sudo_ssh_config = ssh_util.SshConfig(
+        hostname='host1', user='sudo_user1', use_native_ssh=True)
+
+    context = command_util.CommandContext(
+        host='host1', user='user1',
+        ssh_config=ssh_config, sudo_ssh_config=sudo_ssh_config)
+    self.assertIsNotNone(context)
+    self.assertFalse(context.IsLocal())
+    self.assertEqual(self.mock_ssh_context, context._sudo_wrapped_context)
+    self.assertEqual(self.mock_ssh_context, context._wrapped_context)
+    self.mock_ssh_context_creator.assert_has_calls([
+        mock.call(ssh_config),
+        mock.call(sudo_ssh_config),
+        mock.call().sudo('echo "Testing sudo access..."',
+                         hide=True, password=None)])
+    self.assertFalse(self.mock_fabric_pkg.Connection.called)
+
+  def testCreateFabricContext(self):
+    context = command_util._CreateFabricContext(
+        ssh_util.SshConfig(user='user1', hostname='host1'))
+    self.assertIsNotNone(context)
+    self.mock_fabric_pkg.Config.assert_called_once_with(
         system_ssh_path='~/.ssh/config')
-    mock_fabric.Connection.assert_has_calls([
-        mock.call(
-            host='host1', user='user1', config=fabric_config),
-    ])
-    mock_fabric.Connection.assert_has_calls([
-        mock.call(
-            host='host1', user='sudo_user0', config=fabric_config),
-    ])
+    self.mock_fabric_pkg.Connection.assert_called_once_with(
+        host='host1', user='user1', config=mock.ANY)
+    self.mock_fabric_pkg.Connection().open.assert_called_once_with()
+
+  def testCreateFabricContext_withSshKey(self):
+    context = command_util._CreateFabricContext(
+        ssh_util.SshConfig(user='user1', hostname='host1', ssh_key='/sshkey'))
+    self.assertIsNotNone(context)
+    self.mock_fabric_pkg.Config.assert_called_once_with(
+        system_ssh_path='~/.ssh/config')
+    self.mock_fabric_pkg.Connection.assert_called_once_with(
+        host='host1', user='user1', config=mock.ANY,
+        connect_kwargs={'key_filename': '/sshkey'})
+    self.mock_fabric_pkg.Connection().open.assert_called_once_with()
+
+  def testCreateFabricContext_withPassword(self):
+    context = command_util._CreateFabricContext(
+        ssh_util.SshConfig(user='user1', hostname='host1', password='pwd'))
+    self.assertIsNotNone(context)
+    self.mock_fabric_pkg.Config.assert_called_once_with(
+        system_ssh_path='~/.ssh/config')
+    self.mock_fabric_pkg.Connection.assert_called_once_with(
+        host='host1', user='user1', config=mock.ANY,
+        connect_kwargs={'password': 'pwd'})
+    self.mock_fabric_pkg.Connection().open.assert_called_once_with()
+
+  def testRun(self):
+    res = self.remote_context.Run(['cmd'])
+    self.wrapped_context.assert_has_calls([
+        mock.call.run(
+            'cmd', warn=True, out_stream=mock.ANY, err_stream=mock.ANY)])
+    self.assertEqual(0, res.return_code)
 
   def testFindGcloud(self):
     context = command_util.CommandContext(
@@ -144,7 +229,7 @@ class CommandContextTest(absltest.TestCase):
 
   def testRun_sudo(self):
     res = self.remote_context.Run(['cmd'], sudo=True)
-    self.remote_sudo_wrapped_context.assert_has_calls([
+    self.sudo_wrapped_context.assert_has_calls([
         mock.call.sudo(
             'cmd', out_stream=mock.ANY, err_stream=mock.ANY, warn=True,
             password='sudopwd')])
@@ -366,6 +451,8 @@ class DockerHelperTest(absltest.TestCase):
 
   @mock.patch.dict(os.environ, {'ENV3': 'value3'})
   def testRun(self):
+    self._docker_helper.SetHostname('ahost')
+    self._docker_helper.SetNetwork('anetwork')
     self._docker_helper.AddEnv('ENV1', 'value1')
     self._docker_helper.AddEnv('ENV2', 'value2')
     self._docker_helper.CopyEnv('ENV3')
@@ -377,15 +464,22 @@ class DockerHelperTest(absltest.TestCase):
     self._docker_helper.AddPort(8002, 8002)
     self._docker_helper.AddFile('/local/file1', '/docker/file1')
     self._docker_helper.AddFile('/local/file2', '/docker/file2')
+    self._docker_helper.AddCapability('cap1')
+    self._docker_helper.AddCapability('cap2')
+    self._docker_helper.AddDeviceNode('/dev1')
+    self._docker_helper.AddDeviceNode('/dev2')
+    self._docker_helper.AddExtraArgs([
+        '--device-cgroup-rule', 'c 166:* rwm',
+        '-v', '/dev:/dev'])
     self._docker_helper.Run('acontainer')
     self._docker_context.assert_has_calls([
         mock.call.Run(
             ['create', '--name', 'acontainer', '-it',
              '-v', '/dev/bus/usb:/dev/bus/usb',
-             '-v', '/run/udev/control:/run/udev/control',
              '--device-cgroup-rule', 'c 189:* rwm',
-             '--net=host',
              '--cap-add', 'syslog',
+             '--hostname', 'ahost',
+             '--network', 'anetwork',
              '-e', 'ENV1=value1',
              '-e', 'ENV2=value2',
              '-e', 'ENV3=value3',
@@ -393,6 +487,10 @@ class DockerHelperTest(absltest.TestCase):
              '--mount', 'type=bind,src=/local/folder1,dst=/docker/folder1',
              '--mount', 'type=tmpfs,dst=/atmpfs,tmpfs-size=1000',
              '-p', '8001:8001', '-p', '8002:8002',
+             '--cap-add', 'cap1', '--cap-add', 'cap2',
+             '--device', '/dev1', '--device', '/dev2',
+             '--device-cgroup-rule', 'c 166:* rwm',
+             '-v', '/dev:/dev',
              self._image]),
         mock.call.Run(['cp', '-L', '/local/file1', 'acontainer:/docker/file1']),
         mock.call.Run(['cp', '-L', '/local/file2', 'acontainer:/docker/file2']),
@@ -432,9 +530,37 @@ class DockerHelperTest(absltest.TestCase):
         mock.call.Run(['inspect', 'c1', '--format', '{{format}}'],
                       raise_on_failure=False)])
 
+  def testDoesResourceExist_true(self):
+    self._docker_context.Run.side_effect = [
+        common.CommandResult(0, 'OK', None),
+    ]
+    self.assertTrue(self._docker_helper.DoesResourceExist('image'))
+    self._docker_context.assert_has_calls([
+        mock.call.Run(['inspect', 'image', '--format', 'OK'],
+                      raise_on_failure=False)])
+
+  def testDoesResourceExist_false(self):
+    self._docker_context.Run.side_effect = [
+        common.CommandResult(1, None, 'Error: No such object: image\n'),
+    ]
+    self.assertFalse(self._docker_helper.DoesResourceExist('image'))
+    self._docker_context.assert_has_calls([
+        mock.call.Run(['inspect', 'image', '--format', 'OK'],
+                      raise_on_failure=False)])
+
+  def testGetEnv(self):
+    self._docker_context.Run.side_effect = [
+        common.CommandResult(0, '["A=B"]', None),
+    ]
+    self.assertEqual(['A=B'], self._docker_helper.GetEnv('image_id'))
+    self._docker_context.assert_has_calls([
+        mock.call.Run(
+            ['inspect', 'image_id', '--format', '{{json .Config.Env}}'],
+            raise_on_failure=False)])
+
   def testGetRemoteImageDigest(self):
     self._docker_context.Run.side_effect = [
-        command_util.CommandResult(0, 'aimage_digest', None),
+        common.CommandResult(0, 'aimage_digest', None),
     ]
     self.assertEqual(
         'aimage_digest', self._docker_helper.GetRemoteImageDigest('image_id'))
@@ -445,7 +571,7 @@ class DockerHelperTest(absltest.TestCase):
 
   def testGetImageIdForContainer(self):
     self._docker_context.Run.side_effect = [
-        command_util.CommandResult(0, 'aimage_id', None),
+        common.CommandResult(0, 'aimage_id', None),
     ]
     self.assertEqual(
         'aimage_id',
@@ -457,7 +583,7 @@ class DockerHelperTest(absltest.TestCase):
 
   def testGetProcessIdForContainer(self):
     self._docker_context.Run.side_effect = [
-        command_util.CommandResult(0, 'acontainer_pid\n', None),
+        common.CommandResult(0, 'acontainer_pid\n', None),
     ]
     self.assertEqual('acontainer_pid',
                      self._docker_helper.GetProcessIdForContainer('c1'))
@@ -474,7 +600,7 @@ class DockerHelperTest(absltest.TestCase):
 
   def testIsContainerRunning(self):
     self._docker_context.Run.side_effect = [
-        command_util.CommandResult(0, 'running', None),
+        common.CommandResult(0, 'running', None),
     ]
     self.assertTrue(self._docker_helper.IsContainerRunning('c1'))
     self._docker_context.assert_has_calls([
@@ -483,7 +609,7 @@ class DockerHelperTest(absltest.TestCase):
 
   def testIsContainerRunning_noExist(self):
     self._docker_context.Run.side_effect = [
-        command_util.CommandResult(1, None, 'Error: No such object: c1'),
+        common.CommandResult(1, None, 'Error: No such object: c1'),
     ]
     self.assertFalse(self._docker_helper.IsContainerRunning('c1'))
     self._docker_context.assert_has_calls([
@@ -491,12 +617,12 @@ class DockerHelperTest(absltest.TestCase):
                       raise_on_failure=False)])
 
   def testIsContainerDead_alive(self):
-    self._docker_context.Run.return_value = command_util.CommandResult(
+    self._docker_context.Run.return_value = common.CommandResult(
         0, 'Checking container liveliness.\n', u'')
     self.assertFalse(self._docker_helper.IsContainerDead('container_1'))
 
   def testIsContainerDead_dead(self):
-    self._docker_context.Run.return_value = command_util.CommandResult(
+    self._docker_context.Run.return_value = common.CommandResult(
         126,
         (u'OCI runtime exec failed: exec failed:'
          ' cannot exec a container that has stopped: unknown'),
@@ -504,7 +630,7 @@ class DockerHelperTest(absltest.TestCase):
     self.assertTrue(self._docker_helper.IsContainerDead('container_1'))
 
   def testIsContainerDead_commandFailed(self):
-    self._docker_context.Run.return_value = command_util.CommandResult(
+    self._docker_context.Run.return_value = common.CommandResult(
         1, u'No such container: container_1\n', u'')
     self.assertFalse(self._docker_helper.IsContainerDead('container_1'))
 
@@ -517,6 +643,64 @@ class DockerHelperTest(absltest.TestCase):
     self._docker_helper.RemoveVolumes(['v1', 'v2'])
     self._docker_context.assert_has_calls([
         mock.call.Run(['volume', 'rm', 'v1', 'v2'], raise_on_failure=False)])
+
+  def testLogs(self):
+    """Test DockerHelper.Logs."""
+    self._docker_helper.Logs('acontainer')
+    self._docker_context.assert_has_calls([
+        mock.call.Run(['logs', 'acontainer'], raise_on_failure=False)
+    ])
+
+  def testCat(self):
+    """Test DockerHelper.Cat."""
+    self._docker_context.Run.side_effect = [
+        common.CommandResult(0, 'running', None),
+        common.CommandResult(0, 'file content', None),
+    ]
+    self._docker_helper.Cat('acontainer', '/path/to/file')
+    self._docker_context.assert_has_calls([
+        mock.call.Run(['exec', 'acontainer', 'cat', '/path/to/file'],
+                      raise_on_failure=False)
+    ])
+
+  def testCat_containerStopped(self):
+    """Test DockerHelper.Cat when container is stopped."""
+    self._docker_context.Run.side_effect = [
+        common.CommandResult(0, 'stopped', None),
+        common.CommandResult(0, 'container log', None),
+    ]
+    self._docker_helper.Cat('acontainer', '/path/to/file')
+    self._docker_context.assert_has_calls([
+        mock.call.Run(
+            ['run', '--rm', '--entrypoint', 'cat', 'aimage', '/path/to/file'],
+            raise_on_failure=False)
+    ])
+
+  def testGetBridgeNetworkInfos(self):
+    """Test DockerHelper.GetBridgeNetworkInfo()."""
+    self._docker_context.Run.return_value = common.CommandResult(
+        0,
+        '{"EnableIPv6":true,"IPAM":{"Config":['
+        '{"Subnet":"2001:db8::/56"},'
+        '{"Subnet":"192.168.9.0/24","Gateway":"192.168.9.1"}'
+        ']}}',
+        None)
+    res = self._docker_helper.GetBridgeNetworkInfo()
+    self._docker_context.Run.assert_called_once_with(
+        ['network', 'inspect', 'bridge', '--format={{json .}}'],
+        raise_on_failure=False)
+    self.assertEqual(
+        {
+            'EnableIPv6': True,
+            'IPAM': {
+                'Config': [{
+                    'Subnet': '2001:db8::/56'
+                }, {
+                    'Subnet': '192.168.9.0/24',
+                    'Gateway': '192.168.9.1'
+                }]
+            }
+        }, res)
 
 
 class DockerContextTest(absltest.TestCase):
@@ -565,7 +749,7 @@ class DockerContextTest(absltest.TestCase):
             ['docker', 'login',
              '-u', 'oauth2accesstoken',
              '-p', 'atoken',
-             command_util._DOCKER_SERVER],
+             command_util.DEFAULT_DOCKER_SERVER],
             raise_on_failure=False)
     ])
     (self.mock_auth_util

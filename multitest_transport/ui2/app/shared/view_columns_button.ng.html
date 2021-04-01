@@ -1,0 +1,27 @@
+<button
+  mat-icon-button
+  id="view-columns-btn"
+  class="view-columns"
+  aria-label="View columns"
+  matTooltip="View columns"
+  [matMenuTriggerFor]="view_column_menu"
+  type="button"
+>
+  <mat-icon>view_column</mat-icon>
+</button>
+
+<mat-menu #view_column_menu="matMenu">
+  <ng-container *ngFor="let column of columns; let i = index">
+    <ng-container *ngIf="column.removable">
+      <button
+        [attr.id]="column.fieldName + '-menu-btn'"
+        (click)="toggleColumn($event, i)"
+        mat-menu-item
+        type="button"
+      >
+        <mat-icon>{{ column.show ? "check_box" : "check_box_outline_blank" }}</mat-icon>
+        <span class="menu-item">{{ column.displayName }}</span>
+      </button>
+    </ng-container>
+  </ng-container>
+</mat-menu>

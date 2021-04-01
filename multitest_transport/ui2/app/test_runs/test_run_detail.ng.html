@@ -1,5 +1,5 @@
 <!--
- Copyright 2019 Google LLC
+ Copyright 2020 Google LLC
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -47,7 +47,10 @@
                                fxFlex>
             </test-run-failures>
           </div>
-          {{testRun.state_info}}
+          <div class="state-info" #stateInfo
+               [title]="stateInfo.offsetWidth < stateInfo.scrollWidth ? testRun.state_info : ''">
+            {{testRun.state_info}}
+          </div>
           <div id="action-buttons">
             <button mat-flat-button color="accent" (click)="rerunTestRun()"
                     *ngIf="isFinalTestRunState(testRun.state); else cancel">
@@ -60,12 +63,12 @@
             </ng-template>
 
             <a button mat-stroked-button color="accent" *ngIf="outputFilesUrl"
-               [href]="outputFilesUrl">
-              View Output Files
+               [href]="outputFilesUrl" (click)="trackClickEvent('view_output_files')">
+              {{isLastAttemptFinal() ? 'View Output Files' : 'View Working Directory'}}
             </a>
 
             <a button mat-stroked-button color="accent" *ngIf="exportUrl"
-               [href]="exportUrl" [download]="exportUrl">
+               [href]="exportUrl" [download]="exportUrl" (click)="trackClickEvent('export_result')">
               Export Result
             </a>
           </div>
@@ -84,6 +87,23 @@
             </tr>
             <!-- TODO: Add Test Plan name and link to page -->
             <tr>
+              <td>Previous Run:</td>
+              <td>
+                <a href="/test_runs/{{testRun.prev_test_run_id}}">
+                  {{testRun.prev_test_run_id}}
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td>Reruns:</td>
+              <td>
+                <span *ngFor="let rerun of reruns; let i = index">
+                  <a href="/test_runs/{{rerun.id}}">
+                    {{rerun.id}}</a>{{i === reruns.length -1 ? '' : ',&nbsp;' }}
+                </span>
+              </td>
+            </tr>
+            <tr>
               <td>Labels:</td>
               <td>
                 <mat-chip-list [tabIndex]="-1">
@@ -99,16 +119,16 @@
       <mat-grid-tile *ngIf="testRun.test_devices">
         <div class="grid-tile">
           <span class="tile-title">Devices Tested</span>
-          <device-list class="compact" [deviceInfos]="testRun.test_devices || []"
+          <device-picker class="compact" [deviceInfos]="testRun.test_devices || []"
                        [displayedDeviceInfoColumns]="deviceInfoColumns"
                        *ngIf="testRun.test_devices">
-          </device-list>
+          </device-picker>
         </div>
       </mat-grid-tile>
     </mat-grid-list>
 
     <!-- Output Info Tabs -->
-    <mat-tab-group>
+    <mat-tab-group (selectedTabChange)="switchTab($event)" #tabGroup>
       <mat-tab label="Progress">
         <test-run-progress [testRun]="testRun" [request]="request"></test-run-progress>
       </mat-tab>

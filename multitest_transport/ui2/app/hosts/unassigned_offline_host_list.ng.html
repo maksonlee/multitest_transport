@@ -1,0 +1,68 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="action-row" fxLayout="row wrap" fxLayoutAlign="start center">
+  <button
+    mat-raised-button
+    matTooltip="Assign to me"
+    aria-label="Assign to me"
+    [disabled]="
+      !(
+        (labName | permissionCheck) &&
+        hostListTable.tableRowsSelectManager?.selection.selected.length
+      )
+    "
+    (click)="assignHostsToMe.emit(hostListTable.tableRowsSelectManager?.selection.selected)"
+  >
+    Assign to me
+  </button>
+  <assign-to-filter
+    [dataSource]="currentLabOwners"
+    [disabled]="!(labName | permissionCheck)"
+    [selectedHostnames]="hostListTable.tableRowsSelectManager?.selection.selected"
+    (submit)="assignHostsTo.emit($event)"
+  >
+  </assign-to-filter>
+  <add-notes-button
+    [labName]="labName"
+    [ids]="hostListTable.tableRowsSelectManager?.selection.selected"
+    [disabled]="!(labName | permissionCheck)"
+    noteType="HOST"
+    (notesUpdated)="notesUpdated.emit($event)"
+    (click)="startBatchAddHostsNotesHats()"
+  ></add-notes-button>
+</div>
+<div class="list-row" fxLayoutAlign="start start" [style.max-height.px]="listRowMaxHeight">
+  <host-list-table
+    [dataSource]="unassignedHostListDataSource"
+    [headerRowTop]="listHeaderRowTop"
+    [isLoading]="isLoading"
+    [displayedColumns]="[
+      'hostname',
+      'host_group',
+      'host_state',
+      'run_target',
+      'offline_devices',
+      'last_checkin',
+      'lastRecoveryTime',
+      'testHarness',
+      'actions'
+    ]"
+    (hostAssigneeChange)="assignHostsTo.emit($event)"
+    (hostListChangeSort)="changeSort.emit($event)"
+    (removeHostFromList)="removeHostFromList.emit($event)"
+  ></host-list-table>
+</div>

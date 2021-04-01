@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """OAuth2 utilities."""
-import multitest_transport.google_import_fixer  
 import json
 import logging
 import pickle
@@ -22,7 +21,7 @@ import attr
 import google_auth_httplib2
 from google_auth_oauthlib import flow
 from six.moves import urllib
-from google.appengine.ext import ndb
+from tradefed_cluster.util import ndb_shim as ndb
 from google.auth import credentials as ga_credentials
 from google.oauth2 import credentials as authorized_user
 
@@ -39,12 +38,17 @@ class CredentialsProperty(ndb.BlobProperty):
       raise TypeError('Value %s is not a Credentials instance.' % value)
 
   def _to_base_type(self, value):
-    return pickle.dumps(value)
+    # Using protocol 2 to ensure compatiblity with Python 2.
+    return pickle.dumps(value, protocol=2)
 
   def _from_base_type(self, value):
     try:
-      return pickle.loads(value)
-    except KeyError:
+      credentials = pickle.loads(value)
+      # Patch missing fields from older credentials objects (b/176850961)
+      if not hasattr(credentials, '_quota_project_id'):
+        setattr(credentials, '_quota_project_id', None)
+      return credentials
+    except (KeyError, pickle.PickleError):
       logging.warning('Unpickling credentials failed, reverting to JSON')
     # Try to parse JSON blob for backwards compatibility with oauth2client
     try:
@@ -62,6 +66,10 @@ class OAuth2Config(object):
   scopes = attr.ib(factory=list)
   auth_uri = attr.ib(default=GOOGLE_AUTH_URI)
   token_uri = attr.ib(default=GOOGLE_TOKEN_URI)
+
+  @property
+  def is_valid(self):
+    return all([self.client_id, self.client_secret, self.scopes])
 
 
 def ApplyHeader(headers, credentials, scopes=None):

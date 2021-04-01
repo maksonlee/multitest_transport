@@ -17,12 +17,17 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
 import {MatTable} from '@angular/material/table';
-import {ReplaySubject} from 'rxjs';
+import {ReplaySubject, Subject} from 'rxjs';
 import {filter, finalize, mergeMap, takeUntil} from 'rxjs/operators';
 
-import {FileNode, FileService, FileType} from '../services/file_service';
+import {FileNode, FileService, FileType, getDirectoryPath, joinPath} from '../services/file_service';
 import {Notifier} from '../services/notifier';
+
 import {buildApiErrorMessage, noAwait} from './util';
+
+// Local file store root directory
+const ROOT_DIRECTORY = 'local_file_store';
+const ROOT_DIRECTORY_RE = new RegExp(`^${ROOT_DIRECTORY}/`);
 
 /** Displays and manages user-uploaded local files. */
 @Component({
@@ -40,11 +45,14 @@ export class LocalFileStore implements OnInit, OnDestroy {
   columnsToDisplay = ['name', 'timestamp', 'size', 'action'];
 
   /** Notified when the component is destroyed. */
-  private readonly destroy = new ReplaySubject();
+  private readonly destroy = new ReplaySubject<void>();
+  /** Notified when the cancel upload button is pressed. */
+  readonly cancel = new Subject();
 
   isLoading = false;
   files: FileNode[] = [];
   selectedFile?: FileNode;
+  currentDirectory: string = '';
   /** True if currently uploading a file to local storage. */
   isUploading = false;
   /** File upload completion percentage (0 to 100). */
@@ -56,16 +64,35 @@ export class LocalFileStore implements OnInit, OnDestroy {
       private readonly notifier: Notifier) {}
 
   ngOnInit() {
-    this.loadFiles();
+    const path = this.fs.getRelativePath(this.url);
+    const directory =
+        ROOT_DIRECTORY_RE.test(path) ? getDirectoryPath(path) : ROOT_DIRECTORY;
+    this.changeDirectory(directory);
   }
 
   ngOnDestroy() {
     this.destroy.next();
   }
 
-  loadFiles() {
+  /** Returns the file path without the root directory prefix. */
+  getRelativePath(path: string) {
+    return path.replace(ROOT_DIRECTORY_RE, '');
+  }
+
+  /**
+   * Changes the current directory and reloads the list of files.
+   * @param directory directory to change to
+   */
+  changeDirectory(directory: string|FileNode) {
+    this.currentDirectory =
+        typeof directory === 'string' ? directory : directory.path;
+    this.loadFiles();
+  }
+
+  /** Reloads the list of files in the current directory. */
+  private loadFiles() {
     this.isLoading = true;
-    this.fs.listFiles('local_file_store')
+    this.fs.listFiles(this.currentDirectory)
         .pipe(
             takeUntil(this.destroy),
             finalize(() => {
@@ -75,13 +102,18 @@ export class LocalFileStore implements OnInit, OnDestroy {
         .subscribe(files => {
           this.files = files;
           // Check if selected file exists
-          const path = this.selectedFile ?
-              this.selectedFile.path : this.fs.getRelativePath(this.url);
-          const file = this.files.find(f => f.path === path);
+          const path = this.selectedFile ? this.selectedFile.path :
+                                           this.fs.getRelativePath(this.url);
+          const file = this.files.find(
+              f => f.path === path && f.type !== FileType.DIRECTORY);
           this.selectFile(file);
         });
   }
 
+  /**
+   * Selects a file and generates its URL, or clears the selection.
+   * @param file file to select
+   */
   selectFile(file?: FileNode) {
     this.selectedFile = file;
     this.urlChange.emit(file ? this.fs.getFileUrl(file.path) : '');
@@ -98,24 +130,35 @@ export class LocalFileStore implements OnInit, OnDestroy {
 
     this.isUploading = true;
     noAwait(this.liveAnnouncer.announce(`Uploading ${file.name}`, 'polite'));
-    this.fs.uploadFile(file, `local_file_store/${file.name}`)
+    this.fs.uploadFile(file, joinPath(this.currentDirectory, file.name))
         .pipe(
             takeUntil(this.destroy),
+            takeUntil(this.cancel),
             finalize(() => {
               this.isUploading = false;
               this.uploadProgress = 0;
             }),
             )
-        .subscribe(event => {
-          this.uploadProgress = event.progress;
-          if (event.done) {
-            this.liveAnnouncer.announce(`${file.name} uploaded`, 'assertive');
-            this.loadFiles();
-          }
-        });
+        .subscribe(
+            event => {
+              this.uploadProgress = event.progress;
+              if (event.done) {
+                this.liveAnnouncer.announce(
+                    `${file.name} uploaded`, 'assertive');
+                this.loadFiles();
+              }
+            },
+            error => {
+              this.notifier.showError(
+                  `Failed to upload '${file.name}'.`,
+                  buildApiErrorMessage(error));
+            });
   }
 
-  /** Deletes a local file. */
+  /**
+   * Deletes a local file.
+   * @param file to delete
+   */
   deleteFile(file: FileNode) {
     this.notifier
         .confirm('Do you really want to delete this file?', 'Delete File')

@@ -1,0 +1,47 @@
+<!doctype html>
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<html>
+<head>
+  <!-- Google Analytics (https://developers.google.com/analytics/devguides/collection/gtagjs) -->
+  <script async src="https://www.googletagmanager.com/gtag/js"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    // Load analytics parameters
+    const analyticsTrackingId = "{{analytics_tracking_id}}";
+    var analyticsEnabled = !!analyticsTrackingId;
+    var analyticsParams = {is_google: "{{is_google}}"};
+    // Track page view if analytics are enabled
+    if (analyticsEnabled) {
+      gtag('config', analyticsTrackingId,
+          {...analyticsParams, page_path: '/webaoa', custom_map: {dimension1: 'is_google'}});
+    }
+  </script>
+
+  <link rel="shortcut icon" href="/webaoa/static/favicon.ico">
+  <link rel="stylesheet" href="/webaoa/static/styles.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+  <title>Android WebAOA</title>
+</head>
+<body>
+<aoa-app></aoa-app>
+<script src="/webaoa/app.js"></script>
+</body>
+</html>

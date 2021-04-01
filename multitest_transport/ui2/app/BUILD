@@ -7,6 +7,7 @@ licenses(["notice"])
 sass_library(
     name = "app_styles_lib",
     srcs = ["app.scss"],
+    strict_deps = False,
     visibility = ["//multitest_transport"],
     deps = ["//multitest_transport/ui2:constants"],
 )
@@ -15,6 +16,8 @@ sass_binary(
     name = "app_styles",
     src = "app.scss",
     output_name = "app.css",
+    sass_stack = False,
+    strict_deps = False,
     deps = [":app_styles_lib"],
 )
 
@@ -34,11 +37,14 @@ ng_module(
         third_party_js("angular2:platform_browser"),
         third_party_js("angular2:platform_browser_animations"),
         third_party_js("angular2:router"),
+        third_party_js("rxjs"),
         "//multitest_transport/ui2/app/auth",
         "//multitest_transport/ui2/app/build_channels",
         "//multitest_transport/ui2/app/config_sets",
         "//multitest_transport/ui2/app/device_actions",
         "//multitest_transport/ui2/app/devices",
+        "//multitest_transport/ui2/app/hosts",
+        "//multitest_transport/ui2/app/notes",
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/app/settings",
         "//multitest_transport/ui2/app/setup_wizard",
@@ -61,6 +67,7 @@ ng_module(
         third_party_js("angular2:core_testing"),
         third_party_js("angular2:router_testing"),
         third_party_js("typings/jasmine"),
+        third_party_js("rxjs"),
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/app/testing:jasmine_util",
     ],

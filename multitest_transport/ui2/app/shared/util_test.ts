@@ -16,7 +16,19 @@
 
 import 'jasmine';
 
-import {isFnmatchPattern} from './util';
+import {areArraysEqual, getFilterDefaultSingleValue, isFnmatchPattern} from './util';
+
+describe('areArraysEqual', () => {
+  const obj1 = {};
+  const obj2 = {};
+
+  it('should return true if the arrays are equal', () => {
+    expect(areArraysEqual([obj1], [obj1])).toBe(true);
+  });
+  it('should return false if the arrays reference different objects', () => {
+    expect(areArraysEqual([obj1], [obj2])).toBe(false);
+  });
+});
 
 describe('isFnmatchPattern', () => {
   it('should behave correctly on valid input', () => {
@@ -37,5 +49,71 @@ describe('isFnmatchPattern', () => {
     expect(isFnmatchPattern('folder/folder/\img]')).toBe(false);
     expect(isFnmatchPattern('folder/folder/\\\\\img]')).toBe(false);
     expect(isFnmatchPattern('folder/folder/[*]')).toBe(true);
+  });
+});
+
+describe('getFilterDefaultSingleValue', () => {
+  const options = ['lab-1', 'lab-2', 'lab-3'];
+
+  it('should return urlParam when the urlParam and storedParam are specified',
+     () => {
+       const urlParam = 'lab-2';
+       const storedParam = 'lab-3';
+       const result =
+           getFilterDefaultSingleValue(options, urlParam, storedParam);
+       expect(result).toEqual(urlParam);
+     });
+
+  it('should return urlParam when the urlParam and storedParam are ' +
+         'specified and the urlParam is All',
+     () => {
+       const urlParam = 'All';
+       const storedParam = 'lab-3';
+       const result =
+           getFilterDefaultSingleValue(options, urlParam, storedParam);
+       expect(result).toEqual(urlParam);
+     });
+
+  it('should return storedParam when the urlParam and storedParam are ' +
+         'specified but urlParam value is invalid',
+     () => {
+       const urlParam = 'All';
+       const storedParam = 'lab-3';
+       const hasAllOption = false;
+       const result = getFilterDefaultSingleValue(
+           options, urlParam, storedParam, hasAllOption);
+       expect(result).toEqual('lab-3');
+     });
+
+  it('should return first option when the urlParam is specified with invalid ' +
+         'value',
+     () => {
+       const urlParam = 'All';
+       const storedParam = '';
+       const hasAllOption = false;
+       const result = getFilterDefaultSingleValue(
+           options, urlParam, storedParam, hasAllOption);
+       expect(result).toEqual('lab-1');
+     });
+
+  it('should return storedParam when the storedParam is specified', () => {
+    const storedParam = 'lab-3';
+    const result = getFilterDefaultSingleValue(options, '', storedParam);
+    expect(result).toEqual(storedParam);
+  });
+
+  it('should return storedParam when the storedParam is specified with All', () => {
+    const storedParam = 'All';
+    const result = getFilterDefaultSingleValue(options, '', storedParam);
+    expect(result).toEqual(storedParam);
+  });
+
+  it('should return first option when the storedParam is specified with '+
+         'invalid value', () => {
+    const storedParam = 'lab-4';
+    const hasAllOption = false;
+    const result =
+        getFilterDefaultSingleValue(options, '', storedParam, hasAllOption);
+    expect(result).toEqual('lab-1');
   });
 });

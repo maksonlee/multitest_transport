@@ -1,0 +1,202 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-toolbar>
+  <mat-toolbar-row fxLayoutAlign="space-between center">
+    <span>Offline Host Assignments</span>
+  </mat-toolbar-row>
+</mat-toolbar>
+<div class="action-row" fxLayout="row wrap" fxLayoutAlign="space-between center">
+  <span class="space-separator"></span>
+  <span class="devices-count">
+    Offline Devices:
+    <mat-icon
+      [className]="
+        'mat-icon material-icons ' +
+        (totalDeviceCountSummary?.offlineDevices
+          | totalOfflineDevicesAlertIcon
+            : totalDeviceCountSummary?.allDevices
+            : totalOfflineDevicesHighlightRatio)
+      "
+    >
+      {{
+        totalDeviceCountSummary?.offlineDevices
+          | totalOfflineDevicesAlertIcon
+            : totalDeviceCountSummary?.allDevices
+            : totalOfflineDevicesHighlightRatio
+      }}
+    </mat-icon>
+    <span class="offline-devices-count">{{ totalDeviceCountSummary?.offlineDevices }}</span> of
+    {{ totalDeviceCountSummary?.allDevices }}
+  </span>
+</div>
+<div class="filter-row" fxLayout="row wrap" fxLayoutAlign="start center">
+  <mat-form-field appearance="outline" class="mat-select-filter" fxFlex="300px">
+    <mat-select #mylab placeholder="Lab" [(ngModel)]="selectedLab" (selectionChange)="refresh()">
+      <mat-select-trigger> Lab: {{ selectedLab }} </mat-select-trigger>
+      <mat-option *ngFor="let lab of labs" [value]="lab.labName">
+        {{ lab.labName }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <multi-select
+    #hostGroupSelect
+    appearance="outline"
+    [placeholder]="'Host Group'"
+    [inputSelection]="selectedHostGroups"
+    [items]="hostGroups"
+    [itemName]="'host group'"
+    (selectionChange)="setHostGroups($event); reloadHosts()"
+    (keydown)="filterTextChanged.next()"
+  ></multi-select>
+
+  <multi-select
+    #runTargetSelect
+    appearance="outline"
+    [placeholder]="'Run Target'"
+    [inputSelection]="selectedRunTargets"
+    [items]="runTargets"
+    [itemName]="'run target'"
+    (selectionChange)="setSelectedRunTargets($event); reloadHosts()"
+    (keydown)="filterTextChanged.next()"
+  ></multi-select>
+
+  <mat-form-field appearance="outline" class="mat-select-filter" fxFlex="300px">
+    <mat-select
+      [(ngModel)]="selectedTestHarness"
+      placeholder="Test Harness"
+      (selectionChange)="reloadHosts()"
+    >
+      <mat-select-trigger> Test Harness: {{ selectedTestHarness }} </mat-select-trigger>
+      <mat-option [value]="allOptionsValue">
+        {{ allOptionsValue }}
+      </mat-option>
+      <mat-option *ngFor="let testHarness of testHarnesses" [value]="testHarness">
+        {{ testHarness }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <time-input-filter
+    [appearance]="'outline'"
+    [label]="'Last check-in'"
+    [number]="lastCheckInHours"
+    [operator]="lastCheckInOperator"
+    [suffix]="'Hours'"
+    (timeFilterChange)="setLastCheckInTime($event); refresh(false)"
+  ></time-input-filter>
+
+  <button
+    mat-icon-button
+    id="refresh-button"
+    matTooltip="Refresh the data"
+    aria-label="Refresh the data"
+    (click)="refresh()"
+  >
+    <mat-icon>refresh</mat-icon>
+  </button>
+</div>
+<div class="list-row" fxLayoutAlign="start start">
+  <mat-accordion [multi]="true" [style.max-width.px]="accordionMaxWidth">
+    <mat-expansion-panel [expanded]="true">
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          Hosts assigned to me ({{ assignedMeHostListDataSource.length }})
+        </mat-panel-title>
+        <mat-panel-description fxLayoutAlign="end">
+          <span class="hosts-count">
+            Selected:
+            {{
+              assignedMeHostList?.hostListTable?.tableRowsSelectManager?.selection.selected.length
+            }}
+            of
+            {{ assignedMeHostListDataSource.length }}
+          </span>
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <assigned-me-offline-host-list
+        [currentLabOwners]="currentLabOwners"
+        [isLoading]="isLoading"
+        [labName]="selectedLab"
+        [listRowMaxHeight]="hostListRowMaxHeight"
+        [(assignedMeHostListDataSource)]="assignedMeHostListDataSource"
+        [listHeaderRowTop]="listHeaderRowTop"
+        (assignHostsTo)="assignTo($event)"
+        (notesUpdated)="refresh()"
+        (changeSort)="startChangeSortHats()"
+      ></assigned-me-offline-host-list>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          Hosts assigned to others ({{ assignedOthersHostListDataSource.length }})
+        </mat-panel-title>
+        <mat-panel-description fxLayoutAlign="end">
+          <span class="hosts-count">
+            Selected:
+            {{
+              assignedOthersHostList?.hostListTable?.tableRowsSelectManager?.selection.selected
+                .length
+            }}
+            of
+            {{ assignedOthersHostListDataSource.length }}
+          </span>
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <assigned-others-offline-host-list
+        [currentLabOwners]="currentLabOwners"
+        [isLoading]="isLoading"
+        [labName]="selectedLab"
+        [listRowMaxHeight]="hostListRowMaxHeight"
+        [assignedOthersHostListDataSource]="assignedOthersHostListDataSource"
+        [listHeaderRowTop]="listHeaderRowTop"
+        (assignHostsTo)="assignTo($event)"
+        (changeSort)="startChangeSortHats()"
+      ></assigned-others-offline-host-list>
+    </mat-expansion-panel>
+    <mat-expansion-panel [expanded]="true">
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          All unassigned offline hosts ({{ unassignedHostListDataSource.length }})
+        </mat-panel-title>
+        <mat-panel-description fxLayoutAlign="end">
+          <span class="hosts-count">
+            Selected:
+            {{
+              unassignedHostList?.hostListTable?.tableRowsSelectManager?.selection.selected.length
+            }}
+            of
+            {{ unassignedHostListDataSource.length }}
+          </span>
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <unassigned-offline-host-list
+        [currentLabOwners]="currentLabOwners"
+        [isLoading]="isLoading"
+        [labName]="selectedLab"
+        [listRowMaxHeight]="hostListRowMaxHeight"
+        [unassignedHostListDataSource]="unassignedHostListDataSource"
+        [listHeaderRowTop]="listHeaderRowTop"
+        (assignHostsToMe)="assignToMe($event)"
+        (assignHostsTo)="assignTo($event)"
+        (notesUpdated)="refresh()"
+        (changeSort)="startChangeSortHats()"
+        (removeHostFromList)="refresh()"
+      ></unassigned-offline-host-list>
+    </mat-expansion-panel>
+  </mat-accordion>
+</div>

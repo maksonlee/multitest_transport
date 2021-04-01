@@ -48,6 +48,9 @@ describe('TestRunProgress', () => {
 
   it.async('can display log entries', async () => {
     const testRun = {
+      test_run_config: {
+        command: 'command',
+      },
       log_entries: [
         {
           create_time: '2000-01-01T09:12:34Z',
@@ -73,6 +76,11 @@ describe('TestRunProgress', () => {
   });
 
   it.async('can display attempts', async () => {
+    const testRun = {
+      test_run_config: {
+        command: 'command',
+      }
+    } as TestRun;
     const request = {
       command_attempts: [
         {
@@ -88,6 +96,7 @@ describe('TestRunProgress', () => {
           state: CommandState.COMPLETED,
           passed_test_count: 123,
           failed_test_count: 0,
+          total_test_count: 123,
           summary: 'Summary with link http://www.google.com'
         },
         {
@@ -96,14 +105,15 @@ describe('TestRunProgress', () => {
           state: CommandState.ERROR,
           passed_test_count: 12,
           failed_test_count: 34,
+          total_test_count: 46,
           error: 'Error description'
         },
       ]
     } as Request;
     bootstrapTemplate(
-        `<test-run-progress [testRun]="{}" [request]="request">
+        `<test-run-progress [testRun]="testRun" [request]="request">
          </test-run-progress>`,
-        {request});
+        {testRun, request});
     await env.verifyState('test-run-progress_attempts', 'test-run-progress');
   });
 });

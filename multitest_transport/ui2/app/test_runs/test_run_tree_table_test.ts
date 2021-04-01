@@ -20,7 +20,7 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {Test, TestRun} from '../services/mtt_models';
 import {getEl} from '../testing/jasmine_util';
-import {newMockTest, newMockTestRun} from '../testing/test_util';
+import {newMockTest, newMockTestRun} from '../testing/mtt_mocks';
 
 import {TestRunTreeTable} from './test_run_tree_table';
 import {TestRunsModule} from './test_runs_module';

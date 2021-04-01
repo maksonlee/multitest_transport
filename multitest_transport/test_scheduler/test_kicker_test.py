@@ -21,9 +21,11 @@ from absl.testing import absltest
 import mock
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
+from tradefed_cluster import testbed_dependent_test
+from tradefed_cluster.util import ndb_shim as ndb
 import webtest
 
-from google.appengine.ext import testbed
+from multitest_transport.models import build
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
@@ -32,152 +34,27 @@ from multitest_transport.test_scheduler import test_kicker
 from multitest_transport.util import analytics
 from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
+from multitest_transport.util import env
+
+GAE_CONFIGS_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), 'gae_configs')
 
 
-class TestKickerTest(absltest.TestCase):
+class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
 
-  def setUp(self):
-    super(TestKickerTest, self).setUp()
-    root_path = os.path.dirname(__file__)
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
-    self.testbed.init_taskqueue_stub(root_path=root_path)
-    self.testapp = webtest.TestApp(test_kicker.APP)
-    self.taskqueue_stub = self.testbed.get_stub(testbed.TASKQUEUE_SERVICE_NAME)
-    self.hostname = 'HOST:8000'
-    os.environ['DEFAULT_VERSION_HOSTNAME'] = self.hostname
-
-  def tearDown(self):
-    super(TestKickerTest, self).tearDown()
-    self.testbed.deactivate()
-
-  def testCreateTestRun(self):
-    test = ndb_models.Test(
-        name='test', command='command', test_resource_defs=[
-            ndb_models.TestResourceDef(
-                name='foo', default_download_url='default_download_url'),
-            ndb_models.TestResourceDef(
-                name='bar', default_download_url='default_download_url'),
-        ])
+  def _CreateMockTest(self, name='test', command='command'):
+    """Create a mock ndb_models.Test object."""
+    test = ndb_models.Test(name=name, command=command)
     test.put()
-    test_run_config = ndb_models.TestRunConfig(
-        test_key=test.key, cluster='cluster', run_target='run_target')
-    test_resources = [
-        ndb_models.TestResourceObj(
-            name='foo', url='origin_url', cache_url='cache_url'),
-    ]
+    return test
 
-    test_run = test_kicker.CreateTestRun(
-        ['label'], test_run_config, test_resources)
-
-    test_run = ndb_models.TestRun.get_by_id(test_run.key.id())
-    self.assertEqual(test, test_run.test)
-    self.assertEqual(['label'], test_run.labels)
-    self.assertEqual(test_run_config, test_run.test_run_config)
-    self.assertCountEqual([
-        ndb_models.TestResourceObj(
-            name='bar', url='default_download_url'),
-        ndb_models.TestResourceObj(
-            name='foo', url='origin_url', cache_url='cache_url'),
-    ], test_run.test_resources)
-    self.assertEqual(ndb_models.TestRunState.PENDING, test_run.state)
-    tasks = self.taskqueue_stub.get_filtered_tasks(
-        queue_names=[test_kicker.TEST_KICKER_QUEUE])
-    self.assertEqual(1, len(tasks))
-    task = tasks[0]
-    data = json.loads(task.payload)
-    self.assertEqual(test_run.key.id(), data['test_run_id'])
-
-  def testCreateTestRun_withNodeConfig(self):
-    test = ndb_models.Test(
-        name='test', command='command', test_resource_defs=[
-            ndb_models.TestResourceDef(
-                name='abc', default_download_url='default_download_url'),
-            ndb_models.TestResourceDef(
-                name='def', default_download_url='default_download_url'),
-            ndb_models.TestResourceDef(
-                name='xyz', default_download_url='default_download_url'),
-        ])
-    test.put()
-    node_config = ndb_models.GetNodeConfig()
-    node_config.env_vars.append(
-        ndb_models.NameValuePair(name='foo', value='bar'))
-    node_config.test_resource_default_download_urls = [
-        ndb_models.NameValuePair(name='def', value='default_download_url2'),
-        ndb_models.NameValuePair(name='xyz', value='default_download_url2'),
-    ]
-    node_config.put()
-    test_run_config = ndb_models.TestRunConfig(
-        test_key=test.key, cluster='cluster', run_target='run_target')
-    test_resources = [
-        ndb_models.TestResourceObj(
-            name='xyz', url='origin_url', cache_url='cache_url'),
-    ]
-
-    test_run = test_kicker.CreateTestRun(
-        ['label'], test_run_config, test_resources)
-
-    test_run = ndb_models.TestRun.get_by_id(test_run.key.id())
-    self.assertEqual(test, test_run.test)
-    self.assertEqual(node_config.env_vars, test.env_vars)
-    self.assertEqual(['label'], test_run.labels)
-    self.assertEqual(test_run_config, test_run.test_run_config)
-    self.assertCountEqual([
-        ndb_models.TestResourceObj(
-            name='abc', url='default_download_url'),
-        ndb_models.TestResourceObj(
-            name='def', url='default_download_url2'),
-        ndb_models.TestResourceObj(
-            name='xyz', url='origin_url', cache_url='cache_url'),
-    ], test_run.test_resources)
-    self.assertEqual(ndb_models.TestRunState.PENDING, test_run.state)
-    tasks = self.taskqueue_stub.get_filtered_tasks(
-        queue_names=[test_kicker.TEST_KICKER_QUEUE])
-    self.assertEqual(1, len(tasks))
-    task = tasks[0]
-    data = json.loads(task.payload)
-    self.assertEqual(test_run.key.id(), data['test_run_id'])
-
-  def testCreateTestRun_withTestRunActions(self):
-    """Tests that test run can be created with test run actions."""
-    test = ndb_models.Test(name='test', command='command')
-    test.put()
-    # Create a dummy action with two default options
-    action = ndb_models.TestRunAction(
-        name='Foo',
-        hook_class_name='foo',
-        options=[
-            ndb_models.NameValuePair(name='key1', value='default'),
-            ndb_models.NameValuePair(name='key2', value='default'),
-        ])
-    action.put()
-    # Create action ref with overridden and added options
-    test_run_config = ndb_models.TestRunConfig(
+  def _CreateMockTestRunConfig(self, test, run_target='run_target'):
+    """Create a mock ndb_models.TestRunConfig object."""
+    return ndb_models.TestRunConfig(
         test_key=test.key,
-        test_run_action_refs=[
-            ndb_models.TestRunActionRef(
-                action_key=action.key,
-                options=[
-                    ndb_models.NameValuePair(name='key2', value='updated'),
-                    ndb_models.NameValuePair(name='key3', value='added'),
-                ],
-            )
-        ])
-
-    # Test run created with the right test run action
-    test_run = test_kicker.CreateTestRun([], test_run_config, [])
-    self.assertEqual(test_run_config, test_run.test_run_config)
-    self.assertEqual(test_run.test_run_actions, [
-        ndb_models.TestRunAction(
-            name='Foo',
-            hook_class_name='foo',
-            options=[
-                ndb_models.NameValuePair(name='key1', value='default'),
-                ndb_models.NameValuePair(name='key2', value='updated'),
-                ndb_models.NameValuePair(name='key3', value='added'),
-            ])
-    ])
+        run_target=run_target,
+        cluster='cluster',
+        )
 
   def _CreateMockTestRun(
       self,
@@ -209,6 +86,271 @@ class TestKickerTest(absltest.TestCase):
         test_resources=test_resources, state=ndb_models.TestRunState.PENDING)
     test_run.put()
     return test_run
+
+  def assertModelEqual(self, first, second):
+    self.assertEqual(first.to_dict(), second.to_dict())
+
+  def assertModelListEqual(self, first, second):
+    self.assertEqual([f.to_dict() for f in first],
+                     [s.to_dict() for s in second])
+
+  def assertModelSetEqual(self, first, second):
+    self.assertCountEqual([f.to_dict() for f in first],
+                          [s.to_dict() for s in second])
+
+  def setUp(self):
+    super(TestKickerTest, self).setUp()
+    self.testapp = webtest.TestApp(test_kicker.APP)
+    self.hostname = 'localhost:8000'
+    env.STORAGE_PATH = '/data'
+    env.HOSTNAME = 'test.hostname.com'
+    env.FILE_SERVER_URL = 'http://localhost:8006/'
+    os.environ['DEFAULT_VERSION_HOSTNAME'] = self.hostname
+
+  def testValidateDeviceActions(self):
+    action = ndb_models.DeviceAction(
+        device_type='LOCAL_VIRTUAL',
+        tradefed_options=[
+            ndb_models.NameMultiValuePair(
+                name='gce-driver-param', values=['--boot-timeout']),
+            ndb_models.NameMultiValuePair(
+                name='gce-driver-param', values=['600'])
+        ])
+
+    with self.assertRaises(ValueError):
+      test_kicker.ValidateDeviceActions(
+          [action, ndb_models.DeviceAction(device_type='PHYSICAL')])
+
+    with self.assertRaises(ValueError):
+      test_kicker.ValidateDeviceActions([action, action])
+
+    test_kicker.ValidateDeviceActions([
+        action,
+        ndb_models.DeviceAction(
+            device_type='LOCAL_VIRTUAL',
+            tradefed_options=[
+                ndb_models.NameMultiValuePair(
+                    name='gce-driver-path', values=['/bin/acloud_prebuilt'])
+            ])
+    ])
+
+  def testDeviceSpecsToTFCRunTarget(self):
+    self.assertEqual(
+        test_kicker._DeviceSpecsToTFCRunTarget(['product:taimen']),
+        json.dumps(
+            {
+                'host': {
+                    'groups': [
+                        {
+                            'run_targets': [
+                                {
+                                    'name': '*',
+                                    'device_attributes': [
+                                        {
+                                            'name': 'product',
+                                            'value': 'taimen'
+                                        },
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }))
+
+    self.assertEqual(
+        test_kicker._DeviceSpecsToTFCRunTarget(
+            ['device_serial:A', 'device_serial:B']),
+        json.dumps(
+            {
+                'host': {
+                    'groups': [
+                        {
+                            'run_targets': [
+                                {
+                                    'name': '*',
+                                    'device_attributes': [
+                                        {
+                                            'name': 'device_serial',
+                                            'value': 'A'
+                                        },
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            'run_targets': [
+                                {
+                                    'name': '*',
+                                    'device_attributes': [
+                                        {
+                                            'name': 'device_serial',
+                                            'value': 'B'
+                                        },
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }))
+
+  @mock.patch.object(build, 'FindTestResources', autospec=True)
+  def testCreateTestRun(self, mock_find_resources):
+    test = ndb_models.Test(
+        name='test', command='command', test_resource_defs=[
+            ndb_models.TestResourceDef(
+                name='foo', default_download_url='default_download_url'),
+            ndb_models.TestResourceDef(
+                name='bar', default_download_url='default_download_url',
+                decompress=True, decompress_dir='dir'),
+        ])
+    test.put()
+    overwritten_obj = ndb_models.TestResourceObj(
+                name='foo', url='origin_url', cache_url='cache_url')
+    test_run_config = ndb_models.TestRunConfig(
+        test_key=test.key,
+        cluster='cluster',
+        device_specs=['device_serial:serial'],
+        test_resource_objs=[overwritten_obj],
+    )
+    mock_find_resources.return_value = [overwritten_obj]
+
+    test_run = test_kicker.CreateTestRun(['label'], test_run_config)
+
+    test_run = ndb_models.TestRun.get_by_id(test_run.key.id())
+    self.assertModelEqual(test, test_run.test)
+    self.assertEqual(['label'], test_run.labels)
+    self.assertModelEqual(test_run_config, test_run.test_run_config)
+    self.assertModelSetEqual([
+        ndb_models.TestResourceObj(
+            name='bar', url='default_download_url', decompress=True,
+            decompress_dir='dir'),
+        ndb_models.TestResourceObj(
+            name='foo', url='origin_url', cache_url='cache_url',
+            decompress=False, decompress_dir=''),
+    ], test_run.test_resources)
+    self.assertEqual(ndb_models.TestRunState.PENDING, test_run.state)
+    tasks = self.mock_task_scheduler.GetTasks(
+        queue_names=[test_kicker.TEST_KICKER_QUEUE])
+    self.assertLen(tasks, 1)
+    task = tasks[0]
+    data = json.loads(task.payload)
+    self.assertEqual(test_run.key.id(), data['test_run_id'])
+    self.assertIsNone(test_run.sequence_id)
+
+  @mock.patch.object(build, 'FindTestResources', autospec=True)
+  def testCreateTestRun_withNodeConfig(self, mock_find_resources):
+    test = ndb_models.Test(
+        name='test', command='command', test_resource_defs=[
+            ndb_models.TestResourceDef(
+                name='abc', default_download_url='default_download_url'),
+            ndb_models.TestResourceDef(
+                name='def', default_download_url='default_download_url'),
+            ndb_models.TestResourceDef(
+                name='xyz', default_download_url='default_download_url'),
+        ])
+    test.put()
+    node_config = ndb_models.GetNodeConfig()
+    node_config.env_vars.append(
+        ndb_models.NameValuePair(name='foo', value='bar'))
+    node_config.test_resource_default_download_urls = [
+        ndb_models.NameValuePair(name='def', value='default_download_url2'),
+        ndb_models.NameValuePair(name='xyz', value='default_download_url2'),
+    ]
+    node_config.put()
+    overwritten_obj = ndb_models.TestResourceObj(
+                name='xyz', url='origin_url', cache_url='cache_url')
+    test_run_config = ndb_models.TestRunConfig(
+        test_key=test.key,
+        cluster='cluster',
+        device_specs=['device_serial:serial'],
+        test_resource_objs=[overwritten_obj])
+    mock_find_resources.return_value = [overwritten_obj]
+
+    test_run = test_kicker.CreateTestRun(
+        ['label'], test_run_config)
+
+    test_run = ndb_models.TestRun.get_by_id(test_run.key.id())
+    self.assertEqual(test.command, test_run.test.command)
+    self.assertModelListEqual(node_config.env_vars, test_run.test.env_vars)
+    self.assertEqual(['label'], test_run.labels)
+    self.assertModelEqual(test_run_config, test_run.test_run_config)
+    self.assertModelSetEqual([
+        ndb_models.TestResourceObj(
+            name='abc', url='default_download_url', decompress=False,
+            decompress_dir=''),
+        ndb_models.TestResourceObj(
+            name='def', url='default_download_url2', decompress=False,
+            decompress_dir=''),
+        ndb_models.TestResourceObj(
+            name='xyz', url='origin_url', cache_url='cache_url',
+            decompress=False, decompress_dir=''),
+    ], test_run.test_resources)
+    self.assertEqual(ndb_models.TestRunState.PENDING, test_run.state)
+    tasks = self.mock_task_scheduler.GetTasks(
+        queue_names=[test_kicker.TEST_KICKER_QUEUE])
+    self.assertEqual(1, len(tasks))
+    task = tasks[0]
+    data = json.loads(task.payload)
+    self.assertEqual(test_run.key.id(), data['test_run_id'])
+
+  def testCreateTestRun_withTestRunActions(self):
+    """Tests that test run can be created with test run actions."""
+    test = ndb_models.Test(name='test', command='command')
+    test.put()
+    # Create a placeholder action with two default options
+    action = ndb_models.TestRunAction(
+        name='Foo',
+        hook_class_name='foo',
+        options=[
+            ndb_models.NameValuePair(name='key1', value='default'),
+            ndb_models.NameValuePair(name='key2', value='default'),
+        ])
+    action.put()
+    # Create action ref with overridden and added options
+    test_run_config = ndb_models.TestRunConfig(
+        test_key=test.key,
+        test_run_action_refs=[
+            ndb_models.TestRunActionRef(
+                action_key=action.key,
+                options=[
+                    ndb_models.NameValuePair(name='key2', value='updated'),
+                    ndb_models.NameValuePair(name='key3', value='added'),
+                ],
+            )
+        ])
+
+    # Test run created with the right test run action
+    test_run = test_kicker.CreateTestRun([], test_run_config)
+    self.assertModelEqual(test_run_config, test_run.test_run_config)
+    self.assertModelListEqual(test_run.test_run_actions, [
+        ndb_models.TestRunAction(
+            name='Foo',
+            hook_class_name='foo',
+            options=[
+                ndb_models.NameValuePair(name='key1', value='default'),
+                ndb_models.NameValuePair(name='key2', value='updated'),
+                ndb_models.NameValuePair(name='key3', value='added'),
+            ])
+    ])
+
+  def testCreateTestRun_withRerunConfigs(self):
+    test = self._CreateMockTest()
+    config1 = self._CreateMockTestRunConfig(test)
+    config2 = self._CreateMockTestRunConfig(test, 'rt1;rt2')
+    config3 = self._CreateMockTestRunConfig(test, 't1;t2;t3')
+
+    test_run = test_kicker.CreateTestRun(
+        ['label'], config1, rerun_configs=[config2, config3])
+
+    sequence_id = test_run.sequence_id
+    sequence = ndb.Key(ndb_models.TestRunSequence, sequence_id).get()
+
+    self.assertEqual(len(sequence.test_run_configs), 3)
+    self.assertModelEqual(sequence.test_run_configs[0], config1)
+    self.assertModelEqual(sequence.test_run_configs[1], config2)
+    self.assertModelEqual(sequence.test_run_configs[2], config3)
 
   def testGetRerunInfo_empty(self):
     # no rerun info without context
@@ -247,9 +389,15 @@ class TestKickerTest(absltest.TestCase):
     self.assertIsNone(prev_run_key)
     self.assertEqual(expected_context, prev_test_context)
 
-  def _CheckNewRequestMessage(
-      self, msg, test_run, command_line=None, retry_command_line=None,
-      run_target=None, shard_count=1):
+  def _CheckNewRequestMessage(self,
+                              msg,
+                              test_run,
+                              output_url,
+                              test_resource_urls,
+                              command_line=None,
+                              retry_command_line=None,
+                              run_target=None,
+                              shard_count=1):
     """Compare a new request message to its associated test run."""
     test = test_run.test
     test_run_config = test_run.test_run_config
@@ -257,8 +405,12 @@ class TestKickerTest(absltest.TestCase):
     self.assertEqual(api_messages.RequestType.MANAGED, msg.type)
     self.assertEqual(command_line, msg.command_line)
     self.assertEqual(test_run_config.cluster, msg.cluster)
-    self.assertEqual(
-        run_target or test_run_config.run_target, msg.run_target)
+    if test_run_config.device_specs:
+      expected_run_target = test_kicker._DeviceSpecsToTFCRunTarget(
+          test_run_config.device_specs)
+    else:
+      expected_run_target = run_target or test_run_config.run_target
+    self.assertEqual(expected_run_target, msg.run_target)
     self.assertEqual(test_run_config.run_count, msg.run_count)
     self.assertEqual(
         shard_count or test_run_config.shard_count, msg.shard_count)
@@ -267,19 +419,23 @@ class TestKickerTest(absltest.TestCase):
         msg.max_retry_on_test_failures)
     # compare test environment
     self.assertTrue(msg.test_environment.use_subprocess_reporting)
-    self.assertEqual(
-        test.context_file_pattern,
-        msg.test_environment.context_file_pattern)
+    self.assertEqual(output_url, msg.test_environment.output_file_upload_url)
+    self.assertEqual(test.context_file_pattern,
+                     msg.test_environment.context_file_pattern)
     self.assertEqual([test_kicker.METADATA_FILE],
                      msg.test_environment.extra_context_files)
     self.assertEqual(
         retry_command_line, msg.test_environment.retry_command_line)
     self.assertEqual(common.LogLevel.INFO, msg.test_environment.log_level)
+    self.assertEqual(
+        test_run_config.use_parallel_setup,
+        msg.test_environment.use_parallel_setup)
     # compare test resources, including additional metadata file
-    test_resources = [api_messages.TestResource(name=r.name, url='cache_url')
-                      for r in test_run.test_resources]
-    metadata_url = test_kicker.METADATA_API_FORMAT % (self.hostname,
-                                                      test_run.key.id())
+    test_resources = [
+        api_messages.TestResource(name=r.name, url=test_resource_urls[r.name])
+        for r in test_run.test_resources
+    ]
+    metadata_url = test_resource_urls['mtt.json']
     test_resources.append(api_messages.TestResource(
         name=test_kicker.METADATA_FILE, url=metadata_url))
     self.assertEqual(test_resources, msg.test_resources)
@@ -297,24 +453,40 @@ class TestKickerTest(absltest.TestCase):
 
   @mock.patch.object(test_kicker, '_TrackTestRun')
   @mock.patch.object(tfc_client, 'NewRequest', autospec=True)
-  @mock.patch.object(download_util, 'DownloadResource', autospec=True)
+  @mock.patch.object(download_util, 'DownloadResources', autospec=True)
   def testKickTestRun(
-      self, mock_download_resource, mock_new_request, mock_track_test_run):
-    test_run = self._CreateMockTestRun()
-    test_run_id = test_run.key.id()
-    mock_download_resource.return_value = 'cache_url'
+      self, mock_download_resources, mock_new_request, mock_track_test_run):
+    test_run_id = self._CreateMockTestRun().key.id()
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    test_run.test_run_config.use_parallel_setup = True
+    test_run.put()
+    mock_download_resources.return_value = {
+        r.url: 'cache_url' for r in test_run.test_resources
+    }
     mock_request = api_messages.RequestMessage(id='request_id')
     mock_new_request.return_value = mock_request
 
     test_kicker.KickTestRun(test_run_id)
 
-    mock_download_resource.assert_has_calls([
-        mock.call(r.url, test_run=test_run) for r in test_run.test_resources
-    ])
+    mock_download_resources.assert_called_once_with(
+        [r.url for r in test_run.test_resources], test_run=test_run)
     mock_new_request.assert_called()
     msg = mock_new_request.call_args[0][0]
     self._CheckNewRequestMessage(
-        msg, test_run, command_line='command')
+        msg=msg,
+        test_run=test_run,
+        output_url='file:///data/app_default_bucket/test_runs/{}/output'.format(
+            test_run_id),
+        test_resource_urls={
+            'foo':
+                'cache_url',
+            'bar':
+                'cache_url',
+            'mtt.json':
+                'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
+                .format(test_run_id)
+        },
+        command_line='command --invocation-data mtt=1')
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
@@ -322,31 +494,43 @@ class TestKickerTest(absltest.TestCase):
     mock_track_test_run.assert_called_with(test_run)
 
   @mock.patch.object(tfc_client, 'NewRequest', autospec=True)
-  @mock.patch.object(download_util, 'DownloadResource', autospec=True)
+  @mock.patch.object(download_util, 'DownloadResources', autospec=True)
   def testKickTestRun_runnerSharding(
-      self, mock_download_resource, mock_new_request):
-    test_run = self._CreateMockTestRun(
+      self, mock_download_resources, mock_new_request):
+    test_run_id = self._CreateMockTestRun(
         command='command',
         runner_sharding_args='--shard-count ${TF_SHARD_COUNT}',
         run_target='run_target;run_target',
         shard_count=2,
-        sharding_mode=ndb_models.ShardingMode.RUNNER)
-    test_run_id = test_run.key.id()
-    mock_download_resource.return_value = 'cache_url'
+        sharding_mode=ndb_models.ShardingMode.RUNNER).key.id()
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    mock_download_resources.return_value = {
+        r.url: 'cache_url' for r in test_run.test_resources
+    }
     mock_request = api_messages.RequestMessage(id='request_id')
     mock_new_request.return_value = mock_request
 
     test_kicker.KickTestRun(test_run_id)
 
-    mock_download_resource.assert_has_calls([
-        mock.call(r.url, test_run=test_run) for r in test_run.test_resources
-    ])
+    mock_download_resources.assert_called_once_with(
+        [r.url for r in test_run.test_resources], test_run=test_run)
     mock_new_request.assert_called()
     msg = mock_new_request.call_args[0][0]
     self._CheckNewRequestMessage(
-        msg,
-        test_run,
-        command_line='command --shard-count 2',
+        msg=msg,
+        test_run=test_run,
+        output_url='file:///data/app_default_bucket/test_runs/{}/output'.format(
+            test_run_id),
+        test_resource_urls={
+            'foo':
+                'cache_url',
+            'bar':
+                'cache_url',
+            'mtt.json':
+                'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
+                .format(test_run_id)
+        },
+        command_line='command --shard-count 2 --invocation-data mtt=1',
         run_target='run_target;run_target',
         shard_count=1)
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
@@ -354,36 +538,48 @@ class TestKickerTest(absltest.TestCase):
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
 
   @mock.patch.object(tfc_client, 'NewRequest', autospec=True)
-  @mock.patch.object(download_util, 'DownloadResource', autospec=True)
+  @mock.patch.object(download_util, 'DownloadResources', autospec=True)
   def testKickTestRun_editedCommand(
-      self, mock_download_resource, mock_new_request):
-    test_run = self._CreateMockTestRun(
-        edited_command='edited command')
-    test_run_id = test_run.key.id()
-    mock_download_resource.return_value = 'cache_url'
+      self, mock_download_resources, mock_new_request):
+    test_run_id = self._CreateMockTestRun(
+        edited_command='edited command').key.id()
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    mock_download_resources.return_value = {
+        r.url: 'cache_url' for r in test_run.test_resources
+    }
     mock_request = api_messages.RequestMessage(id='request_id')
     mock_new_request.return_value = mock_request
 
     test_kicker.KickTestRun(test_run_id)
 
-    mock_download_resource.assert_has_calls([
-        mock.call(r.url, test_run=test_run) for r in test_run.test_resources
-    ])
+    mock_download_resources.assert_called_once_with(
+        [r.url for r in test_run.test_resources], test_run=test_run)
     mock_new_request.assert_called()
     msg = mock_new_request.call_args[0][0]
     self._CheckNewRequestMessage(
-        msg,
-        test_run,
-        command_line='edited command',
+        msg=msg,
+        test_run=test_run,
+        output_url='file:///data/app_default_bucket/test_runs/{}/output'.format(
+            test_run_id),
+        test_resource_urls={
+            'foo':
+                'cache_url',
+            'bar':
+                'cache_url',
+            'mtt.json':
+                'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
+                .format(test_run_id)
+        },
+        command_line='edited command --invocation-data mtt=1',
         shard_count=1)
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
 
   @mock.patch.object(tfc_client, 'NewRequest', autospec=True)
-  @mock.patch.object(download_util, 'DownloadResource', autospec=True)
+  @mock.patch.object(download_util, 'DownloadResources', autospec=True)
   def testKickTestRun_withPrevTestContext(
-      self, mock_download_resource, mock_new_request):
+      self, mock_download_resources, mock_new_request):
     test_run = self._CreateMockTestRun(
         command='command',
         retry_command_line='retry_command_line',
@@ -395,26 +591,40 @@ class TestKickerTest(absltest.TestCase):
         test_resources=[ndb_models.TestResourceObj(name='bar', url='zzz')])
     test_run.put()
     test_run_id = test_run.key.id()
-    mock_download_resource.return_value = 'cache_url'
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    mock_download_resources.return_value = {
+        r.url: 'cache_url' for r in test_run.test_resources
+    }
     mock_request = api_messages.RequestMessage(id='request_id')
     mock_new_request.return_value = mock_request
 
     test_kicker.KickTestRun(test_run_id)
 
-    mock_download_resource.assert_has_calls([
-        mock.call(r.url, test_run=test_run) for r in test_run.test_resources
-    ])
+    mock_download_resources.assert_called_once_with(
+        [r.url for r in test_run.test_resources], test_run=test_run)
     mock_new_request.assert_called()
     msg = mock_new_request.call_args[0][0]
     self._CheckNewRequestMessage(
-        msg,
-        test_run,
-        command_line='command --shard-count 6',
-        retry_command_line='retry_command_line --shard-count 6',
+        msg=msg,
+        test_run=test_run,
+        output_url='file:///data/app_default_bucket/test_runs/{}/output'.format(
+            test_run_id),
+        test_resource_urls={
+            'foo':
+                'cache_url',
+            'bar':
+                'cache_url',
+            'mtt.json':
+                'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
+                .format(test_run_id)
+        },
+        command_line='command --shard-count 6 --invocation-data mtt=1',
+        retry_command_line=(
+            'retry_command_line --shard-count 6 --invocation-data mtt=1'),
         shard_count=1)
     # prev_test_context's command_line should be replaced.
     self.assertEqual(
-        'retry_command_line --shard-count 6',
+        'retry_command_line --shard-count 6 --invocation-data mtt=1',
         msg.prev_test_context.command_line)
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
@@ -422,9 +632,9 @@ class TestKickerTest(absltest.TestCase):
 
   @mock.patch.object(tfc_client, 'NewRequest', autospec=True)
   @mock.patch.object(test_run_hook, 'ExecuteHooks', autospec=True)
-  @mock.patch.object(download_util, 'DownloadResource', autospec=True)
+  @mock.patch.object(download_util, 'DownloadResources', autospec=True)
   def testKickTestRun_withTestRunActions(
-      self, mock_download_resource, mock_execute_hooks, mock_new_request):
+      self, mock_download_resources, mock_execute_hooks, mock_new_request):
     # Create test run action with two TF result reporters
     test_run_action = ndb_models.TestRunAction(
         name='Foo',
@@ -443,25 +653,46 @@ class TestKickerTest(absltest.TestCase):
     test_run.test_run_actions = [test_run_action]
     test_run.put()
     test_run_id = test_run.key.id()
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
     # Mock responses
-    mock_download_resource.return_value = 'cache_url'
+    mock_download_resources.return_value = {
+        r.url: 'cache_url' for r in test_run.test_resources
+    }
     mock_request = api_messages.RequestMessage(id='request_id')
     mock_new_request.return_value = mock_request
 
     test_kicker.KickTestRun(test_run_id)
+
     # Resources downloaded, hooks executed, and new TFC request created
-    mock_download_resource.assert_called()
+    mock_download_resources.assert_called_once_with(
+        [r.url for r in test_run.test_resources], test_run=test_run)
     mock_execute_hooks.assert_called_with(
         test_run_id, ndb_models.TestRunPhase.BEFORE_RUN)
     mock_new_request.assert_called()
     msg = mock_new_request.call_args[0][0]
-    self._CheckNewRequestMessage(msg, test_run, command_line='command')
+    self._CheckNewRequestMessage(
+        msg=msg,
+        test_run=test_run,
+        output_url='file:///data/app_default_bucket/test_runs/{}/output'.format(
+            test_run_id),
+        test_resource_urls={
+            'foo':
+                'cache_url',
+            'bar':
+                'cache_url',
+            'mtt.json':
+                'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
+                .format(test_run_id)
+        },
+        command_line='command --invocation-data mtt=1')
 
     # TFC request has two TF result reporters with right class names and options
     tradefed_config_objects = msg.test_environment.tradefed_config_objects
+    self.assertEqual(
+        [tradefed_config_objects.pop(0)], test_kicker.DEFAULT_TF_CONFIG_OBJECTS)
     self.assertLen(tradefed_config_objects, 2)
     self.assertEqual(api_messages.TradefedConfigObjectType.RESULT_REPORTER,
-                     tradefed_config_objects[0].type)
+                     tradefed_config_objects[1].type)
     self.assertEqual('com.android.foo', tradefed_config_objects[0].class_name)
     self.assertEqual('test-run-id',
                      tradefed_config_objects[0].option_values[0].key)
@@ -477,24 +708,59 @@ class TestKickerTest(absltest.TestCase):
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
 
+  @mock.patch('multitest_transport.util.env.OPERATION_MODE',
+              env.OperationMode.ON_PREMISE)
+  @mock.patch.object(tfc_client, 'NewRequest', autospec=True)
+  @mock.patch.object(download_util, 'DownloadResources', autospec=True)
+  def testKickTestRun_onPremiseMode(self, mock_download_resources,
+                                    mock_new_request):
+    test_run_id = self._CreateMockTestRun().key.id()
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    mock_download_resources.return_value = {
+        r.url: 'file:///data/cache_url' for r in test_run.test_resources
+    }
+    mock_request = api_messages.RequestMessage(id='request_id')
+    mock_new_request.return_value = mock_request
+
+    test_kicker.KickTestRun(test_run_id)
+
+    mock_download_resources.assert_called_once_with(
+        [r.url for r in test_run.test_resources], test_run=test_run)
+    mock_new_request.assert_called()
+    msg = mock_new_request.call_args[0][0]
+    self._CheckNewRequestMessage(
+        msg=msg,
+        test_run=test_run,
+        output_url='http://test.hostname.com:8006/file/app_default_bucket/test_runs/{}/output'
+        .format(test_run_id),
+        test_resource_urls={
+            'foo':
+                'http://test.hostname.com:8006/file/cache_url',
+            'bar':
+                'http://test.hostname.com:8006/file/cache_url',
+            'mtt.json':
+                'http://test.hostname.com:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
+                .format(test_run_id)
+        },
+        command_line='command --invocation-data mtt=1')
+
   @mock.patch.object(test_kicker, 'KickTestRun')
   def testEnqueueTestRun(self, mock_kick_test_run):
     test_run_id = 1000
     test_kicker.EnqueueTestRun(test_run_id)
-    tasks = self.taskqueue_stub.get_filtered_tasks(
+    tasks = self.mock_task_scheduler.GetTasks(
         queue_names=test_kicker.TEST_KICKER_QUEUE)
-    self.assertEqual(1, len(tasks))
+    self.assertLen(tasks, 1)
     response = self.testapp.post(
-        '/_ah/queue/%s' % test_kicker.TEST_KICKER_QUEUE, tasks[0].payload,
-        headers=tasks[0].headers)
+        '/_ah/queue/%s' % test_kicker.TEST_KICKER_QUEUE, tasks[0].payload)
     self.assertEqual('200 OK', response.status)
     mock_kick_test_run.assert_called_with(test_run_id)
 
-  @mock.patch.object(download_util, 'DownloadResource', autospec=True)
+  @mock.patch.object(download_util, 'DownloadResources', autospec=True)
   @mock.patch.object(file_util, 'GetTestSuiteInfo')
-  @mock.patch.object(file_util, 'FileHandle')
+  @mock.patch.object(file_util, 'OpenFile')
   def testPrepareTestResources(
-      self, mock_file_handle, mock_get_suite_info, mock_download_resource):
+      self, mock_open_file, mock_get_suite_info, mock_download_resources):
     test_run = self._CreateMockTestRun(
         command='command')
     test_run.test_resources = [
@@ -505,8 +771,11 @@ class TestKickerTest(absltest.TestCase):
     ]
     test_run.put()
     test_run_id = test_run.key.id()
-    mock_download_resource.return_value = 'cache_url'
-    mock_file_handle.Get.return_value = 'filehandle'
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    mock_download_resources.return_value = {
+        r.url: 'cache_url' for r in test_run.test_resources
+    }
+    mock_open_file.return_value = mock.MagicMock()
     test_suite_info = file_util.TestSuiteInfo(
         'build_number', 'architecture', 'name', 'fullname', 'version')
     mock_get_suite_info.return_value = test_suite_info
@@ -515,10 +784,10 @@ class TestKickerTest(absltest.TestCase):
     updated_test_run = ndb_models.TestRun.get_by_id(test_run.key.id())
 
     # Resource downloaded and cached
-    mock_download_resource.assert_called_with(
-        'http://foo_origin_url', test_run=test_run)
+    mock_download_resources.assert_called_with(
+        ['http://foo_origin_url'], test_run=test_run)
     self.assertEqual(updated_test_run.test_resources[0].cache_url, 'cache_url')
-    mock_file_handle.Get.assert_called_with('cache_url')
+    mock_open_file.assert_called_with('cache_url')
     # Test package info was updated
     test_package_info = updated_test_run.test_package_info
     self.assertEqual(test_package_info.build_number, 'build_number')

@@ -1,0 +1,106 @@
+<!--
+ Copyright 2021 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<h1 mat-dialog-title>
+  Hosts Update in Lab: {{selectedLab}}
+</h1>
+<h2 *ngIf="labInfo?.hostUpdateStateSummary">
+  Updating:
+  {{
+    getHostUpdatingCount(labInfo.hostUpdateStateSummary)
+  }} of
+  {{labInfo.hostUpdateStateSummary.total}}
+  (refreshed {{labInfo.hostUpdateStateSummary.update_timestamp | utc | fromNow}})
+</h2>
+
+<div class="host-update-panel">
+  <div #update_summary_chart class="host-update-state-summary-chart"></div>
+  <!-- TODO: implement update control panel from UI. -->
+  <div class="host-update-control-panel">
+    <mat-radio-group class="update-mode-selection-group" [(ngModel)] = "selectedMode"
+                     (change)="onModeChange($event)"
+                     aria-label="Select an Update Mode"
+                     fxLayout="row wrap" fxLayoutAlign="start start" fxLayoutGap="8px">
+      <span class="update-mode-selection-title">Update Mode: </span>
+      <mat-radio-button class="update-mode-selection-button"
+                        [value] = "UpdateMode.LAB" >
+        Entire Lab
+      </mat-radio-button>
+      <mat-radio-button class="update-mode-selection-button"
+                        [value] = "UpdateMode.HOST_GROUP" >
+        Select a Host Group
+      </mat-radio-button>
+      <mat-radio-button class="update-mode-selection-button"
+                        [value] = "UpdateMode.HOSTS" >
+        Select Hosts
+      </mat-radio-button>
+    </mat-radio-group>
+
+    <div fxLayout="row wrap" fxLayoutAlign="start start" fxLayoutGap="5px">
+      <mat-form-field appearance="outline" class="mat-select-filter">
+        <mat-select placeholder="Host Group: "
+                    [(ngModel)]="selectedHostGroup"
+                    (selectionChange)="loadHostConfigsInSelectedHostGroup()"
+                    [disabled]="selectedMode !== UpdateMode.HOST_GROUP && selectedMode !== UpdateMode.HOSTS">
+          <mat-select-trigger> Host Group: {{ selectedHostGroup }} </mat-select-trigger>
+          <mat-option *ngFor="let hostGroupName of hostGroupNames" [value]="hostGroupName">
+            {{ hostGroupName }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+      <multi-select appearance="outline"
+                    class="mat-select-filter"
+                    [placeholder]="'Hosts: '"
+                    [inputSelection]="selectedHosts"
+                    [items]="hostNames"
+                    [itemName]="'host'"
+                    [disabled]="selectedMode !== UpdateMode.HOSTS"
+                    (selectionChange)="setSelectedHosts($event)">
+      </multi-select>
+    </div>
+
+    <mat-form-field class="mat-select-filter test-harness-image-selection"
+                    appearance="outline">
+      <mat-label>Select A Test Harness Image</mat-label>
+      <input matInput placeholder="Search for image tag:"
+             [(ngModel)]="imageTagPrefix"
+             (ngModelChange)="getTestHarnessImagesByTagPrefix()"
+             (keyup.enter)="imageDropdown.open()" />
+      <mat-select #imageDropdown [(ngModel)]="selectedImage">
+        <mat-option *ngFor="let image of testHarnessImages"
+                    matTooltip="Tags: {{image.tags.join(', ')}}"
+                    [value]="image">
+          Image: {{image.test_harness_version}} ({{image.digest.slice(-7)}})
+          --
+          {{image.create_time | date:'short'}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="host-update-control-panel-spacer"></div>
+
+    <button class="set-image-button"
+            mat-stroked-button
+            color="accent"
+            type="button"
+            aria-label="set image"
+            [disabled]="disableSetImageButton"
+            (click)="onConfirmSetImage()"
+            >
+      Set Image
+    </button>
+  </div>
+</div>
+

@@ -20,8 +20,10 @@ import apiclient
 import httplib2
 from protorpc import protojson
 from tradefed_cluster import api_messages
+from tradefed_cluster.common import IsFinalCommandState
+from tradefed_cluster.services import app_manager
 
-from google.appengine.api import modules
+from multitest_transport.util import env
 
 API_NAME = 'tradefed_cluster'
 API_VERSION = 'v1'
@@ -34,7 +36,8 @@ _tls = threading.local()
 def _GetAPIClient():
   if not hasattr(_tls, 'api_client'):
     http = httplib2.Http(timeout=HTTP_TIMEOUT_SECONDS)
-    hostname = modules.get_hostname('default')
+    hostname = app_manager.GetInfo('default').hostname.replace(
+        env.HOSTNAME, 'localhost')
     discovery_url = API_DISCOVERY_URL_FORMAT % (hostname, API_NAME, API_VERSION)
     _tls.api_client = apiclient.discovery.build(
         API_NAME, API_VERSION, http=http, discoveryServiceUrl=discovery_url)
@@ -51,6 +54,11 @@ def BackfillCommandAttempts():
   _GetAPIClient().coordinator().backfillCommandAttempts().execute()
 
 
+def BackfillRequestSyncs():
+  """Backfill command attempts for timeout monitoring."""
+  _GetAPIClient().coordinator().backfillRequestSyncs().execute()
+
+
 def NewRequest(new_request_msg):
   """Creates a new request.
 
@@ -59,9 +67,9 @@ def NewRequest(new_request_msg):
   Returns:
     A api_messages.Request object.
   """
-  body = json.loads(protojson.encode_message(new_request_msg))
+  body = json.loads(protojson.encode_message(new_request_msg))  # pytype: disable=module-attr
   res = _GetAPIClient().requests().new(body=body).execute()
-  return protojson.decode_message(api_messages.RequestMessage, json.dumps(res))
+  return protojson.decode_message(api_messages.RequestMessage, json.dumps(res))  # pytype: disable=module-attr
 
 
 def GetRequest(request_id):
@@ -73,7 +81,7 @@ def GetRequest(request_id):
     A TFC Request object.
   """
   res = _GetAPIClient().requests().get(request_id=request_id).execute()
-  return protojson.decode_message(api_messages.RequestMessage, json.dumps(res))
+  return protojson.decode_message(api_messages.RequestMessage, json.dumps(res))  # pytype: disable=module-attr
 
 
 def CancelRequest(request_id):
@@ -97,7 +105,7 @@ def GetTestContext(request_id, command_id):
   req = _GetAPIClient().requests().testContext().get(
       request_id=request_id, command_id=command_id)
   res = req.execute()
-  return protojson.decode_message(api_messages.TestContext, json.dumps(res))
+  return protojson.decode_message(api_messages.TestContext, json.dumps(res))  # pytype: disable=module-attr
 
 
 def GetAttempt(request_id, attempt_id):
@@ -114,6 +122,19 @@ def GetAttempt(request_id, attempt_id):
   return next((a for a in attempts if a.attempt_id == attempt_id), None)
 
 
+def GetLatestFinishedAttempt(request_id):
+  """Find the latest TFC command attempt in a final state.
+
+  Args:
+    request_id: request ID.
+  Returns:
+    Finished TFC command attempt, or None if not found
+  """
+  request = GetRequest(request_id)
+  attempts = reversed(request.command_attempts or [])
+  return next((a for a in attempts if IsFinalCommandState(a.state)), None)
+
+
 def GetDeviceInfo(serial_num):
   """Gets device info.
 
@@ -124,8 +145,8 @@ def GetDeviceInfo(serial_num):
   """
   try:
     res = _GetAPIClient().devices().get(device_serial=serial_num).execute()
-    return protojson.decode_message(api_messages.DeviceInfo, json.dumps(res))
+    return protojson.decode_message(api_messages.DeviceInfo, json.dumps(res))  # pytype: disable=module-attr
   except apiclient.errors.HttpError as e:
     if e.resp.status == 404:
       return None
-    raise e
+    raise

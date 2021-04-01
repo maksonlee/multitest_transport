@@ -16,7 +16,7 @@ ng_module(
         "device_action_picker.ts",
         "device_actions_module.ts",
         "target_preparer_form.ts",
-        "target_preparer_option_form.ts",
+        "tradefed_config_option_form.ts",
     ],
     assets = [
         ":styles",
@@ -24,7 +24,7 @@ ng_module(
         "device_action_list.ng.html",
         "device_action_picker.ng.html",
         "target_preparer_form.ng.html",
-        "target_preparer_option_form.ng.html",
+        "tradefed_config_option_form.ng.html",
     ],
     visibility = ["//multitest_transport"],
     deps = [
@@ -52,7 +52,7 @@ ng_module(
         "device_action_list_test.ts",
         "device_action_picker_test.ts",
         "target_preparer_form_test.ts",
-        "target_preparer_option_form_test.ts",
+        "tradefed_config_option_form_test.ts",
     ],
     visibility = ["//multitest_transport"],
     deps = [

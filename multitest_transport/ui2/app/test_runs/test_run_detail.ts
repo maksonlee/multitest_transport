@@ -17,16 +17,18 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {AfterViewInit, Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MatButton} from '@angular/material/button';
-import {Router} from '@angular/router';
-import {EMPTY, interval, ReplaySubject, zip} from 'rxjs';
-import {finalize, switchMap, takeUntil} from 'rxjs/operators';
+import {MatTabChangeEvent, MatTabGroup} from '@angular/material/tabs';
+import {ActivatedRoute, Router} from '@angular/router';
+import {EMPTY, interval, Observable, ReplaySubject, zip} from 'rxjs';
+import {finalize, first, switchMap, takeUntil} from 'rxjs/operators';
 
+import {AnalyticsService} from '../services/analytics_service';
 import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
-import {isFinalTestRunState, TestRun} from '../services/mtt_models';
+import {isFinalTestRunState, TestRun, TestRunSummary, TestRunSummaryList} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {TfcClient} from '../services/tfc_client';
-import {InvocationStatus, Request} from '../services/tfc_models';
+import {InvocationStatus, isFinalCommandState, Request} from '../services/tfc_models';
 import {OverflowListType} from '../shared/overflow_list';
 import {assertRequiredInput, buildApiErrorMessage} from '../shared/util';
 
@@ -38,6 +40,8 @@ import {assertRequiredInput, buildApiErrorMessage} from '../shared/util';
 })
 export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('backButton', {static: false}) backButton?: MatButton;
+  // TODO Add test for tab change
+  @ViewChild('tabGroup', {static: false}) tabGroup?: MatTabGroup;
   readonly OverflowListType = OverflowListType;
   @Input() testRunId!: string;
 
@@ -45,7 +49,7 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
   isFinalTestRunState = isFinalTestRunState;
   deviceInfoColumns = ['device_serial', 'product', 'build_id'];
 
-  private readonly destroyed = new ReplaySubject();
+  private readonly destroyed = new ReplaySubject<void>();
   private readonly autoUpdate =
       interval(60_000).pipe(takeUntil(this.destroyed)).subscribe(() => {
         this.loadTestRun();
@@ -57,23 +61,40 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
   request?: Request;
   /** Test statuses (number of passed/failed). */
   invocationStatus?: InvocationStatus;
+  /** List of summaries of reruns */
+  reruns: TestRunSummary[] = [];
   /** Link to view the latest output files */
   outputFilesUrl?: string;
   /** Test run results URL. */
   exportUrl?: string;
+  /** Current tab index */
+  currentTabIndex: number = 0;
+
+
+  readonly matTabOptions =
+      ['progress', 'jobs', 'logs', 'test_results', 'test_resources', 'config'];
 
   constructor(
       private readonly notifier: Notifier,
       private readonly router: Router,
+      private readonly route: ActivatedRoute,
       private readonly fs: FileService,
       private readonly mtt: MttClient,
       private readonly tfc: TfcClient,
       private readonly liveAnnouncer: LiveAnnouncer,
+      private readonly analytics: AnalyticsService,
   ) {}
 
   ngOnInit() {
     assertRequiredInput(this.testRunId, 'testRunId', 'test-run-detail');
     this.loadTestRun();
+
+    // tslint:disable-next-line:no-unnecessary-type-assertion
+    (this.route.fragment as Observable<string>)
+        .subscribe((fragment: string) => {
+          const idx = this.matTabOptions.indexOf(fragment);
+          this.currentTabIndex = idx === -1 ? 0 : idx;
+        });
   }
 
   ngAfterViewInit() {
@@ -85,9 +106,16 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
     this.liveAnnouncer.clear();
   }
 
+  switchTab(tabChangeEvent: MatTabChangeEvent) {
+    this.router.navigate([], {
+      fragment: this.matTabOptions[tabChangeEvent.index],
+    });
+  }
+
   loadTestRun() {
     this.isLoading = true;
     this.liveAnnouncer.announce('Loading', 'polite');
+
     this.mtt.getTestRun(this.testRunId)
         .pipe(switchMap((testRun: TestRun) => {
           // Update run information.
@@ -96,6 +124,8 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
           if (testRun && isFinalTestRunState(testRun.state)) {
             this.autoUpdate.unsubscribe();  // Stop auto-updating when complete.
           }
+          this.loadReruns();
+
           // Fetch TFC data if possible.
           if (testRun && testRun.request_id) {
             return zip(
@@ -107,6 +137,9 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
         }))
         .pipe(finalize(() => {
           this.isLoading = false;
+          if (this.tabGroup) {
+            this.tabGroup.selectedIndex = this.currentTabIndex;
+          }
         }))
         .subscribe(
             ([request, invocationStatus]) => {
@@ -122,6 +155,14 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
                   buildApiErrorMessage(error));
             },
         );
+  }
+
+  loadReruns() {
+    this.mtt.getReruns(this.testRunId)
+        .pipe(first())
+        .subscribe((reruns: TestRunSummaryList) => {
+          this.reruns = reruns.test_runs || [];
+        });
   }
 
   updateOutputFilesUrl() {
@@ -171,7 +212,21 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
         [`test_runs/new`], {queryParams: {'prevTestRunId': this.testRunId}});
   }
 
+  isLastAttemptFinal() {
+    if (!this.request || !this.request.command_attempts ||
+        !this.request.command_attempts.length) {
+      return false;
+    }
+    const lastAttempt =
+        this.request.command_attempts[this.request.command_attempts.length - 1];
+    return isFinalCommandState(lastAttempt.state);
+  }
+
   back() {
     this.router.navigate([`test_runs`], {queryParamsHandling: 'merge'});
+  }
+
+  trackClickEvent(action: string) {
+    this.analytics.trackEvent('test_run_detail', action);
   }
 }

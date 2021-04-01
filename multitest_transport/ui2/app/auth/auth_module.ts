@@ -20,11 +20,17 @@
 import {NgModule} from '@angular/core';
 import {SharedModule} from '../shared/shared_module';
 import {AuthReturnPage} from './auth_return_page';
+import {LoginButton} from './login_button';
+
+const COMPONENTS = [
+  AuthReturnPage,
+  LoginButton,
+];
 
 @NgModule({
-  declarations: [AuthReturnPage],
+  declarations: COMPONENTS,
   imports: [SharedModule],
-  exports: [AuthReturnPage],
+  exports: COMPONENTS,
 })
 export class AuthModule {
 }

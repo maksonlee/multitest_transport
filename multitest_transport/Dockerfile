@@ -12,40 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:16.04
+FROM ubuntu:20.04
 MAINTAINER Moon Kim <moonk@google.com>
 
-ARG MTT_VERSION=dev
-ARG MTT_TRADEFED_PREBUILT=tradefed.zip
-
-ENV CLOUD_SDK_VERSION=283.0.0
-ENV CLOUD_SDK_ROOT=/usr/lib/google-cloud-sdk
-ENV MTT_VERSION ${MTT_VERSION}
-ENV MTT_STORAGE_PATH /data
-ENV MTT_MASTER_PORT 8000
-
-ENV MTT_CUSTOM_TF_CONFIG_FILE ${MTT_STORAGE_PATH}/host-config.xml
-ENV MTT_LOG_DIR ${MTT_STORAGE_PATH}/log
-ENV MTT_TEST_OUTPUT_DIR ${MTT_STORAGE_PATH}/app_default_bucket/test_runs
-ENV MTT_TEST_WORK_DIR ${MTT_STORAGE_PATH}/tmp
 ENV PATH /tmp/custom_sdk_tools:${PATH}
-
-# Authenticate on GCE (ignored if running locally or file not provided)
-ENV GOOGLE_APPLICATION_CREDENTIALS /tmp/keyfile/key.json
 
 # Make sure apt-get retries on failures
 RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries
 
-RUN apt-get update && apt-get install -y \
+# TODO: rabbitmq-server is fixed to an old version because
+#                    3.8.2-0ubuntu1.1 takes one minute to start.
+RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y \
         apt-utils \
         cron \
-        curl \
         daemontools \
         git \
         iputils-ping \
         libc++-dev \
-        python-pip \
+        lsof \
+        python \
+        python3 \
+        mariadb-server \
         python3-pip \
+        rabbitmq-server=3.8.2-0ubuntu1 \
+        socat \
         tzdata \
         usbutils \
         unzip \
@@ -56,7 +46,15 @@ RUN pip3 install \
         attrs \
         browsepy \
         cachetools \
-        flask
+        flask \
+        grpcio \
+        gunicorn
+# Install python2 pip.
+RUN wget -q --retry-connrefused -O /tmp/get-pip.py https://bootstrap.pypa.io/pip/2.7/get-pip.py && \
+    python /tmp/get-pip.py && \
+    rm /tmp/get-pip.py
+# Install a version of six that supports ensure_* methods.
+RUN pip install six==1.12.0
 
 # Installing dependencies for VTS
 # Reference: https://cs.android.com/android/platform/superproject/+/master:test/vts/script/setup.sh
@@ -73,7 +71,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         libjpeg-dev \
         libtiff-dev
 # Pin the virtualenv version to use a one with a proven compatibility with VTS.
-RUN pip install virtualenv==16.7.9
+RUN pip install virtualenv==20.0.31
 
 # Install JDK9 from AOSP (https://android.googlesource.com/platform/prebuilts/jdk/jdk9.git/+/375786699dcb340ab2d08de7f5d13dba6637f221)
 RUN mkdir -p /jdk/jdk9 && \
@@ -90,59 +88,105 @@ ENV JAVA_HOME /jdk/jdk9/linux-x86
 ENV PATH ${JAVA_HOME}/bin:${PATH}
 
 # Install SDK tools (aapt, adb, fastboot, mke2fs)
-RUN mkdir -p /sdk_tools
-RUN curl --retry 3 -L https://dl.google.com/android/repository/build-tools_r29.0.3-linux.zip -o build-tools.zip \
+RUN mkdir -p /sdk_tools/lib64
+# Use wget for more reliable retries
+RUN wget -q --retry-connrefused -O build-tools.zip https://dl.google.com/android/repository/build-tools_r29.0.3-linux.zip \
     && unzip -jq build-tools.zip -d /sdk_tools android-10/aapt \
+    && unzip -jq build-tools.zip -d /sdk_tools/lib64 android-10/lib64/* \
     && rm build-tools.zip
-RUN curl --retry 3 -L https://dl.google.com/android/repository/platform-tools_r29.0.6-linux.zip -o platform-tools.zip \
+RUN wget -q --retry-connrefused -O platform-tools.zip https://dl.google.com/android/repository/platform-tools_r29.0.6-linux.zip \
     && unzip -jq platform-tools.zip -d /sdk_tools \
         platform-tools/adb \
         platform-tools/fastboot \
         platform-tools/mke2fs \
     && rm platform-tools.zip
 ENV PATH /tmp/custom_sdk_tools:/sdk_tools:${PATH}
+ENV LD_LIBRARY_PATH /sdk_tools/lib64:${LD_LIBRARY_PATH}
 
 # Install Google Cloud SDK
 # Reference: https://github.com/GoogleCloudPlatform/cloud-sdk-docker/blob/master/Dockerfile
+ENV CLOUD_SDK_VERSION=334.0.0
+ENV CLOUD_SDK_ROOT=/usr/lib/google-cloud-sdk
 RUN apt-get -qqy update && apt-get install -qqy \
         curl \
         gcc \
         python3-dev \
         python3-pip \
         apt-transport-https \
-        lsb-release \
         openssh-client \
         git \
         make \
         gnupg && \
     pip3 install -U crcmod && \
-    echo 'deb http://deb.debian.org/debian/ sid main' >> /etc/apt/sources.list && \
-    export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)" && \
+    export CLOUD_SDK_REPO="cloud-sdk" && \
     echo "deb https://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" > /etc/apt/sources.list.d/google-cloud-sdk.list && \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
     apt-get update && \
     apt-get install -y --allow-unauthenticated \
         google-cloud-sdk=${CLOUD_SDK_VERSION}-0 \
-        google-cloud-sdk-app-engine-python=${CLOUD_SDK_VERSION}-0 \
-        google-cloud-sdk-app-engine-python-extras=${CLOUD_SDK_VERSION}-0 \
-        google-cloud-sdk-datastore-emulator=${CLOUD_SDK_VERSION}-0 \
-        google-cloud-sdk-pubsub-emulator=${CLOUD_SDK_VERSION}-0
+        google-cloud-sdk-datastore-emulator=${CLOUD_SDK_VERSION}-0
 
-# This is to workaround https://issuetracker.google.com/35901176
-RUN rm ${CLOUD_SDK_ROOT}/platform/google_appengine/lib/cacerts/urlfetch_cacerts.txt
+# grpcio is required to use Cloud Datastore emulator.
+# Reference: https://cloud.google.com/appengine/docs/standard/python/tools/migrate-cloud-datastore-emulator#failing_grpc_imports
+RUN pip install grpcio
 
-# TODO: remove the following hacks once migrated to Python 3.
-# Modify App Enging SDK to avoid using FancyProxyHandler which does not respect no_proxy.
-RUN sed -i s/fancy_urllib.FancyProxyHandler/urllib2.ProxyHandler/g \
-    ${CLOUD_SDK_ROOT}/platform/google_appengine/google/appengine/tools/appengine_rpc.py
+# Install cuttlefish-common
+# debuild -d skips checking the dependency of debhelper-compat 12.
+ARG CUTTLEFISH_COMMON_COMMIT=f75508e918057ebc46bbed072e03df8adc704b69
+RUN git clone https://github.com/google/android-cuttlefish --no-checkout --single-branch /tmp/cuttlefish-common/src && \
+    cd /tmp/cuttlefish-common/src && \
+    git checkout ${CUTTLEFISH_COMMON_COMMIT} && \
+    apt-get install -y devscripts config-package-dev debhelper-compat && \
+    debuild -i -us -uc -b -d && \
+    apt-get install -y ../cuttlefish-common_*_amd64.deb iproute2 rsyslog && \
+    cd - && \
+    rm -rf /tmp/cuttlefish-common/src
+# TODO: Remove this flag after a couple of releases.
+ENV MTT_SUPPORT_BRIDGE_NETWORK true
 
-# Fix a bug in urllib2.ProxyHandler to use one proxy settings.
-RUN sed -i s/proxy_bypass\(req.host\)/proxy_bypass\(req.host,proxies=self.proxies\)/g \
-    /usr/lib/python2.7/urllib2.py
+# Install acloud
+# TODO: Replace /url with ?alt=media when it works
+ARG ACLOUD_DOWNLOAD_URL='https://www.googleapis.com/android/internal/build/v3/builds/7087482/aosp_cf_x86_64_phone-userdebug/attempts/latest/artifacts/acloud_prebuilt/url'
+ENV ACLOUD_PREBUILT_PATH=/bin/acloud_prebuilt
+RUN wget -q --retry-connrefused -O ${ACLOUD_PREBUILT_PATH} ${ACLOUD_DOWNLOAD_URL} \
+    && chmod +x ${ACLOUD_PREBUILT_PATH}
+
+# Install libusb-1.0 with udev disabled, as it doesn't work without --net=host
+ARG LIBUSB_VERSION=libusb-1.0.24
+RUN wget -q --retry-connrefused -O ${LIBUSB_VERSION}.tar.bz2 http://downloads.sourceforge.net/project/libusb/libusb-1.0/${LIBUSB_VERSION}/${LIBUSB_VERSION}.tar.bz2 \
+    && tar -xf ${LIBUSB_VERSION}.tar.bz2 \
+    && cd ${LIBUSB_VERSION} \
+    && ./configure --disable-udev \
+    && make install \
+    && ldconfig \
+    && cd - \
+    && rm -rf ${LIBUSB_VERSION}.tar.bz2 ${LIBUSB_VERSION}
+
+# Docker builds image by layers. If a layer changes, all the following layers
+# will need to be rebuilt. So less frequent changes, e.g. install packages, will
+# be built in the base layers. And frequent changes, e.g. set env, will be in
+# later layers.
+ARG MTT_GOOGLE_OAUTH2_CLIENT_ID=
+ARG MTT_GOOGLE_OAUTH2_CLIENT_SECRET=
+ARG MTT_TRADEFED_PREBUILT=tradefed.zip
+ARG MTT_VERSION=dev
+
+ENV MTT_GOOGLE_OAUTH2_CLIENT_ID ${MTT_GOOGLE_OAUTH2_CLIENT_ID}
+ENV MTT_GOOGLE_OAUTH2_CLIENT_SECRET ${MTT_GOOGLE_OAUTH2_CLIENT_SECRET}
+ENV MTT_VERSION ${MTT_VERSION}
+ENV MTT_STORAGE_PATH /data
+ENV MTT_SERVER_LOG_LEVEL info
+
+ENV MTT_CUSTOM_TF_CONFIG_FILE ${MTT_STORAGE_PATH}/host-config.xml
+ENV MTT_LOG_DIR ${MTT_STORAGE_PATH}/log
+ENV MTT_TEST_OUTPUT_DIR ${MTT_STORAGE_PATH}/app_default_bucket/test_runs
+ENV MTT_TEST_WORK_DIR ${MTT_STORAGE_PATH}/tmp
+ENV MTT_USE_HOST_ADB ""
+
+# Authenticate on GCE (ignored if running locally or file not provided)
+ENV GOOGLE_APPLICATION_CREDENTIALS /tmp/keyfile/key.json
 
 COPY . /mtt
-# dev_appserver.py errors if there exists Dockerfile.
-RUN rm /mtt/Dockerfile
 # Unzip the selected prebuilt TF runner
 RUN unzip -q /mtt/prebuilts/tradefed/${MTT_TRADEFED_PREBUILT} -d /tradefed
 RUN rm -rf /mtt/prebuilts/tradefed

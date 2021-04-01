@@ -1,5 +1,5 @@
 <!--
- Copyright 2019 Google LLC
+ Copyright 2020 Google LLC
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -15,35 +15,34 @@
 -->
 
 
-<!-- device list -->
-<device-list
+<!-- device picker -->
+<device-picker
   [autoUpdate]="autoUpdate"
-  [selectedSerials]="runTarget ? runTarget.split(';') : []"
+  [selectedSerials]="getDeviceSerials()"
   [selectable]="true"
-  [selectDisabled]="manualRunTarget"
+  [selectDisabled]="manualDeviceSpecs"
   (selectionChange)="onDeviceListSelectionChange($event); hasContentChanged = true">
-</device-list>
-
+</device-picker>
 <div fxLayoutGap="20px" class="inputRow">
   <!-- shard count -->
   <mat-form-field appearance="outline" floatLabel="always" fxFlex="120px">
     <mat-label> Shard Count </mat-label>
     <input matInput type="number" min="0"
       [(ngModel)]="shardCount"
-      [disabled]="!manualRunTarget"
+      [disabled]="!manualDeviceSpecs"
       (change)="shardCountChange.emit(shardCount)">
   </mat-form-field>
 
-  <!-- run target -->
+  <!-- device spec -->
   <mat-form-field appearance="outline" floatLabel="always" fxFlex>
-    <mat-label> Run Target </mat-label>
-    <input matInput type="text" [(ngModel)]="runTarget"
-           [disabled]="!manualRunTarget"
-           (change)="runTargetChange.emit(runTarget); hasContentChanged = true">
+    <mat-label> Device Spec </mat-label>
+    <input matInput type="text" [ngModel]="getDeviceSpecsString()"
+           [disabled]="!manualDeviceSpecs"
+           (change)="onDeviceSpecsStringChange($event.target.value); hasContentChanged = true">
   </mat-form-field>
 
   <!-- manual shard count and run target edit -->
-  <mat-checkbox class="manualRunTargetCheckbox" [(ngModel)]="manualRunTarget" fxFlex="200px">
+  <mat-checkbox class="manualDeviceSpecsCheckbox" [(ngModel)]="manualDeviceSpecs" fxFlex="200px">
     Enable Manual Editing
   </mat-checkbox>
 </div>

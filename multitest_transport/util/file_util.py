@@ -14,29 +14,29 @@
 
 """A util file that stores common function that involve file operation."""
 import collections
-import cStringIO
 import datetime
+import io
+import json
 import logging
 import os
 import re
-import urllib2
+import stat
 import xml.etree.cElementTree as ElementTree
 import zipfile
 
 import apiclient
-import cloudstorage as gcs
-from protorpc import messages
+import attr
+import six
+from six.moves import urllib
 
 from multitest_transport.util import env
 
 DOWNLOAD_BUFFER_SIZE = 16 * 1024 * 1024
 UPLOAD_BUFFER_SIZE = 512 * 1024
+LOCAL_HOSTNAME = ['localhost', '0.0.0.0', '127.0.0.1', '::', '::1']
 
-FileInfo = collections.namedtuple('FileInfo',
-                                  ['total_size', 'content_type', 'timestamp'])
-
-FileChunk = collections.namedtuple(
-    'FileChunk', ['data', 'offset', 'total_size'])
+FileChunk = collections.namedtuple('FileChunk',
+                                   ['data', 'offset', 'total_size'])
 
 TestSuiteInfo = collections.namedtuple(
     'TestSuiteInfo',
@@ -47,57 +47,67 @@ XtsTestResultSummary = collections.namedtuple(
     ['passed', 'failed', 'modules_total', 'modules_done'])
 
 
-class FileStorage(messages.Enum):
-  """File storage types."""
-  LOCAL_CLOUD_STORAGE = 0  # Locally emulated GCS
-  LOCAL_FILE_SYSTEM = 1  # Local Filesystem
-  GOOGLE_CLOUD_STORAGE = 2  # Google Cloud Storage
+@attr.s(frozen=True)
+class FileInfo(object):
+  """File information."""
+  url = attr.ib()  # file URL
+  is_file = attr.ib(default=True)  # True for files, False for directories
+  total_size = attr.ib(default=None)  # file total size
+  content_type = attr.ib(default=None)  # file content type
+  timestamp = attr.ib(default=None)  # last modification datetime
 
 
+@attr.s(frozen=True)
 class FileSegment(object):
   """Partial file content."""
+  offset = attr.ib()  # starting offset
+  lines = attr.ib()  # lines of content
 
-  def __init__(self, offset, lines):
-    self.offset = offset
-    self.length = sum([len(line) for line in lines])
-    self.lines = lines
+  @property
+  def length(self):
+    return sum([len(line) for line in self.lines])
 
 
-class FileHandle(object):
-  """Wrapper around a URL that can read file metadata/content.
+def _JoinPath(*parts):
+  """Join multiple URL parts together with a '/' separator.
 
-  Ir can also serve as a file-like object.
+  Unlike os.path.join and urllib.urlparse.urljoin, does not treat parts with
+  leading slashes (i.e. absolute parts) differently.
+
+  Args:
+    *parts: URL parts
+  Returns:
+    concatenated URL
   """
+  return '/'.join(re.sub('(^/|/$)', '', part or '') for part in parts)
 
-  _MAX_LINE_LENGTH = 1024
 
-  def __init__(self, url):
-    self.url = url
+def _HttpTimeToDatetime(http_time):
+  """Converts a HTTP time string (RFC 2616) to a datetime object."""
+  if http_time:
+    return datetime.datetime.strptime(http_time, '%a, %d %b %Y %H:%M:%S GMT')
+
+
+def _SecondsToDatetime(epoch_seconds):
+  """Converts a POSIX timestamp (epoch seconds) to a datetime object."""
+  if epoch_seconds:
+    return datetime.datetime.utcfromtimestamp(epoch_seconds)
+
+
+def _MillisToDatetime(epoch_millis):
+  """Converts epoch milliseconds to a datetime object."""
+  if epoch_millis:
+    return _SecondsToDatetime(epoch_millis / 1000.)
+
+
+class BaseReadStream(io.RawIOBase):
+  """Abstract seekable read-only file-like object."""
+
+  def __init__(self, handle):
+    super(BaseReadStream, self).__init__()
+    self.handle = handle
     self.cursor = 0
     self.size = -1
-
-  @classmethod
-  def Get(cls, url):
-    """Factory method which creates the appropriate file handle.
-
-    Args:
-      url: file URL
-    Returns:
-      file handle
-    """
-    if url.startswith('gs://'):
-      return GCSFileHandle(url)  # Google cloud storage URL
-    if url.startswith('file://'):
-      return LocalFileServerHandle(url)  # Local file server URL
-    return HttpFileHandle(url)  # Any other URL defaults to HTTP handling
-
-  def Info(self):
-    """Get file information if file exists.
-
-    Returns:
-      file info: size (number of bytes) and type
-    """
-    raise NotImplementedError
 
   def ReadBytes(self, offset=0, length=None):
     """Read bytes.
@@ -110,187 +120,325 @@ class FileHandle(object):
     """
     raise NotImplementedError
 
-  def Read(self, offset=0, length=None, split_lines=True):
-    """Read partial file content.
-
-    Args:
-      offset: starting position (defaults to start of file)
-      length: number of bytes to read (defaults to rest of file)
-      split_lines: whether or not to split lines to an array (default true)
-    Returns:
-      file segment containing content (string array if split_lines is true,
-        single string otherwise) and metadata
-    """
-    data = self.ReadBytes(offset=offset, length=length)
-    if not data:
-      return None
-    if split_lines:
-      data = data.splitlines(True)
-    return FileSegment(offset, data)
-
-  def seek(self, offset, whence=os.SEEK_SET):      """Implements file.seek()."""
+  def seek(self, offset, whence=os.SEEK_SET):
     if whence == os.SEEK_SET:
       self.cursor = offset
     elif whence == os.SEEK_CUR:
       self.cursor += offset
     elif whence == os.SEEK_END:
       if self.size < 0:
-        self.size = self.Info().total_size
+        self.size = self.handle.Info().total_size
       self.cursor = self.size + offset
     else:
-      raise ValueError('%s is not supported whence value' % whence)
-
-  def tell(self):      """Implements file.tell()."""
+      raise ValueError('Unsupported whence %s' % whence)
     return self.cursor
 
-  def read(self, size=-1):      """Implements file.read()."""
-    if size < 0:
-      size = None
-    data = self.ReadBytes(offset=self.cursor, length=size)
-    if data:
-      self.cursor += len(data)
+  def tell(self):
+    return self.cursor
+
+  def read(self, size=-1):
+    data = self.ReadBytes(offset=self.cursor, length=size) or b''
+    self.cursor += len(data)
     return data
 
-  def readline(self, size=-1):      """Implements file.readline()."""
-    if size < 0:
-      size = self._MAX_LINE_LENGTH
-    data = self.ReadBytes(offset=self.cursor, length=size)
-    if not data:
+  def readinto(self, b):
+    data = self.read(len(b))
+    b[:len(data)] = data
+    return len(data)
+
+  def readall(self):
+    return self.read()
+
+  def write(self, *args, **kwargs):
+    raise io.UnsupportedOperation('write')
+
+  def seekable(self):
+    return True
+
+  def readable(self):
+    return True
+
+
+class BaseWriteStream(io.RawIOBase):
+  """Abstract write-only file-like object."""
+
+  def __init__(self, handle):
+    super(BaseWriteStream, self).__init__()
+    self.handle = handle
+    self.cursor = 0
+
+  def WriteBytes(self, offset=0, data=None, finish=True):
+    """Writes bytes.
+
+    Args:
+      offset: starting position (defaults to start of file)
+      data: bytes to write
+      finish: whether to execute any finalization logic
+    """
+    raise NotImplementedError
+
+  def tell(self):
+    return self.cursor
+
+  def close(self):
+    self.WriteBytes(offset=self.cursor)
+    super(BaseWriteStream, self).close()
+
+  def read(self, *arg, **kwargs):
+    raise io.UnsupportedOperation('read')
+
+  def write(self, data):
+    self.WriteBytes(offset=self.cursor, data=data, finish=False)
+    self.cursor += len(data)
+    return len(data)
+
+  def writable(self):
+    return True
+
+
+class FileHandle(object):
+  """File-like object which wraps a URL and can read file metadata/content."""
+
+  def __init__(self, url):
+    super(FileHandle, self).__init__()
+    self.url = url
+
+  @classmethod
+  def Get(cls, url):
+    """Factory method which creates the appropriate file handle.
+
+    Args:
+      url: file URL
+    Returns:
+      file handle
+    """
+    if url.startswith('file:///'):
+      return LocalFileHandle(url)  # Local file URL
+    if url.startswith('file://'):
+      return RemoteFileHandle(url)  # Remote file server URL
+    return HttpFileHandle(url)  # Any other URL defaults to HTTP handling
+
+  def Info(self):
+    """Get file information.
+
+    Returns:
+      FileInfo or None if file not found.
+    """
+    raise NotImplementedError
+
+  def Open(self, mode='r'):
+    """Returns a file-like object for reading or writing.
+
+    Args:
+      mode: 'r' for reading or 'w' for writing
+    Returns:
+      file-like object
+    """
+    raise NotImplementedError
+
+  def ListFiles(self):
+    """Returns a list of nested files if this handle represents a directory.
+
+    Returns:
+      list of FileInfo or None if directory doesn't exist.
+    """
+    raise NotImplementedError
+
+  def Delete(self):
+    """Deletes this file if it exists."""
+    raise NotImplementedError
+
+
+class LocalFileHandle(FileHandle):
+  """Reads file metadata and content from the file system."""
+
+  def __init__(self, url):
+    super(LocalFileHandle, self).__init__(url)
+    if not url.startswith('file:///'):
+      raise ValueError('Invalid local file URL %s' % url)
+    self.path = url[7:]
+    if not self.path.startswith(env.STORAGE_PATH):
+      self.path = _JoinPath('/', env.STORAGE_PATH, self.path)
+
+  def _GetFileInfo(self, path):
+    stat_info = os.stat(path)
+    return FileInfo(
+        url='file://' + path,
+        is_file=not stat.S_ISDIR(stat_info.st_mode),
+        total_size=stat_info.st_size,
+        timestamp=_MillisToDatetime(stat_info.st_mtime * 1000))
+
+  def Info(self):
+    if not os.path.exists(self.path):
       return None
-    line = data.splitlines()[0]
-    self.cursor += len(line)
-    # If there was a new line char, increase cursor by 1.
-    if len(line) < len(data):
-      self.cursor += 1
-    return line
+    return self._GetFileInfo(self.path)
 
-  def readlines(self, sizehint=-1):      """Implements file.readlines()."""
-    if sizehint < 0:
-      sizehint = None
-    data = self.ReadBytes(offset=self.cursor, length=sizehint)
-    lines = data.splitlines()
-    self.cursor += len(data) + 1
-    return lines
+  def Open(self, mode='r'):
+    if mode == 'w':
+      dir_path = os.path.dirname(self.path)
+      if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+    # FileHandle only supports binary mode.
+    mode += 'b'
+    return open(self.path, mode=mode)
 
-  def next(self):
-    """Implements file.next()."""
-    return self.readline()
+  def ListFiles(self):
+    if not os.path.isdir(self.path):
+      return None
+    files = []
+    for filename in os.listdir(self.path):
+      child_path = os.path.join(self.path, filename)
+      files.append(self._GetFileInfo(child_path))
+    return files
 
-  def __iter__(self):
-    """Implements file.__iter__()."""
-    yield self.next()
+  def Delete(self):
+    if os.path.isfile(self.path):
+      os.remove(self.path)
+
+
+class HttpReadStream(BaseReadStream):
+  """Read-only file-like object accessible using HTTP requests."""
+
+  def __init__(self, handle, url):
+    super(HttpReadStream, self).__init__(handle)
+    self.url = url
+
+  def ReadBytes(self, offset=0, length=None):
+    if length is None or length < 0:
+      headers = {'Range': 'bytes=%s-' % offset}
+    else:
+      headers = {'Range': 'bytes=%s-%s' % (offset, offset + length - 1)}
+    try:
+      request = urllib.request.Request(self.url, headers=headers)
+      return urllib.request.urlopen(request).read()
+    except urllib.error.HTTPError as e:
+      if e.code == 404 or e.code == 416:
+        # Ignore file not found or unsatisfied range errors, which occur if
+        # requesting content from after EOF
+        return None
+      raise
+
+
+class HttpWriteStream(BaseWriteStream):
+  """Write-only file-like object which uses HTTP requests."""
+
+  def __init__(self, handle, url):
+    super(HttpWriteStream, self).__init__(handle)
+    self.url = url
+
+  def WriteBytes(self, offset=0, data=None, finish=True):
+    end_byte = offset + len(data) - 1 if data else offset
+    # Upload is complete when end_byte + 1 == total_size
+    total_size = end_byte + 1 if finish else '*'
+    headers = {'Content-Range': 'bytes %s-%s/%s' %
+                                (offset, end_byte, total_size)}
+    request = urllib.request.Request(url=self.url, data=data, headers=headers)
+    request.get_method = lambda: 'PUT'
+    urllib.request.urlopen(request).read()
 
 
 class HttpFileHandle(FileHandle):
   """Reads file metadata and content via HTTP requests."""
 
-  def _Request(self, **kwargs):
-    return urllib2.Request(self.url, **kwargs)
+  def __init__(self, url, info_url=None, read_url=None):
+    super(HttpFileHandle, self).__init__(url)
+    self.info_url = info_url or url
+    self.read_url = read_url or url
 
-  def _Open(self, **kwargs):
+  def Info(self):
     try:
-      return urllib2.urlopen(self._Request(**kwargs))
-    except urllib2.HTTPError as e:
+      request = urllib.request.Request(self.info_url)
+      request.get_method = lambda: 'HEAD'
+      response = urllib.request.urlopen(request)
+    except urllib.error.HTTPError as e:
       if e.code == 404:
         return None
-      raise e
-
-  def Info(self):
-    f = self._Open()
-    if f is None:
-      return None
-    total_size = int(f.info().get('content-length'))
-    content_type = f.info().get('content-type')
-    last_modified = f.info().get('last-modified')
-    timestamp = datetime.datetime.strptime(
-        last_modified, '%a, %d %b %Y %H:%M:%S GMT') if last_modified else None
-    f.close()
+      raise
+    # Parse file info from response headers
     return FileInfo(
-        total_size=total_size, content_type=content_type, timestamp=timestamp)
+        url=self.url,
+        is_file=True,
+        total_size=int(response.info().get('content-length', 0)),
+        content_type=response.info().get('content-type'),
+        timestamp=_HttpTimeToDatetime(response.info().get('last-modified')))
 
-  def ReadBytes(self, offset=0, length=None):
-    if length is None:
-      headers = {'Range': 'bytes=%s-' % offset}
-    else:
-      headers = {'Range': 'bytes=%s-%s' % (offset, offset + length - 1)}
-
-    f = self._Open(headers=headers)
-    if f is None:
-      return None
-    data = f.read()
-    f.close()
-    return data
+  def Open(self, mode='r'):
+    if mode == 'r':
+      return io.BufferedReader(HttpReadStream(self, self.read_url))
+    raise ValueError('Unsupported mode %s' % mode)
 
 
-class LocalFileServerHandle(HttpFileHandle):
-  """Reads file metadata and content from a local file server."""
+class RemoteFileHandle(HttpFileHandle):
+  """Reads file metadata and content from a remote file server."""
 
   def __init__(self, url):
-    super(LocalFileServerHandle, self).__init__(url)
-    self.file_path = re.sub('^file://(' + env.STORAGE_PATH + ')?', '', url)
-    self.request_url = '%sfile%s' % (env.FILE_SERVER_URL2, self.file_path)
+    # Hostname is optional for backwards compatibility (uses local file server)
+    match = re.search('^file://([^/]+)?(/.*)', url)
+    if not match:
+      raise ValueError('Invalid file URL %s' % url)
+    self.hostname, self.path = match.groups()
+    # Remove storage path prefix (file server expect relative paths)
+    if self.path and self.path.startswith(env.STORAGE_PATH):
+      self.path = self.path[len(env.STORAGE_PATH):]
+    # Use remote file server if hostname is provided
+    fs_url = env.FILE_SERVER_URL
+    if self.hostname is not None:
+      parsed_fs_url = urllib.parse.urlparse(fs_url)
+      fs_url = parsed_fs_url._replace(
+          netloc='{}:{}'.format(self.hostname, parsed_fs_url.port)).geturl()
+    # Generate URLs
+    self.file_url = _JoinPath(fs_url, 'file', self.path)
+    self.dir_url = _JoinPath(fs_url, 'dir', self.path)
+    super(RemoteFileHandle, self).__init__(url, info_url=self.file_url)
 
-  def _Request(self, **kwargs):
-    return urllib2.Request(self.request_url, **kwargs)
+  def Open(self, mode='r'):
+    if mode == 'r':
+      return io.BufferedReader(HttpReadStream(self, self.file_url))
+    if mode == 'w':
+      return io.BufferedWriter(HttpWriteStream(self, self.file_url))
+    raise ValueError('Unsupported mode %s' % mode)
 
-
-class GCSFileHandle(FileHandle):
-  """Reads file metadata and content from Google Cloud Storage."""
-
-  def __init__(self, url):
-    super(GCSFileHandle, self).__init__(url)
-    self.file_path = url[4:]
-
-  def Info(self):
+  def ListFiles(self):
     try:
-      stat = gcs.stat(self.file_path)
-    except gcs.errors.NotFoundError:
-      return None
-    timestamp = datetime.datetime.utcfromtimestamp(
-        stat.st_ctime) if stat.st_ctime else None
-    return FileInfo(
-        total_size=stat.st_size,
-        content_type=stat.content_type,
-        timestamp=timestamp)
+      response = urllib.request.urlopen(self.dir_url)
+    except urllib.error.HTTPError as e:
+      if e.code == 404:
+        return None
+      raise
+    # Parse file information from JSON response
+    files = []
+    for node in json.load(response):
+      files.append(
+          FileInfo(
+              url=_JoinPath(self.url, node.get('name')),
+              is_file=node.get('type') != 'DIRECTORY',
+              total_size=node.get('size'),
+              timestamp=_MillisToDatetime(node.get('update_time'))))
+    return files
 
-  def ReadBytes(self, offset=0, length=None):
-    try:
-      f = gcs.open(self.file_path, offset=offset)
-    except gcs.errors.NotFoundError:
-      return None
-    content = f.read(size=length or -1)
-    f.close()
-    return content
-
-
-def GetFileInfo(file_url):
-  """Convenience method to create a file handle and fetch file metadata."""
-  return FileHandle.Get(file_url).Info()
+  def Delete(self):
+    request = urllib.request.Request(url=self.file_url)
+    request.get_method = lambda: 'DELETE'
+    urllib.request.urlopen(request)
 
 
-def GetStorageUrl(storage, file_path):
-  """Get URL for a file, prefixed according to the storage type.
+def GetAppStorageUrl(parts, hostname=None):
+  """Get the application storage URL for a file.
 
   Args:
-    storage: storage type
-    file_path: file path
+    parts: a list of file path parts
+    hostname: optional hostname of a file
+
   Returns:
-    a URL for a given file.
+    application storage URL
   """
-  if file_path is None:
-    file_path = ''
-  elif file_path.startswith('/'):
-    file_path = file_path[1:]
-
-  if storage in [FileStorage.LOCAL_CLOUD_STORAGE,
-                 FileStorage.GOOGLE_CLOUD_STORAGE]:
-    return 'gs://%s' % file_path
-  elif storage == FileStorage.LOCAL_FILE_SYSTEM:
-    return 'file://%s/%s' % (env.STORAGE_PATH, file_path)
-  raise ValueError(storage)  # unknown storage type
+  # TODO: Support GCS storage in cloud mode
+  if hostname:
+    return _JoinPath(*(['file://', hostname, env.STORAGE_PATH] + parts))
+  return _JoinPath(*(['file:///', env.STORAGE_PATH] + parts))
 
 
-def GetWorkFileUrl(attempt, file_path=None):
+def GetWorkFileUrl(attempt, file_path=''):
   """Get URL for a command attempt's work directory.
 
   Args:
@@ -299,11 +447,13 @@ def GetWorkFileUrl(attempt, file_path=None):
   Returns:
     attempt's work directory URL
   """
-  path = '/tmp/%s/%s' % (attempt.attempt_id, file_path or '')
-  return GetStorageUrl(FileStorage.LOCAL_FILE_SYSTEM, path)
+  if env.OPERATION_MODE == env.OperationMode.ON_PREMISE:
+    return GetAppStorageUrl(['tmp', attempt.attempt_id, file_path],
+                            attempt.hostname)
+  return GetAppStorageUrl(['tmp', attempt.attempt_id, file_path])
 
 
-def GetOutputFileUrl(test_run, attempt, file_path=None):
+def GetOutputFileUrl(test_run, attempt, file_path=''):
   """Get URL for a command attempt's output file.
 
   Args:
@@ -313,10 +463,8 @@ def GetOutputFileUrl(test_run, attempt, file_path=None):
   Returns:
     attempt's output URL
   """
-  path = '%s%s/%s/%s' % (test_run.output_path,
-                         attempt.command_id, attempt.attempt_id,
-                         file_path or '')
-  return GetStorageUrl(test_run.output_storage, path)
+  return GetAppStorageUrl(
+      [test_run.output_path, attempt.command_id, attempt.attempt_id, file_path])
 
 
 def GetOutputFilenames(test_run, attempt):
@@ -329,16 +477,61 @@ def GetOutputFilenames(test_run, attempt):
     list of output filenames
   """
   summary_url = GetOutputFileUrl(test_run, attempt, 'FILES')
-  return [line.strip() for line in FileHandle.Get(summary_url).readlines()]
+  with OpenFile(summary_url) as stream:
+    return [line.strip() for line in stream.readlines()]
 
 
-def ReadFile(file_url, offset=0, length=None, split_lines=True):
-  """Convenience method to create a file handle and read file content."""
-  return FileHandle.Get(file_url).Read(offset, length, split_lines)
+def GetWorkerAccessibleUrl(url):
+  """Get URL for worker based on operation mode.
+
+  Args:
+    url: URL
+
+  Returns:
+    URL for worker to access.
+  """
+  if env.OPERATION_MODE != env.OperationMode.ON_PREMISE:
+    return url
+  u = urllib.parse.urlparse(url)
+  hostname = env.HOSTNAME
+  if u.scheme == 'file':
+    u = urllib.parse.urlparse(RemoteFileHandle(url).file_url)
+  if (u.scheme == 'http' or
+      u.scheme == 'https') and u.hostname in LOCAL_HOSTNAME:
+    u = u._replace(netloc='{}:{}'.format(hostname, u.port))
+  return u.geturl()
+
+
+def OpenFile(url, mode='r'):
+  """Convenience method to get a file handle and open it for reading or writing.
+
+  Args:
+    url: file URL
+    mode: 'r' for reading or 'w' for writing
+  Returns:
+    file-like object for reading or writing
+  """
+  return FileHandle.Get(url).Open(mode=mode)
+
+
+def ReadFile(file_url, offset=0, length=-1):
+  """Read file segment.
+
+  Args:
+    file_url: file URL
+    offset: starting position (defaults to start of file)
+    length: number of bytes to read (defaults to rest of file)
+  Returns:
+    file segment containing lines of content and metadata
+  """
+  with OpenFile(file_url) as stream:
+    stream.seek(offset)
+    data = stream.read(length)
+    return FileSegment(offset, data.splitlines(True)) if data else None
 
 
 def TailFile(file_url, length):
-  """Read content from end of file.
+  """Read file segment from end of file.
 
   Args:
     file_url: file URL
@@ -353,7 +546,10 @@ def TailFile(file_url, length):
   total_size = info.total_size
 
   offset = max(0, total_size - length)
-  return handle.Read(offset)
+  with handle.Open() as stream:
+    stream.seek(offset)
+    data = stream.read()
+    return FileSegment(offset, data.splitlines(True)) if data else None
 
 
 def DownloadFile(file_url, offset=0):
@@ -373,38 +569,40 @@ def DownloadFile(file_url, offset=0):
     raise RuntimeError('File %s not found' % file_url)
   total_size = info.total_size
 
-  bufsize = DOWNLOAD_BUFFER_SIZE
-  size = bufsize
-  while bufsize <= size:
-    # Read/write until EOF (downloaded size smaller than requested size)
-    logging.debug('Downloading %s-%s', offset, offset + bufsize - 1)
-    data = handle.ReadBytes(offset, bufsize)
-    size = len(data)
-    logging.debug('size: %d bytes', size)
-    offset += size
-    yield FileChunk(data=data, offset=offset, total_size=total_size)
+  size = DOWNLOAD_BUFFER_SIZE
+  with handle.Open() as stream:
+    stream.seek(offset)
+    while DOWNLOAD_BUFFER_SIZE <= size:
+      # Read/write until EOF (downloaded size smaller than requested size)
+      logging.debug('Downloading %s-%s', offset,
+                    offset + DOWNLOAD_BUFFER_SIZE - 1)
+      data = stream.read(DOWNLOAD_BUFFER_SIZE)
+      size = len(data)
+      offset += size
+      yield FileChunk(data=data, offset=offset, total_size=total_size)
 
 
-def GetTestSuiteInfo(file_handle):
+def GetTestSuiteInfo(file_obj):
   """Get the test package information.
 
   Args:
-    file_handle: A XTS zip file handle.
+    file_obj: XTS zip file-like object.
   Returns:
     package_info dictionary
   """
   try:
-    zf = zipfile.ZipFile(file_handle)
+    zf = zipfile.ZipFile(file_obj)
     for file_name in zf.namelist():
       # Find a tradefed jar file inside the test package zip.
       if file_name.endswith('-tradefed.jar'):
-        jar = zipfile.ZipFile(cStringIO.StringIO(zf.read(file_name)))
+        jar = zipfile.ZipFile(io.BytesIO(zf.read(file_name)))
         jar_info = jar.NameToInfo.get('test-suite-info.properties')
         if not jar_info:
           continue  # Test suite information not found, skip.
         # Parse test suite information.
         suite_info = {}
         for line in jar.open(jar_info):
+          line = six.ensure_text(line)
           if not line or line.startswith('#') or '=' not in line:
             continue
           key, value = line.split('=', 1)
@@ -414,15 +612,15 @@ def GetTestSuiteInfo(file_handle):
                              name=suite_info.get('name'),
                              fullname=suite_info.get('fullname'),
                              version=suite_info.get('version'))
-  except Exception as e:      logging.error('Failed to get test suite info: %s', e)
+  except Exception:      logging.exception('Failed to get test suite info')
   return None
 
 
-def GetXtsTestResultSummary(file_handle):
-  """Get the test result summary. Assumes a CTS test_result.xml format.
+def GetXtsTestResultSummary(file_obj):
+  """Get the test result summary.
 
   Args:
-    file_handle: XTS XML test result file handle.
+    file_obj: XTS test_result.xml file-like object.
   Returns:
     test result summary dict.
   See Also:
@@ -430,7 +628,7 @@ def GetXtsTestResultSummary(file_handle):
     https://android.googlesource.com/platform/test/suite_harness/+/1b95692/common/util/src/com/android/compatibility/common/util/ResultHandler.java
   """
   try:
-    for _, elem in ElementTree.iterparse(file_handle):
+    for _, elem in ElementTree.iterparse(file_obj):
       if elem.tag == 'Summary':
         return XtsTestResultSummary(
             passed=int(elem.attrib['pass']),
@@ -438,7 +636,7 @@ def GetXtsTestResultSummary(file_handle):
             modules_done=int(elem.attrib['modules_done']),
             modules_total=int(elem.attrib['modules_total']))
       elem.clear()
-  except Exception as e:      logging.error('Failed to get test result summary: %s', e)
+  except Exception:      logging.exception('Failed to get test result summary')
   return None
 
 
@@ -447,10 +645,11 @@ class FileHandleMediaUpload(apiclient.http.MediaIoBaseUpload):
 
   def __init__(self, handle, chunksize=UPLOAD_BUFFER_SIZE, resumable=False):
     info = handle.Info()
-    super(FileHandleMediaUpload, self).__init__(fd=handle,
-                                                mimetype=info.content_type,
-                                                chunksize=chunksize,
-                                                resumable=resumable)
+    super(FileHandleMediaUpload, self).__init__(
+        fd=handle.Open(),
+        mimetype=info.content_type if info else None,
+        chunksize=chunksize,
+        resumable=resumable)
 
   def has_stream(self):
     # Disable streaming to issue a single request per chunk.

@@ -16,12 +16,15 @@
 
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
+import {of, Observable} from 'rxjs';
+import {takeUntil} from 'rxjs/operators';
 
-import {BuildChannel, TestResourceDef, TestResourceObj} from '../services/mtt_models';
+import {MttClient} from '../services/mtt_client';
+import {BuildChannel, BuildItem, TestResourceDef, TestResourceObj, TestResourceType} from '../services/mtt_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
 import {assertRequiredInput} from '../shared/util';
 
-import {BuildPicker} from './build_picker';
+import {BuildPicker, BuildPickerData, BuildPickerMode} from './build_picker';
 
 /** Class of test resources being used in this form */
 export enum TestResourceClassType {
@@ -39,9 +42,10 @@ export enum TestResourceClassType {
   providers: [{provide: FormChangeTracker, useExisting: TestResourceForm}]
 })
 export class TestResourceForm extends FormChangeTracker implements OnInit {
+  readonly TEST_RESOURCE_TYPES = Object.values(TestResourceType);
+
   @Input() data!: TestResourceObj[]|TestResourceDef[];
   @Input() buildChannels!: BuildChannel[];
-  @Input() options: string[] = [];
   @Input() testResourceClassType!: TestResourceClassType;
   @Input() canAdd = true;
   @Input() canDelete = true;
@@ -52,6 +56,7 @@ export class TestResourceForm extends FormChangeTracker implements OnInit {
   // Whenever an event fired such as add or remove, it will set this value to
   // true
   hasContentChanged = false;
+  buildItemByUrl: { [url: string]: Observable<BuildItem|null> } = {};
 
   ngOnInit() {
     assertRequiredInput(this.data, 'data', 'test-resource-form');
@@ -62,19 +67,31 @@ export class TestResourceForm extends FormChangeTracker implements OnInit {
         this.buildChannels, 'buildChannels', 'test-resource-form');
   }
 
-  constructor(public dialog: MatDialog) {
+  constructor(
+      private readonly mttClient: MttClient,
+      private readonly dialog: MatDialog) {
     super();
   }
 
   openBuildPicker(testResource: TestResourceObj|TestResourceDef) {
-    const dialogRef = this.dialog.open(BuildPicker, {
-      width: '800px',
-      panelClass: 'build-picker-container',
-      data: {
-        buildChannels: this.buildChannels,
-        resourceUrl: this.getUrl(testResource),
-      }
-    });
+    const dialogRef =
+        this.dialog.open<BuildPicker, BuildPickerData, string>(BuildPicker, {
+          width: '800px',
+          maxHeight: '100vh',
+          panelClass: 'build-picker-container',
+          data: {
+            buildChannels: this.buildChannels,
+            mode: BuildPickerMode.SELECT,
+            resourceUrl: this.getUrl(testResource),
+          }
+        });
+
+    // Update build channels when a channel is authorized in the dialog.
+    dialogRef.componentInstance.buildChannelsChange
+        .pipe(takeUntil(dialogRef.afterClosed()))
+        .subscribe(buildChannels => {
+          this.buildChannels = buildChannels;
+        });
 
     dialogRef.afterClosed().subscribe(resourceUrl => {
       if (resourceUrl) {
@@ -104,6 +121,18 @@ export class TestResourceForm extends FormChangeTracker implements OnInit {
         TestResourceObj): testResource is TestResourceDef {
     return this.testResourceClassType ===
         TestResourceClassType.TEST_RESOURCE_DEF;
+  }
+
+  getBuildItem(testResource: TestResourceDef|
+               TestResourceObj): Observable<BuildItem|null> {
+    const url = this.getUrl(testResource);
+    if (!url) {
+      return of(null);
+    }
+    if (!(url in this.buildItemByUrl)) {
+      this.buildItemByUrl[url] = this.mttClient.lookupBuildItem(url);
+    }
+    return this.buildItemByUrl[url];
   }
 
   isFormDirty(): boolean {

@@ -72,10 +72,12 @@ export class Notifier {
   }
 
   /** Displays a yes/no confirmation popup. */
-  confirm(message: string, title: string): Observable<boolean> {
+  confirm(
+      message: string, title: string, confirmText = 'Yes',
+      rejectText = 'No'): Observable<boolean> {
     this.liveAnnouncer.announce(title, 'assertive');
     const data: NotifierDialogData =
-        {title, message, icon: 'error', rejectText: 'No', confirmText: 'Yes'};
+        {title, message, icon: 'error', confirmText, rejectText};
     const dialogRef = this.dialog.open(
         NotifierDialog, {width: '400px', disableClose: true, data});
     return dialogRef.afterClosed().pipe(map(result => !!result));

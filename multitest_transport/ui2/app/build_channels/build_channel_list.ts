@@ -35,7 +35,7 @@ export class BuildChannelList implements OnInit, OnDestroy {
   isDefaultBuildChannel = isDefaultBuildChannel;
   buildChannels: BuildChannel[] = [];
 
-  private readonly destroy = new ReplaySubject();
+  private readonly destroy = new ReplaySubject<void>();
 
   constructor(
       private readonly mtt: MttClient,

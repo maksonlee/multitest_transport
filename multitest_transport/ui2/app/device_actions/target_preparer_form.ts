@@ -19,7 +19,7 @@ import {Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, V
 import {TradefedConfigObject} from '../services/mtt_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
 import {assertRequiredInput} from '../shared/util';
-import {OptionValueChangeEvent} from './target_preparer_option_form';
+import {OptionValueChangeEvent} from './tradefed_config_option_form';
 
 /**
  * Form for Target Preparer
@@ -32,6 +32,7 @@ import {OptionValueChangeEvent} from './target_preparer_option_form';
 })
 export class TargetPreparerForm extends FormChangeTracker implements OnInit {
   @Input() targetPreparers!: Array<Partial<TradefedConfigObject>>;
+  @Input() canEdit = true;
   @Output() addTargetPreparer = new EventEmitter();
   @Output() deleteTargetPreparer = new EventEmitter<number>();
   @ViewChildren(FormChangeTracker) trackers!: QueryList<FormChangeTracker>;

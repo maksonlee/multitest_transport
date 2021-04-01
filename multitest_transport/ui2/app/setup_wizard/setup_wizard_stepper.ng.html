@@ -18,8 +18,8 @@
   Setup Wizard
 </h2>
 <div class="info-text">
-  There are a few steps that can be completed to make using this tool easier. Any configurations
-  set here can always be changed again later by going to the Settings page.
+  There are a few optional steps that can be completed to make using this tool easier. Any
+  configurations set here can always be changed again later by going to the Settings page.
 </div>
 
 <mat-vertical-stepper #stepper>
@@ -27,12 +27,15 @@
     <mat-icon>check</mat-icon>
   </ng-template>
 
-  <mat-step>
+  <!-- TODO: re-enable this step once the OAuth issue is resolved. -->
+  <mat-step #buildChannelStep *ngIf="false">
     <ng-template matStepLabel>
       <h3>Login to Google services</h3>
     </ng-template>
 
-    <build-channel-setup></build-channel-setup>
+    <!-- Re-init when this step is selected. -->
+    <build-channel-setup *ngIf="!stepper.selected || stepper.selected == buildChannelStep">
+    </build-channel-setup>
 
     <div class="button-section">
       <button mat-flat-button color="accent" class="horizontal-center"
@@ -61,10 +64,29 @@
 
   <mat-step>
     <ng-template matStepLabel>
+      <h3>
+        Set Service Account
+      </h3>
+    </ng-template>
+
+    <default-auth-step></default-auth-step>
+
+    <div class="button-section">
+      <button mat-flat-button color="accent" class="horizontal-center"
+              matStepperNext>
+        Next Step
+      </button>
+    </div>
+  </mat-step>
+
+  <mat-step #configSetStep>
+    <ng-template matStepLabel>
       <h3>Import Config Sets</h3>
     </ng-template>
 
-    <config-set-picker [isDialog]='true'></config-set-picker>
+    <!-- Re-init when this step is selected. -->
+    <config-set-picker [isDialog]="true" *ngIf="stepper.selected == configSetStep">
+    </config-set-picker>
 
     <div class="button-section">
       <button mat-flat-button color="accent" class="horizontal-center"

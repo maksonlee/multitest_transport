@@ -24,7 +24,7 @@ import {FileService} from '../services/file_service';
 import {Test, TestRun} from '../services/mtt_models';
 import {Command, CommandAttempt, Request} from '../services/tfc_models';
 import {getEl} from '../testing/jasmine_util';
-import {addTime, newMockCommand, newMockCommandAttempt, newMockRequest, newMockTest, newMockTestRun} from '../testing/test_util';
+import {addTime, newMockCommand, newMockCommandAttempt, newMockRequest, newMockTest, newMockTestRun} from '../testing/mtt_mocks';
 
 import {TestJobTree} from './test_job_tree';
 import {TestRunsModule} from './test_runs_module';

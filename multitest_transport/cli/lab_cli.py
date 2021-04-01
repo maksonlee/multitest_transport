@@ -23,15 +23,16 @@ import tempfile
 import zipfile
 
 from multitest_transport.cli import cli_util
+from multitest_transport.cli import command_util
+from multitest_transport.cli import google_auth_util
 from multitest_transport.cli import host_util
 
 logger = logging.getLogger(__name__)
 
 _MTT_BINARY_FILE = 'mtt_binary'
-_REMOTE_MTT_BINARY = '/tmp/mtt'
-_REMOTE_CONFIG_FILE = '/tmp/mtt_host_config.yaml'
-_REMOTE_KEY_DIR = '/tmp/keyfile'
-_REMOTE_KEY_FILE = os.path.join(_REMOTE_KEY_DIR, 'key.json')
+_REMOTE_MTT_BINARY_FORMAT = '/tmp/%s/mtt'
+_REMOTE_CONFIG_FILE_FORMAT = '/tmp/%s/mtt_host_config.yaml'
+_REMOTE_KEY_FILE_FORMAT = '/tmp/%s/keyfile/key.json'
 
 
 def _CreateLabCommandArgParser():
@@ -66,14 +67,15 @@ def _SetupMTTBinary(args, host):
     args: a parsed argparse.Namespace object.
     host: a Host.
   """
+  remote_mtt_binary = _REMOTE_MTT_BINARY_FORMAT % host.context.user
   logger.info('Setting up MTT binary on %s.', host.name)
   host.execution_state = 'Setting up MTT Binary'
   tmp_folder = tempfile.mkdtemp()
   try:
     with zipfile.ZipFile(args.cli_path, 'r') as cli_zip:
       mtt_binary_path = cli_zip.extract(_MTT_BINARY_FILE, tmp_folder)
-    host.context.CopyFile(mtt_binary_path, _REMOTE_MTT_BINARY)
-    host.context.Run(['chmod', '+x', _REMOTE_MTT_BINARY])
+    host.context.CopyFile(mtt_binary_path, remote_mtt_binary)
+    host.context.Run(['chmod', '+x', remote_mtt_binary])
   except zipfile.BadZipfile:
     logger.error('%s is not a zip file.', args.cli_path)
     raise
@@ -91,37 +93,73 @@ def _SetupHostConfig(host):
   Args:
     host: a Host.
   """
+  remote_config_file = _REMOTE_CONFIG_FILE_FORMAT % host.context.user
   logger.info('Setting up host config on %s.', host.name)
   host.execution_state = 'Setting up host config'
   config_file = tempfile.NamedTemporaryFile(suffix='.yaml')
   try:
     host.config.Save(config_file.name)
-    host.context.CopyFile(config_file.name, _REMOTE_CONFIG_FILE)
+    host.context.CopyFile(config_file.name, remote_config_file)
   finally:
     config_file.close()
 
 
-def _SetupServiceAccountKey(host, service_account_json_key_path):
+def _SetupServiceAccountKey(args, host):
   """Setup service account key in remote a host.
 
   Args:
-    host: an instance of host_util.Host.
-    service_account_json_key_path: a string, path of the source key file.
+    args: a parsed argparse.Namespace object.
+    host: a Host.
   """
+  remote_key_file = _REMOTE_KEY_FILE_FORMAT % host.context.user
+  if (not args.service_account_json_key_path and
+      not host.config.service_account_json_key_path and
+      not (host.config.secret_project_id and
+           host.config.service_account_key_secret_id)):
+    logger.debug('No service account set up.')
+    return
   logger.info('Setting up service account key on %s.', host.name)
   host.execution_state = 'Setting up service account key'
+  if (host.config.secret_project_id and
+      host.config.service_account_key_secret_id):
+    # Get service account key from secret manager.
+    cred = google_auth_util.GetGCloudCredential(command_util.CommandContext())
+    if not cred:
+      raise google_auth_util.AuthError(
+          'No user credentials. Run "gcloud auth login".')
+    sevice_account_json_key = google_auth_util.GetSecret(
+        host.config.secret_project_id,
+        host.config.service_account_key_secret_id,
+        cred)
+    service_account_key_file = tempfile.NamedTemporaryFile(suffix='.json')
+    try:
+      service_account_key_file.write(sevice_account_json_key)
+      service_account_key_file.flush()
+      host.context.CopyFile(service_account_key_file.name, remote_key_file)
+      host.config = host.config.SetServiceAccountJsonKeyPath(remote_key_file)
+    finally:
+      service_account_key_file.close()
+    return
+  # Using service account key file in args or config.
+  service_account_json_key_path = (
+      args.service_account_json_key_path or
+      host.config.service_account_json_key_path)
   host.context.CopyFile(
-      service_account_json_key_path, _REMOTE_KEY_FILE)
-  host.config.service_account_json_key_path = _REMOTE_KEY_FILE
+      service_account_json_key_path, remote_key_file)
+  host.config = host.config.SetServiceAccountJsonKeyPath(remote_key_file)
 
 
-def _BuildBaseMTTCmd(args):
+def _BuildBaseMTTCmd(args, host):
   """Build base MTT cmd."""
-  remote_cmd = [_REMOTE_MTT_BINARY]
+  remote_mtt_binary = _REMOTE_MTT_BINARY_FORMAT % host.context.user
+  remote_cmd = [remote_mtt_binary]
   if args.very_verbose:
     remote_cmd += ['-vv']
   elif args.verbose:
     remote_cmd += ['-v']
+  # We copy the mtt binary inside mtt_lab to remote host,
+  # there is not need to update the mtt binary on the remote host.
+  remote_cmd += ['--no_check_update']
   return remote_cmd
 
 
@@ -134,20 +172,16 @@ def Start(args, host):
   Raises:
     RuntimeError: if a MTT node fails to start.
   """
+  remote_config_file = _REMOTE_CONFIG_FILE_FORMAT % host.context.user
   _SetupMTTBinary(args, host)
-
-  service_account_json_key_path = (
-      args.service_account_json_key_path
-      or host.config.service_account_json_key_path)
-  if service_account_json_key_path:
-    _SetupServiceAccountKey(host, service_account_json_key_path)
-
+  _SetupServiceAccountKey(args, host)
   _SetupHostConfig(host)
 
   logger.info('Starting mtt on %s.', host.name)
-  remote_cmd = _BuildBaseMTTCmd(args) + ['start', _REMOTE_CONFIG_FILE]
+  remote_cmd = _BuildBaseMTTCmd(args, host) + ['start', remote_config_file]
+  use_sudo = bool(args.sudo_user) or args.ask_sudo_password
   host.execution_state = 'Running start'
-  host.context.Run(remote_cmd, sudo=args.ask_sudo_password)
+  host.context.Run(remote_cmd, sudo=use_sudo)
   logger.info('Started mtt on %s.', host.name)
 
 
@@ -162,9 +196,10 @@ def Stop(args, host):
   """
   logger.info('Stopping mtt on %s.', host.name)
   _SetupMTTBinary(args, host)
-  remote_cmd = _BuildBaseMTTCmd(args) + ['stop']
+  remote_cmd = _BuildBaseMTTCmd(args, host) + ['stop']
+  use_sudo = bool(args.sudo_user) or args.ask_sudo_password
   host.execution_state = 'Running stop'
-  host.context.Run(remote_cmd, sudo=args.ask_sudo_password)
+  host.context.Run(remote_cmd, sudo=use_sudo)
   logger.info('Stopped mtt on %s.', host.name)
 
 
@@ -177,20 +212,16 @@ def Restart(args, host):
   Raises:
     RuntimeError: if a MTT node fails to restart.
   """
+  remote_config_file = _REMOTE_CONFIG_FILE_FORMAT % host.context.user
   _SetupMTTBinary(args, host)
-
-  service_account_json_key_path = (
-      args.service_account_json_key_path
-      or host.config.service_account_json_key_path)
-  if service_account_json_key_path:
-    _SetupServiceAccountKey(host, service_account_json_key_path)
-
+  _SetupServiceAccountKey(args, host)
   _SetupHostConfig(host)
 
   logger.info('Restarting mtt on %s.', host.name)
-  remote_cmd = _BuildBaseMTTCmd(args) + ['restart', _REMOTE_CONFIG_FILE]
+  remote_cmd = _BuildBaseMTTCmd(args, host) + ['restart', remote_config_file]
+  use_sudo = bool(args.sudo_user) or args.ask_sudo_password
   host.execution_state = 'Running restart'
-  host.context.Run(remote_cmd, sudo=args.ask_sudo_password)
+  host.context.Run(remote_cmd, sudo=use_sudo)
   logger.info('Restarted mtt on %s.', host.name)
 
 
@@ -203,20 +234,16 @@ def Update(args, host):
   Raises:
     RuntimeError: if a MTT node fails to update.
   """
+  remote_config_file = _REMOTE_CONFIG_FILE_FORMAT % host.context.user
   _SetupMTTBinary(args, host)
-
-  service_account_json_key_path = (
-      args.service_account_json_key_path
-      or host.config.service_account_json_key_path)
-  if service_account_json_key_path:
-    _SetupServiceAccountKey(host, service_account_json_key_path)
-
+  _SetupServiceAccountKey(args, host)
   _SetupHostConfig(host)
 
   logger.info('Updating mtt on %s.', host.name)
-  remote_cmd = _BuildBaseMTTCmd(args) + ['update', _REMOTE_CONFIG_FILE]
+  remote_cmd = _BuildBaseMTTCmd(args, host) + ['update', remote_config_file]
+  use_sudo = bool(args.sudo_user) or args.ask_sudo_password
   host.execution_state = 'Running update'
-  host.context.Run(remote_cmd, sudo=args.ask_sudo_password)
+  host.context.Run(remote_cmd, sudo=use_sudo)
   logger.info('Updated mtt on %s.', host.name)
 
 
@@ -229,8 +256,9 @@ def RunCmd(args, host):
   """
   logger.info('Run "%s" on %s.', args.cmd, host.name)
   tokens = shlex.split(args.cmd)
+  use_sudo = bool(args.sudo_user) or args.ask_sudo_password
   host.execution_state = 'Running cmd'
-  res = host.context.Run(tokens, sudo=args.ask_sudo_password)
+  res = host.context.Run(tokens, sudo=use_sudo)
   logger.info(res.stdout)
   logger.info('Finished "%s" on %s.', args.cmd, host.name)
 

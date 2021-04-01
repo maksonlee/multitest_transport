@@ -27,8 +27,8 @@
   <object type="cluster_options" class="com.android.tradefed.cluster.ClusterOptions">
     <option name="cluster" value="default"/>
     <option name="device-monitor-interval" value="60000"/>
-    <option name="run-target-format" value="{SERIAL}" />
-    <option name="service-url" value="http://${MTT_MASTER_URL}/_ah/api/tradefed_cluster/v1/" />
+    <option name="run-target-format" value="*" />
+    <option name="service-url" value="${MTT_CONTROL_SERVER_URL}/_ah/api/tradefed_cluster/v1/" />
     <option name="upload-invocation-status" value="true" />
     <option name="check-command-state" value="true" />
   </object>
@@ -41,7 +41,10 @@
   <option name="dmgr:max-tcp-devices" value="0" />
   <option name="dmgr:max-gce-devices" value="0" />
   <option name="dmgr:max-remote-devices" value="0" />
+  <option name="dmgr:max-local-virtual-devices" value="${MAX_LOCAL_VIRTUAL_DEVICES}" />
 
   <multi_device_recovery
-      class="com.android.tradefed.device.recovery.UsbResetMultiDeviceRecovery" />
+      class="com.android.tradefed.device.recovery.UsbResetRunConfigRecovery">
+    <option name="recovery-config-name" value="usb-reset" />
+  </multi_device_recovery>
 </configuration>

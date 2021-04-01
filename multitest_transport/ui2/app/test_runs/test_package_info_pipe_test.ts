@@ -22,12 +22,17 @@ describe('TestPackageInfoPipe', () => {
   let testPackageInfo: TestPackageInfo;
 
   beforeEach(() => {
-    testPackageInfo = {name: 'CTS', version: '8.1_r11'};
     pipe = new TestPackageInfoPipe();
   });
 
-  it('returns the correct value', () => {
+  it('displays package info without a build number', () => {
+    testPackageInfo = {name: 'CTS', version: '8.1_r11'};
     expect(pipe.transform(testPackageInfo)).toEqual('CTS 8.1_r11');
+  });
+
+  it('displays package info with a build number', () => {
+    testPackageInfo = {name: 'CTS', version: '8.1_r11', build_number: '123456'};
+    expect(pipe.transform(testPackageInfo)).toEqual('CTS 8.1_r11 (123456)');
   });
 
   it('handles missing data', () => {

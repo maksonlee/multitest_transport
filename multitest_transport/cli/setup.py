@@ -16,16 +16,35 @@
 import setuptools
 
 setuptools.setup(
-    name='mtt',
+    name='Android_Test_Station_CLI',
+    description='CLI for Android Test Station.',
+    url='https://source.android.com/compatibility/tests/development/android-test-station/ats-user-guide',
     version='1.0',
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+    ],
     packages=setuptools.find_packages(),
+    # The package works for 3.6 and up, but not for python 4 yet.
+    python_requires='~=3.6',
     entry_points={
         'console_scripts': ['mtt=multitest_transport.cli.cli:Main'],
     },
     install_requires=[
+        'google-api-core',
+        'google-api-python-client',
         'google-auth',
+        'google-cloud-core',
+        'google-cloud-secret-manager',
         'google-cloud-storage',
+        'google-cloud-logging',
+        'grpcio',
         'fabric',
-        'pyyaml',
+        'packaging',
+        'strictyaml',
+        'requests',
     ]
 )

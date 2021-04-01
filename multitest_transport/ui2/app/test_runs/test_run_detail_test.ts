@@ -21,14 +21,17 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
+import {AnalyticsService} from '../services/analytics_service';
 import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
 import {Test, TestPackageInfo, TestRun, TestRunState} from '../services/mtt_models';
 import {TfcClient} from '../services/tfc_client';
 import {CommandAttempt, DeviceInfo, InvocationStatus, Request} from '../services/tfc_models';
 import {getEl, getTextContent} from '../testing/jasmine_util';
-import * as testUtil from '../testing/test_util';
-import {toTitleCase} from '../testing/test_util';
+import {newMockDeviceInfo} from '../testing/mtt_lab_mocks';
+import * as testUtil from '../testing/mtt_mocks';
+import {toTitleCase} from '../testing/mtt_mocks';
+
 import {TestRunDetail} from './test_run_detail';
 import {TestRunsModule} from './test_runs_module';
 import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
@@ -49,14 +52,17 @@ describe('TestRunDetail', () => {
   let testDevices: DeviceInfo[];
   let testPackageInfo: TestPackageInfo;
   let testRun: TestRun;
+  let retryRun: TestRun;
 
   beforeEach(() => {
     test = testUtil.newMockTest();
-    testDevices = [testUtil.newMockDevice()];
+    testDevices = [newMockDeviceInfo()];
     testPackageInfo = testUtil.newMockTestPackageInfo();
     testRun = testUtil.newMockTestRun(
         test, 'tridcomp123', TestRunState.COMPLETED, [], testPackageInfo,
         testDevices);
+    retryRun = testUtil.newMockTestRun(test);
+    retryRun.prev_test_run_id = testRun.id;
     attempt = testUtil.newMockCommandAttempt();
     request = testUtil.newMockRequest();
     invocationStatus = testUtil.newMockInvocationStatus();
@@ -65,8 +71,9 @@ describe('TestRunDetail', () => {
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
     fs = jasmine.createSpyObj(['getTestRunFileUrl', 'getFileBrowseUrl']);
     fs.getFileBrowseUrl.and.returnValue('browse_url');
-    mttClient = jasmine.createSpyObj(['getTestRun']);
+    mttClient = jasmine.createSpyObj(['getTestRun', 'getReruns']);
     mttClient.getTestRun.and.returnValue(observableOf(testRun));
+    mttClient.getReruns.and.returnValue(observableOf({test_runs: [retryRun]}));
     tfcClient =
         jasmine.createSpyObj('tfcClient', ['getDeviceInfos', 'getRequest']);
     tfcClient.getDeviceInfos.and.returnValue(observableOf(testDevices));
@@ -80,6 +87,7 @@ describe('TestRunDetail', () => {
         {provide: MttClient, useValue: mttClient},
         {provide: TfcClient, useValue: tfcClient},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
+        {provide: AnalyticsService, useValue: {}},
       ],
     });
     testRunDetailFixture = TestBed.createComponent(TestRunDetail);
@@ -89,11 +97,8 @@ describe('TestRunDetail', () => {
     testRunDetailFixture.detectChanges();
   });
 
-  it('gets initialized', () => {
+  it('gets initialized and calls the API', () => {
     expect(testRunDetail).toBeTruthy();
-  });
-
-  it('calls the mtt client api method getTestRuns', () => {
     expect(mttClient.getTestRun).toHaveBeenCalled();
   });
 
@@ -107,8 +112,16 @@ describe('TestRunDetail', () => {
     expect(textContent).toContain(toTitleCase(testRun.state));
     expect(textContent).toContain(device.build_id!);
     expect(textContent).toContain(device.product);
+  });
 
-    // TODO: Add more values as page is built
+  it('display previous runs and reruns', () => {
+    const prevRunId = 'prev_run';
+    testRunDetail.testRun!.prev_test_run_id = prevRunId;
+    testRunDetailFixture.detectChanges();
+
+    const textContent = getTextContent(el);
+    expect(textContent).toContain(prevRunId);
+    expect(textContent).toContain(retryRun.id!);
   });
 
   it('displays and announces a loading mask', () => {
@@ -129,7 +142,7 @@ describe('TestRunDetail', () => {
     testRunDetail.updateOutputFilesUrl();
     testRunDetailFixture.detectChanges();
     textContent = getTextContent(el);
-    expect(textContent).toContain('View Output Files');
+    expect(textContent).toContain('View Working Directory');
     expect(testRunDetail.outputFilesUrl).toEqual('browse_url');
   });
 

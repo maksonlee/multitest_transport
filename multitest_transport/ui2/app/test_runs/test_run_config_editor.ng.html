@@ -29,9 +29,9 @@
     <ng-template matStepLabel>Configuration</ng-template>
     <test-run-config-form
       [enableRerun]="false"
-      [testMap]="data.testMap"
-      [(testId)]="data.testRunConfig.test_id"
-      [testRunConfig]="data.testRunConfig"
+      [testMap]="mttObjectMap.testMap"
+      [(testRunConfig)]="data.testRunConfig"
+      (testRunConfigChange)="updateTestResources()">
     ></test-run-config-form>
     <div>
       <button mat-button mat-flat-button (click)="goForward(stepper)"
@@ -44,12 +44,67 @@
 
   <!-- Step 2 Select devices -->
   <mat-step [completed]="!!stepCompletionStatusMap[step.SELECT_RUN_TARGETS]">
-    <ng-template matStepLabel>Select Run Targets</ng-template>
+    <ng-template matStepLabel>Select Devices</ng-template>
 
-    <test-run-target-picker [(runTarget)]="data.testRunConfig.run_target"
+    <test-run-target-picker [(deviceSpecs)]="data.testRunConfig.device_specs"
                             [(shardCount)]="data.testRunConfig.shard_count"
-                            [autoUpdate]="stepper.selectedIndex === 1">
+                            [autoUpdate]="stepper.selectedIndex === 1"
+                            (deviceSpecsChange)="updateSelectedDeviceActions()">
     </test-run-target-picker>
+    <div>
+      <button mat-button mat-flat-button (click)="goForward(stepper)"
+        color="accent">Next step</button>
+      <button mat-button matDialogClose color="accent">Cancel</button>
+      <!-- Error messages after validation -->
+      <form-error-info [invalidInputs]="invalidInputs"></form-error-info>
+    </div>
+  </mat-step>
+
+  <!-- Step 3: Add Actions -->
+  <mat-step [completed]="!!stepCompletionStatusMap[step.ADD_DEVICE_ACTIONS]">
+    <ng-template matStepLabel>Add Actions</ng-template>
+    <!-- Loading Spinner -->
+    <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+
+    <h3>Device Actions</h3>
+    <device-action-picker
+      [class.loading-mask]="isLoading"
+      [deviceActions]="this.mttObjectMap.deviceActionMap | values"
+      [selectedDeviceActions]="selectedDeviceActions"
+      (selectionChange)="updateConfigDeviceActionIds()">
+    </device-action-picker>
+
+    <h3>Test Run Actions</h3>
+    <test-run-action-picker
+      [class.loading-mask]="isLoading"
+      [actions]="this.mttObjectMap.testRunActionMap | values"
+      [selectedActions]="selectedTestRunActions"
+      (selectionChange)="updateConfigTestRunActionIds()">
+    </test-run-action-picker>
+
+    <mat-divider></mat-divider>
+
+    <div>
+      <button mat-button mat-flat-button (click)="goForward(stepper)"
+        color="accent">Next step</button>
+      <button mat-button matDialogClose color="accent">Cancel</button>
+      <!-- Error messages after validation -->
+      <form-error-info [invalidInputs]="invalidInputs"></form-error-info>
+    </div>
+  </mat-step>
+
+  <!-- Step 4: Set Test Resources -->
+  <mat-step [completed]="!!stepCompletionStatusMap[step.SET_TEST_RESOURCES]">
+    <ng-template matStepLabel>Set Test Resources</ng-template>
+    <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"> </mat-spinner>
+    <test-resource-form
+      [data]="this.data.testRunConfig.test_resource_objs"
+      [canAdd]="false"
+      [canDelete]="false"
+      [buildChannels]="mttObjectMap.buildChannelMap | values"
+      [testResourceClassType]="TestResourceClassType.TEST_RESOURCE_OBJ"
+    >
+    </test-resource-form>
     <div>
       <button mat-button mat-stroked-button matStepperPrevious color="accent">
         Previous Step

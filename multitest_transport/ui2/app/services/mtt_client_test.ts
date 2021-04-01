@@ -17,7 +17,7 @@
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {of as observableOf} from 'rxjs';
 
-import * as testUtil from '../testing/test_util';
+import * as testUtil from '../testing/mtt_mocks';
 
 import {AuthService, REDIRECT_URI} from './auth_service';
 import {MTT_API_URL, MttClient, TestRunActionClient} from './mtt_client';
@@ -120,20 +120,41 @@ describe('MttClient', () => {
 
   describe('deleteBuildItem', () => {
     beforeEach(() => {
-      httpClientSpy.post.and.returnValue(observableOf({}));
+      httpClientSpy.delete.and.returnValue(observableOf({}));
     });
 
     it('calls API correctly', () => {
       const id = 'build_channel_id';
       const path = 'path';
       const observable = mttClient.deleteBuildItem(id, path);
-      expect(httpClientSpy.post)
+      expect(httpClientSpy.delete)
           .toHaveBeenCalledWith(
-              `${MTT_API_URL}/build_channels/${id}/build_items/delete`, {path},
+              `${MTT_API_URL}/build_channels/${id}/build_items`,
               jasmine.any(Object));
-      expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
+      expect(httpClientSpy.delete).toHaveBeenCalledTimes(1);
       observable.subscribe((response) => {
         expect(response).toEqual({});
+      });
+    });
+  });
+
+  describe('lookupBuildItem', () => {
+    const BUILD_ITEM = testUtil.newMockBuildItem();
+
+    beforeEach(() => {
+      httpClientSpy.get.and.returnValue(observableOf(BUILD_ITEM));
+    });
+
+    it('calls API correctly', () => {
+      const url = 'http://foo.com/bar/zzz';
+      const observable = mttClient.lookupBuildItem(url);
+      expect(httpClientSpy.get)
+          .toHaveBeenCalledWith(
+              `${MTT_API_URL}/build_channels/build_item_lookup`,
+              jasmine.any(Object));
+      expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
+      observable.subscribe((response) => {
+        expect(response).toEqual(BUILD_ITEM);
       });
     });
   });
@@ -224,17 +245,17 @@ describe('MttClient', () => {
     const DEVICE_ACTION = testUtil.newMockDeviceAction();
 
     beforeEach(() => {
-      httpClientSpy.post.and.returnValue(observableOf(DEVICE_ACTION));
+      httpClientSpy.put.and.returnValue(observableOf(DEVICE_ACTION));
     });
 
     it('calls API and parses response correctly', () => {
       const observable =
           mttClient.updateDeviceAction(DEVICE_ACTION.id, DEVICE_ACTION);
-      expect(httpClientSpy.post)
+      expect(httpClientSpy.put)
           .toHaveBeenCalledWith(
               `${MTT_API_URL}/device_actions/${DEVICE_ACTION.id}`,
               DEVICE_ACTION, jasmine.any(Object));
-      expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
+      expect(httpClientSpy.put).toHaveBeenCalledTimes(1);
       observable.subscribe((response) => {
         expect(response).toEqual(jasmine.objectContaining(DEVICE_ACTION));
       });
@@ -279,15 +300,15 @@ describe('MttClient', () => {
   describe('updateNodeConfig', () => {
     const nodeConfig = testUtil.newMockNodeConfig();
     beforeEach(() => {
-      httpClientSpy.post.and.returnValue(observableOf(nodeConfig));
+      httpClientSpy.put.and.returnValue(observableOf(nodeConfig));
     });
 
     it('calls API and parses response correctly', () => {
       const observable = mttClient.updateNodeConfig(nodeConfig);
-      expect(httpClientSpy.post)
+      expect(httpClientSpy.put)
           .toHaveBeenCalledWith(
               `${MTT_API_URL}/node_config`, nodeConfig, jasmine.any(Object));
-      expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
+      expect(httpClientSpy.put).toHaveBeenCalledTimes(1);
       observable.subscribe((response) => {
         expect(response).toEqual(jasmine.objectContaining(nodeConfig));
       });
@@ -348,16 +369,16 @@ describe('MttClient', () => {
   describe('updatePrivateNodeConfig', () => {
     const privateNodeConfig = testUtil.newMockPrivateNodeConfig();
     beforeEach(() => {
-      httpClientSpy.post.and.returnValue(observableOf(privateNodeConfig));
+      httpClientSpy.put.and.returnValue(observableOf(privateNodeConfig));
     });
 
     it('calls API and parses response correctly', () => {
       const observable = mttClient.updatePrivateNodeConfig(privateNodeConfig);
-      expect(httpClientSpy.post)
+      expect(httpClientSpy.put)
           .toHaveBeenCalledWith(
               `${MTT_API_URL}/private_node_config`, privateNodeConfig,
               jasmine.any(Object));
-      expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
+      expect(httpClientSpy.put).toHaveBeenCalledTimes(1);
       observable.subscribe((response) => {
         expect(response).toEqual(jasmine.objectContaining(privateNodeConfig));
       });
@@ -402,15 +423,15 @@ describe('MttClient', () => {
   describe('updateTest', () => {
     const TEST = testUtil.newMockTest();
     beforeEach(() => {
-      httpClientSpy.post.and.returnValue(observableOf(TEST));
+      httpClientSpy.put.and.returnValue(observableOf(TEST));
     });
 
     it('calls API and parses response correctly', () => {
       const observable = mttClient.updateTest(TEST.id, TEST);
-      expect(httpClientSpy.post)
+      expect(httpClientSpy.put)
           .toHaveBeenCalledWith(
               `${MTT_API_URL}/tests/${TEST.id}`, TEST, jasmine.any(Object));
-      expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
+      expect(httpClientSpy.put).toHaveBeenCalledTimes(1);
       observable.subscribe((response) => {
         expect(response).toEqual(jasmine.objectContaining(TEST));
       });
@@ -479,16 +500,16 @@ describe('MttClient', () => {
   describe('deleteTestPlan', () => {
     const TEST_PLAN = testUtil.newMockTestPlan();
     beforeEach(() => {
-      httpClientSpy.post.and.returnValue(observableOf(null));
+      httpClientSpy.delete.and.returnValue(observableOf(null));
     });
 
     it('calls API and parses response correctly', () => {
       const observable = mttClient.deleteTestPlan(TEST_PLAN.id);
-      expect(httpClientSpy.post)
+      expect(httpClientSpy.delete)
           .toHaveBeenCalledWith(
-              `${MTT_API_URL}/test_plans/${TEST_PLAN.id}/delete`, null,
+              `${MTT_API_URL}/test_plans/${TEST_PLAN.id}`,
               jasmine.any(Object));
-      expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
+      expect(httpClientSpy.delete).toHaveBeenCalledTimes(1);
       observable.subscribe((response) => {
         expect(response).toBeNull();
       });
@@ -516,16 +537,16 @@ describe('MttClient', () => {
   describe('updateTestPlan', () => {
     const testPlan = testUtil.newMockTestPlan();
     beforeEach(() => {
-      httpClientSpy.post.and.returnValue(observableOf(testPlan));
+      httpClientSpy.put.and.returnValue(observableOf(testPlan));
     });
 
     it('calls API and parses response correctly', () => {
       const observable = mttClient.updateTestPlan(testPlan.id, testPlan);
-      expect(httpClientSpy.post)
+      expect(httpClientSpy.put)
           .toHaveBeenCalledWith(
               `${MTT_API_URL}/test_plans/${testPlan.id}`, testPlan,
               jasmine.any(Object));
-      expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
+      expect(httpClientSpy.put).toHaveBeenCalledTimes(1);
       observable.subscribe((response) => {
         expect(response).toEqual(jasmine.objectContaining(testPlan));
       });

@@ -1,6 +1,6 @@
 # Android testing lab software for Android device partners
-
-load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_appengine_binary", "py_appengine_library", "py_appengine_test", "third_party")
+load("//tools/build_defs/testing:bzl_library.bzl", "bzl_library")
+load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_appengine_binary", "pytype_strict_library", "third_party")
 
 licenses(["notice"])
 
@@ -10,43 +10,11 @@ package_group(
     name = "multitest_transport",
     packages = [
         "//multitest_transport/...",
+        "@tradefed_cluster//tradefed_cluster/...",
     ],
 )
-
-PY_APPENGINE_ENVS = [{"runtime": "python27"}]
 
 exports_files(["serve.sh"])
-
-py_appengine_test(
-    name = "appengine_config_test",
-    srcs = [
-        "appengine_config.py",
-        "appengine_config_test.py",
-    ],
-    use_public_sdk = 1,
-    deps = [
-        ":main",
-        third_party("absl/testing:absltest"),
-    ],
-)
-
-py_appengine_library(
-    name = "gcs_proxy_lib",
-    srcs = [
-        "gcs_proxy.py",
-    ],
-    envs = PY_APPENGINE_ENVS,
-    deps = [
-        "//multitest_transport/models",
-    ],
-)
-
-py_appengine_library(
-    name = "google_import_fixer",
-    srcs = ["google_import_fixer.py"],
-    srcs_version = "PY2AND3",
-    visibility = ["//multitest_transport"],
-)
 
 filegroup(
     name = "prebuilts",
@@ -71,36 +39,32 @@ config_setting(
 
 py_appengine_binary(
     name = "main",
+    srcs = [
+        "__init__.py",
+    ],
     configs = [
-        "appengine_config.py",
         "config.yaml",
         "//multitest_transport/gae_configs",
     ],
     data = select({
-        ":dev_mode": [
-            "//multitest_transport/ui2:dev_sources",
-        ],
-        "//conditions:default": [
-            "Dockerfile",
-            "//multitest_transport/ui2:app",
-        ],
+        ":dev_mode": [],
+        "//conditions:default": ["Dockerfile"],
     }) + [
         ":prebuilts",
         ":scripts",
-        "//multitest_transport:serve.sh",
-        "//multitest_transport/ui2:static_files",
+        ":serve.sh",
         "//multitest_transport/file_server:file_server_lib",
     ],
+    python_version = "PY3",
     deps = [
-        ":gcs_proxy_lib",
-        "//multitest_transport/api",
-        "//multitest_transport/core",
-        "//multitest_transport/file_server:proxy_lib",
+        ":server_lib",
+        "//multitest_transport/app_helper:launcher_lib",
+        "//multitest_transport/app_helper:rabbitmq_plugin_lib",
+        "//multitest_transport/app_helper:rabbitmq_puller_lib",
         "//multitest_transport/plugins",
-        "//multitest_transport/sidekicks",
-        "//multitest_transport/test_scheduler",
-        "//multitest_transport/ui2",
         "@tradefed_cluster//tradefed_cluster:app_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
+        third_party("pymysql"),
     ],
 )
 
@@ -112,18 +76,56 @@ py_appengine_binary(
 # $ iblaze run mtt_server --define dev_mode=true -- --storage_path /tmp/mtt
 sh_binary(
     name = "mtt_server",
-    srcs = ["//multitest_transport:serve.sh"],
+    srcs = [":serve.sh"],
     args = select({
         "dev_mode": [
             "--dev_mode true",
-            "--use_mtime_file_watcher true",
+            "--live_reload true",
         ],
         "//conditions:default": [],
     }) + [
-        "--config_dir '..'",
+        "--working_dir '..'",
     ],
     data = [
         ":main",
     ],
 )
 
+pytype_strict_library(
+    name = "server_lib",
+    srcs = [
+        "server.py",
+    ],
+    srcs_version = "PY3",
+    deps = [
+        "//multitest_transport/api",
+        "//multitest_transport/core:app_lib",
+        "//multitest_transport/core:cron_kicker_lib",
+        "//multitest_transport/file_server:proxy_lib",
+        "//multitest_transport/sidekicks",
+        "//multitest_transport/test_scheduler",
+        "//multitest_transport/test_scheduler:test_kicker_lib",
+        "//multitest_transport/test_scheduler:test_plan_kicker_lib",
+        "//multitest_transport/test_scheduler:tfc_event_handler_lib",
+        "//multitest_transport/tools/webaoa",
+        "//multitest_transport/ui2",
+        "//multitest_transport/util:analytics_uploader_lib",
+        "@tradefed_cluster//tradefed_cluster:server_lib",
+        "@tradefed_cluster//tradefed_cluster/services:task_scheduler_lib",
+    ],
+)
+
+
+bzl_library(
+    name = "adapter_bzl",
+    srcs = ["adapter.bzl"],
+    parse_tests = False,
+    visibility = ["//visibility:private"],
+)
+
+bzl_library(
+    name = "adapter.bazel_bzl",
+    srcs = ["adapter.bazel.bzl"],
+    parse_tests = False,
+    visibility = ["//visibility:private"],
+)

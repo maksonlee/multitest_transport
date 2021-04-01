@@ -20,7 +20,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {first} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
-import {BuildChannel, initTest, Test, TestResourceType} from '../services/mtt_models';
+import {BuildChannel, initTest, Test, TestResourceType, TestRunParameters} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {FormChangeTracker} from '../shared/can_deactivate';
 import {APPLICATION_NAME} from '../shared/shared_module';
@@ -40,10 +40,11 @@ export class TestEditPage extends FormChangeTracker implements OnInit,
   @ViewChildren(FormChangeTracker) trackers!: QueryList<FormChangeTracker>;
 
   data: Partial<Test> = initTest();
-  editMode = false;
   outputFilePatterns: Partial<string[]> = [];
-  options = Object.values(TestResourceType);
   setupScripts: Partial<string[]> = [];
+  defaultTestRunParameters: Partial<TestRunParameters> = {};
+
+  editMode = false;
   buildChannels: BuildChannel[] = [];
   title!: string;
 
@@ -82,6 +83,8 @@ export class TestEditPage extends FormChangeTracker implements OnInit,
           this.data.test_resource_defs = result.test_resource_defs || [];
           this.data.jvm_options = result.jvm_options || [];
           this.data.java_properties = result.java_properties || [];
+          this.defaultTestRunParameters =
+              result.default_test_run_parameters || {};
           if (!this.editMode) {
             delete this.data.id;
             this.data.name = `${this.data.name} (copy)`;
@@ -182,6 +185,7 @@ export class TestEditPage extends FormChangeTracker implements OnInit,
         this.outputFilePatterns.filter(item => item !== undefined) as string[];
     resultTest.setup_scripts =
         this.setupScripts.filter(item => item !== undefined) as string[];
+    resultTest.default_test_run_parameters = this.defaultTestRunParameters;
     if (this.editMode) {
       this.mttClient.updateTest(resultTest.id!, resultTest)
           .pipe(first())

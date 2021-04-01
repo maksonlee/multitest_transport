@@ -1,0 +1,46 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="action-row" fxLayout="row wrap" fxLayoutAlign="space-between center">
+  <assign-to-filter
+    [dataSource]="currentLabOwners"
+    [disabled]="!(labName | permissionCheck)"
+    [selectedHostnames]="hostListTable.tableRowsSelectManager?.selection.selected"
+    (submit)="assignHostsTo.emit($event)"
+  >
+  </assign-to-filter>
+</div>
+<div class="list-row" fxLayoutAlign="start start" [style.max-height.px]="listRowMaxHeight">
+  <host-list-table
+    [dataSource]="assignedOthersHostListDataSource"
+    [headerRowTop]="listHeaderRowTop"
+    [isLoading]="isLoading"
+    [displayedColumns]="[
+      'hostname',
+      'host_group',
+      'hostOverallState',
+      'host_state',
+      'run_target',
+      'offline_devices',
+      'testHarness',
+      'assignee',
+      'last_checkin',
+      'lastRecoveryTime',
+      'recoveryState'
+    ]"
+    (hostListChangeSort)="changeSort.emit($event)"
+  ></host-list-table>
+</div>

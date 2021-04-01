@@ -17,7 +17,7 @@ import logging
 import string
 from six.moves import urllib
 
-from google.appengine.api import modules
+from tradefed_cluster.services import app_manager
 
 from multitest_transport.plugins import base
 
@@ -38,7 +38,7 @@ class WebHook(base.TestRunHook):
     data = None
     if self.data:
       data = string.Template(self.data).safe_substitute(test_run_context)
-    hostname = modules.get_hostname('default')
+    hostname = app_manager.GetInfo('default').hostname
     logging.info('Invoking a webhook: url=%s, method=%s, data=%s',
                  url, self.http_method, data)
     request = urllib.request.Request(

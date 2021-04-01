@@ -20,4 +20,6 @@ NUM_RETRIES = 3
 HTTP_TIMEOUT_SECONDS = 60
 # int, File will be downloaded in chunks of this many bytes.
 DEFAULT_CHUNK_SIZE = 16 * 1024 * 1024
+# Upload chunk size in bytes.
+UPLOAD_CHUNK_SIZE = 1 * 1024 * 1024  # 1MB
 HTTP_NOT_FOUND_ERROR_CODE = 404

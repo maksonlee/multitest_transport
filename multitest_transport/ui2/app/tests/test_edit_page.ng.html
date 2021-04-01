@@ -35,13 +35,18 @@
     <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
   </mat-form-field>
 
+  <!-- Description field -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label>Description</mat-label>
+    <textarea matInput type="text" [(ngModel)]="data.description" cdkTextareaAutosize></textarea>
+  </mat-form-field>
+
   <mat-divider></mat-divider>
 
   <!-- Test Resource Defs -->
   <h2> Test Resource Defs </h2>
   <test-resource-form
     [data]="data.test_resource_defs"
-    [options]="options"
     (addTestResource)="onAddTestResourceDef()"
     (removeTestResource)="onRemoveTestResourceDef($event)"
     [buildChannels]="buildChannels"
@@ -114,7 +119,7 @@
   <mat-divider></mat-divider>
 
   <!-- Java Properties -->
-  <h2>Java Properties</h2>
+  <h2> Java Properties </h2>
   <name-value-pair-list-form [data]="data.java_properties"
     (addNameValuePair)="onAddJavaProperty()"
     (removeNameValuePair)="onRemoveJavaProperty($event)">
@@ -145,6 +150,25 @@
     <mat-label> Runner Sharding Args </mat-label>
     <input matInput type="text" [(ngModel)]="data.runner_sharding_args" name="runner_sharding_args">
   </mat-form-field>
+
+  <mat-divider></mat-divider>
+
+  <!-- Default Test Run Parameter -->
+  <h2> Default Test Run Parameters </h2>
+  <div fxLayout="column">
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label> Max Retry </mat-label>
+      <input matInput
+             type="number"
+             [(ngModel)]="defaultTestRunParameters.max_retry_on_test_failures">
+    </mat-form-field>
+    <mat-form-field appearance="outline" floatLabel="always" fxFlex>
+      <mat-label> Output Idle Timeout (Seconds) </mat-label>
+      <input matInput
+             type="number"
+             [(ngModel)]="defaultTestRunParameters.output_idle_timeout_seconds">
+    </mat-form-field>
+  </div>
 
   <!-- Update/Create Button and Cancel Button-->
   <div>

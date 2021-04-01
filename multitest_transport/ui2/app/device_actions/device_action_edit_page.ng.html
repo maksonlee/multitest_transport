@@ -23,7 +23,7 @@
       aria-label="Return to settings page">
       <mat-icon class="back-button-icon">arrow_back</mat-icon>
     </button>
-    {{editMode? 'Edit' : 'New'}} Device Action</h1>
+    {{getPageTitle(formMode)}}</h1>
 </div>
 
 <div class="page">
@@ -32,15 +32,40 @@
   <!-- Name field -->
   <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
     <mat-label>Name</mat-label>
-    <input matInput type="text" [(ngModel)]="data.name" name="name" required #name="ngModel">
+    <input matInput type="text" [(ngModel)]="data.name" name="name" required #name="ngModel"
+           [readonly]="!canEdit()">
     <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
   </mat-form-field>
 
   <!-- Description field -->
   <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
     <mat-label>Description</mat-label>
-    <textarea matInput type="text" [(ngModel)]="data.description" cdkTextareaAutosize></textarea>
+    <textarea matInput type="text" [(ngModel)]="data.description" cdkTextareaAutosize
+              [readonly]="!canEdit()"></textarea>
   </mat-form-field>
+
+  <!-- Device Type field -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label>Target Device Type</mat-label>
+    <input matInput type="text" [(ngModel)]="data.device_type"
+           [readonly]="!canEdit()">
+  </mat-form-field>
+
+  <mat-divider></mat-divider>
+
+  <!-- TradeFed Options -->
+  <div class="margin-bottom">
+    <h2>TradeFed Options</h2>
+    <tradefed-config-option-form
+      [optionTypeName]="'TradeFed Option'"
+      [optionValues]="data.tradefed_options"
+      [canEdit]="canEdit()"
+      (addOption)="onAddOption()"
+      (removeOption)="onRemoveOption($event)"
+      (optionValueChange)="onOptionValueChange($event)"
+    >
+    </tradefed-config-option-form>
+  </div>
 
   <mat-divider></mat-divider>
 
@@ -48,6 +73,7 @@
   <h2>TradeFed Target Preparers</h2>
   <target-preparer-form
     [targetPreparers]="data.tradefed_target_preparers"
+    [canEdit]="canEdit()"
     (addTargetPreparer)="onAddTargetPreparer()"
     (deleteTargetPreparer)="onDeleteTargetPreparer($event)"
   >
@@ -59,7 +85,7 @@
   <h2>Test Resource Definitions</h2>
   <test-resource-form
     [data]="data.test_resource_defs"
-    [options]="options"
+    [canAdd]="canEdit()" [canDelete]="canEdit()"
     (addTestResource)="onAddTestResourceDef()"
     (removeTestResource)="onRemoveTestResourceDef($event)"
     [buildChannels]="buildChannels"
@@ -68,9 +94,9 @@
   </test-resource-form>
 
   <!-- Update/Create Button and Cancel Button-->
-  <div>
+  <div *ngIf="canEdit()">
     <button mat-flat-button color="accent" type="button" (click)="onSubmit()">
-      {{editMode? 'Update' : 'Create'}}
+      {{formMode === FormMode.EDIT ? 'Update' : 'Create'}}
     </button>
     <button mat-button color="accent" type="button" (click)="back()">
       Cancel

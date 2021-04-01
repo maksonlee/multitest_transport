@@ -21,6 +21,7 @@ import {NgModule} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
 import {RouterModule} from '@angular/router';
 
+import {ServicesModule} from '../services/services_module';
 import {SharedModule} from '../shared/shared_module';
 
 import {BuildChannelEditPage} from './build_channel_edit_page';
@@ -35,7 +36,7 @@ const COMPONENTS = [
 
 @NgModule({
   declarations: [BuildPicker, COMPONENTS],
-  imports: [SharedModule, RouterModule, ReactiveFormsModule],
+  imports: [ServicesModule, SharedModule, RouterModule, ReactiveFormsModule],
   exports: COMPONENTS,
   entryComponents: [
     BuildPicker,

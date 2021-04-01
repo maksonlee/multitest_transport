@@ -1,0 +1,63 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<ng-container *ngIf="optionValues">
+  <div *ngFor="let option of optionValues; let i = index" fxLayout="row">
+    <!-- Option Name Field-->
+    <mat-form-field class="small" appearance="outline" floatLabel="always" fxFlex="45">
+      <mat-label>Name</mat-label>
+      <input matInput type="text" [(ngModel)]="option.name" name="name" required #name="ngModel"
+             [readonly]="!canEdit" class="option-name-input">
+      <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
+    </mat-form-field>
+
+    <!-- Option Value Field-->
+    <mat-form-field appearance="outline" floatLabel="always" fxFlex="45">
+      <mat-label>Value</mat-label>
+      <textarea matInput type="text"
+        [readonly]="!canEdit"
+        [ngModel]="arrayToString(option.values, '\n')"
+        name="values"
+        class="option-value-input"
+        cdkTextareaAutosize
+        (ngModelChange)="onOptionValueChange($event, i)"
+      ></textarea>
+    </mat-form-field>
+
+    <!-- delete button -->
+    <button
+      *ngIf="canEdit"
+      type="button"
+      aria-label="Delete"
+      matTooltip="Delete"
+      class="shared-delete-button"
+      (click)="removeOption.emit(i); hasContentChanged = true"
+      mat-button>
+      <mat-icon>delete</mat-icon>
+    </button>
+  </div>
+</ng-container>
+
+<button
+  *ngIf="canEdit"
+  class="add-option-button"
+  [attr.aria-label]="'Add new ' + optionTypeName.toLowerCase()"
+  mat-stroked-button
+  color="accent"
+  type="button"
+  (click)="addOption.emit(); hasContentChanged = true">
+    + Add New {{optionTypeName}}
+</button>

@@ -51,11 +51,12 @@
     <!-- checkboxes -->
     <div class="checkbox-wrapper">
       <div mat-menu-item *ngFor="let action of actions"
-           (click)="$event.stopPropagation()" (keydown.enter)="selection.toggle(action)">
+           (click)="$event.stopPropagation()" (keydown.enter)="selection.toggle(action)"
+           [title]="name.offsetWidth < name.scrollWidth ? action.name : ''">
         <mat-checkbox tabindex="-1"
                       (change)="$event ? selection.toggle(action) : null"
                       [checked]="selection.isSelected(action)">
-          {{action.name}}
+          <div #name class="name">{{action.name}}</div>
         </mat-checkbox>
       </div>
     </div>

@@ -59,8 +59,13 @@ export const DEFAULT_PAGE_SIZE = 10;
     button[disabled] {
       opacity: .6;
     }
+
+    .page-index {
+      margin: 0 4px;
+    }
   `],
   template: `
+    <span class="page-index" *ngIf="showPageIndex">Page: {{pageIndex}},</span>
     <span class="page-size-label">Items per page:</span>
     <mat-form-field *ngIf="pageSizeOptions.length > 1"
                     class="page-size-select">
@@ -72,7 +77,7 @@ export const DEFAULT_PAGE_SIZE = 10;
     </mat-form-field>
 
     <button mat-icon-button class="previous-page"
-            (click)="previous.emit()"
+            (click)="previousPage()"
             [disabled]="!hasPrevious"
             aria-label="Previous page"
             matTooltip="Previous page" [matTooltipDisabled]="!hasPrevious"
@@ -80,7 +85,7 @@ export const DEFAULT_PAGE_SIZE = 10;
       <mat-icon color="primary">chevron_left</mat-icon>
     </button>
     <button mat-icon-button class="next-page"
-            (click)="next.emit()" [disabled]="!hasNext"
+            (click)="nextPage()" [disabled]="!hasNext"
             matTooltip="Next page"
             aria-label="Next page"
             [matTooltipDisabled]="!hasNext"
@@ -94,13 +99,31 @@ export class Paginator {
   @Input() hasPrevious = false;
   @Input() pageSizeOptions: number[] = [];
   @Input() pageSize = DEFAULT_PAGE_SIZE;
+  @Input() showPageIndex = false;
 
   @Output() readonly sizeChange = new EventEmitter<number>();
   @Output() readonly previous = new EventEmitter<void>();
   @Output() readonly next = new EventEmitter<void>();
 
+  pageIndex = 1;
+
   changePageSize(size: number) {
+    this.resetPageIndex();
     this.pageSize = size;
     this.sizeChange.emit(size);
+  }
+
+  nextPage() {
+    this.pageIndex++;
+    this.next.emit();
+  }
+
+  previousPage() {
+    this.pageIndex--;
+    this.previous.emit();
+  }
+
+  resetPageIndex() {
+    this.pageIndex = 1;
   }
 }

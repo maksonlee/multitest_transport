@@ -47,7 +47,7 @@ class BaseIntegrationTest(integration_util.DockerContainerTest):
     self.assertNotEmpty(tests)
     test_ids = [test['id'] for test in tests]
     self.assertIn('noop', test_ids)
-    self.assertIn('android.cts.6_0.arm', test_ids)
+    self.assertIn('android.cts.8_0.arm', test_ids)
     self.assertIn('android.cts.10_0.arm', test_ids)
 
 

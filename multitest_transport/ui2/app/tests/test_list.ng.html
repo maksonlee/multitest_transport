@@ -17,62 +17,97 @@
 <mat-toolbar>
   <mat-toolbar-row fxLayoutAlign="space-between center">
     <h1>Test Suites</h1>
-    <button
-      routerLink='/tests/new'
-      mat-flat-button
-      color="accent"> Create a new test </button>
+    <div>
+      <button
+        routerLink='/tests/new'
+        mat-flat-button
+        color="accent"> Create a new test suite </button>
+      <!-- TODO Convert to modal window -->
+      <button
+        routerLink='/settings/config_sets'
+        mat-flat-button
+        color="accent"> Import more test suites </button>
+    </div>
   </mat-toolbar-row>
 </mat-toolbar>
 
 <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
 
 <div [class.loading-mask]="isLoading">
-
-  <mat-table [dataSource]="dataSource" aria-label="Test suites">
-
-    <!-- Name -->
-    <ng-container matColumnDef="name">
-      <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
-      <mat-cell *matCellDef="let test"> {{test.name}} </mat-cell>
-    </ng-container>
-
-    <!-- Description -->
-    <ng-container matColumnDef="description">
-      <mat-header-cell *matHeaderCellDef> Description </mat-header-cell>
-      <mat-cell *matCellDef="let test"> {{test.description}} </mat-cell>
-    </ng-container>
-
-    <!-- Actions -->
-    <ng-container matColumnDef="actions" stickyEnd>
-      <mat-header-cell *matHeaderCellDef></mat-header-cell>
-      <mat-cell *matCellDef="let test" fxFlex="250px">
-        <a mat-stroked-button color="accent" [routerLink]="['/test_runs/new']" [queryParams]="{'testId': test.id}">Run test</a>
-          <!-- TODO: link to test edit page. -->
-        <a mat-button color="accent" [routerLink]="['/tests', test.id]">Edit</a>
-        <button id="menuButton"
-          aria-label="More actions"
-          matTooltip="More actions"
-          mat-icon-button
-          [matMenuTriggerFor]="menu">
-          <mat-icon>more_vert</mat-icon>
-        </button>
-        <mat-menu #menu="matMenu">
-          <button id="copyButton" mat-menu-item
-            [routerLink]="['/tests/new', test.id]">
-            Copy
+  <ng-container *ngFor="let testList of testsByNamespaceMap | keyvalue">
+    <mat-card *ngIf="testList.value.length">
+      <mat-card-title>
+        <h2 fxFlex>
+          {{getNamespaceTitle(testList.key)}}
+        </h2>
+        <!-- TODO: Add update/remove buttons -->
+        <div>
+          <button *ngIf="!isNamespaceSectionEditable(testList.key)"
+            id="configSetMenuButton"
+            aria-label="More actions"
+            matTooltip="More actions"
+            mat-icon-button
+            [matMenuTriggerFor]="configSetMenu">
+            <mat-icon>more_vert</mat-icon>
           </button>
-          <button id="deleteButton" mat-menu-item (click)="deleteTest(test)">
-            Delete
-          </button>
-        </mat-menu>
-      </mat-cell>
-    </ng-container>
+          <mat-menu #configSetMenu="matMenu">
+            <button id="configSetDeleteButton"
+                    mat-menu-item (click)="confirmDeleteConfigSet(testList.key)">
+              Delete
+            </button>
+          </mat-menu>
+        </div>
+      </mat-card-title>
 
-    <mat-header-row *matHeaderRowDef="columnsToDisplay"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: columnsToDisplay;"></mat-row>
-  </mat-table>
+      <mat-card-content>
+        <mat-table [dataSource]="testList.value" aria-label="Test suites">
 
-  <div class="empty" *ngIf="!tests.length">
-    No test suites found.
-  </div>
+          <!-- Name -->
+          <ng-container matColumnDef="name">
+            <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
+            <mat-cell *matCellDef="let test"> {{test.name}} </mat-cell>
+          </ng-container>
+
+          <!-- Description -->
+          <ng-container matColumnDef="description">
+            <mat-header-cell *matHeaderCellDef> Description </mat-header-cell>
+            <mat-cell *matCellDef="let test"> {{test.description}} </mat-cell>
+          </ng-container>
+
+          <!-- Actions -->
+          <ng-container matColumnDef="actions" stickyEnd>
+            <mat-header-cell *matHeaderCellDef fxFlex="130px"></mat-header-cell>
+            <mat-cell *matCellDef="let test" fxFlex="130px">
+              <a mat-stroked-button color="accent" [routerLink]="['/test_runs/new']"
+                 [queryParams]="{'testId': test.id}">Run test</a>
+              <button id="menuButton"
+                aria-label="More actions"
+                matTooltip="More actions"
+                mat-icon-button
+                [matMenuTriggerFor]="menu">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                <button id="copyButton" mat-menu-item [routerLink]="['/tests/new', test.id]">
+                  Copy
+                </button>
+                <button id="editButton" mat-menu-item [routerLink]="['/tests', test.id]"
+                        *ngIf="isNamespaceSectionEditable(testList.key)">
+                  Edit
+                </button>
+                <button id="deleteButton" mat-menu-item (click)="deleteTest(test)"
+                        *ngIf="isNamespaceSectionEditable(testList.key)">
+                  Delete
+                </button>
+              </mat-menu>
+            </mat-cell>
+          </ng-container>
+
+          <mat-header-row *matHeaderRowDef="columnsToDisplay"></mat-header-row>
+          <mat-row *matRowDef="let row; columns: columnsToDisplay;"></mat-row>
+        </mat-table>
+
+      </mat-card-content>
+    </mat-card>
+  </ng-container>
 </div>

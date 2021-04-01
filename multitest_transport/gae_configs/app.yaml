@@ -34,45 +34,14 @@ env_variables:
   PYTHONHTTPSVERIFY: 0
 
 handlers:
-# API
-- url: /_ah/api/.*
-  script: multitest_transport.api.server.APP
-
-# Test Scheduler
-- url: /_ah/queue/test-kicker-queue
-  script: multitest_transport.test_scheduler.test_kicker.APP
-
-- url: /_ah/queue/test-plan-kicker-queue
-  script: multitest_transport.test_scheduler.test_plan_kicker.APP
-
-- url: /_ah/queue/tfc-event-queue
-  script: multitest_transport.test_scheduler.tfc_event_handler.APP
-
-- url: /sidekicks/.*
-  script: multitest_transport.sidekicks.main.APP
-
-- url: /test_scheduler/.*
-  script: multitest_transport.test_scheduler.test_scheduler.APP
-
-# UI and etc
-- url: /gcs_proxy/.*
-  script: multitest_transport.gcs_proxy.APP
-
-- url: /fs_proxy/.*
-  script: multitest_transport.file_server.proxy.APP
-
-- url: /static/(.*)
-  static_files: google3/third_party/py/multitest_transport/ui2/static/\1
-  upload: google3/third_party/py/multitest_transport/ui2/static/.*
-
-- url: /app.js
-  static_files: google3/third_party/py/multitest_transport/ui2/app.js
-  upload: google3/third_party/py/multitest_transport/ui2/app.js
-
 - url: /.*
-  script: multitest_transport.ui2.main.APP
+  script: multitest_transport.server.APP
 
 libraries:
+- name: grpcio
+  version: latest
+- name: six
+  version: latest
 - name: jinja2
   version: latest
 - name: MySQLdb
@@ -81,5 +50,10 @@ libraries:
   version: latest
 - name: ssl
   version: latest
-- name: webapp2
-  version: latest
+
+skip_files:
+- ^(.*/)?#.*#$
+- ^(.*/)?.*~$
+- ^(.*/)?.*\.pyo$
+- ^(.*/)?.*/RCS/.*$
+- ^(.*/)?\..*$

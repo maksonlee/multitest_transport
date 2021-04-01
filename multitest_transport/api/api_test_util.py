@@ -14,20 +14,15 @@
 
 """A utility module for API tests."""
 
-from absl.testing import absltest
+import endpoints
+from tradefed_cluster import testbed_dependent_test
 import webtest
 
-from google.appengine.ext import testbed
-from google3.third_party.apphosting.python.endpoints.v1_1 import endpoints
 
-
-class TestCase(absltest.TestCase):
+class TestCase(testbed_dependent_test.TestbedDependentTest):
   """A base class for API test classes."""
 
   def setUp(self, api_class):
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
-    self.addCleanup(self.testbed.deactivate)
+    super(TestCase, self).setUp()
     self.api_server = endpoints.api_server([api_class])
     self.app = webtest.TestApp(self.api_server)

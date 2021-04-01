@@ -1,0 +1,63 @@
+/**
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+@import 'third_party/py/multitest_transport/ui2/styles';
+
+.host-update-state-summary-chart {
+  flex: 1 1 45%;
+}
+
+.host-update-control-panel {
+  display: flex;
+  flex: 1 1 55%;
+  flex-direction: column;
+
+  .update-mode-selection-group {
+    font-size: 16px;
+
+    .update-mode-selection-title {
+      font-weight: bold;
+    }
+
+    .update-mode-selection-button {
+      font-weight: normal;
+      margin-left: 8px;
+    }
+  }
+
+  .test-harness-image-selection {
+    width: 60%;
+  }
+
+  .host-update-control-panel-spacer {
+    flex: 1 1 auto;
+  }
+
+  .set-image-button {
+    width: 100px;
+    align-self: center;
+  }
+}
+
+.host-update-panel {
+  display: flex;
+  flex-direction: row;
+  height: 75%;
+}
+
+h2 {
+  color: grey;
+  font-size: 16px;
+}

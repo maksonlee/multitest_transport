@@ -55,13 +55,7 @@ export class DeviceActionPicker extends FormChangeTracker implements OnInit {
   drop(event: CdkDragDrop<string[]>) {
     moveItemInArray(
         this.selectedDeviceActions, event.previousIndex, event.currentIndex);
-  }
-
-  // check whether all dropdown item are selected
-  isAllSelected() {
-    const numSelected = this.selection.selected.length;
-    const numRows = this.deviceActions.length;
-    return numSelected === numRows;
+    this.selectionChange.emit();
   }
 
   // remove an item from drag and drop area, and reset the dropdown menu
@@ -78,11 +72,5 @@ export class DeviceActionPicker extends FormChangeTracker implements OnInit {
     this.selectedDeviceActions.push(...this.selection.selected);
     this.selection.clear();
     this.selectionChange.emit();
-  }
-
-  // toggle selections in dropdown
-  toggleSelection() {
-    this.isAllSelected() ? this.selection.clear() :
-                           this.selection.select(...this.deviceActions);
   }
 }

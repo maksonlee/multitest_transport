@@ -1,5 +1,5 @@
 <!--
- Copyright 2019 Google LLC
+ Copyright 2020 Google LLC
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -15,75 +15,418 @@
 -->
 
 <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
-<div [class.loading-mask]="isLoading" class="container">
-  <mat-table [dataSource]="deviceInfos" class="selectable"
-    aria-label="Device list">
+
+<mat-toolbar class="device-list-toolbar">
+  <mat-toolbar-row fxLayoutAlign="space-between center">
+    <h1>{{ headerTitle }}</h1>
+    <mat-form-field appearance="outline" class="mat-select-filter" fxFlex="300px">
+      <mat-select [(ngModel)]="selectedLab" (selectionChange)="load()">
+        <mat-select-trigger> Lab: {{ selectedLab }} </mat-select-trigger>
+        <mat-option [value]="allOptionsValue">
+          {{ allOptionsValue }}
+        </mat-option>
+        <mat-option *ngFor="let lab of labs" [value]="lab">
+          {{ lab }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<div class="filter">
+  <form [formGroup]="formGroup">
+    <mat-form-field class="form-field" fxFlex>
+      <mat-icon matPrefix class="filter-icon">filter_list</mat-icon>
+      <input
+        id="filterbar-input"
+        matInput
+        #valueInput
+        placeholder="Filter..."
+        formControlName="valueControl"
+        [matAutocomplete]="auto"
+        (keydown.tab)="toggleByKeyPressed($event)"
+        (keydown.enter)="submit($event)"
+        type="text"
+        tabindex="0"
+      />
+      <button
+        *ngIf="hasFilter"
+        mat-button
+        matSuffix
+        mat-icon-button
+        aria-label="clear filter"
+        (click)="resetSelection()"
+        type="button"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+      <mat-autocomplete #auto="matAutocomplete" (closed)="renderSelectedOptionsAndResetFilterbar()">
+        <div>
+          <mat-option [value]="back" *ngIf="filterBarUtility.selectedColumn">
+            <div class="back" (click)="backToRoot($event)">
+              <mat-icon matPrefix class="back-button-icon">arrow_back</mat-icon>
+              Back
+            </div>
+          </mat-option>
+          <mat-option
+            [value]="allOptionsValue"
+            *ngIf="filterBarUtility.selectedColumn && filteredOptions.length; else noMatch"
+          >
+            <div (click)="toggleSelectAll($event)">
+              <mat-checkbox [checked]="isAllSelected">
+                Select {{ filteredOptions?.length }} filtered results
+              </mat-checkbox>
+            </div>
+          </mat-option>
+          <ng-template #noMatch>
+            <div
+              *ngIf="
+                filterBarUtility.selectedColumn &&
+                !filteredOptions.length &&
+                filterBarUtility.selectedColumn !== deviceSerialDisplay &&
+                filterBarUtility.selectedColumn !== extraInfoDisplay
+              "
+              class="no-match"
+            >
+              No matches for <b>{{ inputValue }}</b>
+            </div>
+          </ng-template>
+        </div>
+        <mat-option *ngFor="let option of filteredOptions" [value]="option.value">
+          <div (click)="toggleSelection($event, option)">
+            <mat-checkbox *ngIf="option.showCheckbox" [checked]="option.selected"> </mat-checkbox>
+            {{ option.value }}
+          </div>
+        </mat-option>
+        <mat-option
+          *ngIf="
+            filterBarUtility.selectedColumn === extraInfoDisplay ||
+            filterBarUtility.selectedColumn === deviceSerialDisplay
+          "
+          [value]="inputValue"
+        >
+          <div (click)="addInputOption(inputValue, filterBarUtility.selectedColumn)">
+            Search on {{ filterBarUtility.selectedColumn }}: &quot;<b>{{ inputValue }}</b
+            >&quot;
+          </div>
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <button
+      mat-icon-button
+      class="refresh-button"
+      matTooltip="Refresh the data"
+      aria-label="Refresh the data"
+      (click)="load(0, true)"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
+
+    <mat-divider vertical></mat-divider>
+
+    <button
+      mat-icon-button
+      id="view-columns-btn"
+      class="view-columns"
+      aria-label="View columns"
+      matTooltip="View columns"
+      [matMenuTriggerFor]="view_column_menu"
+      type="button"
+      (click)="startViewDevicesColumnsHats()"
+    >
+      <mat-icon>view_column</mat-icon>
+    </button>
+    <mat-menu #view_column_menu="matMenu">
+      <ng-container *ngFor="let column of columns; let i = index">
+        <ng-container *ngIf="column.removable">
+          <button
+            [attr.id]="column.fieldName + '-menu-btn'"
+            (click)="toggleDisplayColumn($event, column.show, i)"
+            mat-menu-item
+            type="button"
+          >
+            <mat-icon>{{ column.show ? "check_box" : "check_box_outline_blank" }}</mat-icon>
+            <span class="menu-item">{{ column.displayName }}</span>
+          </button>
+        </ng-container>
+      </ng-container>
+    </mat-menu>
+  </form>
+</div>
+
+<div class="action-row" fxLayout="row wrap" fxLayoutAlign="start center">
+  <add-notes-button
+    buttonStyle="Stroked"
+    [labName]="selectedLab"
+    [ids]="tableRowsSelectManager?.selection.selected"
+    [deviceHostMap]="deviceHostMap"
+    [disabled]="!(selectedLab | permissionCheck)"
+    noteType="DEVICE"
+    (notesUpdated)="loadDeviceNotes($event)"
+    (click)="startBatchAddDevicesNotesHats()"
+  ></add-notes-button>
+</div>
+<div [class.loading-mask]="isLoading">
+  <mat-table
+    #table
+    [dataSource]="dataSource"
+    (scroll)="checkTableScrolled()"
+    [class.scrolled]="isTableScrolled"
+    aria-label="Device list"
+    tableRowsSelectManager
+  >
     <!-- Checkbox Column -->
     <ng-container matColumnDef="select">
-      <mat-header-cell *matHeaderCellDef>
-        <mat-checkbox (change)="$event ? toggleSelection() : null"
-                      [checked]="hasSelectedSerial() && isAllSelected()"
-                      [indeterminate]="hasSelectedSerial() && !isAllSelected()"
-                      [disabled]="selectDisabled"
-                      aria-label="Check all devices">
+      <mat-header-cell *matHeaderCellDef fxFlex="60px">
+        <mat-checkbox
+          aria-label="Select all devices"
+          tableRowsSelectCheckbox
+          #tableRowsSelectCheckbox="tableRowsSelectCheckbox"
+          [checked]="tableRowsSelectCheckbox.isAllRowsSelected"
+          [indeterminate]="tableRowsSelectCheckbox.isPartialRowsSelected"
+        >
         </mat-checkbox>
       </mat-header-cell>
-      <mat-cell *matCellDef="let row">
-        <mat-checkbox (click)="$event.stopPropagation()"
-                      (change)="$event ? onSelectionChange(row): null"
-                      [checked]="selection.isSelected(row.device_serial)"
-                      [disabled]="selectDisabled"
-                      [aria-label]="'Device with serial'+row.device_serial">
+      <mat-cell *matCellDef="let row; let rowIndex = index" fxFlex="60px">
+        <mat-checkbox
+          [aria-label]="'Device' + row.device_serial"
+          tableRowSelectCheckbox
+          #tableRowSelectCheckbox="tableRowSelectCheckbox"
+          [rowIdFieldValue]="row.device_serial"
+          [rowIndex]="rowIndex"
+          [checked]="tableRowSelectCheckbox.isSelected"
+        >
         </mat-checkbox>
       </mat-cell>
     </ng-container>
 
-    <!-- Serial Column -->
+    <!-- Device Serial Number -->
     <ng-container matColumnDef="device_serial">
-      <mat-header-cell *matHeaderCellDef> Serial </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.device_serial}} </mat-cell>
-    </ng-container>
-
-    <!-- Product Column -->
-    <ng-container matColumnDef="product">
-      <mat-header-cell *matHeaderCellDef> Product </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.product}} </mat-cell>
-    </ng-container>
-
-    <!-- Variant Column -->
-    <ng-container matColumnDef="product_variant">
-      <mat-header-cell *matHeaderCellDef> Variant </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.product_variant}} </mat-cell>
-    </ng-container>
-
-    <!-- Build Column -->
-    <ng-container matColumnDef="build_id">
-      <mat-header-cell *matHeaderCellDef> Build ID </mat-header-cell>
-      <mat-cell *matCellDef="let element"> {{element.build_id}} </mat-cell>
-    </ng-container>
-
-    <!-- Battery Column -->
-    <ng-container matColumnDef="battery_level">
-      <mat-header-cell *matHeaderCellDef> Battery (%) </mat-header-cell>
-      <mat-cell [ngClass]="{'battery-danger': (element.battery_level === 'unknown'
-                           || +element.battery_level <= 25)}"
-                *matCellDef="let element"> {{element.battery_level}} </mat-cell>
-    </ng-container>
-
-    <!-- State Column -->
-    <ng-container matColumnDef="state">
-      <mat-header-cell *matHeaderCellDef> State </mat-header-cell>
-      <mat-cell *matCellDef="let element">
-        <status-button [state]="element.state || 'unknown'"></status-button>
+      <mat-header-cell *matHeaderCellDef fxFlex="210px"> Serial </mat-header-cell>
+      <mat-cell *matCellDef="let device" [matTooltip]="device.device_serial" fxFlex="210px">
+        <div class="device-serial">
+          <a (click)="openDeviceDetails(device.device_serial)">
+            {{ device.device_serial }}
+          </a>
+        </div>
+        <a
+          mat-icon-button
+          [href]="getDeviceDetailsUrl(device.device_serial)"
+          (click)="storeDeviceSerialsInLocalStorage()"
+          target="_blank"
+        >
+          <mat-icon>launch</mat-icon>
+        </a>
       </mat-cell>
     </ng-container>
 
-    <mat-header-row *matHeaderRowDef="displayedDeviceInfoColumns; sticky: true;"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedDeviceInfoColumns;"
-             [class.selected]="selection.isSelected(row.device_serial)"></mat-row>
+    <!-- Sponge -->
+    <ng-container matColumnDef="sponge">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px"> Sponge </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="120px">
+        <a [href]="getLogUrl(device)" target="_blank">sponge</a>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Host Name -->
+    <ng-container matColumnDef="hostname">
+      <mat-header-cell *matHeaderCellDef fxFlex="200px">
+        Hostname
+      </mat-header-cell>
+      <mat-cell *matCellDef="let device" [matTooltip]="device.hostname" fxFlex="200px">
+        <div class="host-name">
+          <a [routerLink]="['/hosts', device.hostname]">{{ device.hostname }}</a>
+        </div>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Host Group -->
+    <ng-container matColumnDef="host_group">
+      <mat-header-cell *matHeaderCellDef fxFlex="300px">
+        Host Group
+      </mat-header-cell>
+      <mat-cell *matCellDef="let device" [matTooltip]="device.host_group" fxFlex="300px">
+        <div class="host-group">{{ device.host_group }}</div>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Pools -->
+    <ng-container matColumnDef="pools">
+      <mat-header-cell *matHeaderCellDef fxFlex="220px"> Pools </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="220px">
+        <ng-container *ngIf="device.pools">
+          <overflow-list [data]="device.pools" [overflowListType]="overflowListType.BUTTON">
+          </overflow-list>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Device State -->
+    <ng-container matColumnDef="state">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px"> State </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="150px">
+        <status-button [state]="device.state"></status-button>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Battery -->
+    <ng-container matColumnDef="battery_level">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px"> Battery </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="150px">
+        {{ device.extraInfo.battery_level | percent: "1.0" }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Product -->
+    <ng-container matColumnDef="product">
+      <mat-header-cell *matHeaderCellDef fxFlex="180px"> Product </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="180px"> {{ device.product }} </mat-cell>
+    </ng-container>
+
+    <!-- Variant -->
+    <ng-container matColumnDef="variant">
+      <mat-header-cell *matHeaderCellDef fxFlex="180px"> Variant </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="180px"> {{ device.product_variant }} </mat-cell>
+    </ng-container>
+
+    <!-- Run Targets -->
+    <ng-container matColumnDef="run_target">
+      <mat-header-cell *matHeaderCellDef fxFlex="220px"> Run Targets </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="220px">
+        {{ device.run_target }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Build Id -->
+    <ng-container matColumnDef="build_id">
+      <mat-header-cell *matHeaderCellDef fxFlex="180px"> Build Id </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="180px"> {{ device.build_id }} </mat-cell>
+    </ng-container>
+
+    <!-- SIM State -->
+    <ng-container matColumnDef="sim_state">
+      <mat-header-cell *matHeaderCellDef fxFlex="180px"> SIM State </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="180px"> {{ device.sim_state }} </mat-cell>
+    </ng-container>
+
+    <!-- Test Harness -->
+    <ng-container matColumnDef="testHarness">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px">
+        Test Harness
+      </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="120px"> {{ device.test_harness }} </mat-cell>
+    </ng-container>
+
+    <!-- Notes Update Time -->
+    <ng-container matColumnDef="notesUpdateTime">
+      <mat-header-cell *matHeaderCellDef fxFlex="140px"> Notes Update Time </mat-header-cell>
+      <mat-cell
+        *matCellDef="let device"
+        [matTooltip]="device.note?.timestamp | utc | date: 'MM/dd/yyyy h:mma'"
+        fxFlex="140px"
+      >
+        <ng-container *ngIf="device.note">
+          {{ device.note.timestamp | utc | fromNow }}
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Notes Update Timestamp -->
+    <ng-container matColumnDef="notesUpdateTimestamp">
+      <mat-header-cell *matHeaderCellDef fxFlex="140px"> Notes Update Timestamp </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="140px">
+        <ng-container *ngIf="device.note">
+          {{ device.note.timestamp | utc | date: "MM/dd/yyyy h:mma" }}
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Offline Reason -->
+    <ng-container matColumnDef="offline_reason">
+      <mat-header-cell *matHeaderCellDef fxFlex="160px"> Offline Reason </mat-header-cell>
+      <mat-cell *matCellDef="let device" [matTooltip]="device.note?.offline_reason" fxFlex="160px">
+        <ng-container *ngIf="device.note">
+          <div class="notes-info">{{ device.note.offline_reason }}</div>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Recovery Action -->
+    <ng-container matColumnDef="recovery_action">
+      <mat-header-cell *matHeaderCellDef fxFlex="160px"> Recovery Action </mat-header-cell>
+      <mat-cell *matCellDef="let device" [matTooltip]="device.note?.recovery_action" fxFlex="160px">
+        <ng-container *ngIf="device.note">
+          <div class="notes-info">{{ device.note.recovery_action }}</div>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Note -->
+    <ng-container matColumnDef="note">
+      <mat-header-cell *matHeaderCellDef fxFlex="160px"> Note </mat-header-cell>
+      <mat-cell *matCellDef="let device" [matTooltip]="device.note?.message" fxFlex="160px">
+        <ng-container *ngIf="device.note">
+          <div class="notes-info">{{ device.note.message }}</div>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Actions: Mark as fixed, Remove for a single device -->
+    <ng-container matColumnDef="actions" stickyEnd>
+      <mat-header-cell *matHeaderCellDef fxFlex="130px"></mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="130px" fxLayout="row" fxFlexAlign="start center">
+        <button
+          fxFlexOffset="10px"
+          mat-icon-button
+          [matTooltip]="
+            device.recovery_state === recoveryState.FIXED
+              ? 'Click to undo fixed'
+              : 'Click to mark as fixed'
+          "
+          aria-label="Mark as fixed"
+          [disabled]="!(device.lab_name | permissionCheck)"
+          [color]="device.recovery_state === recoveryState.FIXED ? 'accent' : 'primary'"
+          (click)="toggleDeviceFixedState(device, $event)"
+        >
+          <mat-icon [class.lighter]="!(device.recovery_state === recoveryState.FIXED)"
+            >done</mat-icon
+          >
+        </button>
+        <button
+          *ngIf="
+            device?.state.toUpperCase() === 'GONE' &&
+            device.test_harness.toUpperCase() === testHarness.TF.toUpperCase()
+          "
+          mat-button
+          color="accent"
+          type="button"
+          aria-label="Remove device"
+          [disabled]="!(device.lab_name | permissionCheck)"
+          (click)="removeDevice(device.device_serial, device.hostname)"
+        >
+          Remove
+        </button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayColumns"></mat-header-row>
+    <mat-row
+      *matRowDef="let row; columns: displayColumns; let rowIndex = index"
+      tableRowSelect
+      [rowIdFieldValue]="row.device_serial"
+      [rowIndex]="rowIndex"
+    ></mat-row>
   </mat-table>
 
-  <div class="empty" *ngIf="deviceInfos && deviceInfos.length === 0">
+  <paginator
+    [pageSizeOptions]="pageSizeOptions"
+    (sizeChange)="resetPageTokenAndReload()"
+    (previous)="load(-1)"
+    (next)="load(1)"
+  ></paginator>
+
+  <div class="empty" *ngIf="!dataSource.length">
     No devices found.
   </div>
 </div>

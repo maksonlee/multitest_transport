@@ -98,12 +98,11 @@
       </mat-cell>
     </ng-container>
 
-    <!-- Run Targets -->
-    <ng-container matColumnDef="run_target">
-      <mat-header-cell *matHeaderCellDef fxFlex="160px">Run Targets</mat-header-cell>
+    <!-- Device Specs -->
+    <ng-container matColumnDef="device_specs">
+      <mat-header-cell *matHeaderCellDef fxFlex="160px">Device Specs</mat-header-cell>
       <mat-cell *matCellDef="let testRun" fxFlex="160px">
-        <overflow-list [data]="testRun.run_target ?
-                               testRun.run_target.split(';') : []"
+        <overflow-list [data]="testRun.device_specs || []"
                        [overflowListType]="OverflowListType.BUTTON">
         </overflow-list>
       </mat-cell>

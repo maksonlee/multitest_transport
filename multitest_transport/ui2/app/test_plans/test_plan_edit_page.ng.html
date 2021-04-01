@@ -28,7 +28,7 @@
 
 <!-- Stepper -->
 <mat-horizontal-stepper linear="true" #stepper
-  (selectionChange)="resetStepCompletion($event.selectedIndex, stepCompletionStatusMap, totalSteps)">
+  (selectionChange)="onStepperSelectionChange($event.selectedIndex)">
   <ng-template matStepperIcon="edit">
     <mat-icon>check</mat-icon>
   </ng-template>
@@ -68,12 +68,8 @@
     </mat-form-field>
 
     <!-- Schedule field -->
-    <schedule-time-form
-      #scheduleTimeForm
-      [cronExpression]="data.cron_exp"
-      (cronExpressionChange)="setCronExpression($event)"
-    >
-    </schedule-time-form>
+    <schedule-time-form [(ngModel)]="data.cron_exp"
+                        [(timezone)]="data.cron_exp_timezone"></schedule-time-form>
 
     <div>
       <button mat-flat-button (click)="goForward(stepper)" color="accent">
@@ -90,60 +86,8 @@
     <ng-template matStepLabel>Add Test Suites</ng-template>
     <test-run-config-list
       [(data)]="data.test_run_configs"
-      [testMap]="testMap"
-      (dataChange)="updateTestResources()"
     ></test-run-config-list>
 
-    <div>
-      <button mat-stroked-button matStepperPrevious color="accent">
-        Previous Step
-      </button>
-      <button mat-flat-button (click)="goForward(stepper)" color="accent">
-        Next Step
-      </button>
-      <button mat-button (click)="back()" color="accent">Cancel</button>
-      <form-error-info [errorMessage]="errorMessage">
-      </form-error-info>
-    </div>
-  </mat-step>
-
-  <!-- Third step: Select Device Actions -->
-  <mat-step [completed]="!!stepCompletionStatusMap[step.ADD_DEVICE_ACTIONS]">
-    <ng-template matStepLabel>Add Device Actions</ng-template>
-    <!-- Loading Spinner -->
-    <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"> </mat-spinner>
-    <device-action-picker
-      [deviceActions]="deviceActions"
-      [selectedDeviceActions]="selectedDeviceActions"
-      (selectionChange)="updateTestResources()"
-    >
-    </device-action-picker>
-
-    <div>
-      <button mat-stroked-button matStepperPrevious color="accent">
-        Previous Step
-      </button>
-      <button mat-flat-button  (click)="goForward(stepper)" color="accent">
-        Next Step
-      </button>
-      <button mat-button (click)="back()" color="accent">Cancel</button>
-    </div>
-  </mat-step>
-
-  <!-- Fourth step: Set Test Resources -->
-  <mat-step [completed]="!!stepCompletionStatusMap[step.SET_TEST_RESOURCES]">
-    <ng-template matStepLabel>Set Test Resources</ng-template>
-    <!-- Loading Spinner -->
-    <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"> </mat-spinner>
-    <test-resource-form
-      [data]="testResourceObjs"
-      [options]="testResourceTypeOptions"
-      [canAdd]="false"
-      [canDelete]="false"
-      [buildChannels]="buildChannels"
-      [testResourceClassType]="testResourceClassType.TEST_RESOURCE_OBJ"
-    >
-    </test-resource-form>
     <div>
       <button mat-stroked-button matStepperPrevious color="accent">
         Previous Step
@@ -155,4 +99,5 @@
       <form-error-info [invalidInputs]="invalidInputs"></form-error-info>
     </div>
   </mat-step>
+
 </mat-horizontal-stepper>

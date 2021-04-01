@@ -15,32 +15,45 @@
  */
 
 import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
-import {Component, Inject, NgModule} from '@angular/core';
+import {Component, Inject, NgModule, OnDestroy} from '@angular/core';
+import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {ResolveEnd, Router, RouterModule, Routes} from '@angular/router';
+import {NavigationEnd, Router, RouterModule, Routes} from '@angular/router';
+import {ReplaySubject} from 'rxjs';
+import {first} from 'rxjs/operators';
+import {takeUntil} from 'rxjs/operators';
 
+import {AuthModule} from './auth/auth_module';
 import {AuthReturnPage} from './auth/auth_return_page';
 import {BuildChannelEditPage} from './build_channels/build_channel_edit_page';
 import {BuildChannelList} from './build_channels/build_channel_list';
-import {BuildPicker} from './build_channels/build_picker';
+import {BuildPicker, BuildPickerData, BuildPickerMode} from './build_channels/build_picker';
 import {ConfigSetList} from './config_sets/config_set_list';
 import {ConfigSetPicker} from './config_sets/config_set_picker';
 import {DeviceActionEditPage} from './device_actions/device_action_edit_page';
 import {DeviceActionList} from './device_actions/device_action_list';
-import {DeviceListPage} from './devices/device_list_page';
+import {DeviceDetailsPage} from './devices/device_details_page';
+import {DeviceList} from './devices/device_list';
+import {HostDetailsPage} from './hosts/host_details_page';
+import {HostListPage} from './hosts/host_list_page';
+import {NotesModule} from './notes/notes_module';
 import {AnalyticsInterceptor, AnalyticsService} from './services/analytics_service';
 import {APP_DATA, AppData} from './services/app_data';
+import {MttClient} from './services/mtt_client';
+import {Notifier} from './services/notifier';
 import {ServicesModule} from './services/services_module';
 import {StrictParamsInterceptor} from './services/strict_params';
+import {UserService} from './services/user_service';
 import {SettingForm} from './settings/setting_form';
 import {SettingPage} from './settings/setting_page';
 import {SetupWizardDialog} from './setup_wizard/setup_wizard_dialog';
 import {SetupWizardModule} from './setup_wizard/setup_wizard_module';
 import {UnsavedChangeGuard} from './shared/can_deactivate';
 import {SharedModule} from './shared/shared_module';
+import {buildApiErrorMessage} from './shared/util';
 import {TestPlanEditPage} from './test_plans/test_plan_edit_page';
 import {TestPlanListPage} from './test_plans/test_plan_list_page';
 import {TestRunActionList} from './test_run_actions/test_run_action_list';
@@ -79,11 +92,19 @@ export const routes: Routes = [
     canDeactivate: [UnsavedChangeGuard]
   },
   {
+    path: 'device_actions/view/:view_id',
+    component: DeviceActionEditPage,
+    canDeactivate: [UnsavedChangeGuard]
+  },
+  {
     path: 'device_actions/:id',
     component: DeviceActionEditPage,
     canDeactivate: [UnsavedChangeGuard]
   },
-  {path: 'devices', component: DeviceListPage},
+  {path: 'devices', component: DeviceList},
+  {path: 'devices/:id', component: DeviceDetailsPage},
+  {path: 'hosts', component: HostListPage},
+  {path: 'hosts/:id', component: HostDetailsPage},
   {
     path: 'settings',
     component: SettingPage,
@@ -141,14 +162,18 @@ export const routes: Routes = [
 /** Homepage */
 @Component(
     {selector: 'mtt', styleUrls: ['./app.css'], templateUrl: './app.ng.html'})
-export class Mtt {
+export class Mtt implements OnDestroy {
   sideNavExpanded = false;
   dialogRef!: MatDialogRef<SetupWizardDialog>;
+  private readonly destroy = new ReplaySubject<void>();
 
   constructor(
-      private readonly router: Router,
-      private readonly dialog: MatDialog,
       private readonly analytics: AnalyticsService,
+      private readonly dialog: MatDialog,
+      private readonly mttClient: MttClient,
+      private readonly notifier: Notifier,
+      private readonly router: Router,
+      readonly userService: UserService,
       @Inject(APP_DATA) readonly appData: AppData,
   ) {
     if (!appData.setupWizardCompleted) {
@@ -160,18 +185,65 @@ export class Mtt {
       });
     }
     this.initRouteTrackingForAnalytics();
+    this.checkUserPermission();
+  }
+
+  ngOnDestroy() {
+    this.destroy.next();
+    this.destroy.complete();
   }
 
   /** Initialize the tracking of route change events. */
   private initRouteTrackingForAnalytics() {
     this.router.events.subscribe(event => {
-      if (event instanceof ResolveEnd) {
+      if (event instanceof NavigationEnd) {
         // Determine the route path, i.e. /path/:param instead of /path/123.
-        const route = event.state.root.firstChild;
-        const routeConfig = route && route.routeConfig || {};
-        this.analytics.trackLocation(routeConfig.path || '/');
+        const root = this.router.routerState.snapshot.root.firstChild;
+        const paths = [];
+        // To support nested routes, iterate over the route tree
+        for (let route = root; route; route = route.firstChild) {
+          paths.push(route.routeConfig && route.routeConfig.path || '');
+        }
+        let path = paths ? paths.join('/') : '/';
+        // Append the fragment
+        const fragment = root && root.fragment;
+        if (fragment) {
+          path += `#${fragment}`;
+        }
+        this.analytics.trackLocation(path);
       }
     });
+  }
+
+  openBuildPicker() {
+    this.mttClient.getBuildChannels().pipe(first()).subscribe(
+        buildChannelList => {
+          this.dialog.open<BuildPicker, BuildPickerData, string>(BuildPicker, {
+            width: '800px',
+            maxHeight: '100vh',
+            panelClass: 'build-picker-container',
+            data: {
+              buildChannels: buildChannelList.build_channels || [],
+              mode: BuildPickerMode.VIEW,
+            }
+          });
+        },
+        error => {
+          this.notifier.showError(
+              `Failed to load build channels.`, buildApiErrorMessage(error));
+        });
+  }
+
+  checkUserPermission() {
+    this.userService.checkPermission()
+        .pipe(takeUntil(this.destroy))
+        .subscribe(
+            (result) => {
+              this.userService.setAdmin(result.isAdmin);
+            },
+            () => {
+              this.userService.setAdmin(false);
+            });
   }
 }
 
@@ -179,10 +251,12 @@ export class Mtt {
 @NgModule({
   declarations: [Mtt],
   imports: [
+    AuthModule,
     BrowserModule,
     BrowserAnimationsModule,
     HttpClientModule,
     MatTooltipModule,
+    NotesModule,
     ServicesModule,
     SetupWizardModule,
     SharedModule,
@@ -200,6 +274,10 @@ export class Mtt {
       // Accessing a global window object.
       // tslint:disable-next-line:no-any
       useValue: (window as any)['APP_DATA'],
+    },
+    {
+      provide: MAT_DIALOG_DATA,
+      useValue: {},
     },
     UnsavedChangeGuard
   ],

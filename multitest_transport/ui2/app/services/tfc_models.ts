@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+// Align backend interface naming
+// tslint:disable:enforce-name-casing
+import {KeyValuePair} from './mtt_lab_models';
+
+
+/** A big number for retrieving all data without pagination. */
+export const DEFAULT_ALL_COUNT = 9999999;
+
 /**
  * Device Info
  */
@@ -27,17 +35,33 @@ export declare interface DeviceInfo {
   /** device_serial: Serial identifying the device. It should be unique. */
   readonly device_serial: string;
   /** device_type: device type (e.g. marlin) */
-  readonly device_type?: string;
+  readonly device_type?: DeviceType;
+  /** Extra info for the device. */
+  readonly extra_info: KeyValuePair[];
+  /** Flated extra info for the device. */
+  readonly flated_extra_info: string[];
   /** hidden: device is hidden or not */
   readonly hidden?: boolean;
   /** hostname: The name of the host this device is connected to. */
   readonly hostname?: string;
+  /** This device belong to which host group. */
+  readonly host_group?: string;
+  /** The lab’s name the device belongs to. */
+  readonly lab_name?: string;
   /** mac_address: device mac address */
   readonly mac_address?: string;
+  /** The note for device history. */
+  note?: Note;
+  /** All clusters, both physical cluster and virtual cluster. */
+  readonly pools: string[];
   /** product: Device product (e.g. flounder) */
   readonly product: string;
   /** product_variant: device product variant */
   readonly product_variant?: string;
+  /** A user name who is recovering the device. */
+  readonly recovering_by?: string;
+  /** The recovery state of the device. */
+  recovery_state?: RecoveryState;
   /** run_target: device run target */
   readonly run_target?: string;
   /** sdk_version: SDK version of the device's build */
@@ -46,21 +70,14 @@ export declare interface DeviceInfo {
   readonly sim_operator?: string;
   /** sim_state: sim card state */
   readonly sim_state?: string;
-  /** state: device state */
-  readonly state: string;
+  /** The latest state of the device. */
+  readonly state: DeviceState;
+  /** Test harness the device is running under. */
+  readonly test_harness: string;
   /** timestamp: update timestamp */
   readonly timestamp: string;
 }
 
-/**
- * Response for device list api call
- *
- * device_infos: a list of DeviceInfo
- * more: indicate weather there are more results
- */
-export declare interface DeviceInfosResponse {
-  device_infos?: DeviceInfo[];
-}
 
 /**
  * The status of a test invocation
@@ -183,10 +200,12 @@ export declare interface CommandAttempt {
   readonly create_time?: string;
   /** timestamp when the attempt was last updated */
   readonly update_time?: string;
-  /** user friendly error message */
+  /** user friendly error message (infra error) */
   readonly error?: string;
   /** message from the generated error */
   readonly error_reason?: string;
+  /** a subprocess error message (test error) */
+  readonly subprocess_command_error?: string;
   /** summary of the event */
   readonly summary?: string;
   /** number of tests run */
@@ -197,4 +216,387 @@ export declare interface CommandAttempt {
   readonly passed_test_count?: number;
   /** number of modules failed */
   readonly failed_test_run_count?: number;
+}
+
+/** Possible states for a device. */
+export enum DeviceState {
+  ALLOCATED = 'ALLOCATED',
+  AVAILABLE = 'AVAILABLE',
+  CHECKING_AVAILABILITY = 'CHECKING_AVAILABILITY',
+  DIRTY = 'DIRTY',
+  DYING = 'DYING',
+  FASTBOOT = 'FASTBOOT',
+  GONE = 'GONE',
+  IGNORED = 'IGNORED',
+  INIT = 'INIT',
+  LAMEDUCK = 'LAMEDUCK',
+  MISSING = 'MISSING',
+  PREPPING = 'PREPPING',
+  UNAVAILABLE = 'UNAVAILABLE',
+  UNKNOWN = 'UNKNOWN',
+}
+
+/** Possible type for a device.  */
+export enum DeviceType {
+  EMULATOR = 'EMULATOR',
+  GCE = 'GCE',
+  NULL = 'NULL',
+  PHYSICAL = 'PHYSICAL',
+  REMOTE = 'REMOTE',
+  TCP = 'TCP',
+}
+
+/** Possible recovery states for a device or host. */
+export enum RecoveryState {
+  ASSIGNED = 'ASSIGNED',
+  FIXED = 'FIXED',
+  UNKNOWN = 'UNKNOWN',
+  VERIFIED = 'VERIFIED',
+}
+
+/** Possible update states for a host. */
+export enum HostUpdateState {
+  UNKNOWN = 'UNKNOWN',
+  PENDING = 'PENDING',
+  SYNCING = 'SYNCING',
+  SHUTTING_DOWN = 'SHUTTING_DOWN',
+  RESTARTING = 'RESTARTING',
+  TIMED_OUT = 'TIMED_OUT',
+  ERRORED = 'ERRORED',
+  SUCCEEDED = 'SUCCEEDED',
+}
+
+/** Possible test harness for a device or a host.  */
+export enum TestHarness {
+  TF = 'TRADEFED',
+  MH = 'MOBILEHARNESS',
+  GOATS = 'GOATS',
+}
+
+/** Response for user's permission. */
+export declare interface UserPermission {
+  isAdmin: boolean;
+}
+
+/** Response for note api call. */
+export declare interface NoteList {
+  /** notes: a list of DeviceNote. */
+  notes?: Note[];
+  prev_cursor: string;
+  next_cursor: string;
+}
+
+/** Response for device history api call. */
+export declare interface DeviceInfoHistoryList {
+  /** history: a list of DeviceInfo. */
+  histories?: DeviceInfo[];
+  prev_cursor: string;
+  next_cursor: string;
+}
+
+/** Response for device list api call. */
+export declare interface DeviceInfosResponse {
+  /** A list of RawDeviceInfo. */
+  device_infos?: DeviceInfo[];
+  /** Indicate whether there are more results. */
+  more?: boolean;
+  /** The begin cursor of next batch. */
+  next_cursor?: string;
+  prev_cursor?: string;
+}
+
+/** Possible states for a host. */
+export enum HostState {
+  UNKNOWN = 'UNKNOWN',
+  GONE = 'GONE',
+  RUNNING = 'RUNNING',
+  QUITTING = 'QUITTING',
+  KILLING = 'KILLING',
+}
+
+/** Extra device count info by run target. */
+export declare interface DeviceCountSummary {
+  /** Device run target. */
+  readonly run_target: string;
+  /** Total device count of the run target. */
+  readonly total: string;
+  /** Offline device count of the run target. */
+  readonly offline: string;
+  /** Available device count of the run target. */
+  readonly available: string;
+  /** Allocated device count of the run target.. */
+  readonly allocated: string;
+}
+
+/** Info of a single host. */
+export declare interface HostInfo {
+  /** Extra info for the host. */
+  readonly extra_info?: KeyValuePair[];
+  /** Is the host hidden or not, hidden is used for soft delete. */
+  readonly hidden: boolean;
+  /** Unique host name. */
+  readonly hostname: string;
+  /** It’s actually Tradefed’s state on the host. */
+  readonly host_state: string;
+  /** The recovery state of the host. */
+  readonly recovery_state: RecoveryState|null;
+  /** Ex physical cluster. */
+  readonly host_group: string;
+  /** The lab’s name the device belongs to. */
+  readonly lab_name: string;
+  /**
+   * Last time the notes of the host or the devices under the host is added or
+   * updated. Or last time the host is marked as recovered.
+   */
+  readonly last_recovery_time: string;
+  /** The note for host history. */
+  note: Note;
+  /** All ex virtual clusters this host belongs to including the host group. */
+  readonly pools: string[];
+  /** A user name who is assigned to recover the host. */
+  readonly assignee: string;
+  /** Currently includes "tradefed","MH" and "GOATS". */
+  readonly test_harness: TestHarness;
+  readonly test_harness_version: string;
+  /** The start time of the host, seconds from 1970/1/1. */
+  readonly test_runner_start_time: string;
+  /** Last info update time. */
+  readonly timestamp: string;
+  /** Extra device count info by run target. */
+  device_count_summaries?: DeviceCountSummary[];
+  // TODO:Remove the old schema for host
+  /** Old schema for backward compatibility: Allocated device count. */
+  readonly allocated_devices?: string;
+  /** Old schema for backward compatibility: Available device count. */
+  readonly available_devices?: string;
+  /** Old schema for backward compatibility: Offline device count. */
+  readonly offline_devices?: string;
+  /** Old schema for backward compatibility: Total device count. */
+  readonly total_devices?: string;
+  /** Flated extra info for the host. */
+  readonly flated_extra_info: string[];
+  /** Host update state. */
+  readonly update_state: HostUpdateState|null;
+}
+
+/** Response for host history api call. */
+export declare interface HostInfoHistoryList {
+  /** history: a list of HostInfo. */
+  histories?: HostInfo[];
+  prev_cursor: string;
+  next_cursor: string;
+}
+
+/** Info for create or update a single note. */
+export declare interface CreateOrUpdateNote {
+  user: string;
+  lab_name: string;
+  id?: number;
+  message: string;
+  offline_reason: string;
+  offline_reason_id?: number;
+  recovery_action: string;
+  recovery_action_id?: number;
+  hostname: string;
+  device_serial?: string;
+}
+
+/** Response for host list api call. */
+export declare interface HostInfosResponse {
+  /** A list of HostInfo. */
+  host_infos?: HostInfo[];
+  /** Indicate whether there are more results. */
+  more: boolean;
+  prev_cursor: string;
+  next_cursor: string;
+}
+
+/** Host update state summary for a lab or host group. */
+export declare interface HostUpdateStateSummary {
+  /** Total number of hosts. */
+  total: string;
+  /** Number of host in UNKNOWN state. */
+  unknown: string;
+  /** Number of host in PENDING state. */
+  pending: string;
+  /** Number of host in SYNCING state. */
+  syncing: string;
+  /** Number of host in SHUTTING_DOWN state. */
+  shutting_down: string;
+  /** Number of host in RESTARTING state. */
+  restarting: string;
+  /** Number of host in TIMED_OUT state. */
+  timed_out: string;
+  /** Number of host in ERRORED state. */
+  errored: string;
+  /** Number of host in SUCCEEDED state. */
+  succeeded: string;
+  /** Timestamp when the summary is updated. */
+  update_timestamp: string;
+}
+
+/** Info of a single lab. */
+export declare interface LabInfo {
+  /** Unique lab name. */
+  readonly lab_name: string;
+  /** Owners defined in a lab config. */
+  readonly owners: string[];
+  /** Host update state summary for the lab. */
+  readonly host_update_state_summary?: HostUpdateStateSummary|null;
+}
+
+/** Response for lab list api call. */
+export declare interface LabInfosResponse {
+  /** A list of RawLabInfo. */
+  lab_infos?: LabInfo[];
+}
+
+/** Info of a single note. */
+export declare interface Note {
+  /** Unique note id. */
+  readonly id: number;
+  /** The actually notes. */
+  readonly message: string;
+  /** The reason the device is offline. */
+  readonly offline_reason: string;
+  /** The action taken to recover the device. */
+  readonly recovery_action: string;
+  /** Create or update time. */
+  readonly timestamp: string;
+  /** The data modifier. */
+  readonly user: string;
+  /** UNKNOWN, CLUSTER_NOTE, HOST_NOTE or DEVICE_NOTE. */
+  readonly type: string;
+  /** Name of the cluster. */
+  readonly cluster_id: string;
+  /** Name of the host. */
+  readonly hostname: string;
+  /** Device serial of the device. */
+  readonly device_serial: string;
+  /** Addional field for user to record note event time. */
+  readonly event_time?: string;
+}
+
+/** Response for batch get notes. */
+export declare interface NotesResponse {
+  notes?: Note[];
+  more: boolean;
+}
+
+/** Details of a single predefined message */
+export declare interface PredefinedMessage {
+  readonly content: string;
+  readonly create_timestamp: string;
+  readonly id: number;
+  readonly lab_name: string;
+  readonly type: PredefinedMessageType;
+  readonly used_count: number;
+}
+
+/** Response for predefined message list api call. */
+export declare interface PredefinedMessagesResponse {
+  predefined_messages?: PredefinedMessage[];
+  prev_cursor?: string;
+  next_cursor?: string;
+}
+// tslint::enable:enforce-name-casing
+
+/** Possible types for a predefined message. */
+export enum PredefinedMessageType {
+  DEVICE_OFFLINE_REASON = 'DEVICE_OFFLINE_REASON',
+  DEVICE_RECOVERY_ACTION = 'DEVICE_RECOVERY_ACTION',
+  HOST_OFFLINE_REASON = 'HOST_OFFLINE_REASON',
+  HOST_RECOVERY_ACTION = 'HOST_RECOVERY_ACTION',
+}
+
+/** Possible type for a note.  */
+export enum NoteType {
+  UNKNOWN = 'UNKNOWN',
+  CLUSTER_NOTE = 'CLUSTER_NOTE',
+  HOST_NOTE = 'HOST_NOTE',
+  DEVICE_NOTE = 'DEVICE_NOTE',
+}
+
+/** Possible type for a Filter hint.  */
+export enum FilterHintType {
+  POOL = 'POOL',
+  LAB = 'LAB',
+  RUN_TARGET = 'RUN_TARGET',
+  HOST = 'HOST',
+  TEST_HARNESS = 'TEST_HARNESS',
+  TEST_HARNESS_VERSION = 'TEST_HARNESS_VERSION',
+  DEVICE_STATE = 'DEVICE_STATE',
+  HOST_STATE = 'HOST_STATE',
+  HOST_GROUP = 'HOST_GROUP',
+}
+
+/** Info for a single hint. */
+export interface FilterHint {
+  value: string;
+}
+
+/** Response for filter hint api call. */
+export declare interface FilterHintList {
+  filter_hints: FilterHint[];
+}
+
+/** Request for setting a host's recovery state. */
+export declare interface HostRecoveryStateRequest {
+  hostname: string;
+  recovery_state: RecoveryState;
+  assignee?: string;
+}
+
+/** Request for setting hosts' recovery states. */
+export declare interface HostRecoveryStateRequests {
+  host_recovery_state_requests: HostRecoveryStateRequest[];
+}
+
+/** Request for setting a device's recovery state. */
+export declare interface DeviceRecoveryStateRequest {
+  hostname: string;
+  device_serial: string;
+  recovery_state: RecoveryState;
+}
+
+/** Request for setting devices' recovery states. */
+export declare interface DeviceRecoveryStateRequests {
+  device_recovery_state_requests: DeviceRecoveryStateRequest[];
+}
+
+/** Message of a single host config. */
+export declare interface HostConfig {
+  hostname: string;
+  lab_name: string;
+  cluster_name: string;
+  enable_ui_update: boolean;
+}
+
+/** Response for list host configs. */
+export declare interface HostConfigList {
+  host_configs?: HostConfig[];
+  next_cursor?: string;
+}
+
+/** Message of a single test harness image. */
+export declare interface TestHarnessImage {
+  create_time: string;
+  digest: string;
+  repo_name: string;
+  tags: string[];
+  test_harness: string;
+  test_harness_version: string;
+}
+
+/** Response for list test harness images. */
+export declare interface TestHarnessImageList {
+  images?: TestHarnessImage[];
+  next_cursor?: string;
+}
+
+/** Request for updating host metadata in batches. */
+export declare interface BatchUpdateHostMetadataRequest {
+  hostnames: string[];
+  test_harness_image: string;
+  user?: string;
 }

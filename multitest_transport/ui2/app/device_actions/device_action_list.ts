@@ -20,7 +20,8 @@ import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
-import {DeviceAction} from '../services/mtt_models';
+import {ConfigSetInfo, DeviceAction, getNamespaceFromId} from '../services/mtt_models';
+import {MttObjectMapService} from '../services/mtt_object_map';
 import {Notifier} from '../services/notifier';
 import {buildApiErrorMessage} from '../shared/util';
 
@@ -32,13 +33,17 @@ import {buildApiErrorMessage} from '../shared/util';
 })
 export class DeviceActionList implements OnInit, OnDestroy {
   isLoading = false;
-  deviceActions: DeviceAction[] = [];
+  actionNamespaceMap: {[namespace: string]: DeviceAction[]} = {};
+  configSetInfoMap: {[id: string]: ConfigSetInfo} = {};
 
-  private readonly destroy = new ReplaySubject();
+  private readonly destroy = new ReplaySubject<void>();
 
   constructor(
       private readonly liveAnnouncer: LiveAnnouncer,
-      private readonly notifier: Notifier, private readonly mtt: MttClient) {}
+      private readonly notifier: Notifier,
+      private readonly mtt: MttClient,
+      private readonly mttObjectMapService: MttObjectMapService,
+  ) {}
 
   ngOnInit() {
     this.load();
@@ -55,7 +60,7 @@ export class DeviceActionList implements OnInit, OnDestroy {
 
     // Add short delay to allow device action changes to propagate.
     setTimeout(() => {
-      this.mtt.getDeviceActionList()
+      this.mttObjectMapService.getMttObjectMap(true /* forceUpdate */)
           .pipe(
               takeUntil(this.destroy),
               finalize(() => {
@@ -63,8 +68,17 @@ export class DeviceActionList implements OnInit, OnDestroy {
               }),
               )
           .subscribe(
-              result => {
-                this.deviceActions = result.device_actions || [];
+              objectMap => {
+                this.configSetInfoMap = objectMap.configSetInfoMap;
+                this.actionNamespaceMap = {};
+
+                for (const action of Object.values(objectMap.deviceActionMap)) {
+                  const namespace = getNamespaceFromId(action.id || '');
+                  if (!(namespace in this.actionNamespaceMap)) {
+                    this.actionNamespaceMap[namespace] = [];
+                  }
+                  this.actionNamespaceMap[namespace].push(action);
+                }
                 this.liveAnnouncer.announce(
                     'Device actions loaded', 'assertive');
               },
@@ -75,6 +89,20 @@ export class DeviceActionList implements OnInit, OnDestroy {
               },
           );
     }, 100);
+  }
+
+  isNamespaceSectionEditable(namespace: string): boolean {
+    return !namespace || !(namespace in this.configSetInfoMap);
+  }
+
+  getNamespaceTitle(namespace: string): string {
+    if (!namespace) {
+      return 'Default/Custom Device Actions';
+    }
+    if (namespace in this.configSetInfoMap) {
+      return this.configSetInfoMap[namespace].name;
+    }
+    return `Unknown Config Set (${namespace})`;
   }
 
   deleteDeviceAction(deviceAction: DeviceAction) {
@@ -92,9 +120,7 @@ export class DeviceActionList implements OnInit, OnDestroy {
                   result => {
                     this.notifier.showMessage(
                         `Device action '${deviceAction.name}' deleted`);
-                    const index =
-                        this.deviceActions.findIndex(o => o === deviceAction);
-                    this.deviceActions.splice(index, 1);
+                    this.load();
                   },
                   error => {
                     this.notifier.showError(

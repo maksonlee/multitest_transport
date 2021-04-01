@@ -31,7 +31,7 @@ OptionDef = collections.namedtuple(
     'OptionDef', ['name', 'value_type', 'choices', 'default'])
 
 BuildItem = collections.namedtuple('BuildItem', [
-    'name', 'path', 'is_file', 'size', 'timestamp', 'origin_url', 'description'
+    'name', 'path', 'is_file', 'size', 'timestamp', 'description'
 ])
 BuildItem.__new__.__defaults__ = (False, None, None, None, None)
 
@@ -41,19 +41,16 @@ UrlPattern = collections.namedtuple(
     ['url', 'path'])
 
 
+class AuthorizationMethod(enum.Enum):
+  """Authorization methods."""
+  OAUTH2_AUTHORIZATION_CODE = 1
+  OAUTH2_SERVICE_ACCOUNT = 2
+
+
 class BuildItemType(enum.Enum):
-  """A build item type."""
+  """Build item types."""
   FILE = 1
   DIRECTORY = 2
-
-
-class FileNotFoundError(Exception):
-  """A generic error indicating that files not found."""
-
-
-class FilePermissionError(Exception):
-  """The user does not have permission to access the file."""
-  http_status = 403
 
 
 class BuildProviderOptions(object):
@@ -62,7 +59,7 @@ class BuildProviderOptions(object):
   def __init__(self, option_def_map):
     self._option_def_map = option_def_map
     # Fill default values
-    for name, option_def in self._option_def_map.iteritems():
+    for name, option_def in six.iteritems(self._option_def_map):
       self.__dict__[name] = option_def.default
 
   def Update(self, **kwargs):
@@ -73,10 +70,10 @@ class BuildProviderOptions(object):
     Raises:
       ValueError: if an option is not defined.
     """
-    for name, value in kwargs.iteritems():
+    for name, value in six.iteritems(kwargs):
       option_def = self._option_def_map.get(name)
       if not option_def:
-        logging.warn('Unsupported option name %s; ignoring', name)
+        logging.warning('Unsupported option name %s; ignoring', name)
         continue
       self.__dict__[name] = option_def.value_type(value)
 
@@ -85,16 +82,16 @@ class BuildProvider(
     six.with_metaclass(BUILD_PROVIDER_REGISTRY.GetMetaclass(), object)):
   """A base class for a build provider."""
 
-  def __init__(self, url_patterns=None):
-    """ctor.
+  name = None
+  auth_methods = []
+  oauth2_config = None
+  url_patterns = []
 
-    Args:
-      url_patterns: a list of support URL patterns (regex).
-    """
+  def __init__(self):
+    """ctor."""
     self._option_def_map = collections.OrderedDict()
     self._options = None
     self._credentials = None
-    self._url_patterns = url_patterns or []
 
   def AddOptionDef(self, name, value_type=str, choices=None, default=None):
     """Adds a new option definition.
@@ -199,11 +196,6 @@ class BuildProvider(
       total_size: total number of bytes in file
     """
     raise NotImplementedError('DownloadFile() is not implemented.')
-
-  @property
-  def url_patterns(self):
-    """URL patterns."""
-    return self._url_patterns
 
   def FindBuildItemPath(self, url):
     """Find a build item by a URL.

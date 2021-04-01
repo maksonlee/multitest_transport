@@ -20,9 +20,11 @@ import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
 
 import {FileService} from '../services/file_service';
-import {RerunContext, Test, TestRunConfig} from '../services/mtt_models';
+import {initTestRunConfig, RerunContext, Test, TestRunConfig} from '../services/mtt_models';
+import {Notifier} from '../services/notifier';
 import {FormChangeTracker} from '../shared/can_deactivate';
-import {assertRequiredInput, noAwait} from './util';
+
+import {assertRequiredInput, buildApiErrorMessage, noAwait} from './util';
 
 /**
  * A form that display test run config info.
@@ -40,20 +42,22 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
                                                                     OnChanges,
                                                                     OnDestroy {
   @Input() testMap!: {[id: string]: Test};
-  @Input() testId!: string;
   @Input() testRunConfig!: Partial<TestRunConfig>;
   /** True to allow users to select previous test runs to resume. */
   @Input() enableRerun = true;
   /** Local previous test run ID. */
   @Input() prevTestRunId?: string;
-  /** Emits the selected test for two-way binding with parent */
-  @Output() testIdChange = new EventEmitter();
+
+  /** Emits the updated config for two-way binding with parent */
+  @Output() testRunConfigChange = new EventEmitter<Partial<TestRunConfig>>();
   /** Emits the latest rerun parameters. */
   @Output() rerunContext = new EventEmitter<RerunContext>();
 
   /** Notified when the component is destroyed. */
-  private readonly destroy = new ReplaySubject();
+  private readonly destroy = new ReplaySubject<void>();
 
+  /** ID of the selected test */
+  testId = '';
   /** True if the current run will resume another run. */
   isRerun = false;
   /** True if resuming a remote test run (from another instance). */
@@ -65,10 +69,13 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
   isUploading = false;
   /** File upload completion percentage (0 to 100). */
   uploadProgress = 0;
+  /** Show advanced settings. */
+  showAdvancedSettings = false;
 
   constructor(
       private readonly fs: FileService,
-      private readonly liveAnnouncer: LiveAnnouncer) {
+      private readonly liveAnnouncer: LiveAnnouncer,
+      private readonly notifier: Notifier) {
     super();
   }
 
@@ -76,12 +83,13 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
     assertRequiredInput(this.testMap, 'testMap', 'test-run-config-form');
     assertRequiredInput(
         this.testRunConfig, 'testRunConfig', 'test-run-config-form');
-    this.load();
     this.updateRerunContext();
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    this.load();
+    if (changes['testRunConfig']) {
+      this.testId = this.testRunConfig.test_id || '';
+    }
   }
 
   ngOnDestroy() {
@@ -89,17 +97,12 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
     this.liveAnnouncer.clear();
   }
 
-  load() {
-    if (!this.testRunConfig.command) {
-      this.testRunConfig.command =
-          this.testMap[this.testId] ? this.testMap[this.testId].command : '';
+  loadTest(testId: string) {
+    if (!this.testMap[testId]) {
+      return;
     }
-
-    if (!this.testRunConfig.retry_command) {
-      this.testRunConfig.retry_command = this.testMap[this.testId] ?
-          this.testMap[this.testId].retry_command_line :
-          '';
-    }
+    this.testRunConfig = initTestRunConfig(this.testMap[testId]);
+    this.testRunConfigChange.emit(this.testRunConfig);
   }
 
   /**
@@ -129,6 +132,10 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
             this.updateRerunContext();
             this.liveAnnouncer.announce(`${file.name} uploaded`, 'assertive');
           }
+        }, error => {
+          this.notifier.showError(
+              `Failed to upload '${file.name}'.`,
+              buildApiErrorMessage(error));
         });
   }
 

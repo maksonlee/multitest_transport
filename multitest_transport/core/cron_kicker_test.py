@@ -17,41 +17,34 @@
 import datetime
 import os
 import pickle
-import urllib2
 
-
-
+from absl.testing import absltest
 import mock
 import pytz
+from six.moves import urllib
+from tradefed_cluster import testbed_dependent_test
+from tradefed_cluster.plugins import base as tfc_plugins
 import webtest
 
-from google.appengine.api.modules import modules
-from google.appengine.ext import testbed
-from absl.testing import absltest
 from multitest_transport.core import cron_kicker
 
+GAE_CONFIGS_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), 'gae_configs')
 
-class CronKickerTest(absltest.TestCase):
 
-  def setUp(self):
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
-    self.testbed.init_taskqueue_stub(root_path=os.path.dirname(__file__))
-    self.taskqueue_stub = self.testbed.get_stub(testbed.TASKQUEUE_SERVICE_NAME)
-    self.addCleanup(self.testbed.deactivate)
+class CronKickerTest(testbed_dependent_test.TestbedDependentTest):
 
-  @mock.patch.object(urllib2, 'urlopen')
-  @mock.patch.object(modules, 'get_hostname')
-  def testKick(self, mock_get_hostname, mock_urlopen):
+  @mock.patch.object(urllib.request, 'urlopen')
+  def testKick(self, mock_urlopen):
     now = datetime.datetime.utcnow()
     cron_job = cron_kicker.CronJob(
         url='/foo', schedule='schedule', target='target', next_run_time=now)
-    mock_get_hostname.return_value = 'localhost'
+    self.mock_app_manager.GetInfo.return_value = tfc_plugins.AppInfo(
+        name='target', hostname='localhost')
 
     cron_kicker.Kick(cron_job)
 
-    mock_get_hostname.assert_called_with(module='target')
+    self.mock_app_manager.GetInfo.assert_called_with('target')
     mock_urlopen.assert_called_with('http://localhost/foo')
     self.assertIsNone(cron_job.next_run_time)
 
@@ -66,9 +59,9 @@ class CronKickerTest(absltest.TestCase):
 
     cron_kicker.ScheduleNextKick(cron_job)
 
-    tasks = self.taskqueue_stub.get_filtered_tasks(
+    tasks = self.mock_task_scheduler.GetTasks(
         queue_names=[cron_kicker.CRON_KICKER_QUEUE])
-    self.assertEqual(1, len(tasks))
+    self.assertLen(tasks, 1)
     task = tasks[0]
     self.assertEqual(pytz.UTC.localize(next_run_time), task.eta)
     new_cron_job = pickle.loads(task.payload)
@@ -81,6 +74,7 @@ class CronKickerTest(absltest.TestCase):
 class TaskHandlerTest(absltest.TestCase):
 
   def setUp(self):
+    super(TaskHandlerTest, self).setUp()
     self.app = webtest.TestApp(cron_kicker.APP)
 
   @mock.patch.object(cron_kicker, 'ScheduleNextKick')
@@ -98,4 +92,3 @@ class TaskHandlerTest(absltest.TestCase):
 
 if __name__ == '__main__':
   absltest.main()
-

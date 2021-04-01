@@ -13,35 +13,49 @@
 # limitations under the License.
 
 """A module to handle app lifecycle events."""
-import google3
+import logging
+import os
 
-import webapp2
+import flask
 
 from multitest_transport.core import config_loader
 from multitest_transport.core import cron_kicker
+from multitest_transport.core import ndb_upgrader
+from multitest_transport.core import service_checker
+from multitest_transport.models import sql_models
 from multitest_transport.test_scheduler import download_util
 from multitest_transport.test_scheduler import test_scheduler
+from multitest_transport.util import env
 from multitest_transport.util import tfc_client
+from tradefed_cluster import common
+
+APP = flask.Flask(__name__)
 
 
-class AppStartHandler(webapp2.RequestHandler):
+@APP.route('/_ah/start')
+def AppStartHandler():
   """App start event handler."""
+  logging.info(
+      'Server is starting... (%s, cli_version=%s)',
+      env.VERSION, env.CLI_VERSION)
+  logging.info('os.environ=%s', os.environ)
 
-  def get(self):
-    config_loader.Load()
-    cron_kicker.Init()
+  service_checker.Check()
+  config_loader.Load()
+  cron_kicker.Init()
 
-    # Release any remaining test resource download trackers.
-    download_util.ReleaseDownloadLocks()
+  # Update datastore and database if necessary
+  ndb_upgrader.UpgradeNdb()
+  sql_models.db.CreateTables()
 
-    # Requeue non-final commands and command attempts for timeout monitoring.
-    tfc_client.BackfillCommands()
-    tfc_client.BackfillCommandAttempts()
+  # Release any remaining test resource download trackers.
+  download_util.ReleaseDownloadLocks()
 
-    # Requeue or Cancel the pending test runs.
-    test_scheduler.CheckPendingTestRuns()
+  # Requeue non-final requests, commands and command attempts for monitoring.
+  tfc_client.BackfillRequestSyncs()
+  tfc_client.BackfillCommands()
+  tfc_client.BackfillCommandAttempts()
 
-
-APP = webapp2.WSGIApplication([
-    ('/_ah/start', AppStartHandler)
-], debug=True)
+  # Requeue or Cancel the pending test runs.
+  test_scheduler.CheckPendingTestRuns()
+  return common.HTTP_OK

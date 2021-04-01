@@ -1,0 +1,84 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="callout" [ngClass]="getCalloutType()">
+  <ng-container [ngSwitch]="getCalloutType()">
+    <mat-icon *ngSwitchCase="'error'">info</mat-icon>
+    <mat-icon *ngSwitchCase="'warning'">warning</mat-icon>
+    <mat-icon *ngSwitchCase="'success'">check_circle</mat-icon>
+    <mat-icon *ngSwitchCase="'inprogress'">cached</mat-icon>
+    <mat-icon *ngSwitchCase="'info'">info</mat-icon>
+  </ng-container>
+  <div class="callout-message">
+    <ng-container [ngSwitch]="attempt.state">
+      <div class="callout-message-line" *ngSwitchCase="commandState.QUEUED">
+        Test is queued.
+      </div>
+      <div class="callout-message-line" *ngSwitchCase="commandState.RUNNING">
+        Test is running.
+      </div>
+      <div class="callout-message-line" *ngSwitchCase="commandState.COMPLETED">
+        Test completed:
+        <ng-container *ngIf="attempt.failed_test_count && attempt.failed_test_count > 0; else completeAllPass">
+          {{attempt.failed_test_count}}/{{getExecutedTestCount()}} tests failed.
+        </ng-container>
+        <ng-template #completeAllPass>
+          {{attempt.passed_test_count}} tests passed.
+        </ng-template>
+        <ng-container *ngIf="attempt.failed_test_run_count && attempt.failed_test_run_count > 0">
+          ({{attempt.failed_test_run_count}} modules failed to complete)
+        </ng-container>
+      </div>
+      <div class="callout-message-line" *ngSwitchCase="commandState.ERROR">
+        Test {{attempt.subprocess_command_error ? '' : 'job'}} failed to complete: {{getExtraInfoLines()[0]}}
+      </div>
+      <div class="callout-message-line" *ngSwitchCase="commandState.FATAL">
+        Test job failed to start: {{getExtraInfoLines()[0]}}
+      </div>
+    </ng-container>
+    <div *ngIf="getExtraInfo() && showExtraInfo">
+      <div class="callout-message-line" *ngFor="let line of getExtraInfoLines()">
+        {{line}}
+      </div>
+    </div>
+  </div>
+  <button mat-icon-button
+          [disableRipple]="true"
+          (click)="showExtraInfo = !showExtraInfo"
+          *ngIf="getExtraInfo()">
+    <mat-icon>
+      {{ showExtraInfo ? "keyboard_arrow_up" : "keyboard_arrow_down" }}
+    </mat-icon>
+  </button>
+  <a [href]="getOutputFilesUrl()"
+     mat-button
+     color="accent"
+     target='_blank'
+     *ngIf="getOutputFilesUrl()">
+    {{isFinished() ? 'View Output Files' : 'View Working Directory'}}
+  </a>
+</div>
+<div *ngIf="attempt.state != commandState.COMPLETED && attempt.total_test_count && attempt.total_test_count > 0">
+  <ng-container *ngIf="attempt.failed_test_count && attempt.failed_test_count > 0; else allPass">
+    {{attempt.failed_test_count}} / {{getExecutedTestCount()}} tests failed
+  </ng-container>
+  <ng-template #allPass>
+    {{attempt.passed_test_count}} tests passed
+  </ng-template>
+  <ng-container *ngIf="attempt.state == commandState.ERROR">
+    (Some tests may not have run due to the error).
+  </ng-container>
+</div>

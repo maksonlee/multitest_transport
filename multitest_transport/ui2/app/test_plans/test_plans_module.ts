@@ -30,6 +30,7 @@ import {TestRunsModule} from '../test_runs/test_runs_module';
 import {TestPlanEditPage} from './test_plan_edit_page';
 import {TestPlanList} from './test_plan_list';
 import {TestPlanListPage} from './test_plan_list_page';
+import {TestRunActionsModule} from '../test_run_actions/test_run_actions_module';
 
 const COMPONENTS = [
   TestPlanEditPage,
@@ -46,6 +47,7 @@ const COMPONENTS = [
     DevicesModule,
     RouterModule,
     SharedModule,
+    TestRunActionsModule,
     TestRunsModule,
   ],
   exports: COMPONENTS,

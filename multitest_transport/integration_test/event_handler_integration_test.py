@@ -27,12 +27,12 @@ class EventHandlerIntegrationTest(integration_util.DockerContainerTest):
   def setUp(self):
     super(EventHandlerIntegrationTest, self).setUp()
     # Schedule test run
-    self.run_target = str(uuid.uuid4())
-    self.test_run_id = self.container.ScheduleTestRun(self.run_target)['id']
+    self.device_serial = str(uuid.uuid4())
+    self.test_run_id = self.container.ScheduleTestRun(self.device_serial)['id']
     self.container.WaitForState(self.test_run_id, 'QUEUED')
     # Lease task and start test run
     self.task = self.container.LeaseTask(
-        integration_util.DeviceInfo(self.run_target))
+        integration_util.DeviceInfo(self.device_serial))
     self.container.SubmitCommandEvent(self.task, 'InvocationStarted')
     self.container.WaitForState(self.test_run_id, 'RUNNING')
 
@@ -47,7 +47,7 @@ class EventHandlerIntegrationTest(integration_util.DockerContainerTest):
     self.container.WaitForState(self.test_run_id, 'QUEUED')  # Back to QUEUED
     # Retry attempt can be leased
     retry = self.container.LeaseTask(
-        integration_util.DeviceInfo(self.run_target))
+        integration_util.DeviceInfo(self.device_serial))
     self.assertIsNotNone(retry)
     self.assertNotEqual(self.task['attempt_id'], retry['attempt_id'])
 
@@ -78,7 +78,7 @@ class EventHandlerIntegrationTest(integration_util.DockerContainerTest):
     self.container.WaitForState(self.test_run_id, 'QUEUED')  # Back to QUEUED
     # Retry attempt can be leased
     retry = self.container.LeaseTask(
-        integration_util.DeviceInfo(self.run_target))
+        integration_util.DeviceInfo(self.device_serial))
     self.assertIsNotNone(retry)
     self.assertNotEqual(self.task['attempt_id'], retry['attempt_id'])
     # Test run will contain result information

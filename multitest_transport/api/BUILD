@@ -1,311 +1,430 @@
 # MTT API handlers.
-
-load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_appengine_library", "py_appengine_test", "third_party")
+load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_test", "pytype_strict_library", "third_party")
 
 licenses(["notice"])
 
-PY_APPENGINE_TEST_ENVS = [
-    {
-        "runtime": "python27",
-        "libraries": {
-            "webapp2": "latest",
-            "PIL": "latest",
-        },
-    },
-]
-
-py_appengine_library(
+pytype_strict_library(
     name = "api",
+    srcs_version = "PY3",
     visibility = ["//multitest_transport"],
     deps = [
         ":server_lib",
     ],
 )
 
-py_appengine_library(
+pytype_strict_library(
     name = "api_test_util_lib",
+    testonly = True,
     srcs = [
         "api_test_util.py",
     ],
+    srcs_version = "PY3",
     deps = [
-        third_party("absl/testing:absltest"),
+        "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
+        third_party("google-endpoints"),
         third_party("webtest"),
     ],
 )
 
-py_appengine_library(
+pytype_strict_library(
     name = "base_lib",
     srcs = [
         "base.py",
     ],
+    srcs_version = "PY3",
     deps = [
+        ":openapi_lib",
         "//multitest_transport/models",
+        "@tradefed_cluster//tradefed_cluster:api_common_lib",
+        third_party("google-endpoints"),
+        third_party("six"),
     ],
 )
 
-py_appengine_library(
+pytype_strict_library(
     name = "build_channel_api_lib",
     srcs = [
         "build_channel_api.py",
     ],
+    srcs_version = "PY3",
     deps = [
         ":base_lib",
+        "//multitest_transport/models",
+        "//multitest_transport/util",
+        "@tradefed_cluster//tradefed_cluster/util:google_import_fixer",
         third_party("google/oauth2:service_account"),
+        third_party("google-endpoints"),
+        third_party("protorpc"),
+        third_party("six"),
     ],
 )
 
-py_appengine_test(
+py_test(
     name = "build_channel_api_test",
     srcs = [
         "build_channel_api_test.py",
     ],
-    envs = PY_APPENGINE_TEST_ENVS,
-    use_public_sdk = 1,
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":build_channel_api_lib",
-        "//multitest_transport:google_import_fixer",
+        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
+        "@tradefed_cluster//tradefed_cluster/util:google_import_fixer",
         third_party("google/oauth2:credentials"),
         third_party("mock"),
     ],
 )
 
-py_appengine_library(
+pytype_strict_library(
     name = "build_channel_provider_api_lib",
     srcs = [
         "build_channel_provider_api.py",
     ],
+    srcs_version = "PY3",
     deps = [
         ":base_lib",
+        "//multitest_transport/models",
+        third_party("google-endpoints"),
+        third_party("protorpc"),
     ],
 )
 
-py_appengine_test(
+py_test(
     name = "build_channel_provider_api_test",
     srcs = [
         "build_channel_provider_api_test.py",
     ],
-    envs = PY_APPENGINE_TEST_ENVS,
-    use_public_sdk = 1,
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":build_channel_provider_api_lib",
         third_party("mock"),
+        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
-py_appengine_library(
+pytype_strict_library(
     name = "config_set_api_lib",
     srcs = [
         "config_set_api.py",
     ],
+    srcs_version = "PY2AND3",
     deps = [
         ":base_lib",
+        "//multitest_transport/models",
         "//multitest_transport/test_scheduler",
+        "//multitest_transport/util",
+        third_party("google-endpoints"),
+        third_party("protorpc"),
     ],
 )
 
-py_appengine_test(
+py_test(
     name = "config_set_api_test",
     srcs = [
         "config_set_api_test.py",
     ],
-    envs = PY_APPENGINE_TEST_ENVS,
-    use_public_sdk = 1,
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":config_set_api_lib",
+        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
-py_appengine_library(
+pytype_strict_library(
     name = "device_action_api_lib",
     srcs = [
         "device_action_api.py",
     ],
+    srcs_version = "PY3",
     deps = [
         ":base_lib",
+        "//multitest_transport/models",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
+        third_party("google-endpoints"),
+        third_party("protorpc"),
+        third_party("six"),
     ],
 )
 
-py_appengine_test(
+py_test(
     name = "device_action_api_test",
     srcs = [
         "device_action_api_test.py",
     ],
-    envs = PY_APPENGINE_TEST_ENVS,
-    use_public_sdk = 1,
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":device_action_api_lib",
+        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
-py_appengine_library(
+pytype_strict_library(
     name = "node_config_api_lib",
     srcs = [
         "node_config_api.py",
     ],
+    srcs_version = "PY3",
     deps = [
         ":base_lib",
+        "//multitest_transport/models",
+        "//multitest_transport/util",
+        third_party("protorpc"),
     ],
 )
 
-py_appengine_test(
+py_test(
     name = "node_config_api_test",
     srcs = [
         "node_config_api_test.py",
     ],
-    envs = PY_APPENGINE_TEST_ENVS,
-    use_public_sdk = 1,
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":node_config_api_lib",
+        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
-py_appengine_library(
+pytype_strict_library(
+    name = "openapi_lib",
+    srcs = [
+        "openapi.py",
+    ],
+    srcs_version = "PY3",
+    deps = [
+        third_party("endpoints:openapi_generator"),
+    ],
+)
+
+pytype_strict_library(
     name = "private_node_config_api_lib",
     srcs = [
         "private_node_config_api.py",
     ],
+    srcs_version = "PY3",
     deps = [
         ":base_lib",
+        "//multitest_transport/models",
+        third_party("google/oauth2:service_account"),
+        third_party("google-endpoints"),
+        third_party("protorpc"),
     ],
 )
 
-py_appengine_test(
+py_test(
     name = "private_node_config_api_test",
     srcs = [
         "private_node_config_api_test.py",
     ],
-    envs = PY_APPENGINE_TEST_ENVS,
-    use_public_sdk = 1,
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":private_node_config_api_lib",
+        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
-py_appengine_library(
+pytype_strict_library(
     name = "server_lib",
     srcs = [
         "server.py",
     ],
+    data = [
+        "docs.html",
+    ],
+    srcs_version = "PY3",
     deps = [
+        ":base_lib",
         ":build_channel_api_lib",
         ":build_channel_provider_api_lib",
         ":config_set_api_lib",
         ":device_action_api_lib",
         ":node_config_api_lib",
+        ":openapi_lib",
         ":private_node_config_api_lib",
         ":test_api_lib",
         ":test_plan_api_lib",
+        ":test_result_api_lib",
         ":test_run_action_api_lib",
         ":test_run_api_lib",
+        "//multitest_transport/util",
         "@tradefed_cluster//tradefed_cluster:api_lib",
+        third_party("flask"),
+        third_party("google-endpoints"),
     ],
 )
 
-py_appengine_library(
+pytype_strict_library(
     name = "test_api_lib",
     srcs = [
         "test_api.py",
     ],
+    srcs_version = "PY3",
     deps = [
         ":base_lib",
+        "//multitest_transport/models",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
+        third_party("google-endpoints"),
+        third_party("protorpc"),
     ],
 )
 
-py_appengine_test(
+py_test(
     name = "test_api_test",
     srcs = [
         "test_api_test.py",
     ],
-    envs = PY_APPENGINE_TEST_ENVS,
-    use_public_sdk = 1,
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":test_api_lib",
+        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
-py_appengine_library(
+pytype_strict_library(
     name = "test_plan_api_lib",
     srcs = [
         "test_plan_api.py",
     ],
+    srcs_version = "PY2AND3",
     deps = [
         ":base_lib",
-        third_party("croniter"),
+        "//multitest_transport/models",
         "//multitest_transport/test_scheduler",
+        "//multitest_transport/test_scheduler:test_kicker_lib",
+        "//multitest_transport/test_scheduler:test_plan_kicker_lib",
+        "//multitest_transport/util",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
+        third_party("croniter"),
+        third_party("google-endpoints"),
+        third_party("protorpc"),
     ],
 )
 
-py_appengine_test(
+py_test(
     name = "test_plan_api_test",
     srcs = [
         "test_plan_api_test.py",
     ],
-    envs = PY_APPENGINE_TEST_ENVS,
-    use_public_sdk = 1,
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":test_plan_api_lib",
         third_party("mock"),
+        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
-py_appengine_library(
+pytype_strict_library(
+    name = "test_result_api_lib",
+    srcs = [
+        "test_result_api.py",
+    ],
+    srcs_version = "PY3",
+    deps = [
+        ":base_lib",
+        "//multitest_transport/models",
+        "//multitest_transport/util",
+        third_party("google-endpoints"),
+        third_party("protorpc"),
+    ],
+)
+
+py_test(
+    name = "test_result_api_test",
+    srcs = [
+        "test_result_api_test.py",
+    ],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":api_test_util_lib",
+        ":test_result_api_lib",
+        "//multitest_transport/models",
+        "//multitest_transport/util",
+        third_party("mock"),
+        third_party("sqlite3"),
+    ],
+)
+
+pytype_strict_library(
     name = "test_run_action_api_lib",
     srcs = [
         "test_run_action_api.py",
     ],
+    srcs_version = "PY3",
     deps = [
         ":base_lib",
+        "//multitest_transport/models",
         "//multitest_transport/util",
+        "@tradefed_cluster//tradefed_cluster/util:google_import_fixer",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("google/oauth2:service_account"),
+        third_party("google-endpoints"),
+        third_party("protorpc"),
     ],
 )
 
-py_appengine_test(
+py_test(
     name = "test_run_action_api_test",
     srcs = [
         "test_run_action_api_test.py",
     ],
-    envs = PY_APPENGINE_TEST_ENVS,
-    use_public_sdk = 1,
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":test_run_action_api_lib",
-        "//multitest_transport:google_import_fixer",
+        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
+        "@tradefed_cluster//tradefed_cluster/util:google_import_fixer",
         third_party("google/oauth2:credentials"),
         third_party("mock"),
     ],
 )
 
-py_appengine_library(
+pytype_strict_library(
     name = "test_run_api_lib",
     srcs = [
         "test_run_api.py",
     ],
+    srcs_version = "PY2AND3",
     deps = [
         ":base_lib",
-        "//multitest_transport/test_scheduler",
+        "//multitest_transport/models",
+        "//multitest_transport/test_scheduler:test_kicker_lib",
+        "//multitest_transport/test_scheduler:test_run_manager_lib",
+        "//multitest_transport/util",
+        "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster:datastore_util_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
+        third_party("google-endpoints"),
+        third_party("protorpc"),
     ],
 )
 
-py_appengine_test(
+py_test(
     name = "test_run_api_test",
     srcs = [
         "test_run_api_test.py",
     ],
-    envs = PY_APPENGINE_TEST_ENVS,
-    use_public_sdk = 1,
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":test_run_api_lib",
         third_party("mock"),
+        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )

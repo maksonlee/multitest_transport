@@ -21,9 +21,10 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf, throwError} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
-import {AuthorizationState, BuildChannel} from '../services/mtt_models';
+import {AuthorizationMethod, AuthorizationState, BuildChannel} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
-import {getEl, hasEl} from '../testing/jasmine_util';
+import {getEl, getTextContent, hasEl} from '../testing/jasmine_util';
+import {newMockCredentialsInfo} from '../testing/mtt_mocks';
 
 import {BuildChannelItem} from './build_channel_item';
 import {BuildChannelsModule} from './build_channels_module';
@@ -68,16 +69,44 @@ describe('BuildChannelItem', () => {
   }
 
   it('can display an authorized build channel', () => {
-    reload({auth_state: AuthorizationState.AUTHORIZED});
-    expect(hasEl(element, '.auth-button')).toBeFalsy();
-    expect(hasEl(element, '.keyfile-button')).toBeFalsy();
+    reload({
+      auth_state: AuthorizationState.AUTHORIZED,
+      auth_methods: [
+        AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
+        AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
+      ],
+      credentials: newMockCredentialsInfo(),
+    });
+
+    const text = getTextContent(element);
+    expect(text).toContain('credentials_email@google.com');
+    expect(text).toContain('Use Different User Account');
+    expect(text).toContain('Use Different Service Account');
     expect(hasEl(element, '.revoke-button')).toBeTruthy();
   });
 
-  it('can display an unauthorized build channel', () => {
-    reload({auth_state: AuthorizationState.UNAUTHORIZED});
-    expect(hasEl(element, '.auth-button')).toBeTruthy();
-    expect(hasEl(element, '.keyfile-button')).toBeTruthy();
+  it('can display an auth button', () => {
+    reload({
+      auth_state: AuthorizationState.UNAUTHORIZED,
+      auth_methods: [
+        AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
+        AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
+      ],
+    });
+    const text = getTextContent(element);
+    expect(text).toContain('Authorize');
+    expect(text).toContain('Upload Service Account Key');
+    expect(hasEl(element, '.revoke-button')).toBeFalsy();
+  });
+
+  it('can display keyfile button only', () => {
+    reload({
+      auth_state: AuthorizationState.UNAUTHORIZED,
+      auth_methods: [AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT],
+    });
+    const text = getTextContent(element);
+    expect(text).not.toContain('Use Different User Account');
+    expect(text).toContain('Upload Service Account Key');
     expect(hasEl(element, '.revoke-button')).toBeFalsy();
   });
 
@@ -116,20 +145,28 @@ describe('BuildChannelItem', () => {
   });
 
   it('can authorize a build channel', fakeAsync(() => {
-       mtt.authorizeBuildChannel.and.returnValue(observableOf(null));
-       reload({id: 'bc_id', auth_state: AuthorizationState.UNAUTHORIZED});
-       getEl(element, '.auth-button').click();
-       tick(500);
-       // authorizes build channel and notifies parent
-       expect(mtt.authorizeBuildChannel).toHaveBeenCalledWith('bc_id');
-       expect(notifier.showError).not.toHaveBeenCalled();
-       expect(component.authChange.emit)
-           .toHaveBeenCalledWith(jasmine.objectContaining({id: 'bc_id'}));
-     }));
+      mtt.authorizeBuildChannel.and.returnValue(observableOf(null));
+      reload({
+        id: 'bc_id',
+        auth_state: AuthorizationState.UNAUTHORIZED,
+        auth_methods: [AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE],
+      });
+      getEl(element, '.auth-button').click();
+      tick(500);
+      // authorizes build channel and notifies parent
+      expect(mtt.authorizeBuildChannel).toHaveBeenCalledWith('bc_id');
+      expect(notifier.showError).not.toHaveBeenCalled();
+      expect(component.authChange.emit)
+         .toHaveBeenCalledWith(jasmine.objectContaining({id: 'bc_id'}));
+    }));
 
   it('can handle errors when authorizing', () => {
     mtt.authorizeBuildChannel.and.returnValue(throwError('authorize failed'));
-    reload({id: 'bc_id', auth_state: AuthorizationState.UNAUTHORIZED});
+    reload({
+      id: 'bc_id',
+      auth_state: AuthorizationState.UNAUTHORIZED,
+      auth_methods: [AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE],
+    });
     getEl(element, '.auth-button').click();
     // displays error and doesn't notify parent
     expect(notifier.showError).toHaveBeenCalled();
@@ -137,26 +174,34 @@ describe('BuildChannelItem', () => {
   });
 
   it('can authorize a build channel with a service account', fakeAsync(() => {
-       mtt.authorizeBuildChannelWithServiceAccount.and.returnValue(
-           observableOf(null));
-       reload({id: 'bc_id', auth_state: AuthorizationState.UNAUTHORIZED});
-       const file = new File([], 'file');
-       const fileInput = getEl<HTMLInputElement>(element, 'input[type=file]');
-       spyOnProperty(fileInput, 'files').and.returnValue([file]);
-       fileInput.dispatchEvent(new Event('change'));  // Select a key file
-       tick(500);
-       // authorizes build channel and notifies parent
-       expect(mtt.authorizeBuildChannelWithServiceAccount)
-           .toHaveBeenCalledWith('bc_id', file);
-       expect(notifier.showError).not.toHaveBeenCalled();
-       expect(component.authChange.emit)
-           .toHaveBeenCalledWith(jasmine.objectContaining({id: 'bc_id'}));
-     }));
+      mtt.authorizeBuildChannelWithServiceAccount.and.returnValue(
+         observableOf(null));
+      reload({
+       id: 'bc_id',
+       auth_state: AuthorizationState.UNAUTHORIZED,
+       auth_methods: [AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT],
+      });
+      const file = new File([], 'file');
+      const fileInput = getEl<HTMLInputElement>(element, 'input[type=file]');
+      spyOnProperty(fileInput, 'files').and.returnValue([file]);
+      fileInput.dispatchEvent(new Event('change'));  // Select a key file
+      tick(500);
+      // authorizes build channel and notifies parent
+      expect(mtt.authorizeBuildChannelWithServiceAccount)
+         .toHaveBeenCalledWith('bc_id', file);
+      expect(notifier.showError).not.toHaveBeenCalled();
+      expect(component.authChange.emit)
+         .toHaveBeenCalledWith(jasmine.objectContaining({id: 'bc_id'}));
+    }));
 
   it('can handle errors when authorizing with a service account', () => {
     mtt.authorizeBuildChannelWithServiceAccount.and.returnValue(
         throwError('authorize failed'));
-    reload({id: 'bc_id', auth_state: AuthorizationState.UNAUTHORIZED});
+    reload({
+      id: 'bc_id',
+      auth_state: AuthorizationState.UNAUTHORIZED,
+      auth_methods: [AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT],
+    });
     const fileInput = getEl<HTMLInputElement>(element, 'input[type=file]');
     spyOnProperty(fileInput, 'files').and.returnValue([new File([], 'file')]);
     fileInput.dispatchEvent(new Event('change'));  // Select a key file
@@ -167,7 +212,11 @@ describe('BuildChannelItem', () => {
 
   it('can revoke a build channel\'s authorization', fakeAsync(() => {
        mtt.unauthorizeBuildChannel.and.returnValue(observableOf(null));
-       reload({id: 'bc_id', auth_state: AuthorizationState.AUTHORIZED});
+       reload({
+         id: 'bc_id',
+         auth_state: AuthorizationState.AUTHORIZED,
+         credentials: newMockCredentialsInfo(),
+       });
        getEl(element, '.revoke-button').click();
        tick(500);
        // revokes authorization and notifies parent
@@ -180,7 +229,11 @@ describe('BuildChannelItem', () => {
   it('can handle errors when revoking authorization', () => {
     mtt.unauthorizeBuildChannel.and.returnValue(
         throwError('unauthorize failed'));
-    reload({id: 'bc_id', auth_state: AuthorizationState.AUTHORIZED});
+    reload({
+      id: 'bc_id',
+      auth_state: AuthorizationState.AUTHORIZED,
+      credentials: newMockCredentialsInfo(),
+    });
     getEl(element, '.revoke-button').click();
     // displays error and doesn't notify parent
     expect(notifier.showError).toHaveBeenCalled();

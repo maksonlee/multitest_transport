@@ -14,14 +14,16 @@
  limitations under the License.
 -->
 
-<h2 mat-dialog-title>Select a file</h2>
+<h2 mat-dialog-title>
+  {{mode === BuildPickerMode.SELECT ? 'Select a file' : 'View Files'}}
+</h2>
 
 <mat-tab-group
   (selectedTabChange)="onSelectedTabChange($event)"
   [selectedIndex]="selectedTabIndex">
 
   <!-- url tab -->
-  <mat-tab label="By Url">
+  <mat-tab label="By Url" *ngIf="mode === BuildPickerMode.SELECT">
     <div class="url-tab-content">
       <mat-form-field appearance="outline" floatLabel="always"
         fxLayout="column">
@@ -32,8 +34,12 @@
       <button mat-button color="accent" mat-dialog-close>
         Cancel
       </button>
-      <button mat-flat-button color="accent" (click)="selectAndClose()"
-              [attr.aria-disabled]="!searchBarUrlValue">
+      <button
+        mat-flat-button
+        class="select-button"
+        color="accent"
+        (click)="selectAndClose()"
+        [attr.aria-disabled]="!searchBarUrlValue">
         Select
       </button>
     </div>
@@ -43,13 +49,18 @@
   <mat-tab label="Local File">
     <ng-template matTabContent>
       <local-file-store [(url)]="searchBarUrlValue"></local-file-store>
-      <div class="button-group">
+      <div class="button-group" *ngIf="mode === BuildPickerMode.SELECT">
         <button mat-button color="accent" mat-dialog-close>
           Cancel
         </button>
         <button mat-flat-button color="accent" (click)="selectAndClose()"
                 [attr.aria-disabled]="!searchBarUrlValue">
           Select
+        </button>
+      </div>
+      <div *ngIf="mode === BuildPickerMode.VIEW">
+        <button mat-button color="accent" mat-dialog-close>
+          Close
         </button>
       </div>
     </ng-template>
@@ -61,7 +72,8 @@
         [ngTemplateOutletContext]="{buildChannel: buildChannel}"
     >
     </ng-container>
-    <div *ngIf="isBuildChannelAvailable(buildChannel)" class="button-group">
+    <div *ngIf="mode === BuildPickerMode.SELECT && isBuildChannelAvailable(buildChannel)"
+         class="button-group">
       <button mat-button color="accent" mat-dialog-close>
         Cancel
       </button>
@@ -72,6 +84,11 @@
           [attr.aria-disabled]="!selection.selected.length && !searchBarFilenameValue"
       >
         Select
+      </button>
+    </div>
+    <div *ngIf="mode === BuildPickerMode.VIEW">
+      <button mat-button color="accent" mat-dialog-close>
+        Close
       </button>
     </div>
   </mat-tab>
@@ -104,7 +121,7 @@
 
       <!-- Breadcrumb -->
       <breadcrumb
-        [data]="buildChannel"
+        [prefix]="buildChannel.name"
         [path]="searchBarUrlValue"
         (pathChange)="onBreadCrumbPathChange($event)">
       </breadcrumb>
@@ -120,43 +137,34 @@
         [enableInfiniteScroll]="nextPageToken.length > 0"
         [scrollThreshold]="80"
         (scrollLoad)="onScrollLoad($event)"
-        id="build-picker-table"
+        class="build-picker-table"
         aria-label="Build picker">
-        <!-- Name -->
+        <!-- Name and description -->
         <ng-container matColumnDef="name">
-          <mat-header-cell *matHeaderCellDef [fxFlex]="45">
+          <mat-header-cell *matHeaderCellDef [fxFlex]="60">
             Name
           </mat-header-cell>
-          <mat-cell *matCellDef="let item" [fxFlex]="45">
-            {{item.name}}
-          </mat-cell>
-        </ng-container>
-
-        <!-- Description -->
-        <ng-container matColumnDef="description">
-          <mat-header-cell *matHeaderCellDef [fxFlex]="35">
-            Description
-          </mat-header-cell>
-          <mat-cell *matCellDef="let item" [fxFlex]="35">
-            {{item.description}}
+          <mat-cell class="name" *matCellDef="let item" [fxFlex]="60">
+            <span>{{item.name}}</span>
+            <span *ngIf="item.description" class="item-description">{{item.description}}</span>
           </mat-cell>
         </ng-container>
 
         <!-- Timestamp -->
         <ng-container matColumnDef="timestamp">
-          <mat-header-cell *matHeaderCellDef [fxFlex]="35">
+          <mat-header-cell *matHeaderCellDef [fxFlex]="25">
             Timestamp
           </mat-header-cell>
-          <mat-cell *matCellDef="let item" [fxFlex]="35">
+          <mat-cell *matCellDef="let item" [fxFlex]="25">
             {{ item.timestamp | utc | date:'MM/dd/yyyy h:mma' }}
           </mat-cell>
         </ng-container>
         <!-- Size -->
         <ng-container matColumnDef="size">
-          <mat-header-cell *matHeaderCellDef [fxFlex]="15">
+          <mat-header-cell *matHeaderCellDef [fxFlex]="10">
             Size
           </mat-header-cell>
-          <mat-cell *matCellDef="let item" [fxFlex]="15">
+          <mat-cell *matCellDef="let item" [fxFlex]="10">
             {{item.is_file ? item.size : ''}}
           </mat-cell>
         </ng-container>
@@ -190,8 +198,22 @@
     <h3 class="auth-template">
       You haven't setup this build channel
       <br/>
-      <button mat-flat-button color="accent" (click)="authorize(buildChannel.id)">
-          Click To Authorize
+      <button class="auth-button" mat-stroked-button color="accent"
+              *ngIf="buildChannel.auth_methods.includes(AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE)"
+              (click)="authorize(buildChannel.id)">
+          Authorize
+      </button>
+      <input type="file" #keyfileInput
+             (change)="uploadKeyfile(buildChannel.id, $event.target.files[0]);
+                       keyfileInput.value = ''"/>
+      <button
+            class="keyfile-button"
+            mat-flat-button
+            aria-label="Upload Service Account Key"
+            color='accent'
+            *ngIf="buildChannel.auth_methods.includes(AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT)"
+            (click)="keyfileInput.click()">
+        Upload Service Account Key
       </button>
     </h3>
 </ng-template>

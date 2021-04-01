@@ -17,75 +17,52 @@
 <!-- Name Field -->
 <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
   <mat-label> Name </mat-label>
-  <!-- TODO: followup on the design for this input field -->
-  <mat-select required
+  <mat-select
+    required
     [(ngModel)]="testId"
-    (selectionChange)="testIdChange.emit($event.value)"
+    (selectionChange)="loadTest($event.value)"
     #name="ngModel"
-    >
+  >
     <mat-option *ngFor="let item of testMap | keyvalue" [value]="item.value.id">
-      {{item.value.name}}
+      {{ item.value.name }}
     </mat-option>
   </mat-select>
   <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
 </mat-form-field>
 
-<div fxLayout="row">
-  <!-- Run Count Field -->
-  <mat-form-field class="small" fxFlex="25" appearance="outline" floatLabel="always">
-    <mat-label> Run Count </mat-label>
-    <input matInput type="number"
-           [(ngModel)]="testRunConfig.run_count"
-           required
-           min=0
-           #run_count="ngModel">
-    <mat-error *ngIf="run_count.invalid && run_count.touched">Run count is required</mat-error>
-  </mat-form-field>
-
-  <!-- Max Retry Field -->
-  <mat-form-field class="small" fxFlex="25" appearance="outline" floatLabel="always">
-    <mat-label> Max Retry </mat-label>
-    <input matInput type="number"
-           [(ngModel)]="testRunConfig.max_retry_on_test_failures"
-           required
-           min=0
-           #max_retry="ngModel">
-    <mat-error *ngIf="max_retry.invalid && max_retry.touched">Max retry is required</mat-error>
-  </mat-form-field>
-
-  <!-- Queue Timeout(Seconds) Field -->
-  <mat-form-field fxFlex="45" appearance="outline" floatLabel="always">
-    <mat-label> Queue Timeout(Seconds) </mat-label>
-    <input matInput type="number"
-           [(ngModel)]="testRunConfig.queue_timeout_seconds"
-           required
-           min=0
-           #queue_timeout="ngModel">
-    <mat-error *ngIf="queue_timeout.invalid && queue_timeout.touched">Queue timeout is required</mat-error>
-  </mat-form-field>
-</div>
-
 <!-- Command line -->
 <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
   <mat-label>Command</mat-label>
-  <textarea matInput type="text"
+  <textarea
+    matInput
+    type="text"
     [(ngModel)]="testRunConfig.command"
     [disabled]="isRerun"
     cdkTextareaAutosize
   ></textarea>
   <!-- TODO: replace with a test suite specific instruction link. -->
-  <mat-hint>Find supported CTS parameters from
-    <a href="https://source.android.com/compatibility/cts/run#ctsv2_reference"
-       target="_blank" aria-label="Find supported CTS parameters from here">
-        here</a>.
+  <mat-hint
+    >Find supported CTS parameters from
+    <a
+      href="https://source.android.com/compatibility/cts/run#ctsv2_reference"
+      target="_blank"
+      aria-label="Find supported CTS parameters from here"
+    >
+      here</a
+    >.
   </mat-hint>
 </mat-form-field>
 
 <!-- Retry command line -->
-<mat-form-field appearance="outline" floatLabel="always" fxLayout="column"
-                *ngIf="isRerun || testRunConfig?.max_retry_on_test_failures > 0">
+<mat-form-field
+  appearance="outline"
+  floatLabel="always"
+  fxLayout="column"
+>
   <mat-label>Retry Command</mat-label>
-  <textarea matInput type="text"
+  <textarea
+    matInput
+    type="text"
     [(ngModel)]="testRunConfig.retry_command"
     cdkTextareaAutosize
   ></textarea>
@@ -103,21 +80,137 @@
   </mat-form-field>
 
   <!-- Local rerun -->
-  <mat-form-field class="local" appearance="outline" floatLabel="always" fxLayout="column" fxFlex
-                  *ngIf="!isRemoteRerun">
+  <mat-form-field
+    class="local"
+    appearance="outline"
+    floatLabel="always"
+    fxLayout="column"
+    fxFlex
+    *ngIf="!isRemoteRerun"
+  >
     <mat-label>ID</mat-label>
-    <input matInput type="text" [(ngModel)]="prevTestRunId" (input)="updateRerunContext()">
+    <input matInput type="text" [(ngModel)]="prevTestRunId" (input)="updateRerunContext()" />
     <mat-hint>Set to resume a previous local test run</mat-hint>
   </mat-form-field>
 
   <!-- Remote rerun -->
   <div class="remote" fxFlex *ngIf="isRemoteRerun">
-    <input type="file" #fileUploadInput
-           (change)="uploadResultsFile($event.target.files[0]); fileUploadInput.value = ''" />
-    <button mat-stroked-button color="accent" (click)="fileUploadInput.click()"
-            [disabled]="isUploading">Upload Test Results File</button>
-    <span *ngIf="!isUploading">{{testResultsFilename || 'No file selected'}}</span>
-    <mat-progress-spinner mode="determinate" [diameter]="25"
-                          *ngIf="isUploading" [value]="uploadProgress"></mat-progress-spinner>
+    <input
+      type="file"
+      #fileUploadInput
+      (change)="uploadResultsFile($event.target.files[0]); fileUploadInput.value = ''"
+    />
+    <button
+      mat-stroked-button
+      color="accent"
+      (click)="fileUploadInput.click()"
+      [disabled]="isUploading"
+    >
+      Upload Test Results File
+    </button>
+    <span *ngIf="!isUploading">{{ testResultsFilename || "No file selected" }}</span>
+    <mat-progress-spinner
+      mode="determinate"
+      [diameter]="25"
+      *ngIf="isUploading"
+      [value]="uploadProgress"
+    ></mat-progress-spinner>
+  </div>
+</div>
+
+<div>
+  <button mat-button
+          class="advanced-settings-button"
+          color="accent"
+          (click)="showAdvancedSettings = !showAdvancedSettings"
+  >
+    Advanced Settings
+    <mat-icon>{{ showAdvancedSettings ? "arrow_drop_up" : "arrow_drop_down" }}</mat-icon>
+  </button>
+
+  <div fxLayout="column" *ngIf="showAdvancedSettings">
+    <!-- Queue Timeout (Seconds) Field -->
+    <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+      <mat-label> Queue Timeout (Seconds) </mat-label>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="testRunConfig.queue_timeout_seconds"
+        required
+        min="0"
+        #queue_timeout="ngModel"
+      />
+      <mat-error *ngIf="queue_timeout.invalid && queue_timeout.touched">
+        Queue timeout is required
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Run Count Field -->
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label> Run Count </mat-label>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="testRunConfig.run_count"
+        required
+        min="1"
+        #run_count="ngModel"
+      />
+      <mat-error *ngIf="run_count.invalid && run_count.touched">Run count is required</mat-error>
+    </mat-form-field>
+
+    <!-- Max Retry Field -->
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label> Max Retry </mat-label>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="testRunConfig.max_retry_on_test_failures"
+        required
+        min="0"
+        #max_retry="ngModel"
+      />
+      <mat-error *ngIf="max_retry.invalid && max_retry.touched">Max retry is required</mat-error>
+    </mat-form-field>
+
+    <!-- Invocation Timeout (Seconds) Field -->
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label> Invocation Timeout (Seconds) </mat-label>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="testRunConfig.invocation_timeout_seconds"
+        required
+        min="0"
+        #invocation_timeout="ngModel"
+      />
+      <mat-hint>
+        Set this to 0 if you don't want to enforce timeout.
+      </mat-hint>
+      <mat-error *ngIf="invocation_timeout.invalid && invocation_timeout.touched">
+        Invocation timeout is required
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Output Idle Timeout (Seconds) Field -->
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label> Output Idle Timeout (Seconds) </mat-label>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="testRunConfig.output_idle_timeout_seconds"
+        required
+        min="0"
+        #output_idle_timeout="ngModel"
+      />
+      <mat-error *ngIf="output_idle_timeout.invalid && output_idle_timeout.touched">
+        Output idle timeout is required
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Use Parallel Setup Field -->
+    <mat-checkbox [(ngModel)]="testRunConfig.use_parallel_setup">
+      Use Parallel Setup
+    </mat-checkbox>
   </div>
 </div>

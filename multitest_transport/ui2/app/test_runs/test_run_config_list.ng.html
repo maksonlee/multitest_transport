@@ -14,71 +14,12 @@
  limitations under the License.
 -->
 
-<mat-card *ngFor="let config of data; let i = index">
-  <div fxLayout="row" fxLayoutGap="10px">
-    <div fxFlex="60" fxLayout="column" fxLayoutGap="10px">
-      <div fxFlex="50" fxLayout="row" fxLayoutGap="10px">
-        <div class="test-run-config-container" fxFlex="40">
-          <h5>Test</h5>
-          <div>{{ testMap[config.test_id] ? testMap[config.test_id].name : 'Unknown' }}</div>
-        </div>
-        <div class="test-run-config-container" fxFlex>
-          <h5>Command</h5>
-          <div>{{ config.command }}</div>
-        </div>
-      </div>
-      <div fxFlex="50" fxLayout="row" fxLayoutGap="10px">
-        <div class="test-run-config-container" fxFlex="20">
-          <h5>Run Count</h5>
-          <div>{{ config.run_count }}</div>
-        </div>
-        <div class="test-run-config-container" fxFlex="20">
-          <h5>Shard Count</h5>
-          <div>{{ config.shard_count }}</div>
-        </div>
-        <div class="test-run-config-container" fxFlex="20">
-          <h5>Max Retries</h5>
-          <div>{{ config.max_retry_on_test_failures }}</div>
-        </div>
-        <div class="test-run-config-container" fxFlex="40">
-          <h5>Queue Timeout (Secs)</h5>
-          <div>{{ config.queue_timeout_seconds }}</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="test-run-config-container" fxFlex="25">
-      <h5>Run Target(s)</h5>
-      <div *ngFor="let target of config.run_target.split(';')" class="test-run-config-target">
-        {{ target }}
-      </div>
-    </div>
-    <div fxFlex="15">
-      <!-- Edit test run config button -->
-      <button
-        mat-button
-        aria-label="Edit"
-        matTooltip="Edit"
-        class="test-run-config-edit-button"
-        type="button"
-        (click)="edit(i)"
-      >
-        <mat-icon> edit </mat-icon>
-      </button>
-      <!-- Delete test run config button -->
-      <button
-        mat-button
-        aria-label="Delete"
-        matTooltip="Delete"
-        type="button"
-        class="test-run-config-delete-button"
-        (click)="delete(i)"
-      >
-        <mat-icon> delete </mat-icon>
-      </button>
-    </div>
-  </div>
-</mat-card>
+<ng-container *ngFor="let config of data; let i = index">
+  <test-run-config-summary [config]="config" [title]="configTitle + ' ' + (i + 1)"
+                           (configChange)="updateConfig(i, $event)"
+                           (configDelete)="deleteConfig(i)">
+  </test-run-config-summary>
+</ng-container>
 
 <!-- Add new test run config button -->
 <button
@@ -87,7 +28,7 @@
   class="add-button"
   color="accent"
   type="button"
-  (click)="add()"
+  (click)="addConfig()"
 >
   + Add test run configuration
 </button>

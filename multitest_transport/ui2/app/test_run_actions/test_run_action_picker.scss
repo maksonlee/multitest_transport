@@ -100,12 +100,14 @@
   }
 
   mat-checkbox {
+    align-items: center;
     background-color: white;
-    display: block;
+    display: flex;
+    height: 100%;
     margin: 0;
 
     .mat-checkbox-layout {
-      display: block;
+      overflow: hidden;
       padding: 0 16px;
     }
 
@@ -118,5 +120,15 @@
   .mat-menu-content:not(:empty),
   .mat-menu-item {
     padding: 0;
+  }
+
+  .mat-checkbox-label {
+    overflow: hidden;
+
+    .name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 }

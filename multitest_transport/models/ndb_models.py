@@ -16,16 +16,16 @@
 
 import collections
 import datetime
+import re
 import uuid
 
 from protorpc import messages
-from tradefed_cluster import common
+import six
 
-from google.appengine.ext import ndb
-from google.appengine.ext.ndb import msgprop
+from tradefed_cluster import common
+from tradefed_cluster.util import ndb_shim as ndb
 
 from multitest_transport.util import env
-from multitest_transport.util import file_util
 from multitest_transport.util import oauth2_util
 
 NODE_CONFIG_ID = 1
@@ -43,7 +43,7 @@ class NameValuePair(ndb.Model):
 
   @classmethod
   def FromDict(cls, d):
-    return [cls(name=k, value=v) for k, v in d.iteritems()]
+    return [cls(name=k, value=v) for k, v in six.iteritems(d)]
 
   @classmethod
   def ToDict(cls, pairs):
@@ -65,7 +65,7 @@ class NameMultiValuePair(ndb.Model):
 
   @classmethod
   def FromDict(cls, d):
-    return [cls(name=k, values=v) for k, v in d.iteritems()]
+    return [cls(name=k, values=v) for k, v in six.iteritems(d)]
 
   @classmethod
   def ToDict(cls, pairs):
@@ -80,6 +80,12 @@ class AuthorizationState(messages.Enum):
   NOT_APPLICABLE = 0  # Does not require authorization
   AUTHORIZED = 1  # Requires authorization and has credentials
   UNAUTHORIZED = 2  # Requires authorization and no credentials found
+
+
+class AuthorizationMethod(messages.Enum):
+  """Authorization methods."""
+  OAUTH2_AUTHORIZATION_CODE = 1
+  OAUTH2_SERVICE_ACCOUNT = 2
 
 
 class BuildChannelConfig(ndb.Model):
@@ -134,7 +140,7 @@ class EventLogEntry(ndb.Model):
     message: log message
   """
   create_time = ndb.DateTimeProperty(auto_now_add=True)
-  level = msgprop.EnumProperty(EventLogLevel, required=True)
+  level = ndb.EnumProperty(EventLogLevel, required=True)
   message = ndb.TextProperty(required=True)
 
 
@@ -142,6 +148,7 @@ class TestResourceType(messages.Enum):
   UNKNOWN = 0
   DEVICE_IMAGE = 1
   TEST_PACKAGE = 2
+  SYSTEM_IMAGE = 3
 
 
 class TestResourceDef(ndb.Model):
@@ -151,10 +158,39 @@ class TestResourceDef(ndb.Model):
     name: a test resource name.
     default_download_url: a default download URL.
     test_resource_type: a test resource type.
+    decompress: whether the host should decompress the downloaded file.
+    decompress_dir: the directory where the host decompresses the file.
   """
   name = ndb.StringProperty(required=True)
   default_download_url = ndb.StringProperty()
-  test_resource_type = msgprop.EnumProperty(TestResourceType)
+  test_resource_type = ndb.EnumProperty(TestResourceType)
+  decompress = ndb.BooleanProperty()
+  decompress_dir = ndb.StringProperty()
+
+  def ToTestResourceObj(self):
+    """Create a TestResourceObj from this definition."""
+    return TestResourceObj(
+        name=self.name,
+        url=self.default_download_url,
+        test_resource_type=self.test_resource_type,
+        decompress=self.decompress or False,
+        decompress_dir=self.decompress_dir or '')
+
+
+class TestRunParameter(ndb.Model):
+  """Test run parameter.
+
+  Attributes:
+    max_retry_on_test_failures: the max number of retry on test failure.
+    invocation_timeout_seconds: the maximum time for each invocation to run. If
+        an invocation(attempt) runs longer than a given timeout, it would be
+        force stopped.
+    output_idle_timeout_seconds: how long a test run's output can be idle before
+        attempting recovery
+  """
+  max_retry_on_test_failures = ndb.IntegerProperty()
+  invocation_timeout_seconds = ndb.IntegerProperty()
+  output_idle_timeout_seconds = ndb.IntegerProperty()
 
 
 class Test(ndb.Model):
@@ -162,6 +198,7 @@ class Test(ndb.Model):
 
   Attributes:
     name: a test name.
+    description: user-friendly string that describes the test suite.
     test_resource_defs: a list of test resource definitions.
     command: a TF command line.
     env_vars: a dict of environment variables to set before running a test.
@@ -178,8 +215,10 @@ class Test(ndb.Model):
         attempts.
     runner_sharding_args: extra args to enable runner sharding. It can contain
         a reference to a desired shard count (e.g. ${TF_SHARD_COUNT})
+    default_test_run_parameters: default test run parameters.
   """
   name = ndb.StringProperty(required=True)
+  description = ndb.StringProperty()
   test_resource_defs = ndb.StructuredProperty(TestResourceDef, repeated=True)
   command = ndb.StringProperty(required=True)
   env_vars = ndb.StructuredProperty(NameValuePair, repeated=True)
@@ -192,6 +231,7 @@ class Test(ndb.Model):
   context_file_pattern = ndb.StringProperty()
   retry_command_line = ndb.StringProperty()
   runner_sharding_args = ndb.StringProperty()
+  default_test_run_parameters = ndb.LocalStructuredProperty(TestRunParameter)
 
 
 class ShardingMode(messages.Enum):
@@ -218,6 +258,8 @@ class DeviceAction(ndb.Model):
     description: a description.
     test_resource_defs: a list of test resource definitions.
     tradefed_target_preparers: a list of Tradefed target preparers.
+    device_type: the type of the devices that require the device action.
+    tradefed_options: key-value pairs to be added to Tradefed configuration.
   """
   name = ndb.StringProperty(required=True)
   description = ndb.StringProperty()
@@ -225,6 +267,9 @@ class DeviceAction(ndb.Model):
       TestResourceDef, repeated=True)
   tradefed_target_preparers = ndb.LocalStructuredProperty(
       TradefedConfigObject, repeated=True)
+  device_type = ndb.StringProperty()
+  tradefed_options = ndb.LocalStructuredProperty(
+      NameMultiValuePair, repeated=True)
 
 
 class TestRunPhase(messages.Enum):
@@ -253,7 +298,7 @@ class TestRunAction(ndb.Model):
   name = ndb.StringProperty(required=True)
   description = ndb.StringProperty()
   hook_class_name = ndb.StringProperty(required=True)
-  phases = msgprop.EnumProperty(TestRunPhase, repeated=True)
+  phases = ndb.EnumProperty(TestRunPhase, repeated=True)
   options = ndb.LocalStructuredProperty(NameValuePair, repeated=True)
   tradefed_result_reporters = ndb.LocalStructuredProperty(
       TradefedConfigObject, repeated=True)
@@ -281,6 +326,27 @@ class TestRunActionRef(ndb.Model):
     return action
 
 
+class TestResourceObj(ndb.Model):
+  """A test resource object.
+
+  The "Obj" suffix was added to avoid name collistion with TFC TestResource.
+
+  Attributes:
+    name: a test resource name.
+    url: a URL.
+    cache_url: a URL for a cached copy.
+    test_resource_type: a test resource type.
+    decompress: whether the host should decompress the downloaded file.
+    decompress_dir: the directory where the host decompresses the file.
+  """
+  name = ndb.StringProperty(required=True)
+  url = ndb.StringProperty()
+  cache_url = ndb.StringProperty()
+  test_resource_type = ndb.EnumProperty(TestResourceType)
+  decompress = ndb.BooleanProperty()
+  decompress_dir = ndb.StringProperty()
+
+
 class TestRunConfig(ndb.Model):
   """A test run config.
 
@@ -289,7 +355,9 @@ class TestRunConfig(ndb.Model):
     cluster: a cluster to run a test in.
     command: the command to run the test suite
     retry_command: the command to retry this test run
-    run_target: a run target.
+    device_specs: device requirements expressed in space-separated list of
+        key-value pairs (e.g. "product:bramble sim_state:LOADED").
+    run_target: (deprecated) a run target. Only used when device_specs is empty.
     run_count: a run count.
     shard_count: a shard count.
     sharding_mode: a sharding mode.
@@ -298,30 +366,41 @@ class TestRunConfig(ndb.Model):
     max_retry_on_test_failures: the max number of retry on test failure.
     queue_timeout_seconds: how long a test run can stay in QUEUED state before
         being cancelled
+    invocation_timeout_seconds: the maximum time for each invocation to run. If
+        an invocation(attempt) runs longer than a given timeout, it would be
+        force stopped.
     output_idle_timeout_seconds: how long a test run's output can be idle before
         attempting recovery
     before_device_action_keys: device actions to execute before running a test.
     test_run_action_refs: test run actions to execute during a test.
+    test_resource_objs: path to the files to use for test resources.
+    use_parallel_setup: a flag on whether to setup devices in parallel.
   """
   test_key = ndb.KeyProperty(kind=Test, required=True)
   cluster = ndb.StringProperty(required=True)
   command = ndb.StringProperty(required=True, default='')
   retry_command = ndb.StringProperty(required=True, default='')
-  run_target = ndb.StringProperty(required=True)
+  device_specs = ndb.StringProperty(repeated=True)
+  run_target = ndb.StringProperty()
   run_count = ndb.IntegerProperty(required=True, default=1)
   shard_count = ndb.IntegerProperty(required=True, default=1)
-  sharding_mode = msgprop.EnumProperty(
+  sharding_mode = ndb.EnumProperty(
       ShardingMode, default=ShardingMode.RUNNER)
   extra_args = ndb.StringProperty()   # TODO: Deprecated
   retry_extra_args = ndb.StringProperty()  # TODO: Deprecated
   max_retry_on_test_failures = ndb.IntegerProperty()
   queue_timeout_seconds = ndb.IntegerProperty(
       required=True, default=env.DEFAULT_QUEUE_TIMEOUT_SECONDS)
+  invocation_timeout_seconds = ndb.IntegerProperty(
+      default=env.DEFAULT_INVOCATION_TIMEOUT_SECONDS)
   output_idle_timeout_seconds = ndb.IntegerProperty(
       default=env.DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS)
   before_device_action_keys = ndb.KeyProperty(DeviceAction, repeated=True)
   test_run_action_refs = ndb.LocalStructuredProperty(
       TestRunActionRef, repeated=True)
+  test_resource_objs = ndb.LocalStructuredProperty(
+      TestResourceObj, repeated=True)
+  use_parallel_setup = ndb.BooleanProperty(default=True)
 
 
 class TestResourcePipe(ndb.Model):
@@ -334,7 +413,7 @@ class TestResourcePipe(ndb.Model):
   """
   name = ndb.StringProperty(required=True)
   url = ndb.StringProperty()
-  test_resource_type = msgprop.EnumProperty(TestResourceType)
+  test_resource_type = ndb.EnumProperty(TestResourceType)
 
 
 class TestPlan(ndb.Model):
@@ -344,22 +423,36 @@ class TestPlan(ndb.Model):
     name: a test resource name.
     labels: list of strings users can use to categorize test runs and plans.
     cron_exp: a CRON expression.
+    cron_exp_timezone: timezone to use when processing cron expression.
     test_run_configs: a list of test run configs.
     test_resource_pipes: a list of test resource pipes.
     before_device_action_keys: common before device actions for tests.
+    test_run_action_refs: common test run actions to execute during tests.
   """
   name = ndb.StringProperty(required=True)
   labels = ndb.StringProperty(repeated=True)
   cron_exp = ndb.StringProperty()
+  cron_exp_timezone = ndb.StringProperty(default='UTC')
   test_run_configs = ndb.LocalStructuredProperty(TestRunConfig, repeated=True)
   test_resource_pipes = ndb.LocalStructuredProperty(
-      TestResourcePipe, repeated=True)
-  before_device_action_keys = ndb.KeyProperty(DeviceAction, repeated=True)
+      TestResourcePipe, repeated=True)  # TODO: Deprecated
+  before_device_action_keys = ndb.KeyProperty(
+      DeviceAction, repeated=True)  # TODO: Deprecated
+  test_run_action_refs = ndb.LocalStructuredProperty(
+      TestRunActionRef, repeated=True)
+
+  @classmethod
+  def _post_delete_hook(cls, key, future):
+    status = TestPlanStatus.query(ancestor=key).get()
+    if status:
+      status.key.delete()
 
 
 class TestPlanStatus(ndb.Model):
   """A test plan status."""
   last_run_time = ndb.DateTimeProperty()
+  last_run_keys = ndb.KeyProperty(kind='TestRun', repeated=True)
+  last_run_error = ndb.StringProperty()
   next_run_time = ndb.DateTimeProperty()
   next_run_task_name = ndb.StringProperty()
 
@@ -379,23 +472,6 @@ FINAL_TEST_RUN_STATES = {
     TestRunState.CANCELED,
     TestRunState.ERROR
 }
-
-
-class TestResourceObj(ndb.Model):
-  """A test resource object.
-
-  The "Obj" suffix was added to avoid name collistion with TFC TestResource.
-
-  Attributes:
-    name: a test resource name.
-    url: a URL.
-    cache_url: a URL for a cached copy.
-    test_resource_type: a test resource type.
-  """
-  name = ndb.StringProperty(required=True)
-  url = ndb.StringProperty()
-  cache_url = ndb.StringProperty()
-  test_resource_type = msgprop.EnumProperty(TestResourceType)
 
 
 class TestContextObj(ndb.Model):
@@ -466,7 +542,6 @@ class TestRun(ndb.Model):
     test_resources: a list of TestResourceObj objects.
     state: a test run state.
     is_finalized: True if post-run handlers were executed.
-    output_storage: a storage to store test outputs in.
     output_path: a path to store test outputs to.
     output_url: a test output URL.
     prev_test_context: a previous test context object.
@@ -474,6 +549,7 @@ class TestRun(ndb.Model):
     test_package_info: a test package information
     test_devices: a list of TestDeviceInfo of DUTs
     request_id: a TFC request ID.
+    sequence_id: a TestRunSequence ID.
     total_test_count: the number of total test cases.
     failed_test_count: the number of failed test cases.
     failed_test_run_count: the number of test modules that failed to execute.
@@ -492,10 +568,8 @@ class TestRun(ndb.Model):
   test = ndb.StructuredProperty(Test)
   test_run_config = ndb.StructuredProperty(TestRunConfig)
   test_resources = ndb.StructuredProperty(TestResourceObj, repeated=True)
-  state = msgprop.EnumProperty(TestRunState, default=TestRunState.UNKNOWN)
+  state = ndb.EnumProperty(TestRunState, default=TestRunState.UNKNOWN)
   is_finalized = ndb.BooleanProperty()
-  output_storage = msgprop.EnumProperty(
-      file_util.FileStorage, default=file_util.FileStorage.LOCAL_CLOUD_STORAGE)
   output_path = ndb.StringProperty()
   output_url = ndb.StringProperty()
   prev_test_context = ndb.LocalStructuredProperty(TestContextObj)
@@ -503,6 +577,7 @@ class TestRun(ndb.Model):
   test_package_info = ndb.StructuredProperty(TestPackageInfo)
   test_devices = ndb.StructuredProperty(TestDeviceInfo, repeated=True)
   request_id = ndb.StringProperty()
+  sequence_id = ndb.StringProperty()
   total_test_count = ndb.IntegerProperty()
   failed_test_count = ndb.IntegerProperty()
   failed_test_run_count = ndb.IntegerProperty()
@@ -517,7 +592,7 @@ class TestRun(ndb.Model):
   test_run_actions = ndb.LocalStructuredProperty(TestRunAction, repeated=True)
   hook_data = ndb.JsonProperty(default={})
 
-  cancel_reason = msgprop.EnumProperty(common.CancelReason)
+  cancel_reason = ndb.EnumProperty(common.CancelReason)
   error_reason = ndb.StringProperty()
 
   @classmethod
@@ -540,10 +615,13 @@ class TestRun(ndb.Model):
     return TestRunSummary(
         parent=self.key,
         id=self.key.id(),
+        prev_test_run_key=self.prev_test_run_key,
         labels=self.labels,
         test_name=self.test.name if self.test else None,
-        run_target=(self.test_run_config.run_target
-                    if self.test_run_config else None),
+        device_specs=(
+            self.test_run_config.device_specs if self.test_run_config else []),
+        run_target=(
+            self.test_run_config.run_target if self.test_run_config else None),
         state=self.state,
         test_package_info=self.test_package_info,
         test_devices=self.test_devices,
@@ -581,10 +659,6 @@ class TestRun(ndb.Model):
 
   def GetContext(self):
     """Returns a test run context dictionary."""
-    url_map = {
-        r.test_resource_type: r.url
-        for r in self.test_resources if r.test_resource_type
-    }
     ctx = {
         'MTT_USER': env.USER,
         'MTT_HOSTNAME': env.HOSTNAME,
@@ -597,11 +671,26 @@ class TestRun(ndb.Model):
         'MTT_TEST_RUN_CREATE_TIMESTAMP': ToTimestamp(self.create_time),
         'MTT_TEST_RUN_CREATE_TIMESTAMP_MILLIS':
             ToTimestamp(self.create_time) * 1000,
-        'MTT_DEVICE_IMAGE_URL': url_map.get(TestResourceType.DEVICE_IMAGE, ''),
-        'MTT_TEST_PACKAGE_URL': url_map.get(TestResourceType.TEST_PACKAGE, ''),
     }
-    for k, v in url_map.iteritems():
-      ctx['MTT_%s_URL' % k.name] = v
+
+    test_resource_map = {}
+    for r in self.test_resources:
+      m = re.match(r'mtt:///android_ci/(\S+)/(\S+)/(\S+)/.*', r.url)
+      if m:
+        test_resource_map[r.test_resource_type] = [
+            r.url, m.group(1), m.group(2), m.group(3)
+        ]
+      else:
+        test_resource_map[r.test_resource_type] = [r.url, None, None, None]
+    for t in TestResourceType:
+      if t == TestResourceType.UNKNOWN:
+        continue
+      url, branch, target, build_id = test_resource_map.get(
+          t, [None, None, None, None])
+      ctx['MTT_%s_URL' % t.name] = url or ''
+      ctx['MTT_%s_BRANCH' % t.name] = branch or ''
+      ctx['MTT_%s_BUILD_ID' % t.name] = build_id or ''
+      ctx['MTT_%s_TARGET' % t.name] = target or ''
     return ctx
 
 
@@ -609,8 +698,10 @@ class TestRunSummary(ndb.Model):
   """Partial test run information.
 
   Attributes:
+    prev_test_run_key: ID of the previous (parent) test run.
     labels: list of strings users can use to categorize test runs.
     test_name: name of the Test to run.
+    device_specs: device specs.
     run_target: run target.
     state: a test run state.
     test_package_info: a test package information
@@ -621,10 +712,12 @@ class TestRunSummary(ndb.Model):
     create_time: time a test run is created.
     update_time: time a test run is last updated.
   """
+  prev_test_run_key = ndb.KeyProperty(kind='TestRun')
   labels = ndb.StringProperty(repeated=True)
   test_name = ndb.StringProperty()
+  device_specs = ndb.StringProperty(repeated=True)
   run_target = ndb.StringProperty()
-  state = msgprop.EnumProperty(TestRunState, default=TestRunState.UNKNOWN)
+  state = ndb.EnumProperty(TestRunState, default=TestRunState.UNKNOWN)
   test_package_info = ndb.StructuredProperty(TestPackageInfo)
   test_devices = ndb.StructuredProperty(TestDeviceInfo, repeated=True)
   total_test_count = ndb.IntegerProperty()
@@ -632,6 +725,27 @@ class TestRunSummary(ndb.Model):
   failed_test_run_count = ndb.IntegerProperty()
   create_time = ndb.DateTimeProperty()
   update_time = ndb.DateTimeProperty()
+
+
+class TestRunSequenceState(messages.Enum):
+  """Completion state for a TestRunSequence."""
+  RUNNING = 0
+  CANCELED = 1
+  COMPLETED = 2
+  ERROR = 3
+
+
+class TestRunSequence(ndb.Model):
+  """A list of test run configs to be scheduled as retries.
+
+  Attributes:
+    state: completion state for this sequence
+    test_run_configs: remaining retries to schedule
+    finished_test_run_ids: list of completed runs scheduled for this sequence
+  """
+  state = ndb.EnumProperty(TestRunSequenceState, required=True)
+  test_run_configs = ndb.LocalStructuredProperty(TestRunConfig, repeated=True)
+  finished_test_run_ids = ndb.StringProperty(repeated=True)
 
 
 class NodeConfig(ndb.Model):
@@ -664,10 +778,14 @@ class PrivateNodeConfig(ndb.Model):
   """Non-shareable node configs.
 
   Attributes:
+    ndb_version: Latest version the database has been updated to
+    default_credentials: default service account credentials
     metrics_enabled: True to collect usage metrics.
     setup_wizard_completed: If false, trigger the setup wizard on startup
     server_uuid: node's unique identifier.
   """
+  ndb_version = ndb.IntegerProperty()
+  default_credentials = oauth2_util.CredentialsProperty()
   metrics_enabled = ndb.BooleanProperty()
   setup_wizard_completed = ndb.BooleanProperty()
   server_uuid = ndb.StringProperty(required=True, default=str(uuid.uuid4()))
@@ -704,3 +822,12 @@ class TestResourceTracker(ndb.Model):
   download_progress = ndb.FloatProperty(required=True, default=0.0)
   completed = ndb.BooleanProperty()
   error = ndb.StringProperty()
+
+
+def IsLocalId(model_id):
+  """Returns true if the given id is a local id, false otherwise."""
+  try:
+    int(model_id)
+  except ValueError:
+    return False
+  return True

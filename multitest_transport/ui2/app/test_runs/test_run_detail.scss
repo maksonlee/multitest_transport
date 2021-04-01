@@ -16,6 +16,10 @@
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
+.page {
+  max-width: 1280px;
+}
+
 #action-buttons {
   bottom: 20px;
   left: 0;
@@ -31,6 +35,12 @@
   height: 100%;
   margin: 0 4px;
   width: calc(100% - 8px);
+
+  .state-info {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .mat-chip {
@@ -47,6 +57,10 @@
   display: inline-block;
   font-size: 16px;
   padding-bottom: 20px;
+}
+
+td {
+  vertical-align: top;
 }
 
 th {

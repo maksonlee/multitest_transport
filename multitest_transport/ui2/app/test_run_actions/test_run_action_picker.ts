@@ -16,7 +16,7 @@
 
 import {SelectionModel} from '@angular/cdk/collections';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 
 import {TestRunAction} from '../services/mtt_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
@@ -35,6 +35,7 @@ import {assertRequiredInput, deepCopy} from '../shared/util';
 export class TestRunActionPicker extends FormChangeTracker implements OnInit {
   @Input() actions!: TestRunAction[];
   @Input() selectedActions!: TestRunAction[];
+  @Output() selectionChange = new EventEmitter();
 
   selection = new SelectionModel<TestRunAction>(true, this.selectedActions);
 
@@ -48,6 +49,7 @@ export class TestRunActionPicker extends FormChangeTracker implements OnInit {
   move(event: CdkDragDrop<TestRunAction[]>) {
     moveItemInArray(
         this.selectedActions, event.previousIndex, event.currentIndex);
+    this.selectionChange.emit();
   }
 
   /** Removes an action from the selected list. */
@@ -55,6 +57,7 @@ export class TestRunActionPicker extends FormChangeTracker implements OnInit {
     const index = this.selectedActions.indexOf(action);
     if (index > -1) {
       this.selectedActions.splice(index, 1);
+      this.selectionChange.emit();
     }
   }
 
@@ -64,5 +67,6 @@ export class TestRunActionPicker extends FormChangeTracker implements OnInit {
       this.selectedActions.push(deepCopy(action));
     }
     this.selection.clear();
+    this.selectionChange.emit();
   }
 }

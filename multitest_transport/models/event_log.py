@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """Records application events."""
-from google.appengine.ext import ndb
+from tradefed_cluster.util import ndb_shim as ndb
 
 from multitest_transport.models import ndb_models
 

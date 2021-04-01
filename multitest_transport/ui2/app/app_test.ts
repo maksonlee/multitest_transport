@@ -17,23 +17,32 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {RouterTestingModule} from '@angular/router/testing';
+import {of as observableOf} from 'rxjs';
 
 import {Mtt, MttModule} from './app';
 import {MttModuleNgSummary} from './app.ngsummary';
 import {APP_DATA} from './services/app_data';
+import {UserService} from './services/user_service';
 import {getEl} from './testing/jasmine_util';
 
 describe('Mtt', () => {
   let mtt: Mtt;
   let mttFixture: ComponentFixture<Mtt>;
   let el: DebugElement;
+  let userServiceSpy: jasmine.SpyObj<UserService>;
 
   beforeEach(() => {
+    userServiceSpy = jasmine.createSpyObj('userService', {
+      checkPermission: observableOf(true),
+      setAdmin: undefined,
+    });
+
     TestBed.configureTestingModule({
       imports: [MttModule, RouterTestingModule],
       aotSummaries: MttModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: {}},
+        {provide: UserService, useValue: userServiceSpy},
       ],
     });
 
@@ -51,5 +60,9 @@ describe('Mtt', () => {
     const sideNavExpanded = mtt.sideNavExpanded;
     getEl(el, '#toggleSidenavButton').click();
     expect(mtt.sideNavExpanded).not.toEqual(sideNavExpanded);
+  });
+
+  it('calls checkPermission correctly', () => {
+    expect(userServiceSpy.checkPermission).toHaveBeenCalledTimes(1);
   });
 });

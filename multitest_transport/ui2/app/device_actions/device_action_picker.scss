@@ -88,22 +88,23 @@
 
   .checkbox-wrapper {
     height: 300px;
-    overflow: auto
+    overflow: auto;
   }
 
   mat-checkbox {
+    align-items: center;
     background-color: white;
-    display:block;
+    display: flex;
+    height: 100%;
     margin: 0;
 
     .mat-checkbox-layout {
-      display: block;
+      overflow: hidden;
       padding: 0 16px;
     }
 
     &:hover,
-    &.mat-checkbox-checked,
-    &.mat-checkbox-intermediate {
+    &.mat-checkbox-checked {
       background-color: #d2e3fc;
     }
   }
@@ -113,9 +114,13 @@
     padding: 0;
   }
 
-  .mat-menu-item:first-of-type {
-      position: sticky;
-      top: 0;
-      z-index: 1;
+  .mat-checkbox-label {
+    overflow: hidden;
+
+    .name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 }

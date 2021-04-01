@@ -1,0 +1,70 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<!-- Login Button -->
+<button
+  class="login-button"
+  mat-stroked-button
+  color="accent"
+  aria-label="Set Default Service Account"
+  [matMenuTriggerFor]="loginDropdown">
+    {{(defaultCredentials && defaultCredentials.email) ?
+  defaultCredentials.email.split('@')[0] : "Set Default Service Account"}}
+</button>
+
+<!-- Dropdown action picker -->
+<mat-menu #loginDropdown="matMenu">
+  <!-- trap focus and prevent tabs from closing the menu -->
+  <div cdkTrapFocus (keydown.tab)="$event.stopPropagation()" class='login-menu'>
+
+    <ng-container *ngIf="defaultCredentials">
+      <span class='description'>
+        Default service account:
+      </span>
+      <h4>
+        {{(defaultCredentials.email)}}
+      </h4>
+    </ng-container>
+
+    <span class='description'>
+      The Default Service Account is used by default to access remote services including Google
+      Drive and Google Cloud Storage.
+      <!-- TODO: Add link to user guide page -->
+    </span>
+
+    <ng-container *ngIf="(defaultCredentials && defaultCredentials.email);
+                         else setDefaultServiceAccountTemplate">
+      <button mat-stroked-button
+              class='remove-default-button'
+              aria-label="Remove Default Service Account"
+              color='accent'
+              (click)="removeDefaultServiceAccount()">
+        Remove Default Service Account
+      </button>
+    </ng-container>
+    <ng-template #setDefaultServiceAccountTemplate>
+      <input type="file" #keyfileInput
+             (change)="setDefaultServiceAccount($event.target.files[0]); keyfileInput.value = ''"/>
+      <button mat-flat-button
+              class='set-default-button'
+              aria-label="Set Default Service Account"
+              color='accent'
+              (click)="keyfileInput.click()">
+        Set Default Service Account
+      </button>
+    </ng-template>
+  </div>
+</mat-menu>

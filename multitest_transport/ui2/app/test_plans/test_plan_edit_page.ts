@@ -21,7 +21,7 @@ import {MatButton} from '@angular/material/button';
 import {MatChipInputEvent} from '@angular/material/chips';
 import {MatStepper} from '@angular/material/stepper';
 import {ActivatedRoute, Params, Router} from '@angular/router';
-import {forkJoin, of as observableOf, ReplaySubject} from 'rxjs';
+import {forkJoin, of as observableOf, ReplaySubject, Subscription} from 'rxjs';
 import {first, takeUntil} from 'rxjs/operators';
 
 import {TestResourceClassType} from '../build_channels/test_resource_form';
@@ -30,7 +30,6 @@ import {MttClient} from '../services/mtt_client';
 import * as mttModels from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {FormChangeTracker} from '../shared/can_deactivate';
-import {ScheduleTimeForm} from '../shared/schedule_time_form';
 import {buildApiErrorMessage, resetStepCompletion} from '../shared/util';
 
 enum Step {
@@ -50,10 +49,8 @@ const TOTAL_STEPS = 4;
   templateUrl: './test_plan_edit_page.ng.html',
 })
 export class TestPlanEditPage extends FormChangeTracker implements
-    OnInit, AfterViewInit, OnDestroy {
+    OnDestroy, OnInit, AfterViewInit {
   @ViewChild('backButton', {static: false}) backButton?: MatButton;
-  @ViewChild('scheduleTimeForm', {static: false})
-  scheduleTimeForm!: ScheduleTimeForm;
 
   // Validation variables
   @ViewChild(TestResourceForm, {static: true})
@@ -63,47 +60,49 @@ export class TestPlanEditPage extends FormChangeTracker implements
   // Record each step whether it has finished or not
   stepCompletionStatusMap: {[stepNum: number]: boolean} = {};
   step = Step;
-  resetStepCompletion = resetStepCompletion;
   totalSteps = TOTAL_STEPS;
 
-  private readonly destroy = new ReplaySubject<void>();
-  buildChannels: mttModels.BuildChannel[] = [];
   data: Partial<mttModels.TestPlan> = mttModels.initTestPlan();
-  deviceActions: mttModels.DeviceAction[] = [];
-  deviceActionMap: {[key: string]: mttModels.DeviceAction;} = {};
+
+  selectedDeviceActions: mttModels.DeviceAction[] = [];
+  selectedTestRunActions: mttModels.TestRunAction[] = [];
+
   editMode = false;
   nodeConfigTestResourceUrls: mttModels.NameValuePair[] = [];
-  selectedDeviceActions: mttModels.DeviceAction[] = [];
-  testMap: {[key: string]: mttModels.Test} = {};
   testResourceClassType = TestResourceClassType;
   testResourceObjs: mttModels.TestResourceObj[] = [];
-  testResourceTypeOptions = Object.values(mttModels.TestResourceType);
 
   /** Keys used to separate labels */
   readonly separatorKeyCodes: number[] = [ENTER, COMMA];
 
   isLoading = false;
+  deviceInfoSubscription?: Subscription;
+
+  private readonly destroy = new ReplaySubject<void>(1);
 
   constructor(
       private readonly liveAnnouncer: LiveAnnouncer,
       private readonly mttClient: MttClient,
       private readonly notifier: Notifier,
-      private readonly route: ActivatedRoute, private readonly router: Router) {
+      private readonly route: ActivatedRoute,
+      private readonly router: Router,
+  ) {
     super();
   }
 
-  ngOnDestroy() {
-    this.destroy.next();
-  }
-
   ngOnInit() {
-    this.route.params.pipe(takeUntil(this.destroy))
+    this.route.params.pipe(first())
         .subscribe((params: Params) => {
           this.loadData(params['id']);
         });
 
     // Initialize step completion status map
     resetStepCompletion(0, this.stepCompletionStatusMap, this.totalSteps);
+  }
+
+  ngOnDestroy() {
+    this.destroy.next();
+    this.destroy.complete();
   }
 
   /**
@@ -140,10 +139,6 @@ export class TestPlanEditPage extends FormChangeTracker implements
         }
         return res;
       }
-      case Step.SET_TEST_RESOURCES: {
-        this.invalidInputs = this.testResourceForm.getInvalidInputs();
-        return !this.invalidInputs.length;
-      }
       default: {
         break;
       }
@@ -151,6 +146,10 @@ export class TestPlanEditPage extends FormChangeTracker implements
     return true;
   }
 
+  onStepperSelectionChange(selectedIndex: number) {
+    resetStepCompletion(
+        selectedIndex, this.stepCompletionStatusMap, this.totalSteps);
+  }
 
   ngAfterViewInit() {
     this.backButton!.focus();
@@ -163,48 +162,24 @@ export class TestPlanEditPage extends FormChangeTracker implements
       this.liveAnnouncer.announce('Loading', 'polite');
     }
 
-    const buildChannelObs = this.mttClient.getBuildChannels();
-    const deviceActionObs = this.mttClient.getDeviceActionList();
     const nodeConfigObs = this.mttClient.getNodeConfig();
-    const testObs = this.mttClient.getTests();
     const testPlanObs = testPlanId ? this.mttClient.getTestPlan(testPlanId) :
                                      observableOf(null);
 
     // Get API call results
-    forkJoin(
-        [buildChannelObs, deviceActionObs, nodeConfigObs, testObs, testPlanObs])
+    forkJoin({
+      nodeConfig: nodeConfigObs,
+      testPlan: testPlanObs,
+    })
         .pipe(first())
         .subscribe(
-            ([
-              buildChannelRes, deviceActionRes, nodeConfigRes, testRes,
-              testPlanRes
-            ]) => {
-              // Build Channels
-              this.buildChannels = buildChannelRes.build_channels || [];
-
-              // Device Actions
-              this.deviceActions = deviceActionRes.device_actions || [];
-              this.deviceActionMap = {};
-              for (const deviceAction of this.deviceActions) {
-                this.deviceActionMap[deviceAction.id] = deviceAction;
-              }
-
+            (res) => {
               // Node Configs
               this.nodeConfigTestResourceUrls =
-                  nodeConfigRes.test_resource_default_download_urls || [];
-
-              // Tests
-              this.testMap = {};
-              if (testRes.tests) {
-                for (const test of testRes.tests) {
-                  if (test.id) {
-                    this.testMap[test.id] = test;
-                  }
-                }
-              }
+                  res.nodeConfig.test_resource_default_download_urls || [];
 
               // Test Plan
-              this.loadTestPlan(testPlanRes);
+              this.loadTestPlan(res.testPlan);
 
               if (this.editMode) {
                 this.isLoading = false;
@@ -228,71 +203,6 @@ export class TestPlanEditPage extends FormChangeTracker implements
         testPlan.before_device_action_ids || [];
     this.data.labels = testPlan.labels || [];
     this.data.test_resource_pipes = testPlan.test_resource_pipes || [];
-
-    if (this.scheduleTimeForm) {
-      this.scheduleTimeForm.initInputSelector(this.data.cron_exp);
-    }
-
-    if (this.data.before_device_action_ids) {
-      // Load device actions
-      const deviceActionIds = this.data.before_device_action_ids || [];
-      for (const deviceActionId of deviceActionIds) {
-        this.selectedDeviceActions.push(this.deviceActionMap[deviceActionId]);
-      }
-    }
-    this.updateTestResources();
-  }
-
-  /**
-   * Under set test resource types, we need to update the required
-   * test resources on data changes
-   */
-  updateTestResources() {
-    const updatedObjsMap: {[name: string]: mttModels.TestResourceObj;} = {};
-
-    // Get resource defs from Tests
-    for (const config of this.data.test_run_configs!) {
-      const testId = config.test_id;
-      if (testId && this.testMap[testId] &&
-          this.testMap[testId].test_resource_defs) {
-        for (const def of this.testMap[testId].test_resource_defs!) {
-          updatedObjsMap[def.name] = mttModels.testResourceDefToObj(def);
-        }
-      }
-    }
-
-    // Get resource defs from Device Actions
-    for (const deviceAction of this.selectedDeviceActions) {
-      if (deviceAction.test_resource_defs) {
-        for (const def of deviceAction.test_resource_defs) {
-          updatedObjsMap[def.name] = mttModels.testResourceDefToObj(def);
-        }
-      }
-    }
-
-    // Overwrite urls with node config default download values
-    for (const nodeUrl of this.nodeConfigTestResourceUrls) {
-      if (nodeUrl.name in updatedObjsMap) {
-        updatedObjsMap[nodeUrl.name].url = nodeUrl.value;
-      }
-    }
-
-    // Overwrite urls with previously entered values or existed urls from test
-    // plan data.
-    if (this.data.test_resource_pipes) {
-      for (const testResourcePipe of this.data.test_resource_pipes) {
-        if (testResourcePipe.name && testResourcePipe.name in updatedObjsMap) {
-          updatedObjsMap[testResourcePipe.name].url = testResourcePipe.url;
-        }
-      }
-    }
-
-    // Save updated values
-    this.testResourceObjs = Object.values(updatedObjsMap);
-  }
-
-  setCronExpression(cronExpression: string) {
-    this.data.cron_exp = cronExpression;
   }
 
   addLabel(event: MatChipInputEvent) {
@@ -322,7 +232,7 @@ export class TestPlanEditPage extends FormChangeTracker implements
 
   // create or update test plan
   submit() {
-    if (!this.validateStep(Step.SET_TEST_RESOURCES)) {
+    if (!this.validateStep(Step.CONFIGURE_TEST_RUN)) {
       return;
     }
 
@@ -331,17 +241,17 @@ export class TestPlanEditPage extends FormChangeTracker implements
       name: this.data.name!.trim(),
       labels: this.data.labels,
       cron_exp: this.data.cron_exp!.trim(),
+      cron_exp_timezone: this.data.cron_exp_timezone,
       test_run_configs: this.data.test_run_configs,
-      before_device_action_ids:
-          this.selectedDeviceActions.map((action) => action.id),
-      test_resource_pipes: this.testResourceObjs as
-          mttModels.TestResourcePipe[],
+      before_device_action_ids: [],
+      test_run_action_refs: [],
+      test_resource_pipes: [],
     };
 
     if (this.editMode) {
       this.mttClient.updateTestPlan(resultTest.id!, resultTest)
           .subscribe(
-              (result) => {
+              () => {
                 super.resetForm();
                 this.back();
                 this.notifier.showMessage(
@@ -354,7 +264,7 @@ export class TestPlanEditPage extends FormChangeTracker implements
     } else {
       this.mttClient.createTestPlan(resultTest)
           .subscribe(
-              (result) => {
+              () => {
                 super.resetForm();
                 this.back();
                 this.notifier.showMessage(

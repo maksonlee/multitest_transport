@@ -41,12 +41,11 @@
         class="loading-spinner" color="accent" *ngIf="isLoading">
       </mat-spinner>
       <test-run-config-form [class.loading-mask]="isLoading"
-        [testMap]="testMap"
-        [(testId)]="testRunConfig.test_id"
-        [testRunConfig]="testRunConfig"
+        [testMap]="mttObjectMap.testMap"
+        [(testRunConfig)]="testRunConfig"
         [prevTestRunId]="prevTestRunId"
         (rerunContext)="rerunContext = $event"
-        (testIdChange)="updateTestResources()">
+        (testRunConfigChange)="updateTestResources()">
       </test-run-config-form>
 
       <!-- Labels Field -->
@@ -84,9 +83,10 @@
   <mat-step [completed]="!!stepCompletionStatusMap[step.SELECT_DEVICES]">
     <ng-template matStepLabel>Select Devices</ng-template>
 
-    <test-run-target-picker [(runTarget)]="testRunConfig.run_target"
+    <test-run-target-picker [(deviceSpecs)]="testRunConfig.device_specs"
                             [(shardCount)]="testRunConfig.shard_count"
-                            [autoUpdate]="stepper.selectedIndex === 1">
+                            [autoUpdate]="stepper.selectedIndex === 1"
+                            (deviceSpecsChange)="updateSelectedDeviceActions()">
     </test-run-target-picker>
 
     <div>
@@ -103,7 +103,7 @@
     </div>
   </mat-step>
 
-  <!-- Third step: Add Device Actions -->
+  <!-- Third step: Add Actions -->
   <mat-step [completed]="!!stepCompletionStatusMap[step.ADD_ACTIONS]">
     <ng-template matStepLabel>Add Actions</ng-template>
     <mat-spinner
@@ -111,16 +111,17 @@
     </mat-spinner>
     <h2>Device Actions</h2>
     <device-action-picker [class.loading-mask]="isLoading"
-      [deviceActions]="deviceActions"
+      [deviceActions]="mttObjectMap.deviceActionMap | values"
       [selectedDeviceActions]="selectedDeviceActions"
-      (selectionChange)="updateTestResources()"
+      (selectionChange)="updateConfigDeviceActionIds()"
     >
     </device-action-picker>
 
     <h2>Test Run Actions</h2>
     <test-run-action-picker [class.loading-mask]="isLoading"
-                            [actions]="testRunActions"
-                            [selectedActions]="selectedTestRunActions">
+                            [actions]="mttObjectMap.testRunActionMap | values"
+                            [selectedActions]="selectedTestRunActions"
+                            (selectionChange)="updateConfigTestRunActionIds()">
     </test-run-action-picker>
 
     <mat-divider></mat-divider>
@@ -145,13 +146,45 @@
     </mat-spinner>
     <test-resource-form
       [class.loading-mask]="isLoading"
-      [data]="testResourceObjs"
+      [data]="testRunConfig.test_resource_objs"
       [canAdd]="false"
       [canDelete]="false"
-      [buildChannels]="buildChannels"
+      [buildChannels]="mttObjectMap.buildChannelMap | values"
       testResourceClassType="TestResourceClassType.TEST_RESOURCE_OBJ"
     >
     </test-resource-form>
+    <div>
+      <button mat-stroked-button matStepperPrevious color="accent">
+        Previous Step
+      </button>
+      <button mat-flat-button (click)="goForward(stepper)" color="accent">
+        Next Step
+      </button>
+      <button mat-button (click)="back()" color="accent">Cancel</button>
+    </div>
+  </mat-step>
+
+  <!-- Fifth step: Add Rerun Configs -->
+  <mat-step [completed]="!!stepCompletionStatusMap[step.ADD_RERUN_CONFIGS]">
+    <ng-template matStepLabel>Add Rerun Configs</ng-template>
+    <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading || isStartingTestRun">
+    </mat-spinner>
+
+    <test-run-config-summary [config]="testRunConfig" [editable]="false"
+                             [title]="'Primary Test Run Config'">
+    </test-run-config-summary>
+
+    <h3>
+      Add rerun configurations
+    </h3>
+    <div class="description">
+      Add configurations here to schedule reruns after the primary run using different devices,
+      actions, or test resources.
+    </div>
+    <test-run-config-list [(data)]="rerunConfigs" [configTitle]="'Rerun Config'"
+                          [configTemplate]="testRunConfig">
+    </test-run-config-list>
+
     <div>
      <button mat-stroked-button matStepperPrevious color="accent">
         Previous Step

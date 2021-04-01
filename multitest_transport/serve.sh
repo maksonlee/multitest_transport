@@ -13,121 +13,184 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
+
+# Kill all subprocesses when this script stops.
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 readonly SCRIPT_PATH="$(realpath "$0")"
 readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
 # Set environment defaults
-MTT_MASTER_PORT=8000
-MTT_HOST="0.0.0.0"
-ADMIN_HOST="127.0.0.1"
-
-MTT_USER="$USER"
-MTT_HOSTNAME="$(hostname)"
-
-STORAGE_PATH="/tmp/mtt"
-BLOBSTORE_ROOT="blobstore"
-
-CONFIG_DIR="."
-
-MTT_VERSION=${MTT_VERSION:-"dev"}
 ADB_VERSION="$(adb version | grep -oP "Version \K(.*)")"
 ADB_VERSION=${ADB_VERSION:-"UNKNOWN"}
-
-FILE_WATCHER="false"
-
-LOG_LEVEL="info"
-DEV_APPSERVER_LOG_LEVEL="info"
+HTTPLIB2_CA_CERTS=${HTTPLIB2_CA_CERTS:-"/etc/ssl/certs/ca-certificates.crt"}
+MTT_HOSTNAME="$(hostname)"
+MTT_VERSION=${MTT_VERSION:-"dev"}
+MTT_USER="$USER"
 
 # Parse command line arguments
+WORKING_DIR="."
+LIVE_RELOAD="false"
+LOG_LEVEL="info"
+MTT_HOST="0.0.0.0"
+MTT_MASTER_PORT=8000
+STORAGE_PATH="/tmp/mtt"
+FILE_SERVICE_ONLY="false"
+SQL_DATABASE_URI="mysql+pymysql://root@/ats_db"
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --bind_address) MTT_HOST="$2";;
     --port) MTT_MASTER_PORT="$2";;
     --storage_path) STORAGE_PATH="$2";;
-    --config_dir) CONFIG_DIR="$2";;
-    --use_mtime_file_watcher) FILE_WATCHER="$2";;
+    --working_dir) WORKING_DIR="$2";;
+    --live_reload) LIVE_RELOAD="$2";;
+    --file_service_only) FILE_SERVICE_ONLY="$2";;
     --log_level) LOG_LEVEL="$2";;
-    --dev_appserver_log_level) DEV_APPSERVER_LOG_LEVEL="$2";;
     --dev_mode) DEV_MODE="$2";;
+    --sql_database_uri) SQL_DATABASE_URI="$2";;
     *) echo "Unknown argument $1"; exit 1; # fail-fast on unknown key
   esac
   shift # skip key
   shift # skip value
 done
 
-# Set dependent variables
-BLOBSTORE_PATH="$STORAGE_PATH/$BLOBSTORE_ROOT"
-API_PORT="$((${MTT_MASTER_PORT}+3))"
-ADMIN_PORT="$((${MTT_MASTER_PORT}+4))"
-FILE_SERVER_PORT="$((${MTT_MASTER_PORT}+5))"
-FILE_SERVER_PORT2="$((${MTT_MASTER_PORT}+6))"
-PUBSUB_EMULATOR_PORT="$((${MTT_MASTER_PORT}+7))"
+# Change working directory
+cd "${WORKING_DIR}"
+MTT_PYTHON_PATH="${PYTHONPATH}:$(pwd)/google3/third_party/py"
 
-# Create storage and blobstore folders if they don't exist
+# Set dependent variables
+MTT_PORT="${MTT_MASTER_PORT}"
+MTT_CORE_PORT="$((${MTT_MASTER_PORT}+1))"
+MTT_TFC_PORT="$((${MTT_MASTER_PORT}+2))"
+FILE_BROWSER_PORT="$((${MTT_MASTER_PORT}+5))"
+FILE_SERVER_PORT="$((${MTT_MASTER_PORT}+6))"
+DATASTORE_EMULATOR_PORT="$((${MTT_MASTER_PORT}+7))"
+
+# Create storage directory if it doesn't exist
 if [[ ! -d "$STORAGE_PATH" ]]; then
   echo "Storage path $STORAGE_PATH does not exist. Creating..."
   mkdir -p "$STORAGE_PATH"
 fi
-if [[ ! -d "$BLOBSTORE_PATH" ]]; then
-  echo "Blobstore path $BLOBSTORE_PATH does not exist. Creating..."
-  mkdir -p "$BLOBSTORE_PATH"
+
+function start_rabbitmq_puller {
+  # Start RabbitMQ puller
+  PYTHONPATH="${MTT_PYTHON_PATH}" \
+  python3 -m multitest_transport.app_helper.rabbitmq_puller \
+      --rabbitmq_node_port "${RABBITMQ_NODE_PORT:-5672}" \
+      --target "default=http://localhost:${MTT_PORT}/_ah/queue/{queue}" \
+      --target "core=http://localhost:${MTT_CORE_PORT}/_ah/queue/{queue}" \
+      --target "tfc=http://localhost:${MTT_TFC_PORT}/_ah/queue/{queue}" \
+      "queue.yaml" \
+      &
+}
+
+function start_browsepy {
+  # Start browsepy file server
+  browsepy \
+      --directory="$STORAGE_PATH" \
+      "$MTT_HOST" \
+      "$FILE_BROWSER_PORT" \
+      &
+}
+
+function start_local_file_server {
+  # Start local file server
+  NUM_FILE_SERVER_WORKERS=$(($(nproc) + 1))
+  # Uses gthread workers since the default sync workers would time out when sending large files:
+  # https://docs.gunicorn.org/en/stable/design.html?highlight=gthread#asyncio-workers
+  NUM_THREADS=10
+  # TODO: change to use gunicorn in the package.
+  gunicorn "file_server.file_server:flask_app" \
+      --chdir "${SCRIPT_DIR}" \
+      --config "${SCRIPT_DIR}/file_server/gunicorn_config.py" \
+      --env "STORAGE_PATH=${STORAGE_PATH}" \
+      --bind ":${FILE_SERVER_PORT}" \
+      --log-level "${LOG_LEVEL}" --access-logfile - \
+      --workers "${NUM_FILE_SERVER_WORKERS}" \
+      --worker-class "gthread" \
+      --threads "${NUM_THREADS}" \
+      &
+}
+
+function start_datastore_emulator {
+  # Start datastore emulator
+  GCLOUD_SDK_ROOT=$(gcloud info --format="value(installation.sdk_root)")
+  DATASTORE_EMULATOR="${GCLOUD_SDK_ROOT}/platform/cloud-datastore-emulator/cloud_datastore_emulator"
+  "${DATASTORE_EMULATOR}" start \
+      --host=localhost \
+      --port="${DATASTORE_EMULATOR_PORT}" \
+      --index_file="index.yaml" \
+      --storage_file="${STORAGE_PATH}/datastore.db" \
+      --consistency=1 \
+      --require_indexes \
+      "${STORAGE_PATH}" \
+      &
+}
+
+function start_mysql_database {
+  # Skip starting DB if URI already set
+  if [[ -n "${SQL_DATABASE_URI}" ]]; then return; fi
+
+  local db_name="ats_db"
+  local datadir="${STORAGE_PATH}/${db_name}"
+  local socket="${datadir}/mysqld.sock"
+  local pidfile="${datadir}/mysqld.pid"
+  # Ensure DB directory is created and initialized
+  mkdir -p "${datadir}"
+  chown mysql:mysql "${datadir}"
+  mysql_install_db --datadir="${datadir}"
+  # Start DB with specific socket/pid to prevent clashes
+  mysqld_safe \
+    --socket="${socket}" \
+    --pid-file="${pidfile}" \
+    --skip-networking \
+    --datadir="${datadir}" \
+    &
+  SQL_DATABASE_URI="mysql+pymysql://root@/${db_name}?unix_socket=${socket}"
+}
+
+function start_main_server {
+  # Start Android Test Station
+  PYTHONPATH="${MTT_PYTHON_PATH}" \
+  FTP_PROXY="$FTP_PROXY" \
+  HTTP_PROXY="$HTTP_PROXY" \
+  HTTPS_PROXY="$HTTPS_PROXY" \
+  NO_PROXY="$NO_PROXY" \
+  HTTPLIB2_CA_CERTS="$HTTPLIB2_CA_CERTS" \
+  ADB_VERSION="$ADB_VERSION" \
+  DEV_MODE="$DEV_MODE" \
+  MTT_FILE_SERVER_ROOT="$STORAGE_PATH" \
+  MTT_FILE_SERVER_URL="http://localhost:$FILE_SERVER_PORT/" \
+  MTT_FILE_BROWSER_URL="http://localhost:$FILE_BROWSER_PORT/" \
+  MTT_GOOGLE_OAUTH2_CLIENT_ID="$MTT_GOOGLE_OAUTH2_CLIENT_ID" \
+  MTT_GOOGLE_OAUTH2_CLIENT_SECRET="$MTT_GOOGLE_OAUTH2_CLIENT_SECRET" \
+  MTT_VERSION="$MTT_VERSION" \
+  MTT_HOSTNAME="$MTT_HOSTNAME" \
+  MTT_STORAGE_PATH="$STORAGE_PATH" \
+  MTT_SQL_DATABASE_URI="${SQL_DATABASE_URI}" \
+  MTT_USER="$MTT_USER" \
+  python3 -m multitest_transport.app_helper.launcher \
+      --application_id="mtt" \
+      --host="${MTT_HOST}" \
+      --port="${MTT_MASTER_PORT}" \
+      --datastore_emulator_host="localhost:$DATASTORE_EMULATOR_PORT" \
+      --log_level="${LOG_LEVEL}" \
+      --live_reload="${LIVE_RELOAD}" \
+      --module "default=multitest_transport.server:APP" \
+      --module "core=multitest_transport.server:CORE" \
+      --module "tfc=tradefed_cluster.server:TFC"
+}
+
+if [ $FILE_SERVICE_ONLY == "false" ]
+then
+  start_rabbitmq_puller
+  start_browsepy
+  start_local_file_server
+  start_datastore_emulator
+  start_mysql_database
+  start_main_server
+else
+  start_browsepy
+  start_local_file_server
 fi
-
-# Start browsepy file server
-exec browsepy \
-    --directory="$STORAGE_PATH" \
-    "$MTT_HOST" \
-    "$FILE_SERVER_PORT" \
-    &
-
-# Start local file server
-exec python3 "$SCRIPT_DIR/file_server/file_server.py" \
-    --root_path="$STORAGE_PATH" \
-    --port="$FILE_SERVER_PORT2" \
-    &
-
-# Start Google Cloud emulators
-exec gcloud beta emulators pubsub start --host-port="$PUBSUB_EMULATOR_PORT" &
-
-# Start appengine server
-source "$SCRIPT_DIR/scripts/api_keys.sh"
-exec dev_appserver.py \
-    --application=mtt \
-    --host="$MTT_HOST" \
-    --port="$MTT_MASTER_PORT" \
-    --api_host="$ADMIN_HOST" \
-    --api_port="$API_PORT" \
-    --admin_host="$ADMIN_HOST" \
-    --admin_port="$ADMIN_PORT" \
-    --storage_path="$STORAGE_PATH" \
-    --blobstore_path="$BLOBSTORE_PATH" \
-    --log_level="$LOG_LEVEL" \
-    --dev_appserver_log_level="$DEV_APPSERVER_LOG_LEVEL" \
-    --env_var ftp_proxy="$ftp_proxy" \
-    --env_var http_proxy="$http_proxy" \
-    --env_var https_proxy="$https_proxy" \
-    --env_var no_proxy="$no_proxy" \
-    --env_var ADB_VERSION="$ADB_VERSION" \
-    --env_var DEV_MODE="$DEV_MODE" \
-    --env_var MTT_BLOBSTORE_PATH="$BLOBSTORE_PATH" \
-    --env_var MTT_FILE_SERVER_ROOT="$STORAGE_PATH" \
-    --env_var MTT_FILE_SERVER_URL="http://$MTT_HOSTNAME:$FILE_SERVER_PORT/" \
-    --env_var "MTT_FILE_BROWSE_URL_FORMAT=http://{hostname}:$FILE_SERVER_PORT/browse/" \
-    --env_var "MTT_FILE_OPEN_URL_FORMAT=http://{hostname}:$FILE_SERVER_PORT/open/" \
-    --env_var MTT_FILE_SERVER_URL2="http://$MTT_HOSTNAME:$FILE_SERVER_PORT2/" \
-    --env_var MTT_GOOGLE_OAUTH2_CLIENT_ID="$GOOGLE_OAUTH2_CLIENT_ID" \
-    --env_var MTT_GOOGLE_OAUTH2_CLIENT_SECRET="$GOOGLE_OAUTH2_CLIENT_SECRET" \
-    --env_var MTT_VERSION="$MTT_VERSION" \
-    --env_var MTT_HOSTNAME="$MTT_HOSTNAME" \
-    --env_var MTT_STORAGE_PATH="$STORAGE_PATH" \
-    --env_var MTT_USER="$MTT_USER" \
-    --env_var PUBSUB_EMULATOR_HOST="localhost:$PUBSUB_EMULATOR_PORT" \
-    --automatic_restart=yes \
-    --enable_host_checking=false \
-    --enable_sendmail \
-    --require_indexes \
-    --skip_sdk_update_check=yes \
-    --use_mtime_file_watcher="$FILE_WATCHER" \
-    "$CONFIG_DIR/app.yaml" \
-    "$CONFIG_DIR/core.yaml" \
-    "$CONFIG_DIR/tfc.yaml" \

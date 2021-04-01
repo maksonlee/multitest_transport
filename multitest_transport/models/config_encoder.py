@@ -17,6 +17,7 @@ import json
 from protorpc import protojson
 from protorpc.messages import Message
 from protorpc.messages import MessageField
+import six
 import yaml
 
 from multitest_transport.models import messages
@@ -34,7 +35,7 @@ def Encode(config_set):
     Configuration set serialized as a YAML string
   """
   msg = messages.Convert(config_set, _ConfigSetMessage)
-  return _JsonToYaml(protojson.encode_message(msg))
+  return _JsonToYaml(protojson.encode_message(msg))  # pytype: disable=module-attr
 
 
 def Decode(string):
@@ -46,7 +47,7 @@ def Decode(string):
     MTT configuration set
   """
   data = yaml.safe_load(string)
-  msg = protojson.decode_message(_ConfigSetMessage, json.dumps(data))
+  msg = protojson.decode_message(_ConfigSetMessage, json.dumps(data))  # pytype: disable=module-attr
 
   # If url is provided, add it as a namespace to the id to dedupe objects from
   # different configs with the same id and identify which config set each
@@ -103,7 +104,7 @@ def _Load(obj):
 # Modify YAML serializer's treatment of unicode strings.
 def _RepresentUnicode(self, data):
   return self.represent_str(data.encode('utf-8'))
-yaml.add_representer(unicode, _RepresentUnicode)
+yaml.add_representer(six.text_type, _RepresentUnicode)
 
 
 class ConfigSet(object):
@@ -146,13 +147,13 @@ class _ConfigSetMessage(Message):
 def _ConfigSetConverter(obj):
   return _ConfigSetMessage(
       node_config=messages.Convert(obj.node_config, messages.NodeConfig),
-      build_channels=messages.Convert(obj.build_channels,
-                                      messages.BuildChannelConfig),
-      device_actions=messages.Convert(obj.device_actions,
-                                      messages.DeviceAction),
-      test_run_actions=messages.Convert(obj.test_run_actions,
-                                        messages.TestRunAction),
-      tests=messages.Convert(obj.tests, messages.Test),
+      build_channels=messages.ConvertList(
+          obj.build_channels, messages.BuildChannelConfig),
+      device_actions=messages.ConvertList(
+          obj.device_actions, messages.DeviceAction),
+      test_run_actions=messages.ConvertList(
+          obj.test_run_actions, messages.TestRunAction),
+      tests=messages.ConvertList(obj.tests, messages.Test),
       info=messages.Convert(obj.info, messages.ConfigSetInfo))
 
 
@@ -160,11 +161,11 @@ def _ConfigSetConverter(obj):
 def _ConfigSetMessageConverter(msg):
   return ConfigSet(
       node_config=messages.Convert(msg.node_config, ndb_models.NodeConfig),
-      build_channels=messages.Convert(msg.build_channels,
-                                      ndb_models.BuildChannelConfig),
-      device_actions=messages.Convert(msg.device_actions,
-                                      ndb_models.DeviceAction),
-      test_run_actions=messages.Convert(msg.test_run_actions,
-                                        ndb_models.TestRunAction),
-      tests=messages.Convert(msg.tests, ndb_models.Test),
+      build_channels=messages.ConvertList(
+          msg.build_channels, ndb_models.BuildChannelConfig),
+      device_actions=messages.ConvertList(
+          msg.device_actions, ndb_models.DeviceAction),
+      test_run_actions=messages.ConvertList(
+          msg.test_run_actions, ndb_models.TestRunAction),
+      tests=messages.ConvertList(msg.tests, ndb_models.Test),
       info=messages.Convert(msg.info, ndb_models.ConfigSetInfo))

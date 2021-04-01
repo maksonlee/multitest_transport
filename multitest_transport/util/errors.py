@@ -15,32 +15,36 @@
 """Error types."""
 
 
-class TestResourceError(Exception):
-  """Test resource related errors."""
+class BaseError(Exception):
+  """Base MTT error class."""
+
+  def __init__(self, message, http_status=None):
+    super(BaseError, self).__init__(message)
+    if not hasattr(self, 'message'):
+      self.message = message
+    if http_status:
+      self.http_status = http_status
 
 
-class BuildProviderError(Exception):
-  """The Base Error Class for MTT Plugin."""
+class PluginError(BaseError):
+  """Base MTT plugin error class.
 
-
-class FileNotFoundError(BuildProviderError):
-  """An Error indicating that file is not found."""
-
-
-class InvalidFileNameError(BuildProviderError):
-  """An Error indicating that file name is not valid."""
-
-
-class DuplicatedNameError(BuildProviderError):
-  """An MTT Google Drive Error.
-
-  A Google Drive Error indicating that there exists folders or files that
-  shared the same name resides under the same directory
+  Signals that a plugin (build provider or test run hook) operation could not
+  be completed successfully.
   """
+  http_status = 500
 
 
-class InvalidParamError(BuildProviderError):
-  """An MTT Google Drive Error.
+class TestResourceError(BaseError):
+  """Signals that a required test resource was invalid."""
+  http_status = 400
 
-  A Google Drive Error indicating that requested parameters are invalid
-  """
+
+class FileNotFoundError(BaseError):
+  """Signals that the requested file could not be found."""
+  http_status = 404
+
+
+class FilePermissionError(BaseError):
+  """Signals that the caller does not have access to the requested file."""
+  http_status = 403

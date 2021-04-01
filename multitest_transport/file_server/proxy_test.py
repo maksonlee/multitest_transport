@@ -13,11 +13,12 @@
 # limitations under the License.
 
 """Android Test Station local file server proxy tests."""
-import httplib
 from absl.testing import absltest
 import mock
+import six
+from six.moves import http_client
 from six.moves import urllib
-import webapp2
+import webtest
 
 from multitest_transport.file_server import proxy
 from multitest_transport.util import env
@@ -26,9 +27,9 @@ from multitest_transport.util import env
 class MockProxyResponse(object):
   """Fake response to return from the proxy's urllib request."""
 
-  def __init__(self, status=200, data='', headers=None):
+  def __init__(self, status=200, data=b'', headers=None):
     self.code = status
-    self.msg = httplib.responses[status]
+    self.msg = http_client.responses[status]
     self.headers = headers or {}
     self.data = data
 
@@ -49,40 +50,41 @@ class FileServerProxyTest(absltest.TestCase):
 
   def setUp(self):
     super(FileServerProxyTest, self).setUp()
-    env.FILE_SERVER_URL2 = 'http://localhost:8006/'
+    env.FILE_SERVER_URL = 'http://localhost:8006/'
     self.patcher = mock.patch.object(urllib.request, 'urlopen')
     self.mock_urlopen = self.patcher.start()
+    self.testapp = webtest.TestApp(proxy.APP)
 
   def tearDown(self):
     super(FileServerProxyTest, self).tearDown()
     self.patcher.stop()
 
-  def SendMockRequest(self, url, method='GET', data='', headers=None):
+  def SendMockRequest(self, url, method='GET', data=b'', headers=None,
+                      expect_errors=False):
     """Send a request to the proxy handler and return the response."""
-    request = webapp2.Request.blank(url)
-    request.method = method
-    request.body = data
-    for key, value in (headers or {}).iteritems():
+    request = webtest.TestRequest.blank(url, method=method, body=data)
+    for key, value in six.iteritems(headers or {}):
       request.headers[key] = value
-    return request.get_response(proxy.APP)
+    return self.testapp.do_request(request, expect_errors=expect_errors)
 
   def GetProxyRequest(self):
     """Fetch the request that was sent by the proxy."""
     return self.mock_urlopen.call_args[0][0]
 
-  def AssertRequest(self, request, url='', method='GET', data='', headers=None):
+  def AssertRequest(
+      self, request, url='', method='GET', data=b'', headers=None):
     """Verifies the URL, method, data, and headers of a request."""
     self.assertEqual(url, request.get_full_url())
     self.assertEqual(method, request.get_method())
-    self.assertEqual(data, request.get_data())
-    for key, value in (headers or {}).iteritems():
+    self.assertEqual(data, request.data)
+    for key, value in six.iteritems(headers or {}):
       self.assertEqual(value, request.headers[key])
 
-  def AssertResponse(self, response, status=500, data='', headers=None):
+  def AssertResponse(self, response, status=500, data=b'', headers=None):
     """Verifies the status, data, and headers of a response."""
     self.assertEqual(status, response.status_int)
     self.assertEqual(data, response.body)
-    for key, value in (headers or {}).iteritems():
+    for key, value in six.iteritems(headers or {}):
       self.assertEqual(value, response.headers[key])
 
   def testProxyRequest_get(self):
@@ -114,20 +116,12 @@ class FileServerProxyTest(absltest.TestCase):
     proxy_request = self.GetProxyRequest()
     self.AssertRequest(proxy_request, method='DELETE', url=mock.ANY)
 
-  def testProxyRequest_encodedUrl(self):
-    """Tests that encoded URLs are passed to the proxy request."""
-    self.mock_urlopen.return_value = MockProxyResponse()
-    response = self.SendMockRequest('/fs_proxy/hello%20world')
-    self.AssertResponse(response, status=200)
-    proxy_request = self.GetProxyRequest()
-    self.AssertRequest(proxy_request, url='http://localhost:8006/hello%20world')
-
   def testProxyRequest_requestData(self):
     """Tests that data is passed to the proxy request."""
     self.mock_urlopen.return_value = MockProxyResponse()
-    self.SendMockRequest('/fs_proxy/path', data='test')
+    self.SendMockRequest('/fs_proxy/path', data=b'test')
     proxy_request = self.GetProxyRequest()
-    self.AssertRequest(proxy_request, data='test', url=mock.ANY)
+    self.AssertRequest(proxy_request, data=b'test', url=mock.ANY)
 
   def testProxyRequest_requestHeader(self):
     """Tests that headers are passed to the proxy request."""
@@ -144,9 +138,9 @@ class FileServerProxyTest(absltest.TestCase):
 
   def testProxyRequest_responseData(self):
     """Tests that the proxy response data is returned."""
-    self.mock_urlopen.return_value = MockProxyResponse(data='test')
+    self.mock_urlopen.return_value = MockProxyResponse(data=b'test')
     response = self.SendMockRequest('/fs_proxy/path')
-    self.AssertResponse(response, status=200, data='test')
+    self.AssertResponse(response, status=200, data=b'test')
 
   def testProxyRequest_responseHeader(self):
     """Tests that the proxy response headers are returned."""
@@ -157,15 +151,15 @@ class FileServerProxyTest(absltest.TestCase):
   def testProxyRequest_errorResponse(self):
     """Tests that an error response can be returned."""
     self.mock_urlopen.side_effect = MockProxyError(
-        status=400, data='error', headers={'Key': 'value'})
-    response = self.SendMockRequest('/fs_proxy/path')
+        status=400, data=b'error', headers={'Key': 'value'})
+    response = self.SendMockRequest('/fs_proxy/path', expect_errors=True)
     self.AssertResponse(
-        response, status=400, data='error', headers={'Key': 'value'})
+        response, status=400, data=b'error', headers={'Key': 'value'})
 
   def testProxyRequest_proxyError(self):
     """Tests that an error can be handled."""
     self.mock_urlopen.side_effect = urllib.error.URLError('error')
-    response = self.SendMockRequest('/fs_proxy/path')
+    response = self.SendMockRequest('/fs_proxy/path', expect_errors=True)
     self.AssertResponse(response, status=500)
 
 

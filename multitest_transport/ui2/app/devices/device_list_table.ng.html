@@ -1,0 +1,252 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+<div class="device-list-table-container" [class.loading-mask]="isLoading">
+  <!--TODO:Reusable Device List Table for multiple pages -->
+  <mat-table
+    #table
+    [dataSource]="tableDataSource"
+    matSort
+    aria-label="Device list"
+    [class.scrolled]="isTableScrolled"
+    (matSortChange)="changeSort($event)"
+    tableRowsSelectManager
+    (selectionChange)="selectionChange.emit($event)"
+  >
+    <mat-header-row
+      *matHeaderRowDef="displayedColumns; sticky: true"
+      [style.top.px]="headerRowTop"
+    ></mat-header-row>
+    <mat-row
+      *matRowDef="let row; columns: displayedColumns; let rowIndex = index"
+      tableRowSelect
+      [rowIdFieldValue]="row.device_serial"
+      [rowIndex]="rowIndex"
+    ></mat-row>
+
+    <!-- Checkbox Column -->
+    <ng-container matColumnDef="select">
+      <mat-header-cell *matHeaderCellDef fxFlex="60px">
+        <mat-checkbox
+          aria-label="Select all devices"
+          tableRowsSelectCheckbox
+          #tableRowsSelectCheckbox="tableRowsSelectCheckbox"
+          [checked]="tableRowsSelectCheckbox.isAllRowsSelected"
+          [indeterminate]="tableRowsSelectCheckbox.isPartialRowsSelected"
+        >
+        </mat-checkbox>
+      </mat-header-cell>
+      <mat-cell *matCellDef="let row; let rowIndex = index" fxFlex="60px">
+        <mat-checkbox
+          [aria-label]="'Device' + row.device_serial"
+          tableRowSelectCheckbox
+          #tableRowSelectCheckbox="tableRowSelectCheckbox"
+          [rowIdFieldValue]="row.device_serial"
+          [rowIndex]="rowIndex"
+          [checked]="tableRowSelectCheckbox.isSelected"
+        >
+        </mat-checkbox>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Sponge -->
+    <ng-container matColumnDef="sponge">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px"> Sponge </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="120px">
+        <a [href]="getLogUrl(device)" target="_blank" aria-label="sponge">sponge</a>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Run Target -->
+    <ng-container matColumnDef="run_target">
+      <mat-header-cell *matHeaderCellDef fxFlex="180px" mat-sort-header>
+        Run Target
+      </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="180px"> {{ device.run_target }} </mat-cell>
+    </ng-container>
+
+    <!-- Last Check-in -->
+    <ng-container matColumnDef="last_checkin">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px" mat-sort-header>
+        Last Check-in
+      </mat-header-cell>
+      <mat-cell
+        *matCellDef="let device"
+        [matTooltip]="device.timestamp | utc | date: 'MM/dd/yyyy h:mma'"
+        fxFlex="150px"
+      >
+        {{ device.timestamp | utc | fromNow }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Build -->
+    <ng-container matColumnDef="build_alias">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px" mat-sort-header>
+        Build Alias
+      </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="150px"> {{ device.extraInfo.build_id }}</mat-cell>
+    </ng-container>
+
+    <!-- SDK -->
+    <ng-container matColumnDef="sdk_version">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px" mat-sort-header> SDK </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="150px">
+        {{ device.extraInfo.sdk_version }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Battery -->
+    <ng-container matColumnDef="battery_level">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px" mat-sort-header> Battery </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="150px">
+        {{ device.extraInfo.battery_level | percent: "1.0" }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Device State -->
+    <ng-container matColumnDef="state">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px" mat-sort-header> State </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="150px">
+        <status-button [state]="device.state"></status-button>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Notes Update Time -->
+    <ng-container matColumnDef="notesUpdateTime">
+      <mat-header-cell *matHeaderCellDef fxFlex="140px" mat-sort-header>
+        Notes Update Time
+      </mat-header-cell>
+      <mat-cell
+        *matCellDef="let device"
+        [matTooltip]="device.note?.timestamp | utc | date: 'MM/dd/yyyy h:mma'"
+        fxFlex="140px"
+      >
+        <ng-container *ngIf="device.note">
+          {{ device.note.timestamp | utc | fromNow }}
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Notes Update Timestamp -->
+    <ng-container matColumnDef="notesUpdateTimestamp">
+      <mat-header-cell *matHeaderCellDef fxFlex="140px"> Notes Update Timestamp </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="140px">
+        <ng-container *ngIf="device.note">
+          {{ device.note.timestamp | utc | date: "MM/dd/yyyy h:mma" }}
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Offline Reason -->
+    <ng-container matColumnDef="offline_reason">
+      <mat-header-cell *matHeaderCellDef fxFlex="160px" mat-sort-header>
+        Offline Reason
+      </mat-header-cell>
+      <mat-cell *matCellDef="let device" [matTooltip]="device.note?.offline_reason" fxFlex="160px">
+        <ng-container *ngIf="device.note">
+          <div class="notes-info">{{ device.note.offline_reason }}</div>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Recovery Action -->
+    <ng-container matColumnDef="recovery_action">
+      <mat-header-cell *matHeaderCellDef fxFlex="160px" mat-sort-header>
+        Recovery Action
+      </mat-header-cell>
+      <mat-cell *matCellDef="let device" [matTooltip]="device.note?.recovery_action" fxFlex="160px">
+        <ng-container *ngIf="device.note">
+          <div class="notes-info">{{ device.note.recovery_action }}</div>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Note -->
+    <ng-container matColumnDef="note">
+      <mat-header-cell *matHeaderCellDef fxFlex="160px" mat-sort-header> Note </mat-header-cell>
+      <mat-cell *matCellDef="let device" [matTooltip]="device.note?.message" fxFlex="160px">
+        <ng-container *ngIf="device.note">
+          <div class="notes-info">{{ device.note.message }}</div>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Device Serial Number -->
+    <ng-container matColumnDef="device_serial">
+      <mat-header-cell *matHeaderCellDef fxFlex="210px" mat-sort-header> Serial </mat-header-cell>
+      <mat-cell *matCellDef="let device" [matTooltip]="device.device_serial" fxFlex="210px">
+        <div class="device-serial">
+          <ng-container *ngIf="!isModalMode; else deviceSerialStringTemp">
+            <a (click)="openDeviceDetails(device.device_serial)">
+              {{ device.device_serial }}
+            </a>
+          </ng-container>
+          <ng-template #deviceSerialStringTemp>
+            {{ device.device_serial }}
+          </ng-template>
+        </div>
+        <a
+          mat-icon-button
+          [href]="getDeviceDetailsUrl(device.device_serial)"
+          (click)="storeDeviceSerialsInLocalStorage()"
+          target="_blank"
+          aria-label="view device details on a new page"
+        >
+          <mat-icon>launch</mat-icon>
+        </a>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Actions: Mark as fixed, Remove for a single device -->
+    <ng-container matColumnDef="actions" stickyEnd>
+      <mat-header-cell *matHeaderCellDef fxFlex="130px"></mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="130px" fxLayout="row" fxFlexAlign="start center">
+        <button
+          fxFlexOffset="10px"
+          mat-icon-button
+          [matTooltip]="
+            device.recovery_state === recoveryState.FIXED
+              ? 'Click to undo fixed'
+              : 'Click to mark as fixed'
+          "
+          aria-label="Mark as fixed"
+          [color]="device.recovery_state === recoveryState.FIXED ? 'accent' : 'primary'"
+          [disabled]="!(device.lab_name | permissionCheck)"
+          (click)="toggleDeviceFixedState(device, $event)"
+        >
+          <mat-icon [class.lighter]="!(device.recovery_state === recoveryState.FIXED)"
+            >done</mat-icon
+          >
+        </button>
+        <button
+          *ngIf="device.state.toUpperCase() === 'GONE' && device.test_harness === testHarness.TF"
+          mat-button
+          color="accent"
+          type="button"
+          aria-label="Remove device"
+          [disabled]="!(device.lab_name | permissionCheck)"
+          (click)="removeDevice($event, device.device_serial)"
+        >
+          Remove
+        </button>
+      </mat-cell>
+    </ng-container>
+  </mat-table>
+  <div class="empty" *ngIf="dataSource && dataSource.length === 0">
+    No devices found.
+  </div>
+</div>

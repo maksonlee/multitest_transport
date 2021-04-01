@@ -1,0 +1,205 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="recovery-host-toolbar">
+  <div class="title-container" fxLayout="row" fxLayoutAlign="space-between center">
+    <h2>Hosts</h2>
+    <span *ngIf="!focusedHostName" class="hosts-count">
+      Selected: {{ selection.selected.length }} of {{ hostInfos.length }}</span
+    >
+  </div>
+
+  <div fxLayout="column" fxLayoutGap="10px">
+    <div fxLayout="row">
+      <button
+        mat-stroked-button
+        color="accent"
+        type="button"
+        id="mark-selection-recovered-button"
+        aria-label="Mark as recovered"
+        [disabled]="
+          !(selectedLab | permissionCheck) || !(selection.selected.length || focusedHostName)
+        "
+        (click)="markAsRecovered($event)"
+      >
+        Mark as Recovered
+      </button>
+      <button
+        *ngIf="!focusedHostName"
+        mat-stroked-button
+        color="accent"
+        type="button"
+        aria-label="Add notes"
+        [disabled]="!((selectedLab | permissionCheck) && selection.selected.length)"
+        (click)="openHostNoteCreateEditor($event)"
+      >
+        Add Notes
+      </button>
+    </div>
+    <div fxLayout="row">
+      <mat-chip-list>
+        <mat-chip class="status-chip filter-chip">
+          <span>Lab: {{ selectedLab.length ? selectedLab : "All" }}</span>
+        </mat-chip>
+
+        <mat-chip *ngIf="!focusedHostName" class="status-chip filter-chip">
+          <span>Host Group: {{ multiSelectedDisplay(selectedHostGroups) }}</span>
+        </mat-chip>
+
+        <mat-chip *ngIf="!focusedHostName" class="status-chip filter-chip">
+          <span>Run Target: {{ multiSelectedDisplay(selectedRunTargets) }}</span>
+        </mat-chip>
+      </mat-chip-list>
+      <button
+        *ngIf="!focusedHostName"
+        mat-icon-button
+        id="refresh-button"
+        matTooltip="Refresh host list"
+        aria-label="Refresh host list"
+        (click)="load()"
+      >
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+
+<div class="recovery-host-list-container" [class.loading-mask]="isLoading">
+  <mat-table #table class="selectable" [dataSource]="hostInfos" [class.scrolled]="isTableScrolled">
+    <!-- Checkbox Column -->
+    <ng-container matColumnDef="select">
+      <mat-header-cell *matHeaderCellDef fxFlex="60px">
+        <mat-checkbox
+          [checked]="hasSelectedHostName() && isAllSelected()"
+          [indeterminate]="hasSelectedHostName() && !isAllSelected()"
+          (change)="$event ? toggleSelection() : null"
+        >
+        </mat-checkbox>
+      </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="60px">
+        <mat-checkbox
+          (change)="$event ? onSelectionChange(host.hostname) : null"
+          [checked]="selection.isSelected(host.hostname)"
+          (click)="$event.stopPropagation()"
+        >
+        </mat-checkbox>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Host Name -->
+    <ng-container matColumnDef="hostname">
+      <mat-header-cell *matHeaderCellDef fxFlex="200px"> Host Name </mat-header-cell>
+      <mat-cell *matCellDef="let host" [matTooltip]="host.hostname" fxFlex="200px">
+        <div class="host-name">
+          <a (click)="openHostDetails($event, host.hostname)">{{ host.hostname }}</a>
+        </div>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Host Group -->
+    <ng-container matColumnDef="host_group">
+      <mat-header-cell *matHeaderCellDef fxFlex="300px"> Host Group </mat-header-cell>
+      <mat-cell *matCellDef="let host" [matTooltip]="host.host_group" fxFlex="300px">
+        <div class="host-group">
+          {{ host.host_group }}
+        </div>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Host State -->
+    <ng-container matColumnDef="host_state">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px"> Host State </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="150px">
+        <recovery-host-status [state]="host.host_state"> </recovery-host-status>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Offline Devices -->
+    <ng-container matColumnDef="offline_devices">
+      <mat-header-cell *matHeaderCellDef fxFlex="100px"> Offline Devices </mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="100px">
+        <p *ngIf="host.extraInfo" class="offline-devices-count">
+          <mat-icon>
+            {{ host.extraInfo?.offline_devices == 0 ? "disabled" : "warning" }}
+          </mat-icon>
+          {{ host.extraInfo?.offline_devices }} of {{ host.extraInfo?.total_devices }}
+        </p>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Last Check-in -->
+    <ng-container matColumnDef="last_checkin">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px"> Last Check-in </mat-header-cell>
+      <mat-cell
+        *matCellDef="let host"
+        [matTooltip]="host.timestamp | utc | date: 'MM/dd/yyyy h:mma'"
+        fxFlex="120px"
+      >
+        {{ host.timestamp | utc | fromNow }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Actions: Edit notes for a host & Mark a host as recovered -->
+    <ng-container matColumnDef="actions" stickyEnd>
+      <mat-header-cell *matHeaderCellDef fxFlex="400px"></mat-header-cell>
+      <mat-cell *matCellDef="let host" fxFlex="400px">
+        <button
+          mat-button
+          color="accent"
+          type="button"
+          aria-label="Add new host note"
+          [disabled]="!(host.lab_name | permissionCheck)"
+          (click)="openHostNoteCreateEditor($event, [host.hostname])"
+        >
+          Add Note
+        </button>
+        <button
+          mat-button
+          color="accent"
+          type="button"
+          aria-label="Edit latest host note"
+          [disabled]="!(host.lab_name | permissionCheck)"
+          (click)="openHostNoteUpdateEditor($event, host.hostname)"
+        >
+          Edit Note
+        </button>
+        <button
+          mat-button
+          color="accent"
+          type="button"
+          aria-label="Mark as recovered"
+          [disabled]="!userService.isAdminOrMyLab(host.lab_name)"
+          (click)="markAsRecovered($event, [host.hostname])"
+        >
+          Mark as Recovered
+        </button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayColumns; sticky: true"></mat-header-row>
+    <mat-row
+      *matRowDef="let row; columns: displayColumns"
+      [class.selected]="selection.isSelected(row.hostname) || isFocusedRow(row.hostname)"
+      (click)="focusHost(row.hostname)"
+    >
+    </mat-row>
+  </mat-table>
+  <div class="empty" *ngIf="hostInfos && hostInfos.length === 0">
+    No recovery hosts found.
+  </div>
+</div>

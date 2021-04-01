@@ -17,3 +17,17 @@
 :host {
   display: block;
 }
+
+.periodic {
+  .minute, .hour {
+    max-width: 80px;
+  }
+
+  .month-day {
+    max-width: 120px;
+  }
+
+  .every, .weekday {
+    max-width: 140px;
+  }
+}

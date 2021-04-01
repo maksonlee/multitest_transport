@@ -14,7 +14,6 @@
 
 """A MTT plugin for the Android Build system."""
 import datetime
-import logging
 
 import apiclient
 import httplib2
@@ -23,6 +22,7 @@ import six
 from multitest_transport.plugins import base
 from multitest_transport.plugins import constant
 from multitest_transport.util import env
+from multitest_transport.util import errors
 from multitest_transport.util import file_util
 from multitest_transport.util import oauth2_util
 
@@ -52,6 +52,14 @@ def _ParseTimestamp(ts):
 class AndroidBuildProvider(base.BuildProvider):
   """A build provider for the Android Build system."""
   name = 'Android'
+  auth_methods = [
+      base.AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
+      base.AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
+  ]
+  oauth2_config = oauth2_util.OAuth2Config(
+      client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
+      client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
+      scopes=OAUTH2_SCOPES)
 
   def __init__(self):
     super(AndroidBuildProvider, self).__init__()
@@ -68,12 +76,6 @@ class AndroidBuildProvider(base.BuildProvider):
         ANDROID_BUILD_API_NAME, ANDROID_BUILD_API_VERSION, http=http)
     return self._client
 
-  def GetOAuth2Config(self):
-    return oauth2_util.OAuth2Config(
-        client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
-        client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
-        scopes=OAUTH2_SCOPES)
-
   def ListBuildItems(self, path=None, page_token=None, item_type=None):
     """List build items under a given path.
 
@@ -86,27 +88,32 @@ class AndroidBuildProvider(base.BuildProvider):
     Raises:
       ValueError: if a path is invalid.
     """
-    parts = path.split('/', MAX_PATH_PARTS - 1) if path else []
-    if not parts:
-      if item_type == base.BuildItemType.FILE:
-        return [], None
-      return self._ListBranches(page_token)
-    elif len(parts) == 1:
-      if item_type == base.BuildItemType.FILE:
-        return [], None
-      return self._ListTargets(branch=parts[0], page_token=page_token)
-    elif len(parts) == 2:
-      if item_type == base.BuildItemType.FILE:
-        return [], None
-      return self._ListBuilds(
-          branch=parts[0], target=parts[1], page_token=page_token)
-    elif len(parts) == 3:
-      if item_type == base.BuildItemType.DIRECTORY:
-        return [], None
-      return self._ListBuildArtifacts(
-          branch=parts[0], target=parts[1], build_id=parts[2],
-          page_token=page_token)
-    raise ValueError('invalid path: %s' % path)
+    try:
+      parts = path.split('/', MAX_PATH_PARTS - 1) if path else []
+      if not parts:
+        if item_type == base.BuildItemType.FILE:
+          return [], None
+        return self._ListBranches(page_token)
+      elif len(parts) == 1:
+        if item_type == base.BuildItemType.FILE:
+          return [], None
+        return self._ListTargets(branch=parts[0], page_token=page_token)
+      elif len(parts) == 2:
+        if item_type == base.BuildItemType.FILE:
+          return [], None
+        return self._ListBuilds(
+            branch=parts[0], target=parts[1], page_token=page_token)
+      elif len(parts) == 3:
+        if item_type == base.BuildItemType.DIRECTORY:
+          return [], None
+        return self._ListBuildArtifacts(
+            branch=parts[0], target=parts[1], build_id=parts[2],
+            page_token=page_token)
+      raise ValueError('invalid path: %s' % path)
+    except apiclient.errors.HttpError as e:
+      if e.resp.status == 404:
+        raise errors.FileNotFoundError('File %s not found' % path)
+      raise
 
   def GetBuildItem(self, path=None):
     """Returns a build item.
@@ -137,8 +144,6 @@ class AndroidBuildProvider(base.BuildProvider):
   def _ListBranches(self, page_token):
     """List branches as build items."""
     client = self._GetClient()
-    build_items = []
-    next_page_token = None
     req = client.branch().list(
         fields='branches/name,nextPageToken', pageToken=page_token)
     res = req.execute(num_retries=constant.NUM_RETRIES)
@@ -220,9 +225,6 @@ class AndroidBuildProvider(base.BuildProvider):
 
   def _GetBuild(self, branch, target, build_id):
     """Returns a build as a build item."""
-    if not self._IsValidBuildId(build_id):
-      return None
-    res = None
     if build_id == LATEST:
       res = self._GetLatestBuild(branch=branch, target=target)
     else:
@@ -237,15 +239,15 @@ class AndroidBuildProvider(base.BuildProvider):
         timestamp=_ParseTimestamp(res.get('creationTimestamp')))
 
   def _GetLatestBuild(self, branch, target):
-    """Returns the latest build item id under given branch and target."""
+    """Returns the latest successful build for a given branch/target."""
     client = self._GetClient()
     req = client.build().list(
         buildType='submitted',
         buildAttemptStatus='complete',
         branch=branch,
+        successful=True,
         target=target,
-        maxResults=1,
-        pageToken=None)
+        maxResults=1)
     res = req.execute(num_retries=constant.NUM_RETRIES)
     builds = res.get('builds', [])
     if not builds:
@@ -280,7 +282,7 @@ class AndroidBuildProvider(base.BuildProvider):
             path='%s/%s/%s/%s' % (branch, target, build_id, a['name']),
             is_file=True,
             size=int(a['size']),
-            timestamp=_ParseTimestamp(a['creationTime']))
+            timestamp=_ParseTimestamp(a.get('lastModifiedTime')))
         for a in artifacts if 'name' in a
     ]
     next_page_token = res.get('nextPageToken')
@@ -288,9 +290,6 @@ class AndroidBuildProvider(base.BuildProvider):
 
   def _GetBuildArtifact(self, branch, target, build_id, name):
     """Returns a build artifact as a build item."""
-    if not self._IsValidBuildId(build_id):
-      logging.warn('Invalid build ID: %s', build_id)
-      return None
     # if build_id is 'latest', make sure find the latest resource
     if build_id == LATEST:
       build_id = self._GetLatestBuild(branch=branch, target=target)['buildId']
@@ -304,13 +303,7 @@ class AndroidBuildProvider(base.BuildProvider):
         path='%s/%s/%s/%s' % (branch, target, build_id, res['name']),
         is_file=True,
         size=int(res['size']),
-        timestamp=_ParseTimestamp(res['creationTime']))
-
-  def _IsValidBuildId(self, build_id):
-    """Check whether build id is valid."""
-    if (build_id != LATEST) and (not build_id.isdigit()):
-      return False
-    return True
+        timestamp=_ParseTimestamp(res.get('lastModifiedTime')))
 
   def DownloadFile(self, path, offset=0):
     """Download a build file.

@@ -15,51 +15,71 @@
 -->
 
 <div *ngFor="let testResource of data; let i = index" fxLayout="row">
-  <!-- Name Field -->
-  <mat-form-field class="small" appearance="outline" floatLabel="always" fxFlex="30">
-    <mat-label> Name </mat-label>
-    <input matInput type="text" [(ngModel)]="testResource.name" name="name" required
-           [readonly]="!isDef(testResource)" #name="ngModel">
-    <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
-  </mat-form-field>
+  <div fxLayout="row wrap" fxFlex="90">
+    <!-- Name Field -->
+    <mat-form-field class="small" appearance="outline" floatLabel="always" fxFlex>
+      <mat-label> Name </mat-label>
+      <input matInput type="text" [(ngModel)]="testResource.name" name="name" required
+             [readonly]="!isDef(testResource)" #name="ngModel">
+      <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
+    </mat-form-field>
 
-  <!-- Test Resource Type Field -->
-  <mat-form-field class="small" appearance="outline" floatLabel="always" fxFlex="30">
-    <mat-label> Test Resource Type </mat-label>
+    <!-- Test Resource Type Field -->
+    <mat-form-field class="small" appearance="outline" floatLabel="always" fxFlex>
+      <mat-label> Test Resource Type </mat-label>
 
-    <!-- If TestResourceDef, allow user to select type from dropdown -->
-    <mat-select [(ngModel)]="testResource.test_resource_type"
-                name="test_resource_type"
-                *ngIf="isDef(testResource); else objOption"
-                (selectionChange)="hasContentChanged = true"
-                required>
-      <mat-option matInput *ngFor="let option of options" [value]="option">
-        {{option}}
-      </mat-option>
-    </mat-select>
+      <!-- If TestResourceDef, allow user to select type from dropdown -->
+      <mat-select [(ngModel)]="testResource.test_resource_type"
+                  name="test_resource_type"
+                  *ngIf="isDef(testResource); else objOption"
+                  (selectionChange)="hasContentChanged = true"
+                  required>
+        <mat-option matInput *ngFor="let type of TEST_RESOURCE_TYPES" [value]="type">
+          {{type}}
+        </mat-option>
+      </mat-select>
 
-    <!-- If TestResourceObj, just display the type -->
-    <ng-template #objOption>
-      <input matInput type="text" [(ngModel)]="testResource.test_resource_type" readonly>
-    </ng-template>
-  </mat-form-field>
+      <!-- If TestResourceObj, just display the type -->
+      <ng-template #objOption>
+        <input matInput type="text" [(ngModel)]="testResource.test_resource_type" readonly>
+      </ng-template>
+    </mat-form-field>
 
-  <!-- Download Url Field -->
-  <mat-form-field appearance="outline" floatLabel="always" fxFlex="30"
-                  (click)="openBuildPicker(testResource)"
-                  (keydown.enter)="openBuildPicker(testResource)">
-    <mat-label>{{isDef(testResource)? 'Default' : ''}} Download Url</mat-label>
-    <input class="browse-input"
-           matInput type="text"
-           [ngModel]="isDef(testResource) ? testResource.default_download_url : testResource.url"
-           readonly
-           #browseInput="ngModel"
-           [required]="!isDef(testResource)">
-    <button mat-button color="accent" class="browse-button">browse</button>
-    <mat-error *ngIf="!isDef(testResource) && browseInput.invalid && browseInput.touched">
-        Download url is required
-    </mat-error>
-  </mat-form-field>
+    <div fxLayout="row" *ngIf="isDef(testResource)" fxFlex>
+      <!-- Decompress Field -->
+      <mat-checkbox class="align-with-form-field" [(ngModel)]="testResource.decompress"
+                    fxFlex="nogrow">
+        Decompress
+      </mat-checkbox>
+
+      <!-- Decompress Dir Field -->
+      <mat-form-field class="small" appearance="outline" floatLabel="always" fxFlex>
+        <mat-label> Destination </mat-label>
+        <input matInput type="text" [(ngModel)]="testResource.decompress_dir"
+               [disabled]="!testResource.decompress" name="decompress_dir">
+      </mat-form-field>
+    </div>
+
+    <!-- Download Url Field -->
+    <mat-form-field appearance="outline" floatLabel="always" fxFlex
+                    (click)="openBuildPicker(testResource)"
+                    (keydown.enter)="openBuildPicker(testResource)">
+      <mat-label>{{isDef(testResource)? 'Default' : ''}} Download Url</mat-label>
+      <input class="browse-input"
+             matInput type="text"
+             [ngModel]="getUrl(testResource)"
+             readonly
+             #browseInput="ngModel"
+             [required]="!isDef(testResource)">
+      <mat-hint *ngIf="getBuildItem(testResource) | async as buildItem">
+        {{buildItem.name}} ({{buildItem.size | fileSize}})
+      </mat-hint>
+      <button mat-button color="accent" class="browse-button">browse</button>
+      <mat-error *ngIf="!isDef(testResource) && browseInput.invalid && browseInput.touched">
+          Download url is required
+      </mat-error>
+    </mat-form-field>
+  </div>
 
   <!-- Delete Button -->
   <button

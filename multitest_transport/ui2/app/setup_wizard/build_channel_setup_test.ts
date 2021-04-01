@@ -18,7 +18,7 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
-import {EMPTY, of as observableOf} from 'rxjs';
+import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
 import {AuthorizationState} from '../services/mtt_models';
@@ -56,10 +56,9 @@ describe('BuildChannelSetup', () => {
 
   beforeEach(() => {
     mttClient = jasmine.createSpyObj(
-        'mttClient', ['authorizeBuildChannel', 'getBuildChannels']);
-    mttClient.authorizeBuildChannel.and.returnValue(EMPTY);
+        'mttClient', ['getBuildChannels']);
     mttClient.getBuildChannels.and.returnValue(
-        observableOf({build_channels: [...BUILD_CHANNELS]}));
+        observableOf({build_channels: BUILD_CHANNELS}));
 
     TestBed.configureTestingModule({
       imports: [SetupWizardModule, NoopAnimationsModule, RouterTestingModule],

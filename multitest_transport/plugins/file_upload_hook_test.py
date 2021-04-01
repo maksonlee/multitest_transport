@@ -16,8 +16,6 @@
 from absl.testing import absltest
 import mock
 
-from google.appengine.ext import testbed
-
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base as plugins
 from multitest_transport.plugins import file_upload_hook
@@ -25,16 +23,6 @@ from multitest_transport.util import file_util
 
 
 class AbstractFileUploadHookTest(absltest.TestCase):
-
-  def setUp(self):
-    super(AbstractFileUploadHookTest, self).setUp()
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
-
-  def tearDown(self):
-    self.testbed.deactivate()
-    super(AbstractFileUploadHookTest, self).tearDown()
 
   def testInit_noFilePattern(self):
     """Tests that a file pattern is required."""
@@ -55,7 +43,7 @@ class AbstractFileUploadHookTest(absltest.TestCase):
     # Hook will only upload XML files
     hook = file_upload_hook.AbstractFileUploadHook(file_pattern=r'.*\.xml')
     hook.Execute(hook_context)
-    mock_upload_file.assert_called_once_with('world.xml', 'world.xml')
+    mock_upload_file.assert_called_once_with(mock.ANY, 'world.xml', 'world.xml')
 
   @mock.patch.object(file_upload_hook.AbstractFileUploadHook, 'UploadFile')
   @mock.patch.object(file_util, 'GetOutputFileUrl')
@@ -73,8 +61,8 @@ class AbstractFileUploadHookTest(absltest.TestCase):
         file_pattern='.*', upload_prefix='dir/')
     hook.Execute(hook_context)
     mock_upload_file.assert_has_calls([
-        mock.call('hello.txt', 'dir/hello.txt'),
-        mock.call('world.xml', 'dir/world.xml'),
+        mock.call(mock.ANY, 'hello.txt', 'dir/hello.txt'),
+        mock.call(mock.ANY, 'world.xml', 'dir/world.xml'),
     ])
 
   def testExecute_noAttempt(self):

@@ -28,12 +28,15 @@ import {ServicesModule} from '../services/services_module';
 import {SharedModule} from '../shared/shared_module';
 import {TestRunActionsModule} from '../test_run_actions/test_run_actions_module';
 
+import {AttemptStatus} from './attempt_status';
 import {NewTestRunPage} from './new_test_run_page';
 import {TestJobTree} from './test_job_tree';
+import {TestModuleResultList} from './test_module_result_list';
 import {TestPackageInfoPipe} from './test_package_info_pipe';
 import {TestResourceList} from './test_resource_list';
 import {TestRunConfigEditor} from './test_run_config_editor';
 import {TestRunConfigList} from './test_run_config_list';
+import {TestRunConfigSummary} from './test_run_config_summary';
 import {TestRunConsole} from './test_run_console';
 import {TestRunDetail} from './test_run_detail';
 import {TestRunDetailPage} from './test_run_detail_page';
@@ -46,21 +49,12 @@ import {TestRunTargetPicker} from './test_run_target_picker';
 import {TestRunTreeTable} from './test_run_tree_table';
 
 const COMPONENTS = [
-  NewTestRunPage,
-  TestJobTree,
-  TestPackageInfoPipe,
-  TestResourceList,
-  TestRunConfigEditor,
-  TestRunConfigList,
-  TestRunConsole,
-  TestRunDetail,
-  TestRunDetailPage,
-  TestRunFailures,
-  TestRunList,
-  TestRunListPage,
-  TestRunProgress,
-  TestRunResults,
-  TestRunTargetPicker,
+  AttemptStatus,       NewTestRunPage,    TestJobTree,
+  TestPackageInfoPipe, TestResourceList,  TestModuleResultList,
+  TestRunConfigEditor, TestRunConfigList, TestRunConfigSummary,
+  TestRunConsole,      TestRunDetail,     TestRunDetailPage,
+  TestRunFailures,     TestRunList,       TestRunListPage,
+  TestRunProgress,     TestRunResults,    TestRunTargetPicker,
   TestRunTreeTable,
 ];
 
@@ -68,8 +62,8 @@ const COMPONENTS = [
   declarations: COMPONENTS,
   providers: [Title],
   imports: [
-    BuildChannelsModule, DeviceActionsModule, DevicesModule, TestRunActionsModule,
-    ServicesModule, SharedModule
+    BuildChannelsModule, DeviceActionsModule, DevicesModule,
+    TestRunActionsModule, ServicesModule, SharedModule
   ],
   exports: COMPONENTS,
   entryComponents: [TestRunConfigEditor],

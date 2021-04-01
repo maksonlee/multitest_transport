@@ -17,7 +17,6 @@
 import {ChangeDetectionStrategy, Component, Input, OnChanges, OnInit} from '@angular/core';
 import * as moment from 'moment';
 
-import {FileService} from '../services/file_service';
 import {EventLogEntry, EventLogLevel, TestRun} from '../services/mtt_models';
 import {CommandAttempt, Request} from '../services/tfc_models';
 import {assertRequiredInput, millisToDuration} from '../shared/util';
@@ -52,8 +51,6 @@ export class TestRunProgress implements OnInit, OnChanges {
 
   entities: ProgressEntity[] = [];
 
-  constructor(private readonly fs: FileService) {}
-
   ngOnInit() {
     assertRequiredInput(this.testRun, 'testRun', 'test-run-progress');
   }
@@ -83,11 +80,5 @@ export class TestRunProgress implements OnInit, OnChanges {
     const start = moment.utc(attempt.start_time);
     const end = moment.utc(attempt.end_time);
     return millisToDuration(end.diff(start));
-  }
-
-  /** Generate the output files URL for an attempt. */
-  getOutputFilesUrl(attempt: CommandAttempt): string {
-    const url = this.fs.getTestRunFileUrl(this.testRun, attempt);
-    return this.fs.getFileBrowseUrl(url);
   }
 }

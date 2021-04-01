@@ -25,11 +25,33 @@ h3 {
   font-weight: normal;
 }
 
-#build-picker-table {
+input[type=file] {
+  display: none;
+}
+
+.build-picker-table {
   height: 390px;
   margin-top: 20px;
   overflow-x: hidden;
   overflow-y: scroll;
+
+  .mat-row {
+    height: auto;
+    min-height: 49px;
+  }
+
+  .mat-cell.name {
+    flex-wrap: wrap;
+
+    span {
+      flex-basis: 100%;
+    }
+
+    span.item-description {
+      color: $grey-700;
+      font-size: 12px;
+    }
+  }
 }
 
 .auth-template {
@@ -63,7 +85,11 @@ h3 {
   }
 }
 
-.mat-row{
+.mat-stroked-button {
+  margin-right: 20px;
+}
+
+.mat-row {
   &:hover, &.selected {
     background-color: $accent-light;
     cursor: pointer;

@@ -35,13 +35,14 @@ export class ConfigSetList implements OnInit, OnDestroy {
   infos: ConfigSetInfo[] = [];
   readonly ConfigSetStatus = ConfigSetStatus;
 
-  private readonly destroy = new ReplaySubject();
+  private readonly destroy = new ReplaySubject<void>();
 
   @Input()
   displayedColumns: string[] = [
     'name',
     'description',
     'status',
+    'actions',
   ];
 
   constructor(
@@ -154,7 +155,35 @@ export class ConfigSetList implements OnInit, OnDestroy {
             });
   }
 
-  deleteInfo(info: ConfigSetInfo) {
-    // TODO: Add deleteConfigSet API
+  deleteConfigSet(info: ConfigSetInfo) {
+    this.notifier
+        .confirm(
+            `Do you really want to remove the '${
+                info.name}' config set? This will also remove all corresponding test suites and actions.`,
+            'Remove config set')
+        .subscribe(result => {
+          if (!result) {
+            return;
+          }
+          this.isLoading = true;
+          this.mttClient.deleteConfigSet(info.url)
+              .pipe(
+                  first(),
+                  delay(100),
+                  )
+              .subscribe(
+                  result => {
+                    this.notifier.showMessage(
+                        `${info.name} config set removed`);
+                    this.load();
+                    // Let load() set isLoading = false
+                  },
+                  error => {
+                    this.notifier.showError(
+                        `Failed to remove ${info.name} config set.`,
+                        buildApiErrorMessage(error));
+                    this.isLoading = false;
+                  });
+        });
   }
 }

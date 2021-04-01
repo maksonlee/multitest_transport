@@ -91,7 +91,7 @@ describe('TestRunProgress', () => {
     expect(hasEl(element, '.log')).toBeFalsy();
     const attempts = getEls(element, '.attempt');
     expect(attempts.length).toBe(1);
-    expect(attempts[0].textContent).toContain('Attempt attempt_id');
+    expect(attempts[0].textContent).toContain('(attempt attempt_id)');
 
     // Output file URL generated
     const link = getEl<HTMLAnchorElement>(element, '.attempt a');

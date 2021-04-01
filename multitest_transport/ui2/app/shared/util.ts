@@ -19,7 +19,16 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {ElementRef} from '@angular/core';
 import * as moment from 'moment';
 import {timer} from 'rxjs';
-import {switchMap, mapTo} from 'rxjs/operators';
+import {mapTo, switchMap} from 'rxjs/operators';
+import {ALL_OPTIONS_VALUE} from '../services/mtt_lab_models';
+
+
+/** Page modes for edit/view pages. */
+export enum FormMode {
+  NEW = 'NEW',
+  EDIT = 'EDIT',
+  VIEW = 'VIEW',
+}
 
 // A custom interface for moment-duration-format.
 interface Duration extends moment.Duration {
@@ -40,6 +49,18 @@ export function arrayToString(arr: string[], delimiter: string) {
 }
 
 /**
+ * Compare length and elements of two arrays.
+ *
+ * @param first: the first array.
+ * @param second: the second array.
+ * @return a boolean that indicates whether the arrays are equal.
+ */
+export function areArraysEqual<T>(first: T[], second: T[]) {
+  return first.length === second.length &&
+      first.every((element, index) => element === second[index]);
+}
+
+/**
  * Assert whether obj is defined or not
  *
  * @param obj: any object type
@@ -51,11 +72,6 @@ export function assertRequiredInput(
   if (obj === undefined) {
     throw new Error(`[${fieldName}] is a required field in ${componentName}`);
   }
-}
-
-/** Create a continuous number array */
-export function continuousNumberArray(length: number, prefix = 0): number[] {
-  return Array.from<number>({length}).map((unused, i) => i + prefix);
 }
 
 /** Returns a deep copy of the specified value. */
@@ -161,6 +177,8 @@ function formatStackTrace(stackTraces: string[][]) {
   }, `Traceback (most recent call last):\n`);
 }
 
+// TODO: Remove getKeyValue and KeyValuePair after ATS Lab move
+// within ATS.
 /**
  * Gets the value by key in a key value object({key:key,value:value}) array.
  */
@@ -175,4 +193,38 @@ export function getKeyValue(source: KeyValuePair[], key: string): string {
 export declare interface KeyValuePair {
   readonly key: string;
   readonly value: string;
+}
+
+/**
+ * Gets the default value for a single value filter. The value could be
+ * specified from url,last selected value stored in local storage or the first
+ * value of the options.
+ *
+ * @param options: All the candidate options users can select.
+ * @param urlParam: The value specified from url.
+ * @param storedParam: Last selected value stored in local storage.
+ * @param hasAllOption: Whether if there is a predefined 'All' option is
+ *     included in the candidate options.
+ */
+export function getFilterDefaultSingleValue(
+    options: string[], urlParam: string, storedParam: string,
+    hasAllOption = true): string {
+  if (hasAllOption && urlParam === ALL_OPTIONS_VALUE) {
+    return urlParam;
+  }
+
+  if (options.includes(urlParam)) {
+    return urlParam;
+  }
+
+  if (hasAllOption && storedParam === ALL_OPTIONS_VALUE) {
+    return storedParam;
+  }
+
+  if (options.includes(storedParam)) {
+    return storedParam;
+  }
+
+  const firstOption = options.length > 0 ? options[0] : '';
+  return hasAllOption ? ALL_OPTIONS_VALUE : firstOption;
 }

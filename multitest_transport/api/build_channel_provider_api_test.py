@@ -53,6 +53,11 @@ class BuildChannelProviderApiTest(api_test_util.TestCase):
     self.assertLen(res.option_defs, 1)
     self.assertEqual(res.option_defs[0].name, 'mock_option')
 
+  def testGet_notFound(self):
+    response = self.app.get('/_ah/api/mtt/v1/build_channel_providers/unknown',
+                            expect_errors=True)
+    self.assertEqual('404 Not Found', response.status)
+
 
 if __name__ == '__main__':
   absltest.main()

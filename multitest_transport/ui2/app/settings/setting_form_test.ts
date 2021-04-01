@@ -16,14 +16,14 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {DebugElement} from '@angular/core';
-import {async, ComponentFixture, TestBed} from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
 import {getTextContent} from '../testing/jasmine_util';
-import {newMockNodeConfig, newMockPrivateNodeConfig} from '../testing/test_util';
+import {newMockNodeConfig, newMockPrivateNodeConfig} from '../testing/mtt_mocks';
 import {SettingForm} from './setting_form';
 import {SettingsModule} from './settings_module';
 import {SettingsModuleNgSummary} from './settings_module.ngsummary';
@@ -79,7 +79,7 @@ describe('SettingForm', () => {
     expect(textContent).toContain('Update');
   });
 
-  it('sets up parameters correctly', async(async () => {
+  it('sets up parameters correctly', waitForAsync(async () => {
        await settingFormFixture.whenStable();
      }));
 

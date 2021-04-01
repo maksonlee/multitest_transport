@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Inject, OnInit, Output, ViewChild, ViewEncapsulation} from '@angular/core';
+import {Component, EventEmitter, Inject, OnInit, Output, ViewChild} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {MatStepper} from '@angular/material/stepper';
 
-import {Test, TestRunConfig} from '../services/mtt_models';
+import {TestResourceClassType, TestResourceForm} from '../build_channels/test_resource_form';
+import {DeviceInfoService} from '../services/device_info_service';
+import * as mttModels from '../services/mtt_models';
+import {MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
 import {FormChangeTracker} from '../shared/can_deactivate';
 import {TestRunConfigForm} from '../shared/test_run_config_form';
 import {resetStepCompletion} from '../shared/util';
@@ -31,15 +34,16 @@ import {resetStepCompletion} from '../shared/util';
  */
 export interface TestRunConfigEditorData {
   editMode: boolean;
-  testMap: {[id: string]: Test};
-  testRunConfig: Partial<TestRunConfig>;
+  testRunConfig: Partial<mttModels.TestRunConfig>;
 }
 
 enum Step {
   CONFIGURATION = 0,
   SELECT_RUN_TARGETS = 1,
+  ADD_DEVICE_ACTIONS = 2,
+  SET_TEST_RESOURCES = 3,
 }
-const TOTAL_STEPS = 2;
+const TOTAL_STEPS = 4;
 
 /**
  * This component is used to create or update a test run config.
@@ -48,11 +52,12 @@ const TOTAL_STEPS = 2;
   selector: 'test-run-config-editor',
   styleUrls: ['test_run_config_editor.css'],
   templateUrl: './test_run_config_editor.ng.html',
-  encapsulation: ViewEncapsulation.None,
   providers: [{provide: FormChangeTracker, useExisting: TestRunConfigEditor}]
 })
 export class TestRunConfigEditor extends FormChangeTracker implements OnInit {
-  @Output() configSubmitted = new EventEmitter<TestRunConfig>();
+  @ViewChild(TestResourceForm, {static: true})
+  testResourceForm!: TestResourceForm;
+  @Output() configSubmitted = new EventEmitter<mttModels.TestRunConfig>();
 
   // Record each step whether it has finished or not
   stepCompletionStatusMap: {[stepNum: number]: boolean} = {};
@@ -65,8 +70,17 @@ export class TestRunConfigEditor extends FormChangeTracker implements OnInit {
   testRunConfigForm!: TestRunConfigForm;
   errorMessage = '';
 
+  readonly TestResourceClassType = TestResourceClassType;
+
+  isLoading = false;
+  mttObjectMap = newMttObjectMap();
+  selectedDeviceActions: mttModels.DeviceAction[] = [];
+  selectedTestRunActions: mttModels.TestRunAction[] = [];
+
   constructor(
       private readonly dialogRef: MatDialogRef<TestRunConfigEditor>,
+      private readonly deviceInfoService: DeviceInfoService,
+      readonly mttObjectMapService: MttObjectMapService,
       @Inject(MAT_DIALOG_DATA) public data: TestRunConfigEditorData) {
     super();
     // When user clicked outside of the dialog, close the dialog
@@ -78,6 +92,31 @@ export class TestRunConfigEditor extends FormChangeTracker implements OnInit {
   ngOnInit() {
     // Initialize step completion status map
     this.resetStepCompletion(0, this.stepCompletionStatusMap, this.totalSteps);
+    this.load();
+  }
+
+  load() {
+    this.mttObjectMapService.getMttObjectMap().subscribe((res) => {
+      this.mttObjectMap = res;
+      this.loadSelectedActions();
+    });
+  }
+
+  loadSelectedActions() {
+    const deviceActionIds =
+        this.data.testRunConfig.before_device_action_ids || [];
+    this.selectedDeviceActions =
+        deviceActionIds.map(id => this.mttObjectMap.deviceActionMap[id] || {});
+
+    // Load test run actions
+    const testRunActionRefs =
+        this.data.testRunConfig.test_run_action_refs || [];
+    this.selectedTestRunActions = testRunActionRefs.map(ref => {
+      const action = this.mttObjectMap.testRunActionMap[ref.action_id] || {};
+      action.options = ref.options;
+      return action;
+    });
+    this.updateTestResources();
   }
 
   /**
@@ -107,11 +146,16 @@ export class TestRunConfigEditor extends FormChangeTracker implements OnInit {
         return !this.invalidInputs.length;
       }
       case Step.SELECT_RUN_TARGETS: {
-        const res = !!this.data.testRunConfig.run_target;
+        const res = !!this.data.testRunConfig.device_specs &&
+            0 < this.data.testRunConfig.device_specs.length;
         if (!res) {
-          this.errorMessage = 'Run target is required';
+          this.errorMessage = 'Device spec is required';
         }
         return res;
+      }
+      case Step.SET_TEST_RESOURCES: {
+        this.invalidInputs = this.testResourceForm.getInvalidInputs();
+        return !this.invalidInputs.length;
       }
       default: {
         break;
@@ -121,13 +165,89 @@ export class TestRunConfigEditor extends FormChangeTracker implements OnInit {
   }
 
   /**
+   * Update the device actions and the test resources according to the selected
+   * run targets
+   */
+  updateSelectedDeviceActions() {
+    if (!this.deviceInfoService.isInitialized) {
+      return;
+    }
+    const deviceTypes = this.deviceInfoService.deviceSpecsToDeviceTypes(
+        this.data.testRunConfig.device_specs || []);
+
+    this.selectedDeviceActions = mttModels.updateSelectedDeviceActions(
+        this.selectedDeviceActions,
+        Object.values(this.mttObjectMap.deviceActionMap), deviceTypes);
+    this.updateConfigDeviceActionIds();
+  }
+
+  /**
+   * Converts the selected device actions to ids and stores it in the config
+   */
+  updateConfigDeviceActionIds() {
+    this.data.testRunConfig.before_device_action_ids =
+        this.selectedDeviceActions.map(action => action.id);
+    this.updateTestResources();
+  }
+
+  /**
+   * Converts the selected test run actions to ids and stores it in the config
+   */
+  updateConfigTestRunActionIds() {
+    this.data.testRunConfig.test_run_action_refs =
+        this.selectedTestRunActions.map(action => {
+          return {action_id: action.id, options: action.options};
+        });
+  }
+
+  /**
+   * Update the required test resources on data changes
+   */
+  updateTestResources() {
+    const updatedObjsMap: {[name: string]: mttModels.TestResourceObj;} = {};
+
+    // Get resource defs from Test
+    if (typeof this.data.testRunConfig.test_id !== 'undefined') {
+      const test = this.mttObjectMap.testMap[this.data.testRunConfig.test_id];
+      if (test && test.test_resource_defs) {
+        for (const def of test.test_resource_defs) {
+          updatedObjsMap[def.name] = mttModels.testResourceDefToObj(def);
+        }
+      }
+    }
+
+    // Get resource defs from Device Actions
+    for (const deviceAction of this.selectedDeviceActions) {
+      if (deviceAction.test_resource_defs) {
+        for (const def of deviceAction.test_resource_defs) {
+          updatedObjsMap[def.name] = mttModels.testResourceDefToObj(def);
+        }
+      }
+    }
+
+    // Overwrite urls with previously entered values
+    if (this.data.testRunConfig.test_resource_objs) {
+      for (const oldObj of this.data.testRunConfig.test_resource_objs) {
+        if (oldObj.name && oldObj.name in updatedObjsMap) {
+          updatedObjsMap[oldObj.name] = oldObj;
+        }
+      }
+    }
+
+    // Save updated values
+    this.data.testRunConfig.test_resource_objs = Object.values(updatedObjsMap);
+  }
+
+  /**
    * On submit test run config, close the dialog.
    */
   submit() {
-    if (!this.validateStep(Step.SELECT_RUN_TARGETS)) {
+    if (!this.validateStep(Step.SET_TEST_RESOURCES)) {
       return;
     }
-    this.configSubmitted.emit(this.data.testRunConfig as TestRunConfig);
+
+    this.configSubmitted.emit(
+        this.data.testRunConfig as mttModels.TestRunConfig);
     this.dialogRef.close();
   }
 }

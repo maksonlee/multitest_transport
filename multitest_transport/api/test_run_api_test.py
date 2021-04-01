@@ -18,19 +18,18 @@ import uuid
 import zipfile
 
 from absl.testing import absltest
-import cloudstorage as gcs
 import mock
 from protorpc import protojson
 from tradefed_cluster import api_messages
 from tradefed_cluster.api_messages import CommandState
 
 from multitest_transport.api import api_test_util
-from multitest_transport.api import base
 from multitest_transport.api import test_run_api
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import test_kicker
 from multitest_transport.test_scheduler import test_run_manager
+from multitest_transport.util import env
 from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
 
@@ -47,21 +46,33 @@ class TestRunApiTest(api_test_util.TestCase):
     return test
 
   def _createMockTestRuns(
-      self, test=None, labels=None, cluster='cluster', run_target='run_target',
-      run_count=1, shard_count=1, test_devices=None,
-      test_package_info=None, test_resources=None,
-      state=None, output_path=None, count=1):
+      self,
+      test=None,
+      labels=None,
+      cluster='cluster',
+      device_specs=None,
+      run_count=1,
+      shard_count=1,
+      test_devices=None,
+      test_package_info=None,
+      test_resources=None,
+      state=None,
+      output_path=None,
+      count=1,
+      prev_test_run_key=None):
     """Create a mock ndb_models.TestRun object."""
+    device_specs = device_specs or ['device_spec']
     test_runs = []
     for _ in range(count):
       test_run = ndb_models.TestRun(
           id=str(uuid.uuid4()),
+          prev_test_run_key=prev_test_run_key,
           test=test,
           labels=labels or [],
           test_run_config=ndb_models.TestRunConfig(
               test_key=test.key if test is not None else None,
               cluster=cluster,
-              run_target=run_target,
+              device_specs=device_specs,
               run_count=run_count,
               shard_count=shard_count),
           test_devices=test_devices or [],
@@ -78,7 +89,7 @@ class TestRunApiTest(api_test_util.TestCase):
     return [test_run.ToSummary() for test_run in test_runs]
 
   def _createAttempt(self, state=None):
-    """Creates a dummy command attempt."""
+    """Creates a fake command attempt."""
     return api_messages.CommandAttemptMessage(
         request_id='id', command_id='id', attempt_id='id', task_id='id',
         state=state or CommandState.UNKNOWN)
@@ -86,7 +97,7 @@ class TestRunApiTest(api_test_util.TestCase):
   def testListSummaries(self):
     test = self._createMockTest()
     for i in range(1, 10):
-      self._createMockTestRuns(test, run_target=str(i), count=1)
+      self._createMockTestRuns(test, device_specs=[str(i)], count=1)
 
     # fetch first page (5 results, run count 9 to 5, has more)
     res = self.app.get('/_ah/api/mtt/v1/test_runs?max_results=5')
@@ -95,8 +106,8 @@ class TestRunApiTest(api_test_util.TestCase):
     self.assertLen(first_page.test_runs, 5)
     self.assertIsNone(first_page.prev_page_token)  # no previous runs
     self.assertIsNotNone(first_page.next_page_token)  # has following runs
-    self.assertEqual(first_page.test_runs[0].run_target, '9')
-    self.assertEqual(first_page.test_runs[4].run_target, '5')
+    self.assertEqual(first_page.test_runs[0].device_specs, ['9'])
+    self.assertEqual(first_page.test_runs[4].device_specs, ['5'])
 
     # fetch next page (4 results, run count 4 to 1, last page)
     res = self.app.get(
@@ -107,8 +118,8 @@ class TestRunApiTest(api_test_util.TestCase):
     self.assertLen(next_page.test_runs, 4)
     self.assertIsNotNone(next_page.prev_page_token)  # has previous runs
     self.assertIsNone(next_page.next_page_token)  # no following runs
-    self.assertEqual(next_page.test_runs[0].run_target, '4')
-    self.assertEqual(next_page.test_runs[3].run_target, '1')
+    self.assertEqual(next_page.test_runs[0].device_specs, ['4'])
+    self.assertEqual(next_page.test_runs[3].device_specs, ['1'])
 
     # fetch previous page (same as first page)
     res = self.app.get(
@@ -117,6 +128,33 @@ class TestRunApiTest(api_test_util.TestCase):
     self.assertEqual('200 OK', res.status)
     prev_page = protojson.decode_message(messages.TestRunSummaryList, res.body)
     self.assertEqual(first_page, prev_page)
+
+  def testListSummaries_filterReruns(self):
+    test = self._createMockTest()
+    test_run = self._createMockTestRunSummaries(test=test)[0]
+
+    res = self.app.get('/_ah/api/mtt/v1/test_runs?prev_test_run_id=%s' %
+                       test_run.key.id())
+    self.assertEqual('200 OK', res.status)
+    test_run_msg = protojson.decode_message(messages.TestRunSummaryList,
+                                            res.body).test_runs
+    self.assertEqual(test_run_msg, [])
+
+    test_run_key = messages.ConvertToKey(ndb_models.TestRun, test_run.key.id())
+    retry_run = self._createMockTestRunSummaries(
+        test=test, prev_test_run_key=test_run_key)[0]
+    retry_run_msg = messages.Convert(retry_run, messages.TestRunSummary)
+    separate_retry = self._createMockTestRunSummaries(
+        test=test, prev_test_run_key=test_run_key)[0]
+    separate_retry_msg = messages.Convert(separate_retry,
+                                          messages.TestRunSummary)
+
+    res = self.app.get('/_ah/api/mtt/v1/test_runs?prev_test_run_id=%s' %
+                       test_run.key.id())
+    test_run_msg = protojson.decode_message(messages.TestRunSummaryList,
+                                            res.body).test_runs
+    self.assertEqual(test_run_msg[0].id, separate_retry_msg.id)
+    self.assertEqual(test_run_msg[1].id, retry_run_msg.id)
 
   def testListSummaries_filter(self):
     # Helper to fetch filtered test runs and verify/parse response.
@@ -127,9 +165,11 @@ class TestRunApiTest(api_test_util.TestCase):
       return protojson.decode_message(messages.TestRunSummaryList,
                                       res.body).test_runs
 
-    # Create dummy test runs with a variety of property values
+    # Create placeholder test runs with a variety of property values
     runs1 = self._createMockTestRunSummaries(
-        test=self._createMockTest(name='foo'), labels=['bar'], run_target='baz')
+        test=self._createMockTest(name='foo'),
+        labels=['bar'],
+        device_specs=['baz'])
     msg1 = messages.Convert(runs1[0], messages.TestRunSummary)
     runs2 = self._createMockTestRunSummaries(
         test=self._createMockTest(),
@@ -201,7 +241,7 @@ class TestRunApiTest(api_test_util.TestCase):
     test = self._createMockTest()
     test_run = self._createMockTestRuns(
         test, ['label'], cluster='cluster',
-        run_target='run_target', run_count=10,
+        device_specs=['device_spec'], run_count=10,
         shard_count=100)[0]
 
     res = self.app.get('/_ah/api/mtt/v1/test_runs/%s' % test_run.key.id())
@@ -213,37 +253,9 @@ class TestRunApiTest(api_test_util.TestCase):
     self.assertEqual(str(test.key.id()), test_run_msg.test_run_config.test_id)
     self.assertEqual(['label'], test_run_msg.labels)
     self.assertEqual('cluster', test_run_msg.test_run_config.cluster)
-    self.assertEqual('run_target', test_run_msg.test_run_config.run_target)
+    self.assertEqual(['device_spec'], test_run_msg.test_run_config.device_specs)
     self.assertEqual(10, test_run_msg.test_run_config.run_count)
     self.assertEqual(100, test_run_msg.test_run_config.shard_count)
-
-  @mock.patch.object(gcs, 'listbucket')
-  def testListArtifacts(self, mock_listbucket):
-    test = self._createMockTest()
-    test_run = self._createMockTestRuns(
-        test, ['label'], cluster='cluster',
-        run_target='run_target', run_count=10,
-        shard_count=100, output_path='/foo')[0]
-    mock_gcs_files = [
-        mock.MagicMock(name_='abc', filename='/foo/abc', st_size=1),
-        mock.MagicMock(name_='def', filename='/foo/def', st_size=10),
-    ]
-    mock_listbucket.return_value = mock_gcs_files
-
-    res = self.app.get(
-        '/_ah/api/mtt/v1/test_runs/%s/test_artifacts' % test_run.key.id())
-
-    mock_listbucket.assert_called_with(
-        test_run.output_path, marker=None, max_keys=base.DEFAULT_MAX_RESULTS)
-    self.assertEqual('200 OK', res.status)
-    msg = protojson.decode_message(messages.TestArtifactList, res.body)
-    self.assertEqual(len(mock_gcs_files), len(msg.test_artifacts))
-    for i, artifact in enumerate(msg.test_artifacts):
-      self.assertEqual(mock_gcs_files[i].name_, artifact.name)
-      self.assertEqual(mock_gcs_files[i].filename, artifact.path)
-      self.assertEqual(
-          '/gcs_proxy%s' % mock_gcs_files[i].filename, artifact.download_url)
-      self.assertEqual(mock_gcs_files[i].st_size, artifact.size)
 
   @mock.patch.object(test_kicker, 'CreateTestRun', autospec=True)
   def testNew(self, mock_run_test):
@@ -253,26 +265,31 @@ class TestRunApiTest(api_test_util.TestCase):
         'test_run_config': {
             'test_id': str(test.key.id()),
             'cluster': 'cluster',
-            'run_target': 'run_target',
+            'device_specs': ['device_serial:foo', 'device_serial:bar'],
             'run_count': 10,
             'shard_count': 100,
             'max_retry_on_test_failures': 1000,
+            'test_resource_objs': [
+                {
+                    'name': 'bar',
+                    'url': 'bar_url'
+                },
+                {
+                    'name': 'zzz',
+                    'url': 'zzz_url'
+                },
+            ],
         },
-        'test_resource_pipes': [
-            {
-                'name': 'bar',
-                'url': 'bar_url'
-            },
-            {
-                'name': 'zzz',
-                'url': 'zzz_url'
-            },
-        ],
     }
     test_run = ndb_models.TestRun(
-        test=test, labels=['label'], test_run_config=ndb_models.TestRunConfig(
-            test_key=test.key, cluster='cluster',
-            run_target='run_target', run_count=10, shard_count=100,
+        test=test,
+        labels=['label'],
+        test_run_config=ndb_models.TestRunConfig(
+            test_key=test.key,
+            cluster='cluster',
+            device_specs=['device_serial:foo', 'device_serial:bar'],
+            run_count=10,
+            shard_count=100,
             max_retry_on_test_failures=1000))
     test_run.put()
     mock_run_test.return_value = test_run
@@ -284,15 +301,77 @@ class TestRunApiTest(api_test_util.TestCase):
         test_run_config=ndb_models.TestRunConfig(
             test_key=test.key,
             cluster='cluster',
-            run_target='run_target',
+            device_specs=['device_serial:foo', 'device_serial:bar'],
             run_count=10,
             shard_count=100,
-            max_retry_on_test_failures=1000),
-        test_resources=[
-            ndb_models.TestResourceObj(name='bar', url='bar_url'),
-            ndb_models.TestResourceObj(name='zzz', url='zzz_url'),
-        ],
-        rerun_context=None)
+            max_retry_on_test_failures=1000,
+            test_resource_objs=[
+                ndb_models.TestResourceObj(name='bar', url='bar_url'),
+                ndb_models.TestResourceObj(name='zzz', url='zzz_url'),
+            ]),
+        rerun_context=None,
+        rerun_configs=[]
+        )
+    self.assertEqual('200 OK', res.status)
+    test_run_msg = protojson.decode_message(messages.TestRun, res.body)
+    self.assertEqual(
+        messages.Convert(test_run, messages.TestRun), test_run_msg)
+
+  @mock.patch.object(test_kicker, 'CreateTestRun', autospec=True)
+  def testNew_withRunTarget(self, mock_run_test):
+    test = self._createMockTest()
+    request = {
+        'labels': ['label'],
+        'test_run_config': {
+            'test_id': str(test.key.id()),
+            'cluster': 'cluster',
+            'device_specs': ['foo', 'bar'],
+            'run_count': 10,
+            'shard_count': 100,
+            'max_retry_on_test_failures': 1000,
+            'test_resource_objs': [
+                {
+                    'name': 'bar',
+                    'url': 'bar_url'
+                },
+                {
+                    'name': 'zzz',
+                    'url': 'zzz_url'
+                },
+            ],
+        },
+    }
+    test_run = ndb_models.TestRun(
+        test=test,
+        labels=['label'],
+        test_run_config=ndb_models.TestRunConfig(
+            test_key=test.key,
+            cluster='cluster',
+            device_specs=['foo', 'bar'],
+            run_count=10,
+            shard_count=100,
+            max_retry_on_test_failures=1000))
+    test_run.put()
+    mock_run_test.return_value = test_run
+
+    res = self.app.post_json('/_ah/api/mtt/v1/test_runs', request)
+
+    mock_run_test.assert_called_with(
+        labels=['label'],
+        test_run_config=ndb_models.TestRunConfig(
+            test_key=test.key,
+            cluster='cluster',
+            device_specs=['foo', 'bar'],
+            run_count=10,
+            shard_count=100,
+            max_retry_on_test_failures=1000,
+            test_resource_objs=[
+                ndb_models.TestResourceObj(name='bar', url='bar_url'),
+                ndb_models.TestResourceObj(name='zzz', url='zzz_url'),
+            ]),
+        rerun_context=None,
+        rerun_configs=[]
+        )
     self.assertEqual('200 OK', res.status)
     test_run_msg = protojson.decode_message(messages.TestRun, res.body)
     self.assertEqual(
@@ -401,15 +480,18 @@ class TestRunApiTest(api_test_util.TestCase):
     test = self._createMockTest()
     test_run = self._createMockTestRuns(test=test)[0]
     test_run.request_id = 'request'
+    test_run.put()
     res = self.app.get(
         '/_ah/api/mtt/v1/test_runs/%s/metadata' % test_run.key.id())
 
     # metadata is sent back w/o attempts
     metadata = protojson.decode_message(messages.TestRunMetadataList, res.body)
-    expected = messages.TestRunMetadataList(test_runs=[
-        messages.TestRunMetadata(
-            test_run=messages.Convert(test_run, messages.TestRun))
-    ])
+    expected = messages.TestRunMetadataList(
+        test_runs=[
+            messages.TestRunMetadata(
+                test_run=messages.Convert(test_run, messages.TestRun))
+        ],
+        server_version=env.VERSION)
     self.assertEqual(expected, metadata)
 
   def testGetMetadata_runNotFound(self):
@@ -431,16 +513,19 @@ class TestRunApiTest(api_test_util.TestCase):
     test = self._createMockTest()
     test_run = self._createMockTestRuns(test=test)[0]
     test_run.request_id = 'request'
+    test_run.put()
     res = self.app.get(
         '/_ah/api/mtt/v1/test_runs/%s/metadata' % test_run.key.id())
 
     # metadata is sent back w/ only COMPLETED attempts
     metadata = protojson.decode_message(messages.TestRunMetadataList, res.body)
-    expected = messages.TestRunMetadataList(test_runs=[
-        messages.TestRunMetadata(
-            test_run=messages.Convert(test_run, messages.TestRun),
-            command_attempts=[completed_attempt])
-    ])
+    expected = messages.TestRunMetadataList(
+        test_runs=[
+            messages.TestRunMetadata(
+                test_run=messages.Convert(test_run, messages.TestRun),
+                command_attempts=[completed_attempt])
+        ],
+        server_version=env.VERSION)
     self.assertEqual(expected, metadata)
 
   @mock.patch.object(tfc_client, 'GetRequest')
@@ -460,29 +545,31 @@ class TestRunApiTest(api_test_util.TestCase):
 
     # metadata is sent back w/ ordered ancestry information
     metadata = protojson.decode_message(messages.TestRunMetadataList, res.body)
-    expected = messages.TestRunMetadataList(test_runs=[
-        messages.TestRunMetadata(
-            test_run=messages.Convert(child, messages.TestRun)),
-        messages.TestRunMetadata(
-            test_run=messages.Convert(parent, messages.TestRun)),
-        messages.TestRunMetadata(
-            test_run=messages.Convert(grandparent, messages.TestRun))
-    ])
+    expected = messages.TestRunMetadataList(
+        test_runs=[
+            messages.TestRunMetadata(
+                test_run=messages.Convert(child, messages.TestRun)),
+            messages.TestRunMetadata(
+                test_run=messages.Convert(parent, messages.TestRun)),
+            messages.TestRunMetadata(
+                test_run=messages.Convert(grandparent, messages.TestRun))
+        ],
+        server_version=env.VERSION)
     self.assertEqual(expected, metadata)
 
-  @mock.patch.object(file_util.FileHandle, 'Get')
-  def testGetMetadata_remoteAncestry(self, mock_handler_factory):
+  @mock.patch.object(file_util, 'OpenFile')
+  def testGetMetadata_remoteAncestry(self, mock_open_file):
     # create hierarchy of test_runs
     test = self._createMockTest()
     child, parent = self._createMockTestRuns(test=test, count=2)  
-    with tempfile.NamedTemporaryFile(suffix='.zip') as mock_file_handle:
+    with tempfile.NamedTemporaryFile(suffix='.zip') as tmp_stream:
       # write parent metadata to a temporary zip file
-      with zipfile.ZipFile(mock_file_handle, 'w') as context_file:
+      with zipfile.ZipFile(tmp_stream, 'w') as context_file:
         res = self.app.get('/_ah/api/mtt/v1/test_runs/%s/metadata' %
                            parent.key.id())
         context_file.writestr('mtt.json', res.body)
-      mock_file_handle.seek(0)
-      mock_handler_factory.return_value = mock_file_handle
+      tmp_stream.seek(0)
+      mock_open_file.return_value = tmp_stream
 
       # mark child as a remote return
       child.prev_test_context = ndb_models.TestContextObj(test_resources=[
@@ -496,12 +583,14 @@ class TestRunApiTest(api_test_util.TestCase):
       # metadata is sent back w/ ordered ancestry information
       metadata = protojson.decode_message(messages.TestRunMetadataList,
                                           res.body)
-      expected = messages.TestRunMetadataList(test_runs=[
-          messages.TestRunMetadata(
-              test_run=messages.Convert(child, messages.TestRun)),
-          messages.TestRunMetadata(
-              test_run=messages.Convert(parent, messages.TestRun))
-      ])
+      expected = messages.TestRunMetadataList(
+          test_runs=[
+              messages.TestRunMetadata(
+                  test_run=messages.Convert(child, messages.TestRun)),
+              messages.TestRunMetadata(
+                  test_run=messages.Convert(parent, messages.TestRun))
+          ],
+          server_version=env.VERSION)
       self.assertEqual(expected, metadata)
 
 

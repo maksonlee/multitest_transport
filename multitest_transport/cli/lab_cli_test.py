@@ -20,6 +20,7 @@ import tempfile
 from absl.testing import absltest
 from absl.testing import parameterized
 import mock
+from tradefed_cluster.configs import lab_config
 
 from multitest_transport.cli import lab_cli
 from multitest_transport.cli import unittest_util
@@ -42,11 +43,10 @@ class LabCliTest(parameterized.TestCase):
 
   def testCreateParser_withLoggingArgs(self):
     args = self.arg_parser.parse_args([
-        '-v', '--logtostderr', '--log_file', 'file.log', 'version'])
+        '-v', '--log_file', 'file.log', 'version'])
     self.assertEqual(lab_cli.cli_util.PrintVersion, args.func)
     self.assertTrue(args.verbose)
     self.assertEqual('file.log', args.log_file)
-    self.assertTrue(args.logtostderr)
 
   @mock.patch.object(tempfile, 'mkdtemp')
   def testSetupMTTBinary(self, mock_create_temp):
@@ -60,14 +60,15 @@ class LabCliTest(parameterized.TestCase):
             filename='mtt_binary', content='this is a mtt binary')])
 
     args = mock.MagicMock(cli_path=mtt_lab_path)
-    host = mock.MagicMock()
+    host = mock.MagicMock(
+        context=mock.MagicMock(user='testuser'))
     lab_cli._SetupMTTBinary(args, host)
 
     host.context.assert_has_calls([
         mock.call.CopyFile(
             os.path.join(tmp_folder, 'mtt_binary'),
-            '/tmp/mtt'),
-        mock.call.Run(['chmod', '+x', '/tmp/mtt'])])
+            '/tmp/testuser/mtt'),
+        mock.call.Run(['chmod', '+x', '/tmp/testuser/mtt'])])
     self.assertEqual('Setting up MTT Binary', host.execution_state)
 
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
@@ -75,156 +76,206 @@ class LabCliTest(parameterized.TestCase):
     mock_tmpfile = mock.MagicMock()
     mock_tmpfile.name = '/local/config.yaml'
     mock_make_tmpfile.return_value = mock_tmpfile
-    host = mock.MagicMock()
+    host = mock.MagicMock(context=mock.MagicMock(user='testuser'))
     lab_cli._SetupHostConfig(host)
 
     host.config.Save.assert_called_once_with('/local/config.yaml')
     host.context.CopyFile.assert_called_once_with(
-        '/local/config.yaml', '/tmp/mtt_host_config.yaml')
+        '/local/config.yaml', '/tmp/testuser/mtt_host_config.yaml')
     mock_tmpfile.close.assert_called_once_with()
     self.assertEqual('Setting up host config', host.execution_state)
 
   @parameterized.named_parameters(
-      ('$ sudo mtt start', True),
-      ('$ mtt start', False))
+      ('$ mtt_lab start --ask_sudo_password --sudo_user user',
+       True, 'user', True),
+      ('$ mtt_lab start --sudo_user user', False, 'user', True),
+      ('$ mtt_lab start --ask_sudo_password', True, None, True),
+      ('$ mtt_lab start', False, None, False))
   @mock.patch.object(lab_cli, '_SetupMTTBinary')
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
-  def testStart(self, ask_sudo_password, mock_make_tmpfile, mock_setup):
+  @mock.patch.object(lab_config.HostConfig, 'Save')
+  def testStart(
+      self, ask_sudo_password, sudo_user, use_sudo, mock_save,
+      mock_make_tmpfile, mock_setup):
     mock_tmpfile = mock.MagicMock()
     mock_tmpfile.name = '/local/config.yaml'
     mock_make_tmpfile.return_value = mock_tmpfile
     args = mock.MagicMock(
         service_account_json_key_path='/path/to/keyfile.json',
         ask_sudo_password=ask_sudo_password,
+        sudo_user=sudo_user,
         verbose=False,
         very_verbose=False)
-    host = mock.MagicMock()
-    host.config.service_account_json_key_path = '/path/to/keyfile.json'
+    host = mock.MagicMock(
+        context=mock.MagicMock(user='testuser'),
+        config=lab_config.CreateHostConfig(
+            service_account_json_key_path='/path/to/keyfile.json'))
     lab_cli.Start(args, host)
 
     host.context.assert_has_calls([
-        mock.call.CopyFile('/path/to/keyfile.json', '/tmp/keyfile/key.json'),
-        mock.call.CopyFile('/local/config.yaml', '/tmp/mtt_host_config.yaml'),
-        mock.call.Run(['/tmp/mtt', 'start', '/tmp/mtt_host_config.yaml'],
-                      sudo=ask_sudo_password)])
-    self.assertEqual('/tmp/keyfile/key.json',
+        mock.call.CopyFile('/path/to/keyfile.json',
+                           '/tmp/testuser/keyfile/key.json'),
+        mock.call.CopyFile('/local/config.yaml',
+                           '/tmp/testuser/mtt_host_config.yaml'),
+        mock.call.Run(['/tmp/testuser/mtt', '--no_check_update', 'start',
+                       '/tmp/testuser/mtt_host_config.yaml'],
+                      sudo=use_sudo)])
+    self.assertEqual('/tmp/testuser/keyfile/key.json',
                      host.config.service_account_json_key_path)
-    host.config.Save.assert_called_once_with('/local/config.yaml')
+    mock_save.assert_called_once_with('/local/config.yaml')
     mock_setup.assert_called_once_with(args, host)
     mock_tmpfile.close.assert_called_once_with()
     self.assertEqual('Running start', host.execution_state)
 
   @mock.patch.object(lab_cli, '_SetupMTTBinary')
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
-  def testStart_noServiceAccountKey(self, mock_make_tmpfile, mock_setup):
+  @mock.patch.object(lab_config.HostConfig, 'Save')
+  def testStart_noServiceAccountKey(
+      self, mock_save, mock_make_tmpfile, mock_setup):
     mock_tmpfile = mock.MagicMock()
     mock_tmpfile.name = '/local/config.yaml'
     mock_make_tmpfile.return_value = mock_tmpfile
     args = mock.MagicMock(
         service_account_json_key_path=None,
+        sudo_user=None,
         ask_sudo_password=False,
         verbose=False,
         very_verbose=False)
-    host = mock.MagicMock()
-    host.config.service_account_json_key_path = None
+    host = mock.MagicMock(
+        context=mock.MagicMock(user='testuser'),
+        config=lab_config.CreateHostConfig(
+            service_account_json_key_path=None))
     lab_cli.Start(args, host)
 
     host.context.assert_has_calls([
-        mock.call.CopyFile('/local/config.yaml', '/tmp/mtt_host_config.yaml'),
-        mock.call.Run(['/tmp/mtt', 'start', '/tmp/mtt_host_config.yaml'],
-                      sudo=False)])
-    host.config.Save.assert_called_once_with('/local/config.yaml')
+        mock.call.CopyFile(
+            '/local/config.yaml', '/tmp/testuser/mtt_host_config.yaml'),
+        mock.call.Run(['/tmp/testuser/mtt', '--no_check_update', 'start',
+                       '/tmp/testuser/mtt_host_config.yaml'], sudo=False)])
+    mock_save.assert_called_once_with('/local/config.yaml')
     mock_setup.assert_called_once_with(args, host)
     mock_tmpfile.close.assert_called_once_with()
 
   @parameterized.named_parameters(
-      ('$ sudo mtt update', True),
-      ('$ mtt update', False))
+      ('$ mtt_lab update --ask_sudo_password --sudo_user user',
+       True, 'user', True),
+      ('$ mtt_lab update --sudo_user user', False, 'user', True),
+      ('$ mtt_lab update --ask_sudo_password', True, None, True),
+      ('$ mtt_lab update', False, None, False))
   @mock.patch.object(lab_cli, '_SetupMTTBinary')
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
-  def testUpdate(self, ask_sudo_password, mock_make_tmpfile, mock_setup):
+  @mock.patch.object(lab_config.HostConfig, 'Save')
+  def testUpdate(
+      self, ask_sudo_password, sudo_user, use_sudo, mock_save,
+      mock_make_tmpfile, mock_setup):
     mock_tmpfile = mock.MagicMock()
     mock_tmpfile.name = '/local/config.yaml'
     mock_make_tmpfile.return_value = mock_tmpfile
     args = mock.MagicMock(
         service_account_json_key_path='/path/to/keyfile.json',
         ask_sudo_password=ask_sudo_password,
+        sudo_user=sudo_user,
         verbose=False,
         very_verbose=False)
-    host = mock.MagicMock()
-    host.config.service_account_json_key_path = '/path/to/keyfile.json'
+    host = mock.MagicMock(
+        context=mock.MagicMock(user='testuser'),
+        config=lab_config.CreateHostConfig(
+            service_account_json_key_path='/path/to/keyfile.json'))
     lab_cli.Update(args, host)
 
     host.context.assert_has_calls([
-        mock.call.CopyFile('/path/to/keyfile.json', '/tmp/keyfile/key.json'),
-        mock.call.CopyFile('/local/config.yaml', '/tmp/mtt_host_config.yaml'),
-        mock.call.Run(['/tmp/mtt', 'update', '/tmp/mtt_host_config.yaml'],
-                      sudo=ask_sudo_password)])
-    self.assertEqual('/tmp/keyfile/key.json',
+        mock.call.CopyFile('/path/to/keyfile.json',
+                           '/tmp/testuser/keyfile/key.json'),
+        mock.call.CopyFile('/local/config.yaml',
+                           '/tmp/testuser/mtt_host_config.yaml'),
+        mock.call.Run(['/tmp/testuser/mtt', '--no_check_update', 'update',
+                       '/tmp/testuser/mtt_host_config.yaml'],
+                      sudo=use_sudo)])
+    self.assertEqual('/tmp/testuser/keyfile/key.json',
                      host.config.service_account_json_key_path)
-    host.config.Save.assert_called_once_with('/local/config.yaml')
+    mock_save.assert_called_once_with('/local/config.yaml')
     mock_setup.assert_called_once_with(args, host)
     mock_tmpfile.close.assert_called_once_with()
     self.assertEqual('Running update', host.execution_state)
 
   @parameterized.named_parameters(
-      ('$ sudo mtt restart', True),
-      ('$ mtt restart', False))
+      ('$ mtt_lab restart --ask_sudo_password --sudo_user user',
+       True, 'user', True),
+      ('$ mtt_lab restart --sudo_user user', False, 'user', True),
+      ('$ mtt_lab restart --ask_sudo_password', True, None, True),
+      ('$ mtt_lab restart', False, None, False))
   @mock.patch.object(lab_cli, '_SetupMTTBinary')
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
-  def testRestart(self, ask_sudo_password, mock_make_tmpfile, mock_setup):
+  @mock.patch.object(lab_config.HostConfig, 'Save')
+  def testRestart(
+      self, ask_sudo_password, sudo_user, use_sudo, mock_save,
+      mock_make_tmpfile, mock_setup):
     mock_tmpfile = mock.MagicMock()
     mock_tmpfile.name = '/local/config.yaml'
     mock_make_tmpfile.return_value = mock_tmpfile
     args = mock.MagicMock(
         service_account_json_key_path='/path/to/keyfile.json',
         ask_sudo_password=ask_sudo_password,
+        sudo_user=sudo_user,
         verbose=False,
         very_verbose=False)
-    host = mock.MagicMock()
-    host.config.service_account_json_key_path = '/path/to/keyfile.json'
+    host = mock.MagicMock(
+        context=mock.MagicMock(user='testuser'),
+        config=lab_config.CreateHostConfig(
+            service_account_json_key_path='/path/to/keyfile.json'))
     lab_cli.Restart(args, host)
 
     host.context.assert_has_calls([
-        mock.call.CopyFile('/path/to/keyfile.json', '/tmp/keyfile/key.json'),
-        mock.call.CopyFile('/local/config.yaml', '/tmp/mtt_host_config.yaml'),
-        mock.call.Run(['/tmp/mtt', 'restart', '/tmp/mtt_host_config.yaml'],
-                      sudo=ask_sudo_password)])
-    self.assertEqual('/tmp/keyfile/key.json',
+        mock.call.CopyFile('/path/to/keyfile.json',
+                           '/tmp/testuser/keyfile/key.json'),
+        mock.call.CopyFile('/local/config.yaml',
+                           '/tmp/testuser/mtt_host_config.yaml'),
+        mock.call.Run(['/tmp/testuser/mtt', '--no_check_update', 'restart',
+                       '/tmp/testuser/mtt_host_config.yaml'],
+                      sudo=use_sudo)])
+    self.assertEqual('/tmp/testuser/keyfile/key.json',
                      host.config.service_account_json_key_path)
-    host.config.Save.assert_called_once_with('/local/config.yaml')
+    mock_save.assert_called_once_with('/local/config.yaml')
     mock_setup.assert_called_once_with(args, host)
     mock_tmpfile.close.assert_called_once_with()
     self.assertEqual('Running restart', host.execution_state)
 
   @parameterized.named_parameters(
-      ('$ sudo mtt stop', True),
-      ('$ mtt stop', False))
+      ('$ mtt_lab stop --ask_sudo_password --sudo_user user',
+       True, 'user', True),
+      ('$ mtt_lab stop --sudo_user user', False, 'user', True),
+      ('$ mtt_lab stop --ask_sudo_password', True, None, True),
+      ('$ mtt_lab stop', False, None, False))
   @mock.patch.object(lab_cli, '_SetupMTTBinary')
-  def testStop(self, ask_sudo_password, mock_setup):
+  def testStop(self, ask_sudo_password, sudo_user, use_sudo, mock_setup):
     args = mock.MagicMock(
         ask_sudo_password=ask_sudo_password,
+        sudo_user=sudo_user,
         verbose=False,
         very_verbose=False)
-    host = mock.MagicMock()
+    host = mock.MagicMock(context=mock.MagicMock(user='testuser'))
     lab_cli.Stop(args, host)
 
     host.context.Run.assert_called_once_with(
-        ['/tmp/mtt', 'stop'], sudo=ask_sudo_password)
+        ['/tmp/testuser/mtt', '--no_check_update', 'stop'],
+        sudo=use_sudo)
     mock_setup.assert_called_once_with(args, host)
     self.assertEqual('Running stop', host.execution_state)
 
   @parameterized.named_parameters(
-      ('run_cmd_with_sudo', True),
-      ('run_cmd_without_sudo', False))
-  def testRunCmd(self, ask_sudo_password):
+      ('run_cmd_with_sudo_pwd_and_user', True, 'user', True),
+      ('run_cmd_with_sudo_user', False, 'user', True),
+      ('run_cmd_with_sudo_pwd', True, 'user', True),
+      ('run_cmd_without_sudo', False, None, False))
+  def testRunCmd(self, ask_sudo_password, sudo_user, use_sudo):
     args = mock.MagicMock(
         ask_sudo_password=ask_sudo_password,
+        sudo_user=sudo_user,
         cmd='run a command line')
     host = mock.MagicMock()
     lab_cli.RunCmd(args, host)
     host.context.Run.assert_called_once_with(
-        ['run', 'a', 'command', 'line'], sudo=ask_sudo_password)
+        ['run', 'a', 'command', 'line'], sudo=use_sudo)
     self.assertEqual('Running cmd', host.execution_state)
 
   def testCreateLabCommandArgParser(self):
@@ -240,17 +291,63 @@ class LabCliTest(parameterized.TestCase):
     self.assertEqual(['host1', 'cluster1'], args.hosts_or_clusters)
 
   @parameterized.named_parameters(
-      ('no_verbose', [], []),
-      ('verbose', ['-v'], ['-v']),
-      ('very_verbose', ['-vv'], ['-vv']),
-      ('both', ['-v', '-vv'], ['-vv']))
+      ('no_verbose', [], ['--no_check_update']),
+      ('verbose', ['-v'], ['-v', '--no_check_update']),
+      ('very_verbose', ['-vv'], ['-vv', '--no_check_update']),
+      ('both', ['-v', '-vv'], ['-vv', '--no_check_update']))
   def testBuildBaseMTTCmd(self, verbose_flag, res_flag):
     parser = lab_cli.cli_util.CreateLoggingArgParser()
     args = parser.parse_args(verbose_flag)
-    cmd = lab_cli._BuildBaseMTTCmd(args)
+    host = mock.MagicMock(context=mock.MagicMock(user='testuser'))
+    cmd = lab_cli._BuildBaseMTTCmd(args, host)
     self.assertEqual(
-        [lab_cli._REMOTE_MTT_BINARY] + res_flag,
+        ['/tmp/testuser/mtt'] + res_flag,
         cmd)
+
+  def testSetupServiceAccountKey(self):
+    args = mock.MagicMock(service_account_json_key_path=None)
+    host = mock.MagicMock(
+        context=mock.MagicMock(user='testuser'),
+        config=lab_config.CreateHostConfig(
+            service_account_json_key_path='/path/to/keyfile.json'))
+    lab_cli._SetupServiceAccountKey(args, host)
+
+    host.context.CopyFile.assert_called_once_with(
+        '/path/to/keyfile.json', '/tmp/testuser/keyfile/key.json')
+    self.assertEqual('/tmp/testuser/keyfile/key.json',
+                     host.config.service_account_json_key_path)
+    self.assertEqual('Setting up service account key', host.execution_state)
+
+  @mock.patch.object(tempfile, 'NamedTemporaryFile')
+  @mock.patch.object(lab_cli.google_auth_util, 'GetGCloudCredential')
+  @mock.patch.object(lab_cli.google_auth_util, 'GetSecret')
+  def testSetupServiceAccountKey_secretManager(
+      self, mock_get_secret, mock_get_cred, mock_make_tmpfile):
+    mock_tmpfile = mock.MagicMock()
+    mock_tmpfile.name = '/local/sa_key.json'
+    mock_make_tmpfile.return_value = mock_tmpfile
+    args = mock.MagicMock(service_account_json_key_path=None)
+    host = mock.MagicMock(
+        context=mock.MagicMock(user='testuser'),
+        config=lab_config.CreateHostConfig(
+            service_account_json_key_path=None,
+            secret_project_id='secret_project',
+            service_account_key_secret_id='sa_key'))
+    mock_cred = mock.MagicMock()
+    mock_get_cred.return_value = mock_cred
+    mock_get_secret.return_value = b'secret'
+
+    lab_cli._SetupServiceAccountKey(args, host)
+
+    host.context.CopyFile.assert_called_once_with(
+        '/local/sa_key.json', '/tmp/testuser/keyfile/key.json')
+    mock_tmpfile.write.assert_called_once_with(b'secret')
+    mock_tmpfile.flush.assert_called_once_with()
+    mock_tmpfile.close.assert_called_once_with()
+    self.assertEqual('Setting up service account key', host.execution_state)
+    self.assertTrue(mock_get_cred.called)
+    mock_get_secret.assert_called_once_with(
+        'secret_project', 'sa_key', mock_cred)
 
 
 if __name__ == '__main__':

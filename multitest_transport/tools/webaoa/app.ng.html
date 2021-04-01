@@ -1,0 +1,66 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-toolbar>
+  <span>Android WebAOA</span>
+  <a mat-icon-button target="_blank" matTooltip="Help"
+     href="https://source.android.com/compatibility/tests/development/android-test-station/ats-user-builds">
+    <mat-icon>help_outline</mat-icon>
+  </a>
+</mat-toolbar>
+
+<main class="insecure-context" *ngIf="!isSecureContext">
+  <b>A <a href="https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts"
+          target="_blank">secure context</a> (localhost or HTTPS) is required.</b><br>
+  <i>WebAOA</i> can only access your USB devices when running locally or over HTTPS.<br>
+  Consider installing Android Test Station locally or configuring an SSH tunnel.
+</main>
+
+<main class="unsupported-browser" *ngIf="isSecureContext && !isWebUsbSupported">
+  <b>Your browser is not supported.</b><br>
+  This browser does not support the <a
+    href="https://developer.mozilla.org/en-US/docs/Web/API/USB"
+    target="_blank">web technology</a> that powers <i>WebAOA</i>.<br>
+  Consider upgrading to a <a href="https://caniuse.com/#feat=webusb" target="_blank">supported
+  browser</a>.
+</main>
+
+<main [hidden]="editing" *ngIf="isSecureContext && isWebUsbSupported">
+  <div class="header page">
+    <h1>Device Selection</h1>
+    <button mat-button class="continue" (click)="editWithoutDevice()">
+      Continue without Device
+      <mat-icon>arrow_forward</mat-icon>
+    </button>
+  </div>
+  <device-list class="page" (selectionChange)="selectDevice($event)"></device-list>
+</main>
+
+<main [hidden]="!editing" *ngIf="isSecureContext && isWebUsbSupported">
+  <div class="header page">
+    <button mat-button class="return" (click)="returnToDeviceSelection()">
+      <mat-icon>arrow_back</mat-icon>
+      Return to Device Selection
+    </button>
+  </div>
+  <workflow-editor class="page" [device]="device"></workflow-editor>
+</main>
+
+<footer *ngIf="analyticsEnabled">
+  Android WebAOA collects anonymous usage statistics to help us improve it, in accordance with our
+  <a href="https://accounts.google.com/TOS" target="_blank">Terms of Service</a> and
+  <a href="https://accounts.google.com/TOS?privacy=true" target="_blank">Privacy Policy</a>.
+</footer>

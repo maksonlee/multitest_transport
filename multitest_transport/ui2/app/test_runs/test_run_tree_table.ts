@@ -70,7 +70,7 @@ export class TestRunTreeTable implements OnInit, OnChanges {
       data: TestRun|{[key: string]: unknown}|string|number|boolean|Date|undefined,
       level = 0, expanded = true): TreeNode {
     // If no data, return a leaf node
-    if (!data) {
+    if (data == null) {
       return {content: [name], children: [], level};
     }
 

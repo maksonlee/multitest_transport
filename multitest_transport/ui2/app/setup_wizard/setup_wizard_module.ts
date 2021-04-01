@@ -28,13 +28,14 @@ import {SharedModule} from '../shared/shared_module';
 
 import {BuildChannelSetup} from './build_channel_setup';
 import {ConfigRestoreStep} from './config_restore_step';
+import {DefaultAuthStep} from './default_auth_step';
 import {SetupWizardDialog} from './setup_wizard_dialog';
 import {SetupWizardStepper} from './setup_wizard_stepper';
 import {WifiSetup} from './wifi_setup';
 
 const COMPONENTS = [
-  BuildChannelSetup, ConfigRestoreStep, SetupWizardDialog, SetupWizardStepper,
-  WifiSetup
+  BuildChannelSetup, ConfigRestoreStep, DefaultAuthStep, SetupWizardDialog,
+  SetupWizardStepper, WifiSetup
 ];
 
 @NgModule({

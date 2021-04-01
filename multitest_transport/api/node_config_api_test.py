@@ -72,7 +72,7 @@ class NodeConfigApiTest(api_test_util.TestCase):
         ],
     }
 
-    self.app.post_json('/_ah/api/mtt/v1/node_config', data)
+    self.app.put_json('/_ah/api/mtt/v1/node_config', data)
 
     self.assertEqual(self._CreateNodeConfig(data), ndb_models.GetNodeConfig())
 

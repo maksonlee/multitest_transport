@@ -13,21 +13,25 @@
 # limitations under the License.
 
 """A module to provide build channel APIs."""
-import multitest_transport.google_import_fixer  
+# Non-standard docstrings are used to generate the API documentation.
+import tradefed_cluster.util.google_import_fixer  
 import collections
 import json
+import os
 
+import endpoints
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
+from six.moves import urllib
 
 from google.oauth2 import service_account
-from google3.third_party.apphosting.python.endpoints.v1_1 import endpoints
 
 from multitest_transport.api import base
 from multitest_transport.models import build
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
+from multitest_transport.util import file_util
 from multitest_transport.util import oauth2_util
 
 
@@ -43,24 +47,16 @@ class BuildChannelApi(remote.Service):
           'Build channel %s not found' % build_channel_id)
     return build_channel
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       message_types.VoidMessage, mtt_messages.BuildChannelList,
       path='/build_channels', http_method='GET', name='list')
   def List(self, request):
-    """List registered build channels.
-
-    Args:
-      request: a API request object.
-    Returns:
-      a mtt_messages.BuildChannelList object.
-    """
+    """Lists registered build channels."""
     objs = build.ListBuildChannels()
-    build_channels = mtt_messages.Convert(objs, mtt_messages.BuildChannel)
+    build_channels = mtt_messages.ConvertList(objs, mtt_messages.BuildChannel)
     return mtt_messages.BuildChannelList(build_channels=build_channels)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           build_channel_id=messages.StringField(1, required=True)),
@@ -69,23 +65,16 @@ class BuildChannelApi(remote.Service):
       http_method='GET',
       name='get')
   def Get(self, request):
-    """Returns a build channel config.
+    """Fetches a build channel.
 
-    Args:
-      request: an API request object.
-
-    Returns:
-      a mtt_messages.BuildChannelConfig object.
-    Raises:
-      endpoints.NotFoundException: if a given build channel config does not
-      exist.
+    Parameters:
+      build_channel_id: Build channel ID
     """
     build_channel = self._GetBuildChannel(request.build_channel_id)
     return mtt_messages.Convert(build_channel.config,
                                 mtt_messages.BuildChannelConfig)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           build_channel_id=messages.StringField(1, required=True),
@@ -94,59 +83,78 @@ class BuildChannelApi(remote.Service):
       mtt_messages.BuildItemList, path='{build_channel_id}/build_items',
       http_method='GET', name='build_item.list')
   def ListBuildItems(self, request):
-    """Returns a list of build items.
+    """Fetches a list of build items.
 
-    Args:
-      request: an API request object.
-    Returns:
-      a mtt_messages.BuildItemList object.
-    Raises:
-      endpoints.NotFoundException: if a given build channel does not exist.
+    Parameters:
+      build_channel_id: Build channel ID
+      path: Build item path
+      page_token: Token for pagination
     """
     build_channel = self._GetBuildChannel(request.build_channel_id)
     build_items, next_page_token = build_channel.ListBuildItems(
         path=request.path, page_token=request.page_token)
     return mtt_messages.BuildItemList(
-        build_items=[mtt_messages.BuildItem(**b.__dict__) for b in build_items],
+        build_items=mtt_messages.ConvertList(
+            build_items, mtt_messages.BuildItem),
         next_page_token=next_page_token)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           build_channel_id=messages.StringField(1, required=True),
           path=messages.StringField(2)),
-      message_types.VoidMessage, path='{build_channel_id}/build_items/delete',
-      http_method='POST', name='build_item.delete')
+      message_types.VoidMessage, path='{build_channel_id}/build_items',
+      http_method='DELETE', name='build_item.delete')
   def DeleteBuildItem(self, request):
-    """Delete a build item.
+    """Deletes a build item.
 
-    Args:
-      request: an API request object.
-    Returns:
-      a message_types.VoidMessage.
-    Raises:
-      endpoints.NotFoundException: if a build channel/build item does not exist.
+    Parameters:
+      build_channel_id: Build channel ID
+      path: Build item path
     """
     build_channel = self._GetBuildChannel(request.build_channel_id)
     build_channel.DeleteBuildItem(request.path)
     return message_types.VoidMessage()
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
+      endpoints.ResourceContainer(
+          message_types.VoidMessage,
+          url=messages.StringField(1, required=True)),
+      mtt_messages.BuildItem, path='build_item_lookup',
+      http_method='GET', name='build_item.lookup')
+  def LookupBuildItem(self, request):
+    """Get a build item info for a given URL.
+
+    Parameters:
+      url: a build item (file) URL.
+    """
+    build_channel, path = build.FindBuildChannel(request.url)
+    if build_channel:
+      build_item = build_channel.GetBuildItem(path)
+      if not build_item:
+        raise endpoints.NotFoundException('Cannot find %s' % request.url)
+      return mtt_messages.Convert(build_item, mtt_messages.BuildItem)
+    name = os.path.basename(urllib.parse.urlparse(request.url).path)
+    info = file_util.FileHandle.Get(request.url).Info()
+    if not info:
+      raise endpoints.NotFoundException('Cannot find %s' % request.url)
+    return mtt_messages.BuildItem(
+        name=name,
+        is_file=info.is_file,
+        size=info.total_size,
+        timestamp=info.timestamp)
+
+  @base.ApiMethod(
       endpoints.ResourceContainer(mtt_messages.BuildChannelConfig),
       mtt_messages.BuildChannelConfig,
       path='/build_channels',
       http_method='POST',
       name='create')
   def Create(self, request):
-    """Create a build channel.
+    """Creates a build channel.
 
-    Args:
-      request: a API request object.
-
-    Returns:
-      a mtt_messages.BuildChannelConfig object
+    Body:
+      Build channel data
     """
     options = collections.OrderedDict()
     name_value_pair_list = request.options
@@ -159,8 +167,7 @@ class BuildChannelApi(remote.Service):
     return mtt_messages.Convert(build_channel_config,
                                 mtt_messages.BuildChannelConfig)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           mtt_messages.BuildChannelConfig,
           build_channel_id=messages.StringField(1, required=True)),
@@ -171,11 +178,10 @@ class BuildChannelApi(remote.Service):
   def Update(self, request):
     """Updates an existing build channel.
 
-    Args:
-      request: a API request object.
-
-    Returns:
-      a mtt_messages.BuildChannelConfig object
+    Body:
+      Build channel data
+    Parameters:
+      build_channel_id: Build channel ID
     """
     options = collections.OrderedDict()
     name_value_pair_list = request.options
@@ -189,23 +195,26 @@ class BuildChannelApi(remote.Service):
     return mtt_messages.Convert(build_channel_config,
                                 mtt_messages.BuildChannelConfig)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           build_channel_id=messages.StringField(1, required=True)),
       message_types.VoidMessage,
-      path='{build_channel_id}/delete',
-      http_method='POST',
+      path='{build_channel_id}',
+      http_method='DELETE',
       name='delete')
   def Delete(self, request):
+    """Deletes a build channel.
+
+    Parameters:
+      build_channel_id: Build channel ID
+    """
     build_channel_key = mtt_messages.ConvertToKey(
         ndb_models.BuildChannelConfig, request.build_channel_id)
     build_channel_key.delete()
     return message_types.VoidMessage()
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           build_channel_id=messages.StringField(1, required=True),
@@ -213,15 +222,19 @@ class BuildChannelApi(remote.Service):
       mtt_messages.AuthorizationInfo,
       path='{build_channel_id}/auth', http_method='GET', name='auth')
   def GetAuthorizationInfo(self, request):
-    """Determine a build channel configuration's authorization information."""
+    """Determines a build channel configuration's authorization information.
+
+    Parameters:
+      build_channel_id: Build channel ID
+      redirect_uri: URL to redirect to after authorization
+    """
     build_channel = self._GetBuildChannel(request.build_channel_id)
     redirect_uri, is_manual = oauth2_util.GetRedirectUri(request.redirect_uri)
     flow = oauth2_util.GetOAuth2Flow(build_channel.oauth2_config, redirect_uri)
     auth_url, _ = flow.authorization_url()
     return mtt_messages.AuthorizationInfo(url=auth_url, is_manual=is_manual)
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           build_channel_id=messages.StringField(1, required=True),
@@ -232,7 +245,13 @@ class BuildChannelApi(remote.Service):
       http_method='POST',
       name='authorize')
   def AuthorizeConfig(self, request):
-    """Authorize a build channel configuration with an authorization code."""
+    """Authorizes a build channel configuration with an authorization code.
+
+    Parameters:
+      build_channel_id: Build channel ID
+      redirect_uri: URL to redirect to after authorization
+      code: Authorization code
+    """
     build_channel = self._GetBuildChannel(request.build_channel_id)
     redirect_uri, _ = oauth2_util.GetRedirectUri(request.redirect_uri)
     flow = oauth2_util.GetOAuth2Flow(build_channel.oauth2_config, redirect_uri)
@@ -241,8 +260,7 @@ class BuildChannelApi(remote.Service):
     build_channel.config.put()
     return message_types.VoidMessage()
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           mtt_messages.SimpleMessage,
           build_channel_id=messages.StringField(1, required=True)),
@@ -251,7 +269,13 @@ class BuildChannelApi(remote.Service):
       http_method='PUT',
       name='authorize_with_service_account')
   def AuthorizeConfigWithServiceAccount(self, request):
-    """Authorize a build channel configuration with a service account key."""
+    """Authorizes a build channel configuration with a service account key.
+
+    Body:
+      Service account JSON key file data
+    Parameters:
+      build_channel_id: Build channel ID
+    """
     build_channel = self._GetBuildChannel(request.build_channel_id)
     data = json.loads(request.value)
     credentials = service_account.Credentials.from_service_account_info(data)
@@ -259,8 +283,7 @@ class BuildChannelApi(remote.Service):
     build_channel.config.put()
     return message_types.VoidMessage()
 
-  @base.convert_exception
-  @endpoints.method(
+  @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           build_channel_id=messages.StringField(1, required=True)),
@@ -269,7 +292,11 @@ class BuildChannelApi(remote.Service):
       http_method='DELETE',
       name='unauthorize')
   def UnauthorizeConfig(self, request):
-    """Revoke a build channel configuration's authorization."""
+    """Revokes a build channel configuration's authorization.
+
+    Parameters:
+      build_channel_id: Build channel ID
+    """
     build_channel = self._GetBuildChannel(request.build_channel_id)
     build_channel.config.credentials = None
     build_channel.config.put()

@@ -17,6 +17,12 @@
 @import 'third_party/py/multitest_transport/ui2/constants';
 
 h2 {
+  display: inline-block;
+  font-size: 18px;
+  font-weight: normal;
+}
+
+h3 {
   font-size: 16px;
   font-weight: normal;
   padding-left: 20px;
@@ -25,6 +31,10 @@ h2 {
 
 .button-group {
   float: right;
+}
+
+.header-section {
+  display: flex;
 }
 
 .mat-card {

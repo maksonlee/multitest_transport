@@ -23,7 +23,9 @@ import mock
 from tradefed_cluster.configs import lab_config
 
 from multitest_transport.cli import command_util
+from multitest_transport.cli import common
 from multitest_transport.cli import cli
+from multitest_transport.cli import cli_util
 from multitest_transport.cli import unittest_util
 
 _DOCKER_VERSION_STRING = 'Docker version 18.06.1-ce'
@@ -39,22 +41,29 @@ class CliTest(parameterized.TestCase):
         '__main__.cli.command_util.CommandContext',
         return_value=self.mock_context)
     self.mock_create_context = self.context_patcher.start()
-    self.mock_context.Run.return_value = (
-        mock.MagicMock(return_code=0, stdout=_DOCKER_VERSION_STRING))
+    self.enable_ipv6 = False
+    self.mock_context.Run.side_effect = self._MockRun
     self.mock_context.IsLocal.return_value = True
 
+    self.mock_socket = mock.MagicMock()
+    self.mock_socket.__enter__.return_value = self.mock_socket
+    self.socket_patcher = mock.patch(
+        '__main__.cli.socket.socket',
+        return_value=self.mock_socket)
+    self.socket_patcher.start()
     self.mock_auth_patcher = mock.patch(
         '__main__.cli.command_util.google_auth_util'
         '.CreateCredentialFromServiceAccount')
     self.mock_auth_patcher.start()
-    self.expanduser_patcher = mock.patch(
-        '__main__.os.path.expanduser', return_value='/local/.android')
+    self.expanduser_patcher = mock.patch('__main__.os.path.expanduser')
     self.mock_expanduser = self.expanduser_patcher.start()
+    self.mock_expanduser.side_effect = lambda s: s.replace('~', '/local')
     self.file_exists_patcher = mock.patch(
         '__main__.os.path.exists',
         side_effect=lambda p: p in self.mock_exist_files)
     self.file_exists_patcher.start()
-    self.mock_exist_files = ['/local/.android']
+    self.mock_exist_files = ['/dev/kvm', '/dev/vhost-vsock', '/dev/net/tun',
+                             '/dev/vhost-net', '/local/.android']
     self.old_user = os.environ.get('USER')
     os.environ['USER'] = 'user'
     self.mock_timezone_patcher = mock.patch(
@@ -63,15 +72,29 @@ class CliTest(parameterized.TestCase):
     self.mock_waiter_patcher = mock.patch('__main__.cli._WaitForServer')
     self.mock_waiter_patcher.start()
     self.tmp_root = tempfile.mkdtemp()
+    self.get_version_patcher = mock.patch.object(
+        cli_util, 'GetVersion',
+        return_value=('dev_version', 'dev'))
+    self.get_version_patcher.start()
 
     self.arg_parser = cli.CreateParser()
+    self.arg_parser.add_argument('--cli_path', default='cli_path')
+
+    self.mock_control_server_client = mock.MagicMock()
+    self.submit_host_update_event_patcher = mock.patch.object(
+        cli.host_util.control_server_util, 'ControlServerClient',
+        return_value=self.mock_control_server_client)
+    self.submit_host_update_event_patcher.start()
 
   def tearDown(self):
+    self.get_version_patcher.stop()
     os.environ['USER'] = self.old_user
     self.expanduser_patcher.stop()
     self.file_exists_patcher.stop()
     self.mock_auth_patcher.stop()
+    self.socket_patcher.stop()
     self.context_patcher.stop()
+    self.submit_host_update_event_patcher.stop()
     super(CliTest, self).tearDown()
 
   def testGetDockerImageName(self):
@@ -82,18 +105,36 @@ class CliTest(parameterized.TestCase):
         'image:yyy',
         cli._GetDockerImageName('image:xxx', tag='yyy'))
 
+  def _MockRun(self, command, **_kwargs):
+    """Mock CommandContext.Run."""
+    res = mock.MagicMock(return_code=0)
+    if command == ['docker', '-v']:
+      res.stdout = _DOCKER_VERSION_STRING
+    if (command[:2] == ['docker', 'inspect'] and
+        command[3:] == ['--format', '{{json .Config.Env}}']):
+      res.stdout = '["MTT_SUPPORT_BRIDGE_NETWORK=true"]'
+    if command[:4] == ['docker', 'network', 'inspect', 'bridge']:
+      res.stdout = ('{"EnableIPv6":%s,"IPAM":{"Config":['
+                    '{"Subnet":"2001:db8::/56"},'
+                    '{"Subnet":"192.168.9.0/24","Gateway":"192.168.9.1"}'
+                    ']}}' % ('true' if self.enable_ipv6 else 'false'))
+    return res
+
   def _CreateHost(self,
-                  hostname=None,
+                  hostname='mock-host',
                   cluster_name=None,
                   login_name=None,
                   tmpfs_configs=None,
                   docker_image='gcr.io/android-mtt/mtt:prod',
-                  master_url='url',
                   graceful_shutdown=False,
+                  shutdown_timeout_sec=0,
                   enable_stackdriver=False,
                   lab_name=None,
                   enable_autoupdate=None,
-                  service_account_json_key_path=None):
+                  service_account_json_key_path=None,
+                  extra_docker_args=(),
+                  control_server_url='url',
+                  enable_ui_update=False):
 
     host = cli.host_util.Host(
         lab_config.CreateHostConfig(
@@ -103,13 +144,61 @@ class CliTest(parameterized.TestCase):
             host_login_name=login_name,
             tmpfs_configs=tmpfs_configs,
             docker_image=docker_image,
-            master_url=master_url,
+            control_server_url=control_server_url,
             graceful_shutdown=graceful_shutdown,
+            shutdown_timeout_sec=shutdown_timeout_sec,
             enable_stackdriver=enable_stackdriver,
             enable_autoupdate=enable_autoupdate,
-            service_account_json_key_path=service_account_json_key_path))
+            enable_ui_update=enable_ui_update,
+            service_account_json_key_path=service_account_json_key_path,
+            extra_docker_args=list(extra_docker_args)))
     host.context = self.mock_context
     return host
+
+  @mock.patch.object(cli_util, 'GetVersion')
+  def testCheckDockerImageVersion(self, mock_get_version):
+    cli_path = 'cli_path'
+    docker_helper = mock.MagicMock()
+    container_name = 'container_name'
+    mock_get_version.return_value = ('prod_R9.202009.001', 'prod')
+    docker_helper.Exec.return_value = mock.MagicMock(
+        stdout='prod_R9.202009.001')
+
+    cli._CheckDockerImageVersion(cli_path, docker_helper, container_name)
+
+  @mock.patch.object(cli_util, 'GetVersion')
+  def testCheckDockerImageVersion_withNewerImage(self, mock_get_version):
+    cli_path = 'cli_path'
+    docker_helper = mock.MagicMock()
+    container_name = 'container_name'
+    mock_get_version.return_value = ('prod_R9.202009.001', 'prod')
+    docker_helper.Exec.return_value = mock.MagicMock(
+        stdout='prod_R10.202010.001')
+
+    with self.assertRaises(cli.ActionableError):
+      cli._CheckDockerImageVersion(cli_path, docker_helper, container_name)
+
+  @mock.patch.object(cli_util, 'GetVersion')
+  def testCheckDockerImageVersion_withOlderImage(self, mock_get_version):
+    cli_path = 'cli_path'
+    docker_helper = mock.MagicMock()
+    container_name = 'container_name'
+    mock_get_version.return_value = ('prod_R9.202009.001', 'prod')
+    docker_helper.Exec.return_value = mock.MagicMock(
+        stdout='prod_R8.202008.001')
+
+    cli._CheckDockerImageVersion(cli_path, docker_helper, container_name)
+
+  @mock.patch.object(cli_util, 'GetVersion')
+  def testCheckDockerImageVersion_multipleUnderScore(self, mock_get_version):
+    cli_path = 'cli_path'
+    docker_helper = mock.MagicMock()
+    container_name = 'container_name'
+    mock_get_version.return_value = ('prod_R9_202009_001', 'prod')
+    docker_helper.Exec.return_value = mock.MagicMock(
+        stdout='prod_R9_202009_001')
+
+    cli._CheckDockerImageVersion(cli_path, docker_helper, container_name)
 
   def testStart(self):
     """Test start without service account."""
@@ -125,22 +214,33 @@ class CliTest(parameterized.TestCase):
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/dev/bus/usb:/dev/bus/usb',
-            '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
-            '--net=host',
             '--cap-add', 'syslog',
-            '-e', 'MTT_MASTER_URL=url',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'LAB_NAME=alab',
             '-e', 'CLUSTER=acluster',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '127.0.0.1:5037:5037',
             'gcr.io/android-mtt/mtt:prod']),
-        mock.call(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
 
   @mock.patch.dict(
       os.environ, {
@@ -161,25 +261,36 @@ class CliTest(parameterized.TestCase):
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/dev/bus/usb:/dev/bus/usb',
-            '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
-            '--net=host',
             '--cap-add', 'syslog',
-            '-e', 'MTT_MASTER_URL=url',
+            '--hostname', 'ahost',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
             '-e', 'HTTP_PROXY=http_proxy',
             '-e', 'HTTPS_PROXY=https_proxy',
             '-e', 'FTP_PROXY=ftp_proxy',
-            '-e', 'NO_PROXY=127.0.0.1,ahost,no_proxy',
+            '-e', 'NO_PROXY=127.0.0.1,::1,localhost,ahost,no_proxy',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '127.0.0.1:5037:5037',
             'gcr.io/android-mtt/mtt:prod']),
-        mock.call(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
 
   @mock.patch.object(cli.command_util.DockerHelper, 'IsContainerRunning')
   def testStart_alreadyRunning(self, mock_is_running):
@@ -207,20 +318,31 @@ class CliTest(parameterized.TestCase):
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/dev/bus/usb:/dev/bus/usb',
-            '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
-            '--net=host',
             '--cap-add', 'syslog',
-            '-e', 'MTT_MASTER_URL=url',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '127.0.0.1:5037:5037',
             'gcr.io/android-mtt/mtt:prod']),
-        mock.call(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
 
   def testStart_withServiceAccount(self):
     """Test Start function."""
@@ -233,61 +355,185 @@ class CliTest(parameterized.TestCase):
             service_account_json_key_path='/path/to/key.json'))
 
     self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'inspect', 'gcr.io/android-mtt/mtt:prod',
+                   '--format', '{{json .Config.Env}}'],
+                  raise_on_failure=False),
         mock.call(
             ['docker', 'volume', 'rm', 'mtt-temp'], raise_on_failure=False),
+        mock.call(['mkdir', '-p', '/local/.ats_storage']),
+        mock.call(['docker', 'network', 'inspect', 'bridge',
+                   '--format={{json .}}'],
+                  raise_on_failure=False),
         mock.call(['docker', 'container', 'rm', 'mtt'],
                   raise_on_failure=False),
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/dev/bus/usb:/dev/bus/usb',
-            '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
-            '--net=host',
             '--cap-add', 'syslog',
-            '-e', 'MTT_MASTER_URL=url',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
             '-e', 'JSON_KEY_PATH=/tmp/keyfile/key.json',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=volume,src=mtt-key,dst=/tmp/keyfile',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '127.0.0.1:5037:5037',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call([
             'docker', 'cp', '-L',
             '/path/to/key.json', 'mtt:/tmp/keyfile/key.json']),
-        mock.call(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
 
-  @mock.patch.object(cli, '_WaitForServer')
-  def testStart_standalone(self, wait_for_server):
-    wait_for_server.return_value = True
-
-    args = self.arg_parser.parse_args(['start'])
-    cli.Start(args, self._CreateHost(master_url=None))
+  def testStart_onPremise(self):
+    args = self.arg_parser.parse_args([
+        'start', '--port', '8100', '--adb_server_port', '5137',
+        '--operation_mode', 'on_premise'
+    ])
+    cli.Start(args, self._CreateHost())
 
     self.mock_context.Run.assert_has_calls([
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/dev/bus/usb:/dev/bus/usb',
-            '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
-            '--net=host',
             '--cap-add', 'syslog',
-            '-e', 'MTT_MASTER_PORT=8000',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=on_premise',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '8100:8000',
+            '-p', '8105:8005',
+            '-p', '8106:8006',
+            '-p', '127.0.0.1:5137:5037',
             'gcr.io/android-mtt/mtt:prod']),
-        mock.call(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
+
+  @mock.patch.object(cli, '_WaitForServer')
+  def testStart_standalone(self, wait_for_server):
+    wait_for_server.return_value = True
+
+    args = self.arg_parser.parse_args([
+        'start', '--port', '8100', '--adb_server_port', '5137'])
+    cli.Start(args, self._CreateHost(control_server_url=None))
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
+            'docker', 'create',
+            '--name', 'mtt', '-it',
+            '-v', '/dev/bus/usb:/dev/bus/usb',
+            '--device-cgroup-rule', 'c 189:* rwm',
+            '--cap-add', 'syslog',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
+            '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '--mount', 'type=volume,src=mtt-data,dst=/data',
+            '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
+            '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
+            '--mount', ('type=bind,src=/var/run/docker.sock,'
+                        'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '8100:8000',
+            '-p', '8105:8005',
+            '-p', '8106:8006',
+            '-p', '127.0.0.1:5137:5037',
+            'gcr.io/android-mtt/mtt:prod']),
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
+
+  @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
+  @mock.patch.object(cli, '_WaitForServer')
+  def testStart_standaloneFailContainerRunning(
+      self, wait_for_server, is_container_running):
+    wait_for_server.return_value = False
+    is_container_running.side_effect = [False, True]
+
+    args = self.arg_parser.parse_args(['start'])
+    with self.assertRaisesRegex(
+        RuntimeError, r'.*ATS server failed to start.*'):
+      cli.Start(args, self._CreateHost(control_server_url=None))
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+        mock.call(
+            ['docker', 'logs', 'mtt'], raise_on_failure=False),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'cat', '/data/log/server/current'],
+            raise_on_failure=False)
+    ])
+
+  @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
+  @mock.patch.object(cli, '_WaitForServer')
+  def testStart_standaloneFailContainerDead(
+      self, wait_for_server, is_container_running):
+    wait_for_server.return_value = False
+    is_container_running.side_effect = [False, False]
+
+    args = self.arg_parser.parse_args(['start'])
+    with self.assertRaisesRegex(
+        RuntimeError, r'.*ATS server failed to start.*'):
+      cli.Start(args, self._CreateHost(control_server_url=None))
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+        mock.call(
+            ['docker', 'logs', 'mtt'], raise_on_failure=False),
+        mock.call(
+            ['docker', 'run', '--rm', '--entrypoint', 'cat',
+             '--mount', 'type=volume,src=mtt-data,dst=/data',
+             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
+             'gcr.io/android-mtt/mtt:prod', '/data/log/server/current'],
+            raise_on_failure=False)
+    ])
 
   def testStart_argsWithContainerNameAndImageName(self):
     """Test Start function."""
@@ -299,29 +545,47 @@ class CliTest(parameterized.TestCase):
         self._CreateHost(cluster_name='acluster'))
 
     self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'inspect', 'animage:atag',
+                   '--format', '{{json .Config.Env}}'],
+                  raise_on_failure=False),
         mock.call(
             ['docker', 'volume', 'rm', 'mtt-temp'], raise_on_failure=False),
+        mock.call(['mkdir', '-p', '/local/.ats_storage']),
+        mock.call(['docker', 'network', 'inspect', 'bridge',
+                   '--format={{json .}}'],
+                  raise_on_failure=False),
         mock.call(['docker', 'container', 'rm', 'acontainer'],
                   raise_on_failure=False),
         mock.call([
             'docker', 'create',
             '--name', 'acontainer', '-it',
             '-v', '/dev/bus/usb:/dev/bus/usb',
-            '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
-            '--net=host',
             '--cap-add', 'syslog',
-            '-e', 'MTT_MASTER_URL=url',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
+            '-e', 'IMAGE_NAME=animage:atag',
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '127.0.0.1:5037:5037',
             'animage:atag']),
-        mock.call(['docker', 'start', 'acontainer'])])
+        mock.call(['docker', 'start', 'acontainer']),
+        mock.call(
+            ['docker', 'exec', 'acontainer', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
 
   @mock.patch.object(shutil, 'rmtree')
   @mock.patch.object(shutil, 'copy')
@@ -344,24 +608,35 @@ class CliTest(parameterized.TestCase):
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/dev/bus/usb:/dev/bus/usb',
-            '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
-            '--net=host',
             '--cap-add', 'syslog',
-            '-e', 'MTT_MASTER_URL=url',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '127.0.0.1:5037:5037',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call([  # temp directory copied over to container
             'docker',
             'cp', '-L', '/tmp/dir', 'mtt:/tmp/custom_sdk_tools']),
-        mock.call(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
 
   def testStart_withStackdriver(self):
     """Test Start with stackdriver logging enabled."""
@@ -375,36 +650,54 @@ class CliTest(parameterized.TestCase):
             service_account_json_key_path='/path/to/key.json'))
 
     self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'inspect', 'gcr.io/android-mtt/mtt:prod',
+                   '--format', '{{json .Config.Env}}'],
+                  raise_on_failure=False),
         mock.call(
             ['docker', 'volume', 'rm', 'mtt-temp'], raise_on_failure=False),
+        mock.call(['mkdir', '-p', '/local/.ats_storage']),
+        mock.call(['docker', 'network', 'inspect', 'bridge',
+                   '--format={{json .}}'],
+                  raise_on_failure=False),
         mock.call(['docker', 'container', 'rm', 'mtt'],
                   raise_on_failure=False),
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/dev/bus/usb:/dev/bus/usb',
-            '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
-            '--net=host',
             '--cap-add', 'syslog',
-            '-e', 'MTT_MASTER_URL=url',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
             '-e', 'JSON_KEY_PATH=/tmp/keyfile/key.json',
             '-e', 'ENABLE_STACKDRIVER_LOGGING=1',
             '-e', 'ENABLE_STACKDRIVER_MONITORING=1',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=volume,src=mtt-key,dst=/tmp/keyfile',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '127.0.0.1:5037:5037',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call([
             'docker', 'cp', '-L',
             '/path/to/key.json', 'mtt:/tmp/keyfile/key.json']),
-        mock.call(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
 
   def testStart_withTmpfs(self):
     """Test Start with tmpfs."""
@@ -417,38 +710,57 @@ class CliTest(parameterized.TestCase):
                 lab_config.CreateTmpfsConfig('/atmpfs', 1000, '750')]))
 
     self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'inspect', 'gcr.io/android-mtt/mtt:prod',
+                   '--format', '{{json .Config.Env}}'],
+                  raise_on_failure=False),
         mock.call(
             ['docker', 'volume', 'rm', 'mtt-temp'], raise_on_failure=False),
+        mock.call(['mkdir', '-p', '/local/.ats_storage']),
+        mock.call(['docker', 'network', 'inspect', 'bridge',
+                   '--format={{json .}}'],
+                  raise_on_failure=False),
         mock.call(['docker', 'container', 'rm', 'mtt'],
                   raise_on_failure=False),
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/dev/bus/usb:/dev/bus/usb',
-            '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
-            '--net=host',
             '--cap-add', 'syslog',
-            '-e', 'MTT_MASTER_URL=url',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
             '--mount', 'type=tmpfs,dst=/atmpfs,tmpfs-size=1000,tmpfs-mode=750',
+            '-p', '127.0.0.1:5037:5037',
             'gcr.io/android-mtt/mtt:prod']),
-        mock.call(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
 
   def testStart_imageNameAndMasterUrlInHost(self):
-    """Test start with image name and master url in host."""
+    """Test start with image name and primary url in host."""
     args = self.arg_parser.parse_args(['start'])
     cli.Start(
         args,
         self._CreateHost(
-            cluster_name='acluster', master_url='tfc',
+            cluster_name='acluster',
+            control_server_url='tfc',
             docker_image='a_docker_image'))
 
     self.mock_context.Run.assert_has_calls([
@@ -456,21 +768,32 @@ class CliTest(parameterized.TestCase):
             'docker', 'create',
             '--name', 'mtt', '-it',
             '-v', '/dev/bus/usb:/dev/bus/usb',
-            '-v', '/run/udev/control:/run/udev/control',
             '--device-cgroup-rule', 'c 189:* rwm',
-            '--net=host',
             '--cap-add', 'syslog',
-            '-e', 'MTT_MASTER_URL=tfc',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=tfc',
             '-e', 'CLUSTER=acluster',
+            '-e', 'IMAGE_NAME=a_docker_image',
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
             '--mount', ('type=bind,src=/var/run/docker.sock,'
                         'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '127.0.0.1:5037:5037',
             'a_docker_image']),
-        mock.call(['docker', 'start', 'mtt'])])
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
 
   @mock.patch.object(cli, '_StartMttNode')
   @mock.patch.object(cli, '_StartMttDaemon')
@@ -484,6 +807,282 @@ class CliTest(parameterized.TestCase):
 
     start_mtt.assert_not_called()
     start_mttd.assert_called_once_with(args, host)
+
+  @mock.patch.object(cli, '_StartMttNode')
+  @mock.patch.object(cli, '_StartMttDaemon')
+  def testStart_EnableUiUpdate(
+      self, start_mttd, start_mtt):
+    args = self.arg_parser.parse_args(['start'])
+    host = self._CreateHost(enable_ui_update=True)
+    cli.Start(args, host)
+    start_mttd.assert_called_once_with(args, host)
+    start_mtt.assert_not_called()
+    (self.mock_control_server_client.PatchTestHarnessImageToHostMetadata
+     .assert_called_with(host.config.hostname, host.config.docker_image))
+
+  def testStart_withLocalVirtualDevice(self):
+    """Test start with virtual device enabled."""
+    args = self.arg_parser.parse_args(
+        ['start', '--max_local_virtual_devices', '1'])
+    cli.Start(args, self._CreateHost())
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
+            'docker', 'create',
+            '--name', 'mtt', '-it',
+            '-v', '/dev/bus/usb:/dev/bus/usb',
+            '--device-cgroup-rule', 'c 189:* rwm',
+            '--cap-add', 'syslog',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
+            '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'MAX_LOCAL_VIRTUAL_DEVICES=1',
+            '--mount', 'type=volume,src=mtt-data,dst=/data',
+            '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
+            '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
+            '--mount', ('type=bind,src=/var/run/docker.sock,'
+                        'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'net_admin',
+            '--device', '/dev/kvm',
+            '--device', '/dev/vhost-vsock',
+            '--device', '/dev/net/tun',
+            '--device', '/dev/vhost-net',
+            'gcr.io/android-mtt/mtt:prod']),
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
+
+  def testStart_withExtraDockerArgs(self):
+    """Test start with extra docker args."""
+    args = self.arg_parser.parse_args([
+        'start',
+        '--extra_docker_args', '"--arg1" value1',
+        '--extra_docker_args', '"--arg2"',
+        '--extra_docker_args', 'value2',
+    ])
+    cli.Start(
+        args,
+        self._CreateHost(
+            hostname='ahost', cluster_name='acluster',
+            extra_docker_args=['--arg3', 'value3']))
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
+            'docker', 'create',
+            '--name', 'mtt', '-it',
+            '-v', '/dev/bus/usb:/dev/bus/usb',
+            '--device-cgroup-rule', 'c 189:* rwm',
+            '--cap-add', 'syslog',
+            '--hostname', 'ahost',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
+            '-e', 'CLUSTER=acluster',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
+            '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '--mount', 'type=volume,src=mtt-data,dst=/data',
+            '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
+            '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
+            '--mount', ('type=bind,src=/var/run/docker.sock,'
+                        'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '127.0.0.1:5037:5037',
+            '--arg3', 'value3', '--arg1', 'value1', '--arg2', 'value2',
+            'gcr.io/android-mtt/mtt:prod']),
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
+
+  def testStart_withLocalMounts(self):
+    """Test start with additional paths mounted in local file store."""
+    args = self.arg_parser.parse_args([
+        'start',
+        '--mount_local_path', '/path/to/dir',
+        '--mount_local_path', '/path/to/dir:remote',
+        '--mount_local_path', '/path/to/dir:/absolute',
+    ])
+    cli.Start(args, self._CreateHost())
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
+            'docker', 'create',
+            '--name', 'mtt', '-it',
+            '-v', '/dev/bus/usb:/dev/bus/usb',
+            '--device-cgroup-rule', 'c 189:* rwm',
+            '--cap-add', 'syslog',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
+            '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '--mount', 'type=volume,src=mtt-data,dst=/data',
+            '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
+            '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
+            '--mount', ('type=bind,src=/var/run/docker.sock,'
+                        'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '--mount', 'type=bind,src=/path/to/dir,dst=/tmp/.mnt/dir',
+            '--mount', 'type=bind,src=/path/to/dir,dst=/tmp/.mnt/remote',
+            '--mount', 'type=bind,src=/path/to/dir,dst=/tmp/.mnt/absolute',
+            '-p', '127.0.0.1:5037:5037',
+            'gcr.io/android-mtt/mtt:prod']),
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
+
+  def testStart_failAdbPortInUse(self):
+    """Test start with the adb server port in use."""
+    self.mock_socket.bind.side_effect = OSError('unit test')
+    args = self.arg_parser.parse_args(['start'])
+    with self.assertRaises(cli.ActionableError):
+      cli.Start(args, self._CreateHost())
+
+  def testStart_failDeviceNodesNotExisting(self):
+    """Test start without the device nodes required by local virtual devices."""
+    self.mock_exist_files = []
+    args = self.arg_parser.parse_args(
+        ['start', '--max_local_virtual_devices', '1'])
+    with self.assertRaises(cli.ActionableError):
+      cli.Start(args, self._CreateHost())
+
+  @mock.patch.object(shutil, 'which')
+  def testStart_withUseHostADB(self, mock_which):
+    """Test start with additional paths mounted in local file store."""
+    with tempfile.NamedTemporaryFile() as mock_adb:
+      args = self.arg_parser.parse_args(['start', '--use_host_adb'])
+      mock_which.return_value = mock_adb.name
+
+      cli.Start(args, self._CreateHost())
+
+      self.mock_context.Run.assert_has_calls([
+          mock.call([
+              'docker', 'create',
+              '--name', 'mtt', '-it',
+              '-v', '/dev/bus/usb:/dev/bus/usb',
+              '--device-cgroup-rule', 'c 189:* rwm',
+              '--cap-add', 'syslog',
+              '--hostname', 'mock-host',
+              '--network', 'bridge',
+              '-e', 'OPERATION_MODE=standalone',
+              '-e', 'MTT_CLI_VERSION=dev_version',
+              '-e', 'MTT_CONTROL_SERVER_URL=url',
+              '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
+              '-e', 'USER=user',
+              '-e', 'TZ=Etc/UTC',
+              '-e', 'MTT_SERVER_LOG_LEVEL=info',
+              '-e', 'MTT_USE_HOST_ADB=1',
+              '--mount', 'type=volume,src=mtt-data,dst=/data',
+              '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
+              '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
+              '--mount', ('type=bind,src=/var/run/docker.sock,'
+                          'dst=/var/run/docker.sock'),
+              '--mount', ('type=bind,src=/local/.ats_storage,'
+                          'dst=/tmp/.mnt/.ats_storage'),
+              'gcr.io/android-mtt/mtt:prod']),
+          mock.call(['docker', 'start', 'mtt']),
+          mock.call(
+              ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+              raise_on_failure=False),
+      ])
+
+  def testStart_EnableIPv6(self):
+    """Test start with IPv6 bridge network."""
+    self.enable_ipv6 = True
+    args = self.arg_parser.parse_args(['start'])
+
+    cli.Start(args, self._CreateHost())
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call(['docker', 'network', 'inspect', 'bridge',
+                   '--format={{json .}}'],
+                  raise_on_failure=False),
+        mock.call(['docker', 'container', 'rm', 'mtt'],
+                  raise_on_failure=False),
+        mock.call([
+            'docker', 'create',
+            '--name', 'mtt', '-it',
+            '-v', '/dev/bus/usb:/dev/bus/usb',
+            '--device-cgroup-rule', 'c 189:* rwm',
+            '--cap-add', 'syslog',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
+            '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'ENABLE_IPV6_BRIDGE_NETWORK=1',
+            '--mount', 'type=volume,src=mtt-data,dst=/data',
+            '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
+            '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
+            '--mount', ('type=bind,src=/var/run/docker.sock,'
+                        'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '127.0.0.1:5037:5037',
+            'gcr.io/android-mtt/mtt:prod']),
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
+
+  def testStart_withControlServerUrl(self):
+    """Test start with control_server_url."""
+    args = self.arg_parser.parse_args(
+        ['start', '--control_server_url', 'new_url'])
+    cli.Start(args, self._CreateHost(cluster_name='acluster', lab_name='alab'))
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
+            'docker', 'create', '--name', 'mtt', '-it', '-v',
+            '/dev/bus/usb:/dev/bus/usb', '--device-cgroup-rule', 'c 189:* rwm',
+            '--cap-add', 'syslog', '--hostname', 'mock-host', '--network',
+            'bridge', '-e', 'OPERATION_MODE=standalone', '-e',
+            'MTT_CLI_VERSION=dev_version', '-e',
+            'MTT_CONTROL_SERVER_URL=new_url', '-e', 'LAB_NAME=alab', '-e',
+            'CLUSTER=acluster', '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
+            '-e', 'USER=user', '-e', 'TZ=Etc/UTC', '-e',
+            'MTT_SERVER_LOG_LEVEL=info', '--mount',
+            'type=volume,src=mtt-data,dst=/data', '--mount',
+            'type=volume,src=mtt-temp,dst=/tmp', '--mount',
+            'type=bind,src=/local/.android,dst=/root/.android', '--mount',
+            ('type=bind,src=/var/run/docker.sock,'
+             'dst=/var/run/docker.sock'), '--mount',
+            ('type=bind,src=/local/.ats_storage,'
+             'dst=/tmp/.mnt/.ats_storage'), '-p', '127.0.0.1:5037:5037',
+            'gcr.io/android-mtt/mtt:prod'
+        ]),
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+                  raise_on_failure=False),
+    ])
 
   @mock.patch.object(cli, '_IsDaemonActive')
   @mock.patch.object(cli, '_SetupSystemdScript')
@@ -596,12 +1195,12 @@ class CliTest(parameterized.TestCase):
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
   @mock.patch('__main__.cli.os.geteuid')
   def testStop_noMasterUrl(self, euid, is_running):
-    """Test Stop with kill mtt with master_url in host config."""
+    """Test Stop with kill mtt with control_server_url in host config."""
     euid.return_value = 123
     is_running.return_value = True
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop'])
-    cli.Stop(args, self._CreateHost(master_url=None))
+    cli.Stop(args, self._CreateHost(control_server_url=None))
 
     self.mock_context.Run.assert_has_calls([
         mock.call(['docker', 'stop', 'mtt'],
@@ -680,6 +1279,22 @@ class CliTest(parameterized.TestCase):
 
   @mock.patch.object(cli, '_StartMttNode')
   @mock.patch.object(cli, '_StopMttNode')
+  @mock.patch.object(cli, '_StartMttDaemon')
+  @mock.patch.object(cli, '_StopMttDaemon')
+  def testRestart_EnableUiUpdate(
+      self, stop_mttd, start_mttd, stop_mtt, start_mtt):
+    args = self.arg_parser.parse_args(['restart'])
+    host = self._CreateHost(enable_ui_update=True)
+    cli.Restart(args, host)
+    stop_mttd.assert_called_with(host)
+    stop_mtt.assert_called_once_with(args, host)
+    start_mtt.assert_not_called()
+    start_mttd.assert_called_once_with(args, host)
+    (self.mock_control_server_client.PatchTestHarnessImageToHostMetadata
+     .assert_called_with(host.config.hostname, host.config.docker_image))
+
+  @mock.patch.object(cli, '_StartMttNode')
+  @mock.patch.object(cli, '_StopMttNode')
   @mock.patch.object(cli, '_PullUpdate')
   def testUpdate(self, pull_update, stop_mtt, start_mtt):
     """Test Update."""
@@ -705,12 +1320,37 @@ class CliTest(parameterized.TestCase):
 
   @mock.patch.object(cli, '_UpdateMttNode')
   @mock.patch.object(cli, '_StartMttDaemon')
-  def testUpdate_EnableAutoupdate(self, start_mttd, update_mtt):
+  @mock.patch.object(cli, '_StopMttDaemon')
+  def testUpdate_EnableAutoupdate(self, stop_mttd, start_mttd, update_mtt):
     args = self.arg_parser.parse_args(['update'])
     host = self._CreateHost(enable_autoupdate=True)
     cli.Update(args, host)
+    stop_mttd.assert_called_once()
     start_mttd.assert_called_once()
     update_mtt.assert_not_called()
+
+  @mock.patch.object(cli, '_UpdateMttNode')
+  @mock.patch.object(cli, '_StopMttDaemon')
+  def testUpdate_DisableAutoupdate(self, stop_mttd, update_mtt):
+    args = self.arg_parser.parse_args(['update'])
+    host = self._CreateHost(enable_autoupdate=False)
+    cli.Update(args, host)
+    stop_mttd.assert_called_once()
+    update_mtt.assert_called_once()
+
+  @mock.patch.object(cli, '_UpdateMttNode')
+  @mock.patch.object(cli, '_StartMttDaemon')
+  @mock.patch.object(cli, '_StopMttDaemon')
+  def testUpdate_EnableUiUpdate(
+      self, stop_mttd, start_mttd, update_mtt):
+    args = self.arg_parser.parse_args(['update'])
+    host = self._CreateHost(enable_ui_update=True)
+    cli.Update(args, host)
+    stop_mttd.assert_called_once()
+    start_mttd.assert_called_once()
+    update_mtt.assert_not_called()
+    (self.mock_control_server_client.PatchTestHarnessImageToHostMetadata
+     .assert_called_with(host.config.hostname, host.config.docker_image))
 
   def testPullUpdate_forceUpdate(self):
     """Test PullUpdate with force_update."""
@@ -794,19 +1434,21 @@ class CliTest(parameterized.TestCase):
     host.context.Run.assert_has_calls([
         mock.call(['systemctl', 'daemon-reload'])])
 
-  def testSetupMTTRuntimeIntoPermanentPath(self):
+  @mock.patch.object(lab_config.HostConfig, 'Save')
+  def testSetupMTTRuntimeIntoPermanentPath(self, mock_save):
     mtt_path = os.path.join(self.tmp_root, 'mtt')
     key_path = os.path.join(self.tmp_root, 'keyfile', 'key.json')
     args = mock.create_autospec(cli.argparse.Namespace)
     args.cli_path = mtt_path
     host = mock.create_autospec(cli.host_util.Host)
-    host.config.service_account_json_key_path = key_path
+    host.config = lab_config.CreateHostConfig(
+        service_account_json_key_path=key_path)
     cli._SetupMTTRuntimeIntoLibPath(args, host)
     host.context.assert_has_calls([
         mock.call.CopyFile(mtt_path, cli._MTT_BINARY),
         mock.call.CopyFile(key_path, cli._KEY_FILE),
     ])
-    host.config.Save.assert_called_once_with(cli._HOST_CONFIG)
+    mock_save.assert_called_once_with(cli._HOST_CONFIG)
 
   @parameterized.named_parameters(
       ('Daemon is active', True, 0, '**/nActive: active (running)\n**', ''),
@@ -814,8 +1456,10 @@ class CliTest(parameterized.TestCase):
       ('Daemon is not registered', False, 4, '', '**could not be found.\n'))
   def testIsDaemonActive(self, expect_active, return_code, stdout, stderr):
     host = self._CreateHost()
-    host.context.Run.return_value = cli.command_util.CommandResult(
-        return_code=return_code, stdout=stdout, stderr=stderr)
+    host.context.Run.side_effect = [
+        common.CommandResult(
+            return_code=return_code, stdout=stdout, stderr=stderr)
+    ]
     self.assertEqual(expect_active, cli._IsDaemonActive(host))
 
   def testForceKillMttNode_withoutContainerRunning(self):
@@ -836,8 +1480,8 @@ class CliTest(parameterized.TestCase):
     ]
     docker_helper.GetProcessIdForContainer.return_value = 'acontainer_pid'
     host.context.Run.side_effect = [
-        cli.command_util.CommandResult(0, 'a_parent_pid\n', None),
-        cli.command_util.CommandResult(0, None, None),
+        common.CommandResult(0, 'a_parent_pid\n', None),
+        common.CommandResult(0, None, None),
     ]
 
     cli._ForceKillMttNode(host, docker_helper, 'a_container_name')
@@ -860,11 +1504,11 @@ class CliTest(parameterized.TestCase):
     docker_helper.IsContainerDead.side_effect = [False, False, True]
     docker_helper.IsContainerRunning.return_value = True
     mock_time.time.side_effect = [0, 0, 30, 60, 90]
-    host = self._CreateHost()
+    host = self._CreateHost(shutdown_timeout_sec=90)
     container_name = 'container_1'
 
     cli._DetectAndKillDeadContainer(
-        host, docker_helper, container_name, total_wait_sec=90)
+        host, docker_helper, container_name)
 
     mock_kill.assert_called_with(host, docker_helper, container_name)
     self.assertLen(mock_time.sleep.call_args_list, 2)
@@ -876,11 +1520,11 @@ class CliTest(parameterized.TestCase):
     docker_helper.IsContainerDead.return_value = False
     docker_helper.IsContainerRunning.return_value = True
     mock_time.time.side_effect = [0, 0, 30, 60, 90]
-    host = self._CreateHost()
+    host = self._CreateHost(shutdown_timeout_sec=90)
     container_name = 'container_1'
 
     cli._DetectAndKillDeadContainer(
-        host, docker_helper, container_name, total_wait_sec=90)
+        host, docker_helper, container_name)
 
     mock_kill.assert_called_with(host, docker_helper, container_name)
     self.assertLen(mock_time.sleep.call_args_list, 3)
@@ -893,14 +1537,51 @@ class CliTest(parameterized.TestCase):
     docker_helper.IsContainerDead.side_effect = [False, False, True]
     docker_helper.IsContainerRunning.side_effect = [True, True, False]
     mock_time.time.side_effect = [0, 0, 30, 60, 90]
-    host = self._CreateHost()
+    host = self._CreateHost(shutdown_timeout_sec=90)
     container_name = 'container_1'
 
     cli._DetectAndKillDeadContainer(
-        host, docker_helper, container_name, total_wait_sec=90)
+        host, docker_helper, container_name)
 
     mock_kill.assert_not_called()
     self.assertLen(mock_time.sleep.call_args_list, 2)
+
+  @mock.patch.object(cli, '_UpdateMttNode')
+  def testRunDaemonIteration_autoUpdate(self, mtt_update):
+    args = self.arg_parser.parse_args(['daemon'])
+    host = self._CreateHost(enable_autoupdate=True)
+    cli._RunDaemonIteration(args, host)
+    mtt_update.assert_called_with(args, host)
+
+  @mock.patch.object(cli, '_UpdateMttNode')
+  def testRunDaemonIteration_uiUpdate(self, mtt_update):
+    args = self.arg_parser.parse_args(['daemon'])
+    host = self._CreateHost(enable_ui_update=True)
+    self.mock_control_server_client.GetHostMetadata.return_value = {
+        'hostname': host.config.hostname,
+        'testHarnessImage': 'gcr.io/android-mtt/mtt:123',
+    }
+    cli._RunDaemonIteration(args, host)
+    mtt_update.assert_called_with(args, host)
+    self.assertEqual('gcr.io/android-mtt/mtt:123', host.config.docker_image)
+
+  @mock.patch.object(cli, '_UpdateMttNode')
+  def testRunDaemonIteration_uiUpdateNoMetadata(self, mtt_update):
+    args = self.arg_parser.parse_args(['daemon'])
+    host = self._CreateHost(enable_ui_update=True)
+    self.mock_control_server_client.GetHostMetadata.return_value = {
+        'hostname': host.config.hostname,
+    }
+    cli._RunDaemonIteration(args, host)
+    mtt_update.assert_called_with(args, host)
+    self.assertEqual('gcr.io/android-mtt/mtt:prod', host.config.docker_image)
+
+  @mock.patch.object(cli, '_UpdateMttNode')
+  def testRunDaemonIteration_runNothing(self, mtt_update):
+    args = self.arg_parser.parse_args(['daemon'])
+    host = self._CreateHost()
+    cli._RunDaemonIteration(args, host)
+    mtt_update.assert_not_called()
 
 
 _ALL_START_OPTIONS = (
@@ -910,6 +1591,9 @@ _ALL_START_OPTIONS = (
     ('tag', 'tag'),
     ('service_account_json_key_path', 'key.json'),
     ('port', 8001),
+    ('max_local_virtual_devices', 1),
+    ('server_log_level', 'info'),
+    ('operation_mode', 'standalone'),
 )
 _ALL_STOP_OPTIONS = (
     ('name', 'container'),

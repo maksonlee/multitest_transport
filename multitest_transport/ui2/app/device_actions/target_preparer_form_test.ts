@@ -19,12 +19,12 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
-import {newMockNameMultiValuePairList, newMockTradefedConfigObjectList} from '../testing/test_util';
+import {newMockNameMultiValuePairList, newMockTradefedConfigObjectList} from '../testing/mtt_mocks';
 
 import {DeviceActionsModule} from './device_actions_module';
 import {DeviceActionsModuleNgSummary} from './device_actions_module.ngsummary';
 import {TargetPreparerForm} from './target_preparer_form';
-import {OptionValueChangeEvent} from './target_preparer_option_form';
+import {OptionValueChangeEvent} from './tradefed_config_option_form';
 
 describe('TargetPreparerForm', () => {
   let targetPreparerForm: TargetPreparerForm;
@@ -46,12 +46,25 @@ describe('TargetPreparerForm', () => {
 
   it('initializes a component', () => {
     expect(targetPreparerForm).toBeTruthy();
-  });
 
-  it('should show HTML correctly', () => {
     const textContent = getTextContent(el);
     expect(textContent).toContain('Class Name');
     expect(textContent).toContain('Add New Target Preparer Option');
+
+    // Inputs should be editable
+    const classNameInput = getEl(el, '.class-name-input');
+    expect(classNameInput.getAttribute('readonly')).toBeNull();
+  });
+
+  it('should hide add and remove buttons when not editable', () => {
+    targetPreparerForm.canEdit = false;
+    targetPreparerFormFixture.detectChanges();
+    const textContent = getTextContent(el);
+    expect(textContent).not.toContain('Add Target Preparer');
+    expect(textContent).not.toContain('Remove');
+
+    const classNameInput = getEl(el, '.class-name-input');
+    expect(classNameInput.getAttribute('readonly')).toEqual('true');
   });
 
   it('called correct function on press add button', () => {

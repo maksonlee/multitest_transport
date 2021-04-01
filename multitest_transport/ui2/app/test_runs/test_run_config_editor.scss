@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Google LLC
+ * Copyright 2020 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
-device-list {
+device-picker {
   display: block;
   margin-bottom: 20px;
 }
@@ -25,11 +25,17 @@ h2 {
   padding: 20px 20px 0;
 }
 
+h3 {
+  font-size: 18px;
+  font-weight: normal;
+  margin: 0 0 6px;
+}
+
 .mat-button {
   margin-right: 20px;
 }
 
-mat-horizontal-stepper {
+mat-horizontal-stepper ::ng-deep {
   .mat-step-header {
     &:hover,
     &.cdk-program-focused,

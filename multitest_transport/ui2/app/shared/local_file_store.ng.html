@@ -18,23 +18,33 @@
   <!-- selected file name -->
   <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
     <mat-label> Selected File </mat-label>
-    <input matInput type="text" [ngModel]="selectedFile?.name" disabled />
+    <input matInput type="text" [value]="getRelativePath(selectedFile?.path || '')" disabled />
   </mat-form-field>
 
   <!-- upload button -->
   <input type="file" #fileUploadInput
          (change)="uploadFile($event.target.files[0]); fileUploadInput.value = ''" />
-  <button mat-flat-button color="accent" (click)="fileUploadInput.click()">
+  <button mat-flat-button color="accent" *ngIf="!isUploading" (click)="fileUploadInput.click()">
     Upload File
   </button>
 
   <!-- TODO: Progress bar styling and add percentage info    -->
   <!-- progress bar -->
-  <mat-progress-bar *ngIf="isUploading" mode="determinate" [value]="uploadProgress">
-  </mat-progress-bar>
+  <div class="progress" *ngIf="isUploading">
+    <mat-progress-bar mode="determinate" [value]="uploadProgress"></mat-progress-bar>
+    <button mat-icon-button (click)="cancel.next()"
+            matTooltip="Cancel upload">
+      <mat-icon>cancel</mat-icon>
+    </button>
+  </div>
+
+  <!-- Breadcrumb -->
+  <breadcrumb
+      [path]="currentDirectory"
+      (pathChange)="changeDirectory($event)">
+  </breadcrumb>
 
   <!-- table to display the file list -->
-  <h4>Uploaded Files</h4>
   <mat-table *ngIf="files?.length; else emptyTemplate"
     [dataSource]="files" aria-label="Local file store">
     <!-- Name -->
@@ -60,7 +70,7 @@
     <!-- Size -->
     <ng-container matColumnDef="size">
       <mat-header-cell *matHeaderCellDef [fxFlex]="10">
-        Size (bytes)
+        Size
       </mat-header-cell>
       <mat-cell *matCellDef="let file" [fxFlex]="10">
         {{ file.type !== FileType.DIRECTORY ? file.size : "" }}
@@ -68,10 +78,16 @@
     </ng-container>
 
     <!-- Actions -->
-    <ng-container matColumnDef="action" stickyEnd>
+    <ng-container matColumnDef="action">
       <mat-header-cell *matHeaderCellDef [fxFlex]="10"></mat-header-cell>
       <mat-cell *matCellDef="let file" [fxFlex]="10" fxLayoutAlign="center">
-        <button mat-icon-button aria-label="Delete"
+        <button mat-icon-button aria-label="Change directory" class="change-dir"
+                *ngIf="file.type === FileType.DIRECTORY"
+                (click)="changeDirectory(file); $event.stopPropagation()">
+          <mat-icon>navigate_next</mat-icon>
+        </button>
+        <button mat-icon-button aria-label="Delete" class="delete"
+                *ngIf="file.type !== FileType.DIRECTORY"
                 (click)="deleteFile(file); $event.stopPropagation()">
           <mat-icon>delete_forever</mat-icon>
         </button>
@@ -81,8 +97,9 @@
     <!-- Header -->
     <mat-header-row *matHeaderRowDef="columnsToDisplay"> </mat-header-row>
     <mat-row *matRowDef="let file; columns: columnsToDisplay" tabindex="0"
-      (click)="selectFile(file)"
-      (keyup.enter)="selectFile(file)"
+      (click)="file.type !== FileType.DIRECTORY ? selectFile(file) : null"
+      (dblclick)="file.type === FileType.DIRECTORY ? changeDirectory(file) : null"
+      (keyup.enter)="file.type === FileType.DIRECTORY ? changeDirectory(file) : selectFile(file)"
       [class.selected]="file === selectedFile">
     </mat-row>
   </mat-table>

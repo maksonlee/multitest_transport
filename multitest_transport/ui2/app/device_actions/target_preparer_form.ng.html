@@ -18,6 +18,7 @@
   <h2>TF Target Preparer
     <!-- Delete Button -->
     <button
+      *ngIf="canEdit"
       mat-button
       color="accent"
       type="button"
@@ -31,8 +32,8 @@
   <div fxLayout="column">
     <mat-form-field appearance="outline" floatLabel="always">
       <mat-label>Class Name</mat-label>
-      <input matInput type="text" [(ngModel)]="targetPreparer.class_name"
-        name="class_name" required #class_name="ngModel">
+      <input matInput type="text" [(ngModel)]="targetPreparer.class_name" [readonly]="!canEdit"
+        class="class-name-input" name="class_name" required #class_name="ngModel">
       <mat-error *ngIf="class_name.invalid && class_name.touched">Class name is required</mat-error>
     </mat-form-field>
   </div>
@@ -42,17 +43,20 @@
   </h3>
 
   <!-- Option Form -->
-  <target-preparer-option-form
+  <tradefed-config-option-form
+    [optionTypeName]="'Target Preparer Option'"
     [optionValues]="targetPreparer.option_values"
+    [canEdit]="canEdit"
     (addOption)="onAddOption(targetPreparer)"
     (removeOption)="onRemoveOption(targetPreparer, $event)"
     (optionValueChange)="onOptionValueChange(targetPreparer, $event)"
     >
-  </target-preparer-option-form>
+  </tradefed-config-option-form>
 </mat-card>
 
 <!-- Add button  -->
 <button
+  *ngIf="canEdit"
   mat-stroked-button
   aria-label="Add target preparer"
   color="accent"

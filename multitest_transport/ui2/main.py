@@ -12,67 +12,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Main handler for MTT."""
+"""ATS UI flask server."""
 import os
 
-import javascript_sources
-import jinja2
-import webapp2
+import flask
 
 from multitest_transport.models import ndb_models
 from multitest_transport.util import env
 
+ROOT_PATH = os.path.dirname(__file__)
+STATIC_PATH = os.path.join(ROOT_PATH, 'static')
 
-BASE_PATH = os.path.dirname(__file__)
-MANIFEST_PATH = BASE_PATH + '/dev_sources.MF'
-
-JINJA = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__))))
-
-APP_JS = 'dev.js' if env.IS_DEV_MODE else 'app.js'
-
-
-class BaseHandler(webapp2.RequestHandler):
-  """A base class for all page request handlers."""
-
-  def __init__(self, request, response):
-    super(BaseHandler, self).__init__(request, response)
-    self.context = {}
-    self.context['env'] = env
-
-    private_node_config = ndb_models.GetPrivateNodeConfig()
-    self.context['private_node_config'] = private_node_config
-
-    self.context['analytics_tracking_id'] = ''
-    if not env.IS_DEV_MODE and private_node_config.metrics_enabled:
-      self.context['analytics_tracking_id'] = 'UA-140187490-1'
+APP = flask.Flask(
+    __name__,
+    root_path=ROOT_PATH,
+    static_folder=None,
+    template_folder=ROOT_PATH)
 
 
-class MainHandler(BaseHandler):
-  """Always returns index.html. Routing handled by angular."""
-
-  def get(self):
-    self.context['app_js'] = APP_JS
-    template = JINJA.get_template('index.html')
-    self.response.write(template.render(self.context))
+@APP.route('/static/<path:path>')
+def Static(path):
+  """Returns static files."""
+  return flask.send_from_directory(STATIC_PATH, path, conditional=False)
 
 
-class DevJavascriptHandler(webapp2.RequestHandler):
-  """Development JavaScript handler.
-
-  In development mode, the app.yaml provides a path to a manifest
-  file for serving concatenated JS.  The production app.yaml maps
-  app_bundle.js to a compiled static file served by App Engine.
-
-  """
-
-  def get(self):
-    self.response.out.write(
-        javascript_sources.compile_js_from_manifest(MANIFEST_PATH))
+@APP.route('/app.js')
+def App():
+  """Returns application script."""
+  script = 'dev_sources.concat.js' if env.IS_DEV_MODE else 'app.js'
+  return flask.send_from_directory(ROOT_PATH, script, conditional=False)
 
 
-ROUTES = [('/.*', MainHandler)]
-if env.IS_DEV_MODE:
-  ROUTES = [('/dev.js', DevJavascriptHandler)] + ROUTES
-
-APP = webapp2.WSGIApplication(ROUTES)
+@APP.route('/', defaults={'_': ''})
+@APP.route('/<path:_>')
+def Root(_):
+  """Routes all other requests to index.html and angular."""
+  private_node_config = ndb_models.GetPrivateNodeConfig()
+  analytics_tracking_id = ''
+  if not env.IS_DEV_MODE and private_node_config.metrics_enabled:
+    analytics_tracking_id = 'UA-140187490-1'
+  return flask.render_template(
+      'index.html',
+      analytics_tracking_id=analytics_tracking_id,
+      env=env,
+      private_node_config=private_node_config)

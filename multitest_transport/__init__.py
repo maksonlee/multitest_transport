@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,3 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""A hack module to fix import order."""
+import sys
+
+# Move google3/third_party/py to the end of sys.path to ensure default modules
+# to be preferred over packaged ones. Without this, modules like enum causes
+# compatibility issues.
+sys.path.sort(key=lambda p: p.endswith('google3/third_party/py'))
+
+# Ensure google3 imports to work correctly.
+import google3  

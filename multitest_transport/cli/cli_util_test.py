@@ -79,12 +79,124 @@ class CliUtilTest(absltest.TestCase):
     try:
       f = tempfile.NamedTemporaryFile()
       arg_parser = cli_util. CreateLoggingArgParser()
-      args = arg_parser.parse_args([
-          '--logtostderr', '-v', '--log_file', f.name])
+      args = arg_parser.parse_args(['-v', '--log_file', f.name])
       logger = cli_util.CreateLogger(args)
       self.assertIsNotNone(logger)
     finally:
       f.close()
+
+  @mock.patch.object(os, 'access')
+  @mock.patch.object(cli_util, '_DownloadToolFromHttp')
+  def testCheckAndUpdateTool(self, mock_download, mock_access):
+    mock_access.return_value = True
+    local_path = '/local/path/file.par'
+    remote_path = 'http://googlestorage.com/remote/path/file.par'
+    mock_download.return_value = local_path
+    new_path = cli_util.CheckAndUpdateTool(local_path, remote_path)
+    self.assertEqual(local_path, new_path)
+
+    mock_access.assert_called_once_with('/local/path', os.W_OK)
+    mock_download.assert_called_once_with(remote_path, local_path)
+
+  @mock.patch.object(os, 'access')
+  @mock.patch.object(cli_util, '_DownloadToolFromGCS')
+  def testCheckAndUpdateTool_withGCSUrl(self, mock_download, mock_access):
+    mock_access.return_value = True
+    local_path = '/local/path/file.par'
+    remote_path = 'gs://bucket/remote/path/file.par'
+    mock_download.return_value = local_path
+    new_path = cli_util.CheckAndUpdateTool(local_path, remote_path)
+    self.assertEqual(local_path, new_path)
+
+    mock_access.assert_called_once_with('/local/path', os.W_OK)
+    mock_download.assert_called_once_with(remote_path, local_path)
+
+  @mock.patch.object(os, 'access')
+  @mock.patch.object(cli_util, '_DownloadToolFromHttp')
+  @mock.patch.object(cli_util, 'GetVersion')
+  def testCheckAndUpdateTool_remoteNotSet(
+      self, mock_get_version, mock_download, mock_access):
+    local_path = '/local/path/mtt'
+    mock_access.return_value = True
+    mock_download.return_value = local_path
+    mock_get_version.return_value = ('aversion', 'prod')
+
+    new_path = cli_util.CheckAndUpdateTool(local_path)
+    self.assertEqual(local_path, new_path)
+
+    mock_get_version.assert_called_once_with(local_path)
+    mock_access.assert_called_once_with('/local/path', os.W_OK)
+    mock_download.assert_called_once_with(
+        'https://storage.googleapis.com/android-mtt.appspot.com/prod/mtt',
+        local_path)
+
+  @mock.patch.object(cli_util, 'GetVersion')
+  def testCheckAndUpdateTool_devEnvironment(self, mock_get_version):
+    mock_get_version.return_value = ('dev', 'dev')
+
+    new_path = cli_util.CheckAndUpdateTool('/local/path/mtt')
+    self.assertIsNone(new_path)
+
+    mock_get_version.assert_called_once_with('/local/path/mtt')
+
+  def testCheckAndUpdateTool_remoteDifferentName(self):
+    new_path = cli_util.CheckAndUpdateTool(
+        '/local/path/file.par', 'gs://bucket/remote/path/new_file.par')
+    self.assertIsNone(new_path)
+
+  @mock.patch.object(os, 'access')
+  def testCheckAndUpdateTool_noWriteAccess(self, mock_access):
+    mock_access.return_value = False
+
+    new_path = cli_util.CheckAndUpdateTool(
+        '/local/path/file.par', 'gs://bucket/remote/path/file.par')
+    self.assertIsNone(new_path)
+
+    mock_access.assert_called_once_with('/local/path', os.W_OK)
+
+  @mock.patch.object(os, 'rename')
+  @mock.patch.object(os, 'chmod')
+  @mock.patch.object(cli_util.gcs_file_util, 'CalculateMd5Hash')
+  @mock.patch.object(cli_util.gcs_file_util, 'CreateBackupFilePath')
+  @mock.patch.object(cli_util.requests, 'head')
+  @mock.patch.object(cli_util.requests, 'get')
+  @mock.patch.object(cli_util, '_WriteResponseToFile')
+  def testDownloadToolFromHttp(
+      self, mock_write, mock_get, mock_head, mock_create_backup_path,
+      mock_md5hash, mock_chmod, mock_rename):
+    mock_head.return_value = mock.MagicMock(
+        headers={'x-goog-hash': 'crc32c=crc32chash, md5=md5hash'})
+    mock_response = mock.MagicMock()
+    mock_get.return_value = mock_response
+    mock_create_backup_path.return_value = '/path/to/backup.par'
+    mock_md5hash.return_value = six.ensure_text('new_md5hash')
+
+    new_path = cli_util._DownloadToolFromHttp(
+        'http://googlestorage.com/remote/path/file.par', '/local/path/file.par')
+    self.assertEqual('/local/path/file.par', new_path)
+
+    mock_create_backup_path.assert_called_once_with('/local/path/file.par')
+    mock_rename('/local/path/file.par', '/path/to/backup.par')
+    mock_write.assert_called_once_with(mock_response, '/local/path/file.par')
+    mock_chmod.assert_called_once_with('/local/path/file.par', 0o770)
+
+  @mock.patch.object(cli_util.requests, 'head')
+  def testDownloadToolFromHttp_remoteNotExist(self, mock_head):
+    mock_head.side_effect = cli_util.requests.ConnectionError('File not exist.')
+    new_path = cli_util._DownloadToolFromHttp(
+        'http://googlestorage.com/remote/path/file.par', '/local/path/file.par')
+    self.assertIsNone(new_path)
+
+  @mock.patch.object(cli_util.gcs_file_util, 'CalculateMd5Hash')
+  @mock.patch.object(cli_util.requests, 'head')
+  def testDownloadToolFromHttp_sameMd5Hash(self, mock_head, mock_md5hash):
+    mock_head.return_value = mock.MagicMock(
+        headers={'x-goog-hash': 'crc32c=crc32chash, md5=md5hash'})
+    mock_md5hash.return_value = six.ensure_text('md5hash')
+
+    new_path = cli_util._DownloadToolFromHttp(
+        'http://googlestorage.com/remote/path/file.par', '/local/path/file.par')
+    self.assertIsNone(new_path)
 
   @mock.patch.object(os, 'rename')
   @mock.patch.object(os, 'chmod')
@@ -93,7 +205,7 @@ class CliUtilTest(absltest.TestCase):
   @mock.patch.object(cli_util.gcs_file_util, 'CreateGCSClient')
   @mock.patch.object(cli_util.gcs_file_util, 'GetGCSBlob')
   @mock.patch.object(cli_util.google_auth_util, 'GetGCloudCredential')
-  def testCheckAndUpdateTool(
+  def testDownloadToolFromGCS(
       self, create_cred, mock_get_blob, mock_create_gcs_client, mock_md5hash,
       mock_create_backup_path, mock_chmod, mock_rename):
     cred = mock.MagicMock()
@@ -105,8 +217,8 @@ class CliUtilTest(absltest.TestCase):
     mock_create_backup_path.return_value = '/path/to/backup.par'
     mock_md5hash.return_value = six.ensure_text('md5hash')
 
-    new_path = cli_util.CheckAndUpdateTool(
-        '/local/path/file.par', 'gs://bucket/remote/path/file.par')
+    new_path = cli_util._DownloadToolFromGCS(
+        'gs://bucket/remote/path/file.par', '/local/path/file.par')
     self.assertEqual('/local/path/file.par', new_path)
 
     self.assertTrue(create_cred.called)
@@ -119,73 +231,19 @@ class CliUtilTest(absltest.TestCase):
         '/local/path/file.par')
     mock_chmod.assert_called_once_with('/local/path/file.par', 0o770)
 
-  @mock.patch.object(os, 'rename')
-  @mock.patch.object(os, 'chmod')
-  @mock.patch.object(cli_util.gcs_file_util, 'CreateBackupFilePath')
-  @mock.patch.object(cli_util.gcs_file_util, 'CalculateMd5Hash')
   @mock.patch.object(cli_util.gcs_file_util, 'CreateGCSClient')
   @mock.patch.object(cli_util.gcs_file_util, 'GetGCSBlob')
   @mock.patch.object(cli_util.google_auth_util, 'GetGCloudCredential')
-  @mock.patch.object(cli_util, 'GetVersion')
-  def testCheckAndUpdateTool_remoteNotSet(
-      self, mock_get_version, create_cred, mock_get_blob,
-      mock_create_gcs_client, mock_md5hash, mock_create_backup_path,
-      mock_chmod, mock_rename):
-    mock_get_version.return_value = ('aversion', 'prod')
-    cred = mock.MagicMock()
-    create_cred.return_value = cred
-    mock_client = mock.MagicMock()
-    mock_create_gcs_client.return_value = mock_client
-    mock_blob = mock.MagicMock(md5_hash='new_md5hash')
-    mock_get_blob.return_value = mock_blob
-    mock_create_backup_path.return_value = '/path/to/mtt_backup'
-    mock_md5hash.return_value = six.ensure_text('md5hash')
-
-    new_path = cli_util.CheckAndUpdateTool('/local/path/mtt')
-    self.assertEqual('/local/path/mtt', new_path)
-
-    mock_get_version.assert_called_once_with('/local/path/mtt')
-    self.assertTrue(create_cred.called)
-    mock_create_gcs_client.assert_called_once_with('android-mtt', cred)
-    mock_get_blob.assert_called_once_with(
-        mock_client, 'gs://android-mtt.appspot.com/prod/mtt')
-    mock_create_backup_path.assert_called_once_with('/local/path/mtt')
-    mock_rename('/local/path/mtt', '/path/to/mtt_backup')
-    mock_blob.download_to_filename.assert_called_once_with(
-        '/local/path/mtt')
-    mock_chmod.assert_called_once_with('/local/path/mtt', 0o770)
-
-  @mock.patch.object(cli_util, 'GetVersion')
-  def testCheckAndUpdateTool_devEnvironment(self, mock_get_version):
-    mock_get_version.return_value = ('dev', 'dev')
-
-    new_path = cli_util.CheckAndUpdateTool('/local/path/mtt')
-    self.assertIsNone(new_path)
-
-    mock_get_version.assert_called_once_with('/local/path/mtt')
-
-  def testCheckAndUpdateTool_remoteNotGCS(self):
-    new_path = cli_util.CheckAndUpdateTool(
-        '/local/path/file.par', '/bucket/remote/path/file.par')
-    self.assertIsNone(new_path)
-
-  def testCheckAndUpdateTool_remoteDifferentName(self):
-    new_path = cli_util.CheckAndUpdateTool(
-        '/local/path/file.par', 'gs://bucket/remote/path/new_file.par')
-    self.assertIsNone(new_path)
-
-  @mock.patch.object(cli_util.gcs_file_util, 'CreateGCSClient')
-  @mock.patch.object(cli_util.gcs_file_util, 'GetGCSBlob')
-  @mock.patch.object(cli_util.google_auth_util, 'GetGCloudCredential')
-  def testCheckAndUpdateTool_remoteNotExist(
+  def testDownloadToolFromGCS_remoteNotExist(
       self, create_cred, mock_get_blob, mock_create_gcs_client):
     cred = mock.MagicMock()
     create_cred.return_value = cred
     mock_client = mock.MagicMock()
     mock_create_gcs_client.return_value = mock_client
     mock_get_blob.side_effect = cli_util.gcs_file_util.GCSError('No file.par')
-    new_path = cli_util.CheckAndUpdateTool(
-        '/local/path/file.par', 'gs://bucket/remote/not/exist/path/file.par')
+
+    new_path = cli_util._DownloadToolFromGCS(
+        'gs://bucket/remote/not/exist/path/file.par', '/local/path/file.par')
     self.assertIsNone(new_path)
     mock_get_blob.assert_called_once_with(
         mock_client, 'gs://bucket/remote/not/exist/path/file.par')
@@ -194,7 +252,7 @@ class CliUtilTest(absltest.TestCase):
   @mock.patch.object(cli_util.gcs_file_util, 'CreateGCSClient')
   @mock.patch.object(cli_util.gcs_file_util, 'GetGCSBlob')
   @mock.patch.object(cli_util.google_auth_util, 'GetGCloudCredential')
-  def testCheckAndUpdateTool_sameMd5Hash(
+  def testDownloadToolFromGCS_sameMd5Hash(
       self, create_cred, mock_get_blob, mock_create_gcs_client, mock_md5hash):
     cred = mock.MagicMock()
     create_cred.return_value = cred
@@ -203,40 +261,12 @@ class CliUtilTest(absltest.TestCase):
     mock_blob = mock.MagicMock(md5_hash='md5hash')
     mock_get_blob.return_value = mock_blob
     mock_md5hash.return_value = six.ensure_text('md5hash')
-    new_path = cli_util.CheckAndUpdateTool(
-        '/local/path/file.par', 'gs://bucket/remote/path/file.par')
+
+    new_path = cli_util._DownloadToolFromGCS(
+        'gs://bucket/remote/path/file.par', '/local/path/file.par')
     self.assertIsNone(new_path)
     mock_get_blob.assert_called_once_with(
         mock_client, 'gs://bucket/remote/path/file.par')
-
-  @mock.patch.object(os, 'rename')
-  @mock.patch.object(cli_util.gcs_file_util, 'CreateBackupFilePath')
-  @mock.patch.object(cli_util.gcs_file_util, 'CalculateMd5Hash')
-  @mock.patch.object(cli_util.gcs_file_util, 'CreateGCSClient')
-  @mock.patch.object(cli_util.gcs_file_util, 'GetGCSBlob')
-  @mock.patch.object(cli_util.google_auth_util, 'GetGCloudCredential')
-  def testCheckAndUpdateTool_noWriteAccess(
-      self, create_cred, mock_get_blob, mock_create_gcs_client, mock_md5hash,
-      mock_create_backup_path, mock_rename):
-    cred = mock.MagicMock()
-    create_cred.return_value = cred
-    mock_client = mock.MagicMock()
-    mock_create_gcs_client.return_value = mock_client
-    mock_create_backup_path.return_value = '/path/to/backup.par'
-    mock_blob = mock.MagicMock(md5_hash='new_md5hash')
-    mock_get_blob.return_value = mock_blob
-    mock_blob.download_to_filename.side_effect = [OSError()]
-    mock_md5hash.return_value = six.ensure_text('md5hash')
-
-    new_path = cli_util.CheckAndUpdateTool(
-        '/local/path/file.par', 'gs://bucket/remote/path/file.par')
-    self.assertIsNone(new_path)
-
-    mock_get_blob.assert_called_once_with(
-        mock_client, 'gs://bucket/remote/path/file.par')
-    mock_rename('/local/path/file.par', '/path/to/backup.par')
-    mock_blob.download_to_filename.assert_called_once_with(
-        '/local/path/file.par')
 
 
 class ArgumentParserTest(parameterized.TestCase):

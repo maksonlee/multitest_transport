@@ -26,7 +26,8 @@ import {TestPackageInfo, TestRunState, TestRunSummary} from '../services/mtt_mod
 import {DeviceInfo} from '../services/tfc_models';
 import {DEFAULT_PAGE_SIZE} from '../shared/paginator';
 import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
-import {newMockDevice, newMockTestPackageInfo, toTitleCase} from '../testing/test_util';
+import {newMockDeviceInfo} from '../testing/mtt_lab_mocks';
+import {newMockTestPackageInfo, toTitleCase} from '../testing/mtt_mocks';
 
 import {TestRunList} from './test_run_list';
 import {TestRunsModule} from './test_runs_module';
@@ -44,12 +45,12 @@ describe('TestRunList', () => {
 
   beforeEach(() => {
     window.localStorage.clear();
-    testDevices = [newMockDevice()];
+    testDevices = [newMockDeviceInfo()];
     testPackageInfo = newMockTestPackageInfo();
 
     testRunCompleted = {
       id: 'completed',
-      run_target: 'target1;target2',
+      device_specs: ['device_serial:target1', 'device_serial:target2'],
       state: TestRunState.COMPLETED,
       test_name: 'test_name',
       test_package_info: testPackageInfo,
@@ -58,7 +59,7 @@ describe('TestRunList', () => {
 
     testRunPending = {
       id: 'pending',
-      run_target: 'target1;target2',
+      device_specs: ['device_serial:target1', 'device_serial:target2'],
       state: TestRunState.PENDING,
       test_name: 'test_name',
       test_package_info: testPackageInfo,
@@ -105,7 +106,7 @@ describe('TestRunList', () => {
     expect(text).toContain(
         `${testPackageInfo.name} ${testPackageInfo.version}`);
 
-    expect(text).toContain('target1');
+    expect(text).toContain('device_serial:target1');
     expect(text).toContain(device.build_id!);
     expect(text).toContain(device.product);
   });

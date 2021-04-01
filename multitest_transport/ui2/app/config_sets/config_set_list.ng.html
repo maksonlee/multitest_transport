@@ -21,11 +21,11 @@
 <div [class.loading-mask]="isLoading" fxLayout="column">
 
   <div class="header-section">
-    <div class="description">
+    <span class="description" fxFlex>
       Config sets are bundles of configs for running test suites, including related device actions,
       build channels, etc.
-    </div>
-    <div class="import-actions">
+    </span>
+    <div>
       <button mat-flat-button color='accent' [routerLink]="['/config_sets/add']">
         Import
       </button>
@@ -74,7 +74,26 @@
       </mat-cell>
     </ng-container>
 
-    <!-- TODO: Add update and remove buttons -->
+    <!-- Action Menu Column -->
+    <ng-container matColumnDef="actions">
+      <mat-header-cell *matHeaderCellDef fxFlex="100px"></mat-header-cell>
+      <mat-cell *matCellDef="let info" fxFlex="100px">
+        <button
+          id="menuButton"
+          aria-label="More actions"
+          matTooltip="More actions"
+          mat-icon-button
+          [matMenuTriggerFor]="menu">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <button id="removeButton" mat-menu-item
+                  (click)="deleteConfigSet(info)">
+            Remove
+          </button>
+        </mat-menu>
+      </mat-cell>
+    </ng-container>
 
     <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true;"></mat-header-row>
     <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>

@@ -32,20 +32,21 @@ class FileServerIntegrationTest(integration_util.DockerContainerTest):
     super(FileServerIntegrationTest, self).setUp()
     # Upload test resource to local file store
     test_resource_file = os.path.join(TEST_DATA_DIR, 'android-cts.zip')
-    self.container.UploadFile(test_resource_file, 'android-cts.zip')
+    self.container.UploadFile(test_resource_file,
+                              'local_file_store/android-cts.zip')
     # Schedule test run with test resource
-    self.run_target = str(uuid.uuid4())
+    self.device_serial = str(uuid.uuid4())
     self.test_run_id = self.container.ScheduleTestRun(
-        self.run_target,
+        self.device_serial,
         test_id='android.cts.9_0.arm',
-        test_resource_pipes=[{
+        test_resource_objs=[{
             'name': 'android-cts.zip',
-            'url': 'mtt:///local_file_store/android-cts.zip'
+            'url': 'file:///data/local_file_store/android-cts.zip',
         }])['id']
     # Lease task, allowing additional time for resource download
     self.container.WaitForState(self.test_run_id, 'QUEUED', timeout=60)
     self.task = self.container.LeaseTask(
-        integration_util.DeviceInfo(self.run_target))
+        integration_util.DeviceInfo(self.device_serial))
 
   def testStreamLogs(self):
     """Tests that logs can be read using the file server."""

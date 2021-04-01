@@ -22,7 +22,7 @@ import {of as observableOf} from 'rxjs';
 import {MttClient} from '../services/mtt_client';
 import * as util from '../shared/util';
 import {getTextContent} from '../testing/jasmine_util';
-import {newMockBuildChannel, newMockNotImportedConfigSetInfo} from '../testing/test_util';
+import {newMockBuildChannel, newMockNotImportedConfigSetInfo} from '../testing/mtt_mocks';
 
 import {SetupWizardModule} from './setup_wizard_module';
 import {SetupWizardModuleNgSummary} from './setup_wizard_module.ngsummary';

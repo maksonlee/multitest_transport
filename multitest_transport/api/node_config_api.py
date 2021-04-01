@@ -13,13 +13,11 @@
 # limitations under the License.
 
 """A module to provide node config APIs."""
-
+# Non-standard docstrings are used to generate the API documentation.
 import datetime
 
 from protorpc import message_types
 from protorpc import remote
-
-from google3.third_party.apphosting.python.endpoints.v1_1 import endpoints
 
 from multitest_transport.api import base
 from multitest_transport.models import config_encoder
@@ -32,26 +30,30 @@ from multitest_transport.util import env
 class NodeConfigApi(remote.Service):
   """A handler for Node Config API."""
 
-  @base.convert_exception
-  @endpoints.method(message_types.VoidMessage, messages.NodeConfig,
-                    http_method='GET', path='/node_config', name='get')
+  @base.ApiMethod(message_types.VoidMessage, messages.NodeConfig,
+                  http_method='GET', path='/node_config', name='get')
   def Get(self, request):
+    """Fetches the server's node configuration."""
     node_config = ndb_models.GetNodeConfig()
     return messages.Convert(node_config, messages.NodeConfig)
 
-  @base.convert_exception
-  @endpoints.method(messages.NodeConfig, messages.NodeConfig,
-                    http_method='POST', path='/node_config', name='update')
+  @base.ApiMethod(messages.NodeConfig, messages.NodeConfig,
+                  http_method='PUT', path='/node_config', name='update')
   def Update(self, request):
+    """Updates the server's node configuration.
+
+    Body:
+      Node configuration data
+    """
     node_config = messages.Convert(
         request, ndb_models.NodeConfig, messages.NodeConfig)
     node_config.put()
     return messages.Convert(node_config, messages.NodeConfig)
 
-  @base.convert_exception
-  @endpoints.method(message_types.VoidMessage, messages.SimpleMessage,
-                    http_method='GET', path='export', name='export')
+  @base.ApiMethod(message_types.VoidMessage, messages.SimpleMessage,
+                  http_method='GET', path='export', name='export')
   def ExportConfigData(self, request):
+    """Exports the server's node configuration."""
     config_set = config_encoder.ConfigSet(
         node_config=ndb_models.GetNodeConfig(),
         build_channels=ndb_models.BuildChannelConfig.query().fetch(),
@@ -63,10 +65,14 @@ class NodeConfigApi(remote.Service):
     data = config_encoder.Encode(config_set)
     return messages.SimpleMessage(value=header + data)
 
-  @base.convert_exception
-  @endpoints.method(messages.SimpleMessage, message_types.VoidMessage,
-                    http_method='POST', path='import', name='import')
+  @base.ApiMethod(messages.SimpleMessage, message_types.VoidMessage,
+                  http_method='POST', path='import', name='import')
   def ImportConfigData(self, request):
+    """Imports another server's node configuration.
+
+    Body:
+      Exported node configuration data
+    """
     config_set = config_encoder.Decode(request.value)
     config_encoder.Load(config_set)
     return message_types.VoidMessage()

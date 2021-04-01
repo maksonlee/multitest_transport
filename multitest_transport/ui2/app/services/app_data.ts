@@ -25,10 +25,10 @@ export declare interface AppData {
   readonly adbVersion?: string;
   /** Tracking ID to use if Google Analytics is enabled. */
   readonly analyticsTrackingId?: string;
-  /** Base URL for browsing directory contents. */
-  readonly fileBrowseUrl?: string;
-  /** Base URL for opening files. */
-  readonly fileOpenUrl?: string;
+  /** Hostname. */
+  readonly hostname?: string;
+  /** Base URL of the file browser. */
+  readonly fileBrowserUrl?: string;
   /** Base path served by the file server. */
   readonly fileServerRoot?: string;
   /** True if running in development mode. */
@@ -43,6 +43,12 @@ export declare interface AppData {
   readonly mttVersion?: string;
   /** Whether or not the user has completed the setup wizard. */
   readonly setupWizardCompleted?: boolean;
-  /** Current login username. */
+  /** Current user's email. */
+  readonly email?: string;
+  /** Current login username without email domain. */
   readonly userNickname?: string;
+  /** True if running in ATS Lab. */
+  readonly isAtsLabInstance?: boolean;
+  /** Base URL for logs. */
+  readonly logUrl?: string;
 }

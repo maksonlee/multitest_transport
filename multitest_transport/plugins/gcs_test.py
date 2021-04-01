@@ -18,9 +18,11 @@ from absl.testing import absltest
 import apiclient
 import mock
 
+from multitest_transport.models import event_log
 from multitest_transport.plugins import base
 from multitest_transport.plugins import constant
 from multitest_transport.plugins import gcs
+from multitest_transport.util import errors
 from multitest_transport.util import file_util
 
 
@@ -250,7 +252,7 @@ class GCSBuildProviderTest(absltest.TestCase):
         size=0,
         timestamp=None)
     mock_get_build_item.return_value = fake_build_item
-    with self.assertRaises(base.FileNotFoundError) as e:
+    with self.assertRaises(errors.FileNotFoundError) as e:
       list(provider.DownloadFile(path))
     self.assertEqual(
         e.exception.message, 'Build item bucket/fake/path/ does not exist')
@@ -261,7 +263,7 @@ class GCSBuildProviderTest(absltest.TestCase):
     provider = gcs.GCSBuildProvider()
     path = 'bucket/fake/path/'
     mock_get_build_item.return_value = None
-    with self.assertRaises(base.FileNotFoundError) as e:
+    with self.assertRaises(errors.FileNotFoundError) as e:
       list(provider.DownloadFile(path))
     self.assertEqual(
         e.exception.message, 'Build item bucket/fake/path/ does not exist')
@@ -299,9 +301,11 @@ class GCSBuildProviderTest(absltest.TestCase):
 
 class GCSFileUploadHookTest(absltest.TestCase):
 
+  @mock.patch.object(event_log, 'Info')
   @mock.patch.object(file_util, 'FileHandleMediaUpload')
   @mock.patch.object(file_util.FileHandle, 'Get')
-  def testUploadFile(self, mock_handle_factory, mock_media_upload_ctor):
+  def testUploadFile(self, mock_handle_factory, mock_media_upload_ctor,
+                     mock_log):
     """Tests uploading a file to GCS."""
     hook = gcs.GCSFileUploadHook(file_pattern='.*')
 
@@ -316,13 +320,15 @@ class GCSFileUploadHookTest(absltest.TestCase):
     hook._client.objects().insert().next_chunk.return_value = None, True
 
     # Upload file and verify that client and uploader used properly
-    hook.UploadFile('fake_url', 'bucket/test_run/error.txt')
+    hook.UploadFile(mock.MagicMock(), 'file_url', 'bucket/test_run/file.txt')
     mock_media_upload_ctor.assert_called_with(
-        mock_handle, chunksize=gcs._UPLOAD_BUFFER_SIZE, resumable=True)
+        mock_handle, chunksize=constant.UPLOAD_CHUNK_SIZE, resumable=True)
     hook._client.objects().insert.assert_called_with(
         bucket='bucket',
-        name='test_run/error.txt',
+        name='test_run/file.txt',
         media_body=mock_media_upload)
+    mock_log.assert_called_with(
+        mock.ANY, '[GCS] Uploaded file_url to bucket/test_run/file.txt.')
 
 
 if __name__ == '__main__':

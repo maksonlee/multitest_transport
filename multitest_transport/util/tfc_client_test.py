@@ -19,32 +19,29 @@ from absl.testing import absltest
 import apiclient
 import mock
 
-from google.appengine.api import modules
-from google.appengine.ext import testbed
+from tradefed_cluster import testbed_dependent_test
+from tradefed_cluster.plugins import base as tfc_plugins
 
 from multitest_transport.util import tfc_client
 
 
-class TfcClientTest(absltest.TestCase):
+class TfcClientTest(testbed_dependent_test.TestbedDependentTest):
 
   def setUp(self):
     super(TfcClientTest, self).setUp()
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
-    self.addCleanup(self.testbed.deactivate)
     tfc_client._tls = threading.local()
 
   @mock.patch.object(apiclient.discovery, 'build')
   def testGetAPIClient(self, mock_build):
-    hostname = modules.get_hostname('default')
+    self.mock_app_manager.GetInfo.return_value = tfc_plugins.AppInfo(
+        name='default', hostname='hostname')
 
     api_client = tfc_client._GetAPIClient()
 
     mock_build.assert_called_with(
         tfc_client.API_NAME, tfc_client.API_VERSION, http=mock.ANY,
         discoveryServiceUrl=tfc_client.API_DISCOVERY_URL_FORMAT % (
-            hostname, tfc_client.API_NAME, tfc_client.API_VERSION))
+            'hostname', tfc_client.API_NAME, tfc_client.API_VERSION))
     self.assertEqual(mock_build(), api_client)
 
 

@@ -37,20 +37,18 @@
 <body>
 <mtt></mtt>
 <script>
-  // Determine hostname
-  var hostname = location.hostname;
-  // Set general application data
   window.APP_DATA = {
     adbVersion: "{{env.ADB_VERSION}}",
     analyticsTrackingId: "{{analytics_tracking_id}}",
-    fileBrowseUrl: "{{env.FILE_BROWSE_URL_FORMAT}}".replace("{hostname}", hostname),
-    fileOpenUrl: "{{env.FILE_OPEN_URL_FORMAT}}".replace("{hostname}", hostname),
+    hostname: "{{env.HOSTNAME}}",
+    fileBrowserUrl: "{{env.FILE_BROWSER_URL}}",
     fileServerRoot: "{{env.FILE_SERVER_ROOT}}",
     isGoogle: "{{env.IS_GOOGLE}}" === "True",
     mttVersion: "{{env.VERSION}}",
     setupWizardCompleted: "{{private_node_config.setup_wizard_completed}}" === "True",
+    isAtsLabInstance: false,
   };
 </script>
-<script src="{{app_js}}"></script>
+<script src="/app.js?version={{env.VERSION}}"></script>
 </body>
 </html>

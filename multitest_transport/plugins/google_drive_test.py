@@ -101,7 +101,7 @@ class GoogleDriveTest(absltest.TestCase):
     side_effect = apiclient.http.HttpError(mock.Mock(status=404), 'not found')
     mock_api_client.files().list().execute.side_effect = side_effect
     provider._client = mock_api_client
-    with self.assertRaises(errors.InvalidParamError) as e:
+    with self.assertRaises(errors.PluginError) as e:
       param = {}
       param['q'] = (
           google_drive._QUERY_ITEM_FORMAT % ('parent_id', 'child_name'))
@@ -186,7 +186,7 @@ class GoogleDriveTest(absltest.TestCase):
     provider = google_drive.GoogleDriveBuildProvider()
     mock_get_file_ids.return_value = (['id_1', 'id_2'], None)
 
-    with self.assertRaises(errors.DuplicatedNameError) as e:
+    with self.assertRaises(errors.PluginError) as e:
       provider._GetFileIdHelper(parent_folder_id='parent', name='folderA')
 
     self.assertEqual(e.exception.message,
@@ -312,7 +312,7 @@ class GoogleDriveTest(absltest.TestCase):
         size=0,
         timestamp=None)
     mock_get_build_item.return_value = fake_build_item
-    with self.assertRaises(base.FileNotFoundError) as e:
+    with self.assertRaises(errors.FileNotFoundError) as e:
       list(provider.DownloadFile(path))
     self.assertEqual(
         e.exception.message, google_drive._FILE_NOT_FOUND_ERROR % path)
@@ -323,7 +323,7 @@ class GoogleDriveTest(absltest.TestCase):
     provider = google_drive.GoogleDriveBuildProvider()
     path = 'fake/path/'
     mock_get_build_item.return_value = None
-    with self.assertRaises(base.FileNotFoundError) as e:
+    with self.assertRaises(errors.FileNotFoundError) as e:
       list(provider.DownloadFile(path))
     self.assertEqual(
         e.exception.message, google_drive._FILE_NOT_FOUND_ERROR % path)

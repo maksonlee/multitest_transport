@@ -1,0 +1,56 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="host-details-device-list-container">
+  <div class="card-header">
+    <h2 fxLayout="row wrap" fxLayoutAlign="space-between center">
+      <div>
+        <add-notes-button
+          [buttonStyle]="'Stroked'"
+          [labName]="labName"
+          [ids]="deviceListTable.tableRowsSelectManager?.selection.selected"
+          [deviceHostMap]="deviceHostMap"
+          [disabled]="!(labName | permissionCheck)"
+          noteType="DEVICE"
+          (notesUpdated)="reloadDevices($event)"
+          (click)="startBatchAddDevicesNotesHats()"
+        ></add-notes-button>
+      </div>
+      <div>
+        <button
+          mat-icon-button
+          class="refresh-button"
+          matTooltip="Refresh the data"
+          aria-label="Refresh the data"
+          (click)="load(id)"
+        >
+          <mat-icon>refresh</mat-icon>
+        </button>
+
+        <view-columns-button
+          [columns]="deviceListTable.columns"
+          (columnToggled)="deviceListTable.toggleDisplayedColumn($event)"
+          (click)="startViewDevicesColumnsHats()"
+        ></view-columns-button>
+      </div>
+    </h2>
+  </div>
+  <device-list-table
+    [dataSource]="deviceInfos"
+    [isLoading]="isLoading"
+    (deviceListChangeSort)="startChangeSortHats()"
+  ></device-list-table>
+</div>

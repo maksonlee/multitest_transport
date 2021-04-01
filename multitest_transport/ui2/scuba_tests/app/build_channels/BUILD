@@ -16,10 +16,13 @@ ng_module(
     srcs = [
         "build_channel_edit_page_scuba_test.ts",
         "build_channel_item_scuba_test.ts",
+        "build_channel_list_scuba_test.ts",
+        "test_resource_form_scuba_test.ts",
     ],
-    visibility = ["//multitest_transport"],
+    visibility = ["//visibility:private"],
     deps = [
         "//multitest_transport/ui2/app/build_channels",
+        "//multitest_transport/ui2/app/testing:test_util",
         third_party_js("angular2:cdk_a11y"),
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),

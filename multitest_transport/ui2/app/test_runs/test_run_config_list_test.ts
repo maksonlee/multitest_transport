@@ -16,15 +16,18 @@
 
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {DebugElement} from '@angular/core';
-import {inject, ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services/app_data';
-import {Test, TestRunConfig} from '../services/mtt_models';
+import {initTestRunConfig, Test, TestRunConfig} from '../services/mtt_models';
+import {MttObjectMap, MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
 import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
-import {newMockTest, newMockTestRunConfig} from '../testing/test_util';
+import {newMockTest, newMockTestRunConfig} from '../testing/mtt_mocks';
 
+import {TestRunConfigEditor, TestRunConfigEditorData} from './test_run_config_editor';
 import {TestRunConfigList} from './test_run_config_list';
 import {TestRunsModule} from './test_runs_module';
 import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
@@ -33,40 +36,46 @@ describe('TestRunConfigList', () => {
   let testRunConfigs: TestRunConfig[];
   let test1: Test;
   let test2: Test;
+  let config1: TestRunConfig;
+  let config2: TestRunConfig;
   let testMap: {[id: string]: Test};
+  let mttData: MttObjectMap;
+  let mttObjectMapService: jasmine.SpyObj<MttObjectMapService>;
 
   let testRunConfigList: TestRunConfigList;
   let testRunConfigListFixture: ComponentFixture<TestRunConfigList>;
   let el: DebugElement;
 
   beforeEach(() => {
+    test1 = newMockTest('test.1', 'test1');
+    test2 = newMockTest('xts.2.0', 'xTS 2.0');
+    testMap = {[test1.id!]: test1, [test2.id!]: test2};
+    config1 = newMockTestRunConfig(test1.id!);
+    config2 = newMockTestRunConfig(test2.id!);
+    testRunConfigs = [config1, config2];
+    mttData = newMttObjectMap();
+    mttData.testMap = testMap;
+    mttObjectMapService = jasmine.createSpyObj(['getMttObjectMap']);
+    mttObjectMapService.getMttObjectMap.and.returnValue(observableOf(mttData));
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, TestRunsModule, HttpClientTestingModule],
       providers: [
         {provide: APP_DATA, useValue: {}},
+        {provide: MttObjectMapService, useValue: mttObjectMapService},
       ],
       aotSummaries: TestRunsModuleNgSummary,
     });
-
-    test1 = newMockTest('test1');
-    test2 = newMockTest('xTS 2.0');
-    testMap = {[test1.id!]: test1, [test2.id!]: test2};
-    testRunConfigs =
-        [newMockTestRunConfig(test1.id!), newMockTestRunConfig(test2.id!)];
 
     testRunConfigListFixture = TestBed.createComponent(TestRunConfigList);
     el = testRunConfigListFixture.debugElement;
     testRunConfigList = testRunConfigListFixture.componentInstance;
     testRunConfigList.data = testRunConfigs;
-    testRunConfigList.testMap = testMap;
     testRunConfigListFixture.detectChanges();
   });
 
   it('should get initialized correctly', () => {
     expect(testRunConfigList).toBeTruthy();
-  });
 
-  it('should render HTML correctly', () => {
     const textContent = getTextContent(el);
     expect(textContent).toContain(test1.name);
     expect(textContent).toContain(test2.name);
@@ -78,29 +87,71 @@ describe('TestRunConfigList', () => {
     expect(items.length).toBe(testRunConfigList.data.length);
   });
 
-  it('should trigger removeTestRunConfig on delete button click', () => {
-    const removeItemIndex = 0;
-    spyOn(testRunConfigList, 'delete');
-    getEl(el, '.test-run-config-delete-button').click();
-    expect(testRunConfigList.delete).toHaveBeenCalledWith(removeItemIndex);
+  it('can delete items', () => {
+    testRunConfigList.deleteConfig(0);
+    testRunConfigListFixture.detectChanges();
+
+    const textContent = getTextContent(el);
+    expect(textContent).not.toContain(test1.name);
+    expect(textContent).toContain(test2.name);
+
+    const items = getEls(el, '.mat-card');
+    expect(items).toBeTruthy();
+    expect(items.length).toBe(1);
   });
 
-  it('should open test run config editor on openTestRunConfigEditor called',
+  it('should open test run config editor with the last config',
      inject([MatDialog], (dialog: MatDialog) => {
        spyOn(dialog, 'open').and.callThrough();
-       testRunConfigList.add();
-       expect(dialog.open).toHaveBeenCalled();
+       testRunConfigList.addConfig();
        expect(dialog.open).toHaveBeenCalledTimes(1);
+
+       const testRunConfigEditorData: TestRunConfigEditorData = {
+         editMode: false,
+         testRunConfig: config2,
+       };
+       expect(dialog.open).toHaveBeenCalledWith(TestRunConfigEditor, {
+         panelClass: 'test-run-config-editor-dialog',
+         data: testRunConfigEditorData,
+       });
      }));
 
-  describe('delete button', () => {
-    it('should display correct aria-label and tooltip', () => {
-      const deleteButton = getEl(el, '.test-run-config-delete-button');
-      expect(deleteButton).toBeTruthy();
-      expect(deleteButton.getAttribute('aria-label')).toBe('Delete');
-      expect(deleteButton.getAttribute('mattooltip')).toBe('Delete');
-    });
-  });
+  it('should open test run config editor with a new config',
+     inject([MatDialog], (dialog: MatDialog) => {
+       testRunConfigList.data = [];
+       testRunConfigListFixture.detectChanges();
+       spyOn(dialog, 'open').and.callThrough();
+       testRunConfigList.addConfig();
+       expect(dialog.open).toHaveBeenCalledTimes(1);
+
+       const testRunConfigEditorData: TestRunConfigEditorData = {
+         editMode: false,
+         testRunConfig: initTestRunConfig(test1),
+       };
+       expect(dialog.open).toHaveBeenCalledWith(TestRunConfigEditor, {
+         panelClass: 'test-run-config-editor-dialog',
+         data: testRunConfigEditorData,
+       });
+     }));
+
+  it('should open test run config editor with a config template',
+     inject([MatDialog], (dialog: MatDialog) => {
+       testRunConfigList.data = [];
+       testRunConfigList.configTemplate = config1;
+       testRunConfigListFixture.detectChanges();
+       spyOn(dialog, 'open').and.callThrough();
+       testRunConfigList.addConfig();
+       expect(dialog.open).toHaveBeenCalledTimes(1);
+
+       const testRunConfigEditorData: TestRunConfigEditorData = {
+         editMode: false,
+         testRunConfig: config1,
+       };
+       expect(dialog.open).toHaveBeenCalledWith(TestRunConfigEditor, {
+         panelClass: 'test-run-config-editor-dialog',
+         data: testRunConfigEditorData,
+       });
+     }));
 
   describe('add button', () => {
     it('should display correct aria-label and tooltip', () => {

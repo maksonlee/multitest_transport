@@ -36,6 +36,12 @@ indexes:
 
 - kind: TestRunSummary
   properties:
+  - name: prev_test_run_key
+  - name: create_time
+    direction: desc
+
+- kind: TestRunSummary
+  properties:
   - name: test_name
   - name: create_time
     direction: desc
@@ -86,6 +92,13 @@ indexes:
 - kind: TestRunSummary
   properties:
   - name: labels
+  - name: create_time
+  - name: __key__
+    direction: desc
+
+- kind: TestRunSummary
+  properties:
+  - name: prev_test_run_key
   - name: create_time
   - name: __key__
     direction: desc

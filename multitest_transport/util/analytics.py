@@ -13,100 +13,39 @@
 # limitations under the License.
 
 """Utilities for tracking Google Analytics events."""
-import logging
-import six
-from six.moves import urllib
+import json
 
-import webapp2
-from google.appengine.ext import deferred
+from tradefed_cluster.services import task_scheduler
+from tradefed_cluster import common
 
-from multitest_transport.models import ndb_models
-from multitest_transport.util import env
 
-# GA constants
-_GA_ENDPOINT = 'http://www.google-analytics.com/collect'
-_API_VERSION = '1'
-_EVENT_TYPE = 'event'
-_TRACKING_ID = 'UA-140187490-2'
+# Analytics uploading task queue
+QUEUE_NAME = 'analytics-queue'
 
-# GA categories and actions
+# GA categories
+BUILD_CHANNEL_CATEGORY = 'build_channel'
+DEVICE_ACTION_CATEGORY = 'device_action'
 SYSTEM_CATEGORY = 'system'
+TEST_RUN_ACTION_CATEGORY = 'test_run_action'
 TEST_RUN_CATEGORY = 'test_run'
+INVOCATION_CATEGORY = 'invocation'
+
+# GA actions
+DOWNLOAD_ACTION = 'download'
+END_ACTION = 'end'
+EXECUTE_ACTION = 'execute'
 HEARTBEAT_ACTION = 'heartbeat'
 START_ACTION = 'start'
-END_ACTION = 'end'
-
-# GA custom metrics definitions
-_METRIC_KEYS = {
-    'app_version': 'cd1',
-    'test_name': 'cd2',
-    'test_version': 'cd3',
-    'state': 'cd4',
-    'is_rerun': 'cd5',
-    'is_google': 'cd6',
-    'duration_seconds': 'cm1',
-    'device_count': 'cm2',
-    'attempt_count': 'cm3',
-    'failed_module_count': 'cm4',
-    'test_count': 'cm5',
-    'failed_test_count': 'cm6',
-}
+TARGET_PREPARER_ACTION = 'target_preparer'
 
 
 def Log(category, action, **kwargs):
-  """Asynchronous log event in GA if metrics are enabled."""
-  private_node_config = ndb_models.GetPrivateNodeConfig()
-  if env.IS_DEV_MODE or not private_node_config.metrics_enabled:
-    logging.debug('Metrics disabled - skipping %s:%s', category, action)
-    return
-  event = _Event(private_node_config.server_uuid, category, action, **kwargs)
-  deferred.defer(_Send, event)
+  """Schedules a task to upload an event to GA."""
+  payload = json.dumps(dict(category=category, action=action, **kwargs))
+  task_scheduler.AddTask(queue_name=QUEUE_NAME, payload=payload)
 
 
-def _Send(event):
-  """Send event to GA."""
-  try:
-    data = urllib.parse.urlencode(dict(event))
-    request = urllib.request.Request(
-        url=_GA_ENDPOINT, data=data, headers={'User-Agent': 'MTT'})
-    urllib.request.urlopen(request)
-  except Exception as e:      logging.debug('Failed to send analytics: %s', e)
-
-
-class _Event(object):
-  """Holds GA event information."""
-
-  def __init__(self, server_uuid, category, action, **kwargs):
-    # Required parameters
-    self.v = _API_VERSION  # API version
-    self.tid = _TRACKING_ID  # Tracking ID
-    self.cid = server_uuid  # Server ID
-    self.t = _EVENT_TYPE  # Event type
-    self.ec = category  # Event category
-    self.ea = action  # Event action
-    # Custom dimensions and metrics
-    setattr(self, _METRIC_KEYS['app_version'], env.VERSION)
-    setattr(self, _METRIC_KEYS['is_google'], env.IS_GOOGLE)
-    for key, value in six.iteritems(kwargs):
-      if not _METRIC_KEYS[key]:
-        logging.warning('Unknown metric key: %s', key)
-        continue
-      setattr(self, _METRIC_KEYS[key], value)
-
-  def __iter__(self):
-    for key, value in six.iteritems(self.__dict__):
-      if value is not None:
-        yield key, value
-
-  def __eq__(self, other):
-    return isinstance(other, _Event) and dict(self) == dict(other)
-
-  def __ne__(self, other):
-    return not self.__eq__(other)
-
-
-class HeartbeatSender(webapp2.RequestHandler):
+def HeartbeatSender():
   """Request handler which periodically logs that this instance is up."""
-
-  def get(self):
-    Log(SYSTEM_CATEGORY, HEARTBEAT_ACTION)
+  Log(SYSTEM_CATEGORY, HEARTBEAT_ACTION)
+  return common.HTTP_OK

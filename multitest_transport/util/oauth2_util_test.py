@@ -13,12 +13,12 @@
 # limitations under the License.
 
 """Unit tests for oauth2_util."""
-import multitest_transport.google_import_fixer  
 import json
 
 from absl.testing import absltest
-from google.appengine.ext import ndb
-from google.appengine.ext import testbed
+import six
+from tradefed_cluster import testbed_dependent_test
+from tradefed_cluster.util import ndb_shim as ndb
 from google.oauth2 import credentials as authorized_user
 from google.oauth2 import service_account
 
@@ -30,15 +30,8 @@ class TestModel(ndb.Model):
   credentials = oauth2_util.CredentialsProperty()
 
 
-class CredentialsPropertyTest(absltest.TestCase):
+class CredentialsPropertyTest(testbed_dependent_test.TestbedDependentTest):
   """Tests for oauth2_util.CredentialsProperty."""
-
-  def setUp(self):
-    super(CredentialsPropertyTest, self).setUp()
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
-    self.addCleanup(self.testbed.deactivate)
 
   def testStore(self):
     """Tests that credentials can be stored and retrieved."""
@@ -75,7 +68,8 @@ class CredentialsPropertyTest(absltest.TestCase):
         'client_secret': 'client_secret',
         'refresh_token': 'refresh_token',
     }
-    credentials = prop._from_base_type(json.dumps(data))
+    value = six.ensure_binary(json.dumps(data))
+    credentials = prop._from_base_type(value)
     self.assertIsNotNone(credentials)
     self.assertEqual('client_id', credentials.client_id)
     self.assertEqual('client_secret', credentials.client_secret)

@@ -1,0 +1,89 @@
+/**
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import 'third_party/py/multitest_transport/ui2/constants';
+
+.button-group {
+  float: right;
+}
+
+.card {
+  border-radius: 8px;
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3),
+    0 2px 6px 2px rgba(60, 64, 67, 0.15);
+}
+
+.card-header {
+  line-height: 36px;
+  padding-left: 15px;
+}
+
+.table-content {
+  border-spacing: 0;
+  margin: 50px;
+  width: 90%;
+
+  .title-field {
+    border-bottom: 1px solid $border-table;
+    height: 50px;
+    padding-left: 12px;
+    width: 20%;
+  }
+
+  .value-field {
+    border-bottom: 1px solid $border-table;
+    height: 50px;
+    width: 50%;
+  }
+}
+
+.table-layout {
+  border: 0;
+  width: 100%;
+
+  td {
+    width: 50%;
+  }
+}
+
+mat-table {
+  margin-top: 10px;
+
+  mat-cell,
+  mat-header-cell {
+    margin-right: 10px;
+  }
+
+  mat-header-row,
+  mat-row {
+    display: inline-flex !important;
+    min-width: 100%;
+  }
+
+  mat-header-cell.mat-table-sticky:last-of-type,
+  mat-cell.mat-table-sticky:last-of-type {
+    justify-content: center;
+    padding: 0 0 0 1px;
+  }
+
+  &:not(.scrolled) {
+    mat-header-cell.mat-table-sticky:last-of-type,
+    mat-cell.mat-table-sticky:last-of-type {
+      border-left: 1px solid $primary-less;
+      padding: 0;
+    }
+  }
+}

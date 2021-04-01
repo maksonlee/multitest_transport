@@ -1,0 +1,155 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+<div class="card-header">
+  <h2 fxLayout="row wrap" fxLayoutAlign="space-between center">
+    <div>
+      <button
+        mat-stroked-button
+        color="accent"
+        type="button"
+        aria-label="Add notes"
+        matTooltip="Add notes"
+        class="note-list-add-note-button"
+        [disabled]="!(labName | permissionCheck)"
+        (click)="editNote()"
+      >
+        Add Notes
+      </button>
+      <mat-checkbox
+        *ngIf="isHostNotes"
+        class="include-device-notes"
+        [(ngModel)]="includeDeviceNotes"
+        (change)="toggleDeviceNotes()"
+        >Include device notes</mat-checkbox
+      >
+    </div>
+    <div>
+      <button
+        mat-icon-button
+        class="refresh-button"
+        matTooltip="Refresh the data"
+        aria-label="Refresh the data"
+        (click)="loadNoteList(0, true)"
+      >
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </h2>
+</div>
+<div class="note-list-container" [hidden]="noteList && noteList.length === 0">
+  <mat-table #table [dataSource]="noteList">
+    <!-- Time -->
+    <ng-container matColumnDef="timestamp">
+      <mat-header-cell *matHeaderCellDef fxFlex="140px"> Time </mat-header-cell>
+      <mat-cell
+        *matCellDef="let note"
+        [matTooltip]="note.timestamp | utc | date: 'MM/dd/yyyy h:mma'"
+        fxFlex="140px"
+      >
+        {{ note.timestamp | utc | fromNow }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- User -->
+    <ng-container matColumnDef="user">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px"> User </mat-header-cell>
+      <mat-cell *matCellDef="let note" fxFlex="120px"> {{ note.user }} </mat-cell>
+    </ng-container>
+
+    <!-- Note Type -->
+    <ng-container matColumnDef="note_type" *ngIf="isHostNotes">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px"> Note Type </mat-header-cell>
+      <mat-cell *matCellDef="let note" fxFlex="120px"> {{ note.type }} </mat-cell>
+    </ng-container>
+
+    <!-- Hostname/Device Serial -->
+    <ng-container matColumnDef="hostname_serial">
+      <mat-header-cell *matHeaderCellDef fxFlex="200px"> Hostname/Device Serial </mat-header-cell>
+      <mat-cell
+        *matCellDef="let note"
+        matTooltip="{{ note.hostname }} {{ note.device_serial }}"
+        fxFlex="200px"
+      >
+        <div class="hostname-serial">{{ note.hostname }} {{ note.device_serial }}</div>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Offline Reason -->
+    <ng-container matColumnDef="offline_reason">
+      <mat-header-cell *matHeaderCellDef fxFlex="200px"> Offline Reason </mat-header-cell>
+      <mat-cell *matCellDef="let note" [matTooltip]="note.offline_reason" fxFlex="200px">
+        <div class="offline-reason">{{ note.offline_reason }}</div>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Recovery Action -->
+    <ng-container matColumnDef="recovery_action">
+      <mat-header-cell *matHeaderCellDef fxFlex="200px"> Recovery Action </mat-header-cell>
+      <mat-cell *matCellDef="let note" [matTooltip]="note.recovery_action" fxFlex="200px">
+        <div class="recovery-action">{{ note.recovery_action }}</div>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Message -->
+    <ng-container matColumnDef="message">
+      <mat-header-cell *matHeaderCellDef fxFlex="200px"> Message </mat-header-cell>
+      <mat-cell *matCellDef="let note" [matTooltip]="note.message" fxFlex="200px">
+        <div class="message">{{ note.message }}</div>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Actions: Edit note, Remove note -->
+    <ng-container matColumnDef="actions" stickyEnd>
+      <mat-header-cell *matHeaderCellDef fxFlex="210px"></mat-header-cell>
+      <mat-cell *matCellDef="let note" fxFlex="210px">
+        <button
+          mat-button
+          color="accent"
+          type="button"
+          aria-label="Edit note"
+          [disabled]="!(labName | permissionCheck)"
+          (click)="editNote(note.id, note.hostname, note.device_serial, note.type)"
+        >
+          Edit Note
+        </button>
+        <button
+          mat-button
+          color="accent"
+          type="button"
+          aria-label="Remove note"
+          [disabled]="!(labName | permissionCheck)"
+          (click)="removeNote(note.id, note.type, note.hostname, note.device_serial)"
+        >
+          Remove Note
+        </button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+  </mat-table>
+  <paginator
+    [pageSizeOptions]="PAGE_SIZE_OPTIONS"
+    (sizeChange)="resetPageTokenAndReload()"
+    (previous)="loadNoteList(-1)"
+    (next)="loadNoteList(1)"
+  ></paginator>
+</div>
+<div class="empty" *ngIf="noteList && noteList.length === 0">
+  No notes found.
+</div>

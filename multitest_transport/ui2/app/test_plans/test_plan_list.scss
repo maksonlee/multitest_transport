@@ -21,3 +21,22 @@
   border: 1px solid $border-chip;
   font-size: 12px;
 }
+
+.mat-row {
+  height: auto;
+  min-height: 49px;
+
+  .mat-cell.last-run-info {
+    flex-wrap: wrap;
+
+    .mat-icon {
+      color: $icon-danger;
+    }
+
+    a, span {
+      align-items: center;
+      display: flex;
+      flex-basis: 100%;
+    }
+  }
+}

@@ -24,7 +24,7 @@ import {AppData} from './app_data';
 // Google Analytics global site tag
 declare let gtag: Function;
 
-// Dummy values
+// Placeholder values
 const TRACKING_ID = 'testTrackingId';
 const PATH = 'testPath';
 const TITLE = 'testTitle';

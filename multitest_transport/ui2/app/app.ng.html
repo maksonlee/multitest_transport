@@ -15,40 +15,53 @@
 -->
 
 <mat-toolbar>
-  <button id="toggleSidenavButton" mat-icon-button (click)="sideNavExpanded = !sideNavExpanded"
-          matTooltip="Main menu" aria-label="Toggle sidenav menu">
+  <button
+    id="toggleSidenavButton"
+    mat-icon-button
+    (click)="sideNavExpanded = !sideNavExpanded"
+    matTooltip="Main menu"
+    aria-label="Toggle sidenav menu"
+  >
     <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
   </button>
   <a routerLink="/" class="title">Android Test Station</a>
   <div id="version-info">
-    Version: {{appData?.mttVersion}}<br>
-    ADB: {{appData?.adbVersion}}
+    Version: {{ appData?.mttVersion }}<br />
+    ADB: {{ appData?.adbVersion }}
   </div>
+  <login-button></login-button>
 </mat-toolbar>
 
 <mat-sidenav-container [class.collapsed]="!sideNavExpanded">
-
   <!--Sidenav menu-->
   <mat-sidenav mode="side" opened role="navigation">
-
     <div class="sidenav-container">
       <mat-nav-list>
-
         <h3 matSubheader>
           <span>Testing</span>
         </h3>
 
-        <a mat-list-item routerLink='/tests' routerLinkActive="active" [matTooltip]="'Test Suites'">
+        <a mat-list-item routerLink="/tests" routerLinkActive="active" [matTooltip]="'Test Suites'">
           <mat-icon matListIcon>assignment</mat-icon>
           <span>Test Suites</span>
         </a>
 
-        <a mat-list-item routerLink='/test_plans' routerLinkActive="active" [matTooltip]="'Test Plans'">
+        <a
+          mat-list-item
+          routerLink="/test_plans"
+          routerLinkActive="active"
+          [matTooltip]="'Test Plans'"
+        >
           <mat-icon matListIcon>date_range</mat-icon>
           <span>Test Plans</span>
         </a>
 
-        <a mat-list-item routerLink='/test_runs' routerLinkActive="active" [matTooltip]="'Test Results'">
+        <a
+          mat-list-item
+          routerLink="/test_runs"
+          routerLinkActive="active"
+          [matTooltip]="'Test Results'"
+        >
           <mat-icon matListIcon>bar_chart</mat-icon>
           <span>Test Results</span>
         </a>
@@ -56,12 +69,17 @@
         <mat-divider></mat-divider>
 
         <h3 matSubheader>
-          <span>Devices</span>
+          <span>Equipment</span>
         </h3>
 
-        <a mat-list-item routerLink='/devices' routerLinkActive="active" [matTooltip]="'Devices'">
+        <a mat-list-item routerLink="/devices" routerLinkActive="active" [matTooltip]="'Devices'">
           <mat-icon matListIcon>phone_android</mat-icon>
           <span>Devices</span>
+        </a>
+
+        <a mat-list-item routerLink="/hosts" routerLinkActive="active" [matTooltip]="'Hosts'">
+          <mat-icon matListIcon>dns</mat-icon>
+          <span>Hosts</span>
         </a>
 
         <mat-divider></mat-divider>
@@ -70,14 +88,58 @@
           <span>Settings</span>
         </h3>
 
-        <a mat-list-item routerLink='/settings' routerLinkActive="active" matTooltip='Settings'>
+        <a mat-list-item routerLink="/settings" routerLinkActive="active" matTooltip="Settings">
           <mat-icon matListIcon>settings</mat-icon>
-          <span> Settings </span>
+          <span>Settings</span>
         </a>
 
+        <a mat-list-item matTooltip="View Files" (click)="openBuildPicker()">
+          <mat-icon matListIcon>folder_open</mat-icon>
+          <span>View Files</span>
+        </a>
+
+        <mat-divider></mat-divider>
+
+        <h3 matSubheader>
+          <span>Tools</span>
+        </h3>
+
+        <a mat-list-item matTooltip="WebAOA" target="_blank" href="/webaoa">
+          <mat-icon matListIcon>android</mat-icon>
+          <span> WebAOA </span>
+        </a>
+
+        <mat-divider></mat-divider>
+
+        <h3 matSubheader>
+          <span>Help</span>
+        </h3>
+
+        <a
+          mat-list-item
+          matTooltip="User Guide"
+          target="_blank"
+          href="https://source.android.com/compatibility/tests/development/android-test-station/ats-user-guide"
+        >
+          <mat-icon matListIcon>article</mat-icon>
+          <span>User Guide</span>
+        </a>
+
+        <a
+          mat-list-item
+          matTooltip="FAQs"
+          target="_blank"
+          href="https://source.android.com/compatibility/tests/development/android-test-station/faq"
+        >
+          <mat-icon matListIcon>help_outline</mat-icon>
+          <span>FAQs</span>
+        </a>
+        <a mat-list-item matTooltip="API Explorer" target="_blank" href="/_ah/api_docs">
+          <mat-icon matListIcon>code</mat-icon>
+          <span> API Explorer </span>
+        </a>
       </mat-nav-list>
     </div>
-
   </mat-sidenav>
 
   <!--Routed content-->
@@ -86,7 +148,8 @@
       <router-outlet></router-outlet>
     </main>
     <footer *ngIf="appData.analyticsTrackingId">
-      Android Test Station collects anonymous usage statistics to help us improve it, in accordance with our
+      Android Test Station collects anonymous usage statistics to help us improve it, in accordance
+      with our
       <a href="https://accounts.google.com/TOS" target="_blank">Terms of Service</a> and
       <a href="https://accounts.google.com/TOS?privacy=true" target="_blank">Privacy Policy</a>.
     </footer>

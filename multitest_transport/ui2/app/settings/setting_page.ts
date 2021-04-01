@@ -19,7 +19,7 @@ import {Title} from '@angular/platform-browser';
 import {MttClient} from '../services/mtt_client';
 import {Notifier} from '../services/notifier';
 import {APPLICATION_NAME} from '../shared/shared_module';
-import {buildApiErrorMessage} from '../shared/util';
+import {buildApiErrorMessage, reloadPage} from '../shared/util';
 /** A component for display settings */
 @Component({
   selector: 'setting-page',
@@ -67,6 +67,7 @@ export class SettingPage implements OnInit {
       this.mttClient.importNodeConfig(content).subscribe(
           result => {
             this.notifier.showMessage(`Configuration imported`);
+            reloadPage(100);  // Reload all components on the page
           },
           error => {
             this.notifier.showError(

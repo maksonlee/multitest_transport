@@ -32,9 +32,9 @@ class FileServerTest(absltest.TestCase):
     super(FileServerTest, self).setUp()
     self.app = file_server.flask_app
     self.app.root_path = tempfile.mkdtemp()
+    self.app.tmp_upload_dir = tempfile.mkdtemp()
     for test_file in os.scandir(TEST_DATA_DIR):
       shutil.copy(os.path.join(TEST_DATA_DIR, test_file), self.app.root_path)
-    self.app.upload_cache = file_server.UploadCache(10, 60)
 
   def tearDown(self):
     super(FileServerTest, self).tearDown()
@@ -72,10 +72,17 @@ class FileServerTest(absltest.TestCase):
       data = json.loads(response.data)
       self.assertEqual('File \'foo\' not found', data['message'])
 
-  def testUploadFile(self):
-    """Tests that new files can be uploaded."""
+  def testUploadFile_putMethod(self):
+    """Tests that new files can be uploaded by put method."""
     with self.app.test_client() as client:
       response = client.put('/file/upload.txt', data='test')
+      self.assertEqual(201, response.status_code)
+      self.assertEqual('test', open(self.app.root_path + '/upload.txt').read())
+
+  def testUploadFile_postMethod(self):
+    """Tests that new files can be uploaded by post method."""
+    with self.app.test_client() as client:
+      response = client.post('/file/upload.txt', data='test')
       self.assertEqual(201, response.status_code)
       self.assertEqual('test', open(self.app.root_path + '/upload.txt').read())
 
@@ -148,6 +155,14 @@ class FileServerTest(absltest.TestCase):
       self.assertEqual(400, response.status_code)
       data = json.loads(response.data)
       self.assertEqual('Invalid offset 4 (expected 6)', data['message'])
+
+  def testUploadFile_longFilename(self):
+    """Tests that a file can be uploaded to a long destination (b/172595968)."""
+    with self.app.test_client() as client:
+      filename = os.path.join('a' * 100, 'b' * 100, 'c' * 100, 'upload.txt')
+      response = client.put('/file/' + filename, data='test')
+      self.assertEqual(201, response.status_code)
+      self.assertEqual('test', open(self.app.root_path + '/' + filename).read())
 
   def testDeleteFile(self):
     """Tests that files can be deleted."""

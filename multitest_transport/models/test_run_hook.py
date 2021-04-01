@@ -18,15 +18,27 @@ Serves as an adapter between test run hooks (which define execution logic) and
 actions (which define specific execution parameters).
 """
 import logging
+import string
 
 from tradefed_cluster import api_messages
-from tradefed_cluster.common import IsFinalCommandState
 from tradefed_cluster.plugins import base as tfc_plugins
 
 from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base as plugins
+from multitest_transport.util import analytics
 from multitest_transport.util import tfc_client
+
+
+def _ApplyOptionsFromDeviceActions(test_run_id, task):
+  """Apply the Tradefed options of the device actions before an attempt."""
+  test_run = ndb_models.TestRun.get_by_id(test_run_id)
+  if not test_run:
+    return
+  for action in test_run.before_device_actions:
+    for tradefed_option in action.tradefed_options:
+      task.extra_options.setdefault(tradefed_option.name,
+                                    []).extend(tradefed_option.values)
 
 
 def ExecuteHooks(test_run_id, phase, attempt_id=None, task=None):
@@ -53,21 +65,34 @@ def _GetLatestAttempt(test_run, attempt_id):
     # Fetch specific attempt (should also always be the latest attempt)
     return tfc_client.GetAttempt(test_run.request_id, attempt_id)
   # Fetch latest finished attempt if ID not specified
-  request = tfc_client.GetRequest(test_run.request_id)
-  attempts = reversed(request.command_attempts or [])
-  return next((a for a in attempts if IsFinalCommandState(a.state)), None)
+  return tfc_client.GetLatestFinishedAttempt(test_run.request_id)
 
 
 def _ExecuteHook(action, hook_context):
   """Construct a hook instance and execute it."""
   try:
     hook_cls = plugins.GetTestRunHookClass(action.hook_class_name)
+    if hook_cls is None:
+      raise ValueError('Cannot find a hook class %s' % action.hook_class_name)
     options = ndb_models.NameValuePair.ToDict(action.options)
+    test_run_context = hook_context.test_run.GetContext()
+    options = {
+        k: string.Template(v).substitute(test_run_context)
+        for k, v in options.items()
+    }
     if action.credentials:
       options['_credentials'] = action.credentials
+    logging.debug(
+        'Executing %s: ctx=%s, options=%s',
+        hook_cls, test_run_context, options)
     hook = hook_cls(**options)
+    analytics.Log(
+        analytics.TEST_RUN_ACTION_CATEGORY,
+        analytics.EXECUTE_ACTION,
+        label=action.hook_class_name,
+        value=hook_context.phase.number)
     hook.Execute(hook_context)
-  except Exception as e:      logging.error('Failed to execute action %s: %s', action, e)
+  except Exception as e:      logging.exception('Failed to execute action %s', action)
     event_log.Error(hook_context.test_run,
                     'Test run action \'%s\' failed: %s' % (action.name, e))
 
@@ -102,6 +127,7 @@ class TfcTaskInterceptor(tfc_plugins.Plugin):
         continue
       # Invoke before attempt hooks and update command task
       task = self.ConvertCommandTask(command_task)
+      _ApplyOptionsFromDeviceActions(test_run_key.id(), task)
       ExecuteHooks(
           test_run_key.id(), ndb_models.TestRunPhase.BEFORE_ATTEMPT, task=task)
       self.UpdateCommandTask(command_task, task)

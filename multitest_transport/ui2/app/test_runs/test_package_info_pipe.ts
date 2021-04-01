@@ -27,6 +27,10 @@ export class TestPackageInfoPipe implements PipeTransform {
     if (!testPackage || !testPackage.name || !testPackage.version) {
       return '';
     }
-    return `${testPackage.name} ${testPackage.version}`;
+    let output = `${testPackage.name} ${testPackage.version}`;
+    if (testPackage.build_number) {
+      output += ` (${testPackage.build_number})`;
+    }
+    return output;
   }
 }

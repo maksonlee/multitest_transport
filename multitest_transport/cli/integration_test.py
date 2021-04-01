@@ -18,6 +18,7 @@ import subprocess
 
 from absl import flags
 from absl.testing import absltest
+import six
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string('mtt_path', None, 'Path of MTT CLI binary.')
@@ -41,7 +42,7 @@ def _RunCmd(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE):
   outs, errs = proc.communicate()
   logging.debug('stdout: %s\n stderr: %s', outs, errs)
   if proc.returncode != 0:
-    raise CommandError(errs)
+    raise CommandError(six.ensure_text(errs))
   return outs.decode(), errs.decode()
 
 
@@ -89,7 +90,7 @@ class CliIntegrationTest(absltest.TestCase):
   def testVersion(self):
     cmd = [FLAGS.mtt_path, '--no_check_update', 'version']
     outs, _ = _RunCmd(cmd)
-    self.assertRegexpMatches(outs, r'Version: .*')
+    six.assertRegex(self, outs, r'Version: .*')
 
   def testStart(self):
     self._Start()
@@ -99,7 +100,7 @@ class CliIntegrationTest(absltest.TestCase):
     self._Start()
     self.assertEqual(RUNNING, self._GetStatus())
     self._Stop()
-    with self.assertRaisesRegexp(CommandError, r'No such object: mtt'):
+    with six.assertRaisesRegex(self, CommandError, r'No such object: mtt'):
       self._GetStatus()
 
   def testUpdate(self):

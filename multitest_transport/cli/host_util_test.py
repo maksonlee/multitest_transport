@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Tests for google3.wireless.android.test_tools.multitest_transport.cli.host_util."""
+import collections
 import getpass
 import socket
 
@@ -21,6 +22,7 @@ from absl.testing import parameterized
 import mock
 
 from multitest_transport.cli import host_util
+from multitest_transport.cli import ssh_util
 
 
 class HostUtilTest(parameterized.TestCase):
@@ -33,20 +35,44 @@ class HostUtilTest(parameterized.TestCase):
         '__main__.host_util.command_util.CommandContext',
         return_value=self.mock_context)
     self.mock_create_context = self.context_patcher.start()
-    self.mock_host_func = mock.MagicMock(__name__='mock_host_func')
     self.host_config1 = host_util.lab_config.CreateHostConfig(
         cluster_name='cluster1', hostname='host1',
         host_login_name='user1')
+    self.ssh_config1 = ssh_util.SshConfig(user='user1', hostname='host1')
     self.host_config2 = host_util.lab_config.CreateHostConfig(
         cluster_name='cluster2', hostname='host2',
         host_login_name='user1')
+    self.ssh_config2 = ssh_util.SshConfig(user='user1', hostname='host2')
     self.host_config3 = host_util.lab_config.CreateHostConfig(
         cluster_name='cluster3', hostname='host3', host_login_name='user1')
+    self.ssh_config3 = ssh_util.SshConfig(user='user1', hostname='host3')
     self.mock_lab_config_pool = mock.MagicMock()
+    self.mock_func_calls = collections.OrderedDict()
+    self.mock_func_exceptions = {}
+    self.default_args = {
+        'lab_config_path': 'lab_config.yaml',
+        'hosts_or_clusters': [],
+        'parallel': False,
+        'host_func': self._MockFunc,
+        'ssh_key': None,
+        'ask_login_password': False,
+        'ask_sudo_password': False,
+        'sudo_user': None,
+        'use_native_ssh': False,
+        'ssh_arg': None,
+    }
 
   def tearDown(self):
     self.context_patcher.stop()
     super(HostUtilTest, self).tearDown()
+
+  def _MockFunc(self, args, host):
+    # Instead of using mock package, this _MockFunc simulate the
+    # real host_func behavior.
+    host.context.Run('a_command')
+    self.mock_func_calls[host.name] = args
+    if host.name in self.mock_func_exceptions:
+      raise self.mock_func_exceptions[host.name]
 
   @mock.patch.object(host_util, '_BuildLabConfigPool')
   def testExecute(self, mock_build_lab_config_pool):
@@ -54,31 +80,18 @@ class HostUtilTest(parameterized.TestCase):
     mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
     self.mock_lab_config_pool.GetHostConfigs.side_effect = [[
         self.host_config1, self.host_config2]]
-    args = mock.MagicMock(
-        lab_config_path='lab_config.yaml',
-        hosts_or_clusters=[],
-        parallel=False,
-        ssh_key=None,
-        host_func=self.mock_host_func,
-        ask_login_password=False,
-        ask_sudo_password=False,
-        sudo_user=None)
+    args = mock.MagicMock(**self.default_args)
 
     host_util.Execute(args)
 
     self.mock_lab_config_pool.GetHostConfigs.assert_called_once_with()
     self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'user1', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user=None),
-        mock.call('host2', 'user1', login_password=None, ssh_key=None,
-                  sudo_password=None, sudo_user=None)])
-    self.assertLen(self.mock_host_func.call_args_list, 2)
-    args1, host1 = self.mock_host_func.call_args_list[0][0]
-    args2, host2 = self.mock_host_func.call_args_list[1][0]
-    self.assertEqual(args, args1)
-    self.assertEqual('host1', host1.name)
-    self.assertEqual(args, args2)
-    self.assertEqual('host2', host2.name)
+        mock.call('host1', 'user1',
+                  ssh_config=self.ssh_config1, sudo_ssh_config=None),
+        mock.call('host2', 'user1',
+                  ssh_config=self.ssh_config2, sudo_ssh_config=None)])
+    self.assertEqual(
+        [('host1', args), ('host2', args)], list(self.mock_func_calls.items()))
 
   @mock.patch.object(getpass, 'getpass')
   @mock.patch.object(host_util, '_BuildLabConfigPool')
@@ -88,31 +101,65 @@ class HostUtilTest(parameterized.TestCase):
     mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
     self.mock_lab_config_pool.GetHostConfigs.side_effect = [[
         self.host_config1, self.host_config2]]
-    args = mock.MagicMock(
-        lab_config_path='lab_config.yaml',
-        hosts_or_clusters=[],
-        parallel=False,
-        ssh_key=None,
-        host_func=self.mock_host_func,
-        ask_password=True,
+    args_dict = self.default_args.copy()
+    args_dict.update(
+        ask_login_password=True,
         ask_sudo_password=True,
-        sudo_user='sudo_user')
+        sudo_user='sudo_user',
+    )
+    args = mock.MagicMock(**args_dict)
 
     host_util.Execute(args)
 
     self.mock_lab_config_pool.GetHostConfigs.assert_called_once_with()
     self.mock_create_context.assert_has_calls([
-        mock.call('host1', 'user1', login_password='login_pswd', ssh_key=None,
-                  sudo_password='sudo_pswd', sudo_user='sudo_user'),
-        mock.call('host2', 'user1', login_password='login_pswd', ssh_key=None,
-                  sudo_password='sudo_pswd', sudo_user='sudo_user')])
-    self.assertLen(self.mock_host_func.call_args_list, 2)
-    args1, host1 = self.mock_host_func.call_args_list[0][0]
-    args2, host2 = self.mock_host_func.call_args_list[1][0]
-    self.assertEqual(args, args1)
-    self.assertEqual('host1', host1.name)
-    self.assertEqual(args, args2)
-    self.assertEqual('host2', host2.name)
+        mock.call('host1', 'user1',
+                  ssh_config=ssh_util.SshConfig(
+                      user='user1', hostname='host1',
+                      password='login_pswd'),
+                  sudo_ssh_config=ssh_util.SshConfig(
+                      user='sudo_user', hostname='host1',
+                      password='sudo_pswd')),
+        mock.call('host2', 'user1',
+                  ssh_config=ssh_util.SshConfig(
+                      user='user1', hostname='host2',
+                      password='login_pswd'),
+                  sudo_ssh_config=ssh_util.SshConfig(
+                      user='sudo_user', hostname='host2',
+                      password='sudo_pswd'))])
+    self.assertEqual(
+        [('host1', args), ('host2', args)], list(self.mock_func_calls.items()))
+
+  @mock.patch.object(host_util, '_BuildLabConfigPool')
+  def testExecute_nativeSsh(self, mock_build_lab_config_pool):
+    """Test execute."""
+    mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
+    self.mock_lab_config_pool.GetHostConfigs.side_effect = [[
+        self.host_config1, self.host_config2]]
+    args_dict = self.default_args.copy()
+    args_dict.update(
+        use_native_ssh=True,
+        ssh_arg=['-o op1=v1 -o op2=v2'])
+    args = mock.MagicMock(**args_dict)
+
+    host_util.Execute(args)
+
+    self.mock_lab_config_pool.GetHostConfigs.assert_called_once_with()
+    self.mock_create_context.assert_has_calls([
+        mock.call('host1', 'user1',
+                  ssh_config=ssh_util.SshConfig(
+                      user='user1', hostname='host1',
+                      ssh_args=['-o op1=v1 -o op2=v2'],
+                      use_native_ssh=True),
+                  sudo_ssh_config=None),
+        mock.call('host2', 'user1',
+                  ssh_config=ssh_util.SshConfig(
+                      user='user1', hostname='host2',
+                      ssh_args=['-o op1=v1 -o op2=v2'],
+                      use_native_ssh=True),
+                  sudo_ssh_config=None)])
+    self.assertEqual(
+        [('host1', args), ('host2', args)], list(self.mock_func_calls.items()))
 
   def testSequentialExecute_exitOnError(self):
     """Test _SequentialExecute multiple hosts sequentially and failed."""
@@ -120,20 +167,19 @@ class HostUtilTest(parameterized.TestCase):
         host_util.Host(host_config, context=self.mock_context)
         for host_config in
         [self.host_config1, self.host_config2]]
-    self.mock_host_func.side_effect = [Exception(), None]
-    args = mock.MagicMock(
-        parallel=False,
-        exit_on_error=True,
-        host_func=self.mock_host_func)
+    self.mock_func_exceptions['host1'] = Exception()
+    args_dict = self.default_args.copy()
+    args_dict.update(parallel=False, exit_on_error=True)
+    args = mock.MagicMock(**args_dict)
 
     with self.assertRaises(Exception):
       host_util._SequentialExecute(
-          host_util._WrapFuncForSetHost(self.mock_host_func),
+          host_util._WrapFuncForSetHost(self._MockFunc),
           args,
           hosts,
           exit_on_error=True)
 
-    self.mock_host_func.assert_called_once_with(args, hosts[0])
+    self.assertEqual({'host1': args}, self.mock_func_calls)
     self.assertEqual(host_util.HostExecutionState.ERROR,
                      hosts[0].execution_state)
     self.assertEqual(host_util.HostExecutionState.UNKNOWN,
@@ -145,19 +191,19 @@ class HostUtilTest(parameterized.TestCase):
         host_util.Host(host_config, context=self.mock_context)
         for host_config in
         [self.host_config1, self.host_config2, self.host_config3]]
-    args = mock.MagicMock(
-        parallel=2,
-        host_func=self.mock_host_func)
+    args_dict = self.default_args.copy()
+    args_dict.update(parallel=2)
+    args = mock.MagicMock(**args_dict)
 
     host_util._ParallelExecute(
-        host_util._WrapFuncForSetHost(self.mock_host_func),
+        host_util._WrapFuncForSetHost(self._MockFunc),
         args,
         hosts)
 
     # We don't know the order of the call since it's parallel.
-    self.mock_host_func.assert_has_calls([mock.call(args, hosts[0])])
-    self.mock_host_func.assert_has_calls([mock.call(args, hosts[1])])
-    self.mock_host_func.assert_has_calls([mock.call(args, hosts[2])])
+    self.assertEqual(
+        {'host1': args, 'host2': args, 'host3': args},
+        self.mock_func_calls)
     self.assertEqual(host_util.HostExecutionState.COMPLETED,
                      hosts[0].execution_state)
     self.assertEqual(host_util.HostExecutionState.COMPLETED,
@@ -171,26 +217,18 @@ class HostUtilTest(parameterized.TestCase):
         host_util.Host(host_config, context=self.mock_context)
         for host_config in
         [self.host_config1, self.host_config2]]
-    def _FakeHostFuncFactory(bad_hosts):
-      def _FakeHostFunc(unused_args, host):
-        if host in bad_hosts:
-          raise Exception()
-      return _FakeHostFunc
-    self.mock_host_func.side_effect = _FakeHostFuncFactory(bad_hosts=[hosts[1]])
-    args = mock.MagicMock(
-        parallel=True,
-        host_func=self.mock_host_func)
+    self.mock_func_exceptions['host2'] = Exception()
+    args_dict = self.default_args.copy()
+    args_dict.update(parallel=True)
+    args = mock.MagicMock(**args_dict)
 
     host_util._ParallelExecute(
-        host_util._WrapFuncForSetHost(self.mock_host_func),
+        host_util._WrapFuncForSetHost(self._MockFunc),
         args,
         hosts)
 
     # We don't know the order of the call since it's parallel.
-    self.mock_host_func.assert_has_calls([
-        mock.call(args, hosts[0])])
-    self.mock_host_func.assert_has_calls([
-        mock.call(args, hosts[1])])
+    self.assertEqual({'host1': args, 'host2': args}, self.mock_func_calls)
     self.assertEqual(host_util.HostExecutionState.COMPLETED,
                      hosts[0].execution_state)
     self.assertEqual(host_util.HostExecutionState.ERROR,
@@ -206,7 +244,9 @@ class HostUtilTest(parameterized.TestCase):
     args = mock.MagicMock(
         lab_config_path='lab_config.yaml', service_account_json_key_path=None)
     host = host_util.CreateHost(args)
-    self.assertEqual(self.host_config1, host.config)
+    expected_host_config = self.host_config1.SetDockerImage(
+        host_util._DEFAULT_DOCKERIZED_TF_IMAGE)
+    self.assertEqual(expected_host_config, host.config)
     self.assertIsNotNone(host.context)
 
   @mock.patch.object(host_util, '_BuildLabConfigPool')
@@ -330,85 +370,70 @@ class HostUtilTest(parameterized.TestCase):
 
   def testHostContext(self):
     """Test Host.context."""
-    host_config = host_util.lab_config.CreateHostConfig(
-        hostname='ahost', host_login_name='auser')
-    host = host_util.Host(host_config)
+    host = host_util.Host(self.host_config1, self.ssh_config1)
     self.assertIsNotNone(host.context)
     self.mock_create_context.assert_called_once_with(
-        'ahost', 'auser', login_password=None, ssh_key=None, sudo_password=None,
-        sudo_user=None)
+        self.host_config1.hostname, self.host_config1.host_login_name,
+        ssh_config=self.ssh_config1, sudo_ssh_config=None)
 
   def testHostContext_withSSHInfo(self):
-    host_config = host_util.lab_config.CreateHostConfig(
-        hostname='host1', host_login_name='user1')
+    ssh_config = ssh_util.SshConfig(
+        user='user1', hostname='host1', password='loginpwd',
+        ssh_key='/ssh_key')
+    sudo_ssh_config = ssh_util.SshConfig(
+        user='sudo_user1', hostname='host1', password='sudopwd',
+        ssh_key='/ssh_key')
     host = host_util.Host(
-        host_config, sudo_user='sudo_user1', sudo_password='sudopwd',
-        login_password='loginpwd', ssh_key='/ssh_key')
+        self.host_config1,
+        ssh_config=ssh_config,
+        sudo_ssh_config=sudo_ssh_config)
+
     self.assertIsNotNone(host.context)
     self.mock_create_context.assert_called_once_with(
-        'host1', 'user1', login_password='loginpwd',
-        ssh_key='/ssh_key', sudo_password='sudopwd', sudo_user='sudo_user1')
+        'host1', 'user1',
+        ssh_config=ssh_config,
+        sudo_ssh_config=sudo_ssh_config)
 
   def testHostContext_unknownException(self):
     """Test Host.context with exception."""
-    host_config = host_util.lab_config.CreateHostConfig(
-        hostname='host1', host_login_name='auser')
     self.mock_create_context.side_effect = Exception('Connection timeout.')
 
     context = None
     with self.assertRaises(Exception):
-      context = host_util.Host(host_config).context
+      context = host_util.Host(self.host_config1, self.ssh_config1).context
     self.assertIsNone(context)
     self.mock_create_context.assert_called_once_with(
-        'host1', 'auser', login_password=None, ssh_key=None,
-        sudo_password=None, sudo_user=None)
+        'host1', 'user1', ssh_config=self.ssh_config1, sudo_ssh_config=None)
 
   def testWrapFuncForSetHost(self):
-    host = host_util.Host(
-        host_util.lab_config.CreateHostConfig(
-            hostname='host1', host_login_name='auser'))
+    host = host_util.Host(self.host_config1, self.ssh_config1)
     host.context = self.mock_context
     host.StartExecutionTimer = mock.MagicMock()
     host.StopExecutionTimer = mock.MagicMock()
-    args = mock.MagicMock(
-        hosts=[],
-        extra_hosts=None,
-        user=None,
-        cluster=None,
-        parallel=False,
-        func=self.mock_host_func)
-    f = host_util._WrapFuncForSetHost(self.mock_host_func)
+    args = mock.MagicMock(**self.default_args)
+    f = host_util._WrapFuncForSetHost(self._MockFunc)
 
     f(args, host)
 
-    self.mock_host_func.assert_called_once_with(args, host)
+    self.assertEqual({'host1': args}, self.mock_func_calls)
     self.assertEqual(host_util.HostExecutionState.COMPLETED,
                      host.execution_state)
     host.StartExecutionTimer.assert_called_once()
     host.StopExecutionTimer.assert_called_once()
 
   def testWrapFuncForSetHost_error(self):
-    host = host_util.Host(
-        host_util.lab_config.CreateHostConfig(
-            hostname='host1', host_login_name='auser'))
+    host = host_util.Host(self.host_config1, self.ssh_config1)
     host.context = self.mock_context
     host.StartExecutionTimer = mock.MagicMock()
     host.StopExecutionTimer = mock.MagicMock()
-    args = mock.MagicMock(
-        hosts=[],
-        extra_hosts=None,
-        user=None,
-        cluster=None,
-        parallel=False,
-        func=self.mock_host_func)
-    f = host_util._WrapFuncForSetHost(self.mock_host_func)
+    args = mock.MagicMock(**self.default_args)
+    f = host_util._WrapFuncForSetHost(self._MockFunc)
     e = Exception('Fail to run command.')
-    self.mock_host_func.side_effect = [e]
-
+    self.mock_func_exceptions['host1'] = e
     with self.assertRaises(Exception):
       f(args, host)
 
-    self.mock_host_func.assert_called_once_with(args, host)
+    self.assertEqual({'host1': args}, self.mock_func_calls)
     self.assertEqual(host_util.HostExecutionState.ERROR,
                      host.execution_state)
     self.assertEqual(e, host.error)
@@ -416,25 +441,17 @@ class HostUtilTest(parameterized.TestCase):
     host.StopExecutionTimer.assert_called_once()
 
   def testWrapFuncForSetHost_skip(self):
-    host = host_util.Host(
-        host_util.lab_config.CreateHostConfig(
-            hostname='host1', host_login_name='auser'))
+    host = host_util.Host(self.host_config1, self.ssh_config1)
     host.context = self.mock_context
     host.StartExecutionTimer = mock.MagicMock()
     host.StopExecutionTimer = mock.MagicMock()
     host.execution_state = host_util.HostExecutionState.COMPLETED
-    args = mock.MagicMock(
-        hosts=[],
-        extra_hosts=None,
-        user=None,
-        cluster=None,
-        parallel=False,
-        func=self.mock_host_func)
-    f = host_util._WrapFuncForSetHost(self.mock_host_func)
+    args = mock.MagicMock(**self.default_args)
+    f = host_util._WrapFuncForSetHost(self._MockFunc)
 
     f(args, host)
 
-    self.assertFalse(self.mock_host_func.called)
+    self.assertEmpty(self.mock_func_calls)
     host.StartExecutionTimer.assert_not_called()
     host.StopExecutionTimer.assert_not_called()
 
@@ -470,30 +487,145 @@ class HostUtilTest(parameterized.TestCase):
              for _ in range(3)]
     self.assertEqual(3, host_util._GetMaxWorker(args, hosts))
 
-  @mock.patch.object(host_util, 'logger')
-  def testPrintExecutionState(self, mock_logger):
-    host1 = host_util.Host(
-        host_util.lab_config.CreateHostConfig(
-            hostname='host1', host_login_name='auser'))
-    host1.execution_state = 'Step1'
-    host1.execution_state = 'Step2'
-    host2 = host_util.Host(
-        host_util.lab_config.CreateHostConfig(
-            hostname='host2', host_login_name='auser'))
-    host2.execution_state = 'Step1'
-    host3 = host_util.Host(
-        host_util.lab_config.CreateHostConfig(
-            hostname='host3', host_login_name='auser'))
-    host3.execution_state = 'Step1'
-    host3.execution_state = 'Step2'
-    host4 = host_util.Host(
-        host_util.lab_config.CreateHostConfig(
-            hostname='host4', host_login_name='auser'))
-    host4.execution_state = 'Step1'
-    host_util._PrintExecutionState([host4, host3, host2, host1])
-    mock_logger.assert_has_calls([
-        mock.call.info('%r host in "%s": %s', 2, 'Step1', 'host2 host4'),
-        mock.call.info('%r host in "%s": %s', 2, 'Step2', 'host1 host3')])
+
+class ExecutionStatePrinterTest(absltest.TestCase):
+  """Unit test for ExecutionStatePrinter."""
+
+  def setUp(self):
+    super(ExecutionStatePrinterTest, self).setUp()
+    self.logger_patcher = mock.patch('__main__.host_util.logger')
+    self.mock_logger = self.logger_patcher.start()
+    self.now_patcher = mock.patch('__main__.host_util._GetCurrentTime')
+    self.mock_now = self.now_patcher.start()
+    self.mock_now.return_value = 1
+    self.hosts = []
+    for i in range(5):
+      self.hosts.append(
+          host_util.Host(
+              host_util.lab_config.CreateHostConfig(
+                  hostname='host' + str(i), host_login_name='auser')))
+    self.mock_now.return_value = 11
+    for i in range(5):
+      self.hosts[i].StartExecutionTimer()
+      self.hosts[i].execution_state = 'Step1'
+    self.mock_now.return_value = 21
+    self.hosts[0].execution_state = 'Step2'
+    self.hosts[2].execution_state = 'Step2'
+    self.mock_now.return_value = 31
+    self.hosts[0].execution_state = host_util.HostExecutionState.COMPLETED
+    self.hosts[4].execution_state = host_util.HostExecutionState.ERROR
+    self.printer = host_util.ExecutionStatePrinter(self.hosts)
+
+  def tearDown(self):
+    super(ExecutionStatePrinterTest, self).tearDown()
+    self.now_patcher.stop()
+    self.logger_patcher.stop()
+
+  def testPrintState(self):
+    self.printer.PrintState()
+    self.mock_logger.assert_has_calls([
+        mock.call.info('%r of %r hosts completed.', 1, 5),
+        mock.call.error('%r of %r hosts errored: %s', 1, 5, 'host4'),
+        mock.call.info(
+            '%r of %r hosts in "%s": %s', 2, 5, 'Step1', 'host1 host3'),
+        mock.call.info(
+            '%r of %r hosts in "%s": %s', 1, 5, 'Step2', 'host2')])
+    self.assertEqual(31, self.printer._previous_print_time)
+    self.assertEqual(
+        [(host_util.HostExecutionState.COMPLETED, 1),
+         (host_util.HostExecutionState.ERROR, 1),
+         ('Step1', 2), ('Step2', 1)],
+        self.printer._previous_overview)
+
+    self.mock_logger.reset_mock()
+    self.mock_now.return_value = 41
+    self.hosts[2].execution_state = host_util.HostExecutionState.COMPLETED
+    self.printer.PrintState()
+    self.mock_logger.assert_has_calls([
+        mock.call.info('%r of %r hosts completed.', 2, 5),
+        mock.call.error('%r of %r hosts errored: %s', 1, 5, 'host4'),
+        mock.call.info(
+            '%r of %r hosts in "%s": %s', 2, 5, 'Step1', 'host1 host3')])
+    self.assertEqual(41, self.printer._previous_print_time)
+
+  def testPrintState_unchanged(self):
+    self.printer.PrintState()
+    self.mock_logger.assert_has_calls([
+        mock.call.info('%r of %r hosts completed.', 1, 5),
+        mock.call.error('%r of %r hosts errored: %s', 1, 5, 'host4'),
+        mock.call.info(
+            '%r of %r hosts in "%s": %s', 2, 5, 'Step1', 'host1 host3'),
+        mock.call.info(
+            '%r of %r hosts in "%s": %s', 1, 5, 'Step2', 'host2')])
+    self.assertEqual(31, self.printer._previous_print_time)
+    self.mock_logger.reset_mock()
+    self.mock_now.return_value = 41
+    self.printer.PrintState()
+    # The state doesn't change and it's only 10 seconds from last print.
+    # So this no print this round.
+    self.assertEqual(31, self.printer._previous_print_time)
+    self.assertFalse(self.mock_logger.called)
+
+  def testPrintState_longGapSinceLastPrint(self):
+    time1 = 41
+    self.mock_now.return_value = time1
+    self.printer.PrintState()
+    self.mock_logger.assert_has_calls([
+        mock.call.info('%r of %r hosts completed.', 1, 5),
+        mock.call.error('%r of %r hosts errored: %s', 1, 5, 'host4'),
+        mock.call.info(
+            '%r of %r hosts in "%s": %s', 2, 5, 'Step1', 'host1 host3'),
+        mock.call.info(
+            '%r of %r hosts in "%s": %s', 1, 5, 'Step2', 'host2')])
+    self.assertEqual(time1, self.printer._previous_print_time)
+
+    self.mock_logger.reset_mock()
+    time2 = time1 + host_util._MAX_LOGGING_TIME_GAP_IN_SEC + 10
+    self.mock_now.return_value = time2
+    self.printer.PrintState()
+    # The state doesn't change but it's long time since last print.
+    self.assertEqual(time2, self.printer._previous_print_time)
+    self.mock_logger.assert_has_calls([
+        mock.call.info('%r of %r hosts completed.', 1, 5),
+        mock.call.error('%r of %r hosts errored: %s', 1, 5, 'host4'),
+        mock.call.info(
+            '%r of %r hosts in "%s": %s', 2, 5, 'Step1', 'host1 host3'),
+        mock.call.info(
+            '%r of %r hosts in "%s": %s', 1, 5, 'Step2', 'host2')])
+    self.assertEqual(time2, self.printer._previous_print_time)
+
+  def testPrintResult(self):
+    self.mock_now.return_value = 51
+    for i in range(5):
+      self.hosts[i].StopExecutionTimer()
+    with self.assertRaises(host_util.ExecutionError):
+      self.printer.PrintResult()
+    self.mock_logger.assert_has_calls([
+        mock.call.info('%r of %r hosts completed:', 1, 5),
+        mock.call.info('%s [%s]', 'host0', 'Time elapsed: 0 min 40 s(ended)'),
+        mock.call.error('1 of 5 hosts errored:'),
+        mock.call.error('%s [%s]', 'host4', 'Time elapsed: 0 min 40 s(ended)'),
+        mock.call.error('2 of 5 hosts in "Step1":'),
+        mock.call.error('%s [%s]', 'host1', 'Time elapsed: 0 min 40 s(ended)'),
+        mock.call.error('%s [%s]', 'host3', 'Time elapsed: 0 min 40 s(ended)'),
+        mock.call.error('1 of 5 hosts in "Step2":'),
+        mock.call.error('%s [%s]', 'host2', 'Time elapsed: 0 min 40 s(ended)'),
+        mock.call.info('Total: 5, Completed: 1, Error: 1, Step1: 2, Step2: 1')])
+
+  def testPrintResult_allCompleted(self):
+    self.mock_now.return_value = 51
+    for i in range(5):
+      self.hosts[i].execution_state = host_util.HostExecutionState.COMPLETED
+      self.hosts[i].StopExecutionTimer()
+    self.printer.PrintResult()
+    self.mock_logger.assert_has_calls([
+        mock.call.info('%r of %r hosts completed:', 5, 5),
+        mock.call.info('%s [%s]', 'host0', 'Time elapsed: 0 min 40 s(ended)'),
+        mock.call.info('%s [%s]', 'host1', 'Time elapsed: 0 min 40 s(ended)'),
+        mock.call.info('%s [%s]', 'host2', 'Time elapsed: 0 min 40 s(ended)'),
+        mock.call.info('%s [%s]', 'host3', 'Time elapsed: 0 min 40 s(ended)'),
+        mock.call.info('%s [%s]', 'host4', 'Time elapsed: 0 min 40 s(ended)'),
+        mock.call.info('Total: 5, Completed: 5, Error: 0')])
 
 
 if __name__ == '__main__':

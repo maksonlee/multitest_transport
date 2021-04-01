@@ -13,58 +13,69 @@
 # limitations under the License.
 
 """Android Test Station local file server proxy."""
-import httplib
 import logging
+
+import flask
+import flask.views
+import six
+from six.moves import http_client
 from six.moves import urllib
-import webapp2
 
 from multitest_transport.util import env
 
+APP = flask.Flask(__name__)
 
-class FileServerProxy(webapp2.RequestHandler):
+
+class FileServerProxy(flask.views.MethodView):
   """Proxies requests to the local file server."""
 
   def get(self, path):
-    self._ProxyRequest('GET', path)
+    return self._ProxyRequest('GET', path)
 
   def post(self, path):
-    self._ProxyRequest('POST', path)
+    return self._ProxyRequest('POST', path)
 
   def put(self, path):
-    self._ProxyRequest('PUT', path)
+    return self._ProxyRequest('PUT', path)
 
   def delete(self, path):
-    self._ProxyRequest('DELETE', path)
+    return self._ProxyRequest('DELETE', path)
 
   def _ProxyRequest(self, method, path):
     # Combine target host and request URL
-    path = urllib.parse.quote(path)
-    target_host = env.FILE_SERVER_URL2
+    target_host = env.FILE_SERVER_URL
     (scheme, host, _, _, _) = urllib.parse.urlsplit(target_host)
-    (_, _, _, query, fragment) = urllib.parse.urlsplit(self.request.url)
+    (_, _, _, query, fragment) = urllib.parse.urlsplit(flask.request.url)
     url = urllib.parse.urlunsplit((scheme, host, path, query, fragment))  
     try:
       # Create and send request with body and header
-      request = urllib.request.Request(
-          url=url, data=self.request.body, headers=self.request.headers)
+      data = flask.request.get_data()
+      headers = {}
+      # urllib in python2.7 can only handle 'str' (binary).
+      # We make sure they are binary before passing it to urllib.
+      url = str(url)
+      for key, value in flask.request.headers.items():
+        headers[str(key)] = str(value)
+      data = six.ensure_binary(data)
+      request = urllib.request.Request(url=url, data=data, headers=headers)
       request.get_method = lambda: method
       response = urllib.request.urlopen(request)
     except urllib.error.HTTPError as e:
       # Relay HTTP errors back to caller
-      response = e
-    except urllib.error.URLError as e:
-      logging.error('Error during proxy request %s: %s', url, e)
-      self.response.status = httplib.INTERNAL_SERVER_ERROR
-      return
+      r = flask.Response(e.read(), headers=dict(e.headers))
+      r.status = e.reason
+      r.status_code = int(e.code)
+      return r
+    except urllib.error.URLError:
+      logging.exception('Error during proxy request %s', url)
+      return flask.Response(status=http_client.INTERNAL_SERVER_ERROR)
 
-    # Construct and send response
-    self.response.status_int = response.code
-    self.response.status_message = response.msg
-    self.response.headers = response.headers
-    self.response.body = response.read()
+    r = flask.Response(response.read(), headers=dict(response.headers))
+    r.status = getattr(response, 'msg')
+    r.status_code = int(response.code)
     response.close()
+    return r
 
 
-APP = webapp2.WSGIApplication([
-    (r'/fs_proxy/(.*)', FileServerProxy),
-], debug=True)
+APP.add_url_rule(
+    '/fs_proxy/<path:path>', view_func=FileServerProxy.as_view('fs_proxy'))

@@ -16,7 +16,7 @@
 
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {EMPTY, from, Observable} from 'rxjs';
+import {EMPTY, from, Observable, of as observableOf} from 'rxjs';
 import {map, switchMap} from 'rxjs/operators';
 
 import {AnalyticsParams} from './analytics_service';
@@ -33,11 +33,13 @@ export const MTT_API_URL = '/_ah/api/mtt/v1';
 })
 export class MttClient {
   readonly testRunActions: TestRunActionClient;
+  readonly testResults: TestResultClient;
 
   constructor(
       private readonly http: HttpClient, private readonly auth: AuthService) {
     // TODO: Reorganize MttClient methods
     this.testRunActions = new TestRunActionClient(http, auth);
+    this.testResults = new TestResultClient();
   }
 
   /**
@@ -96,9 +98,16 @@ export class MttClient {
         {params});
   }
 
+  lookupBuildItem(url: string):
+      Observable<model.BuildItem> {
+    const params = new HttpParams().set('url', url);
+    return this.http.get<model.BuildItem>(
+        `${MTT_API_URL}/build_channels/build_item_lookup`, {params});
+  }
+
   listBuildItems(id: string, path: string, pageToken?: string):
       Observable<model.BuildItemList> {
-    let params = new HttpParams().set('build_channel_id', id).set('path', path);
+    let params = new HttpParams().set('path', path);
     if (pageToken) {
       params = params.set('page_token', pageToken);
     }
@@ -108,11 +117,11 @@ export class MttClient {
   }
 
   deleteBuildItem(id: string, path: string) {
-    const params = new AnalyticsParams('build_channels', 'delete_build_item');
-    return this.http.post(
-        `${MTT_API_URL}/build_channels/${
-            encodeURIComponent(id)}/build_items/delete`,
-        {path}, {params});
+    const params = new AnalyticsParams('build_channels', 'delete_build_item')
+        .set('path', path);
+    return this.http.delete(
+        `${MTT_API_URL}/build_channels/${encodeURIComponent(id)}/build_items`,
+        {params});
   }
 
   getBuildChannelProviders(): Observable<model.BuildChannelProviderList> {
@@ -151,9 +160,8 @@ export class MttClient {
 
   deleteBuildChannel(id: string) {
     const params = new AnalyticsParams('build_channels', 'delete');
-    return this.http.post(
-        `${MTT_API_URL}/build_channels/${encodeURIComponent(id)}/delete`, null,
-        {params});
+    return this.http.delete(
+        `${MTT_API_URL}/build_channels/${encodeURIComponent(id)}`, {params});
   }
 
   getConfigSetBuildChannels(): Observable<model.BuildChannelList> {
@@ -175,9 +183,18 @@ export class MttClient {
 
   importConfigSet(url = '', content = ''): Observable<model.ConfigSetInfo> {
     const params = new AnalyticsParams('config_sets', 'import');
+    if (!url) {
+      url = 'local';
+    }
     return this.http.post<model.ConfigSetInfo>(
-        `${MTT_API_URL}/config_sets/import`, {'url': url, 'content': content},
-        {params});
+        `${MTT_API_URL}/config_sets/import/${encodeURIComponent(url)}`,
+        {'content': content}, {params});
+  }
+
+  deleteConfigSet(url: string) {
+    const params = new AnalyticsParams('config_sets', 'delete');
+    return this.http.delete(
+        `${MTT_API_URL}/config_sets/${encodeURIComponent(url)}`, {params});
   }
 
   getDeviceAction(id: string): Observable<model.DeviceAction> {
@@ -198,16 +215,15 @@ export class MttClient {
 
   updateDeviceAction(id: string, deviceAction: model.DeviceAction) {
     const params = new AnalyticsParams('device_actions', 'update');
-    return this.http.post(
+    return this.http.put(
         `${MTT_API_URL}/device_actions/${encodeURIComponent(id)}`, deviceAction,
         {params});
   }
 
   deleteDeviceAction(id: string) {
     const params = new AnalyticsParams('device_actions', 'delete');
-    return this.http.post(
-        `${MTT_API_URL}/device_actions/${encodeURIComponent(id)}/delete`, null,
-        {params});
+    return this.http.delete(
+        `${MTT_API_URL}/device_actions/${encodeURIComponent(id)}`, {params});
   }
 
   createNewTestRunRequest(newtestRun: model.NewTestRunRequest):
@@ -223,7 +239,7 @@ export class MttClient {
 
   updateNodeConfig(nodeConfig: model.NodeConfig) {
     const params = new AnalyticsParams('node_config', 'update');
-    return this.http.post(`${MTT_API_URL}/node_config`, nodeConfig, {params});
+    return this.http.put(`${MTT_API_URL}/node_config`, nodeConfig, {params});
   }
 
   exportNodeConfig(): Observable<model.SimpleMessage> {
@@ -245,8 +261,25 @@ export class MttClient {
 
   updatePrivateNodeConfig(privateNodeConfig: model.PrivateNodeConfig) {
     const params = new AnalyticsParams('private_node_config', 'update');
-    return this.http.post(
+    return this.http.put(
         `${MTT_API_URL}/private_node_config`, privateNodeConfig, {params});
+  }
+
+  setDefaultServiceAccount(key: Blob): Observable<void> {
+    return from(readBlobAsText(key)).pipe(switchMap(data => {
+      const params = new AnalyticsParams(
+          'private_node_config', 'set_default_service_account');
+      return this.http.put<void>(
+          `${MTT_API_URL}/private_node_config/default_service_account`,
+          {value: data}, {params});
+    }));
+  }
+
+  removeDefaultServiceAccount() {
+    const params = new AnalyticsParams(
+        'private_node_config', 'remove_default_service_account');
+    return this.http.delete(
+        `${MTT_API_URL}/private_node_config/default_service_account`, {params});
   }
 
   createTest(test: model.Test) {
@@ -265,15 +298,14 @@ export class MttClient {
 
   updateTest(testId: string, test: model.Test) {
     const params = new AnalyticsParams('tests', 'update');
-    return this.http.post(
+    return this.http.put(
         `${MTT_API_URL}/tests/${encodeURIComponent(testId)}`, test, {params});
   }
 
   deleteTest(id: string) {
     const params = new AnalyticsParams('tests', 'delete');
-    return this.http.post(
-        `${MTT_API_URL}/tests/${encodeURIComponent(id)}/delete`, null,
-        {params});
+    return this.http.delete(
+        `${MTT_API_URL}/tests/${encodeURIComponent(id)}`, {params});
   }
 
   createTestPlan(testPlan: model.TestPlan) {
@@ -284,7 +316,7 @@ export class MttClient {
 
   updateTestPlan(testPlanId: string, testPlan: model.TestPlan) {
     const params = new AnalyticsParams('test_plans', 'update');
-    return this.http.post<model.TestPlan>(
+    return this.http.put<model.TestPlan>(
         `${MTT_API_URL}/test_plans/${encodeURIComponent(testPlanId)}`, testPlan,
         {params});
   }
@@ -307,9 +339,8 @@ export class MttClient {
 
   deleteTestPlan(id: string) {
     const params = new AnalyticsParams('test_plans', 'delete');
-    return this.http.post(
-        `${MTT_API_URL}/test_plans/${encodeURIComponent(id)}/delete`, null,
-        {params});
+    return this.http.delete(
+        `${MTT_API_URL}/test_plans/${encodeURIComponent(id)}`, {params});
   }
 
   getTestRun(id: string): Observable<model.TestRun> {
@@ -338,6 +369,12 @@ export class MttClient {
       }
     });
 
+    return this.http.get<model.TestRunSummaryList>(
+        `${MTT_API_URL}/test_runs`, {params});
+  }
+
+  getReruns(id: string) {
+    const params = new HttpParams({fromObject: {'prev_test_run_id': id}});
     return this.http.get<model.TestRunSummaryList>(
         `${MTT_API_URL}/test_runs`, {params});
   }
@@ -439,5 +476,103 @@ export class TestRunActionClient {
     return this.http.post<void>(
         `${TestRunActionClient.PATH}/${encodeURIComponent(id)}/auth`,
         {'redirect_uri': REDIRECT_URI, 'code': code}, {params});
+  }
+}
+
+/** Provides access to the test results API. */
+export class TestResultClient {
+  /** Backend path which serves test run action data. */
+  static readonly PATH = `${MTT_API_URL}/test_result`;
+
+  // TODO: Remove once API is implemented
+
+  createMockModuleResult(
+      name = 'module_name', passed = 0, failed = 0, total = 0,
+      errorMessage?: string): model.TestModuleResult {
+    return {
+      id: 'module_id',
+      attempt_id: 'attempt_id',
+      name,
+      passed_tests: passed,
+      failed_tests: failed,
+      total_tests: total,
+      error_message: errorMessage,
+    } as model.TestModuleResult;
+  }
+
+  // TODO: Remove once API is implemented
+  createMockTestCaseResult(
+      moduleId = 'module_id', name = 'testName', status = model.TestStatus.PASS,
+      errorMessage = 'failure message',
+      stackTrace = 'some stack trace'): model.TestCaseResult {
+    return {
+      id: 'test_id',
+      module_id: moduleId,
+      name,
+      status,
+      error_message: errorMessage,
+      stack_trace: stackTrace,
+    } as model.TestCaseResult;
+  }
+
+  /** Lists all modules. */
+  listModules(testRunId: string, pageToken?: string):
+      Observable<model.TestModuleResultList> {
+    // TODO: Replace with actual API call later
+    // TODO: Add pagination and filtering
+    const module1 = this.createMockModuleResult(
+        'module1', 12345, 67890, 98765, 'lorem ipsum');
+    const module2 = this.createMockModuleResult(
+        'module.2', 0, 0, 0,
+        'some super super super super super super super super super super super super super super long text');
+    const module3 = this.createMockModuleResult(
+        'module_3_with_really_really_really_really_really_long_name',
+    );
+    return observableOf({results: [module1, module2, module3]});
+  }
+
+  listTestCases(testRunId: string, moduleId: string, pageToken?: string):
+      Observable<model.TestCaseResultList> {
+    // TODO: Replace with actual API call later
+    // TODO: Add filtering
+    const testCase1 = this.createMockTestCaseResult(
+        moduleId, 'test_case.1', model.TestStatus.PASS, '', '');
+    const testCase2 = this.createMockTestCaseResult(
+        moduleId, 'test_case2', model.TestStatus.FAIL, 'some failure message',
+        'some stack trace');
+    const testCase3 = this.createMockTestCaseResult(
+        moduleId, 'really_really_long.test.case.name_with_lots_of_text',
+        model.TestStatus.ASSUMPTION_FAILURE,
+        'some other failure message that is really really really long',
+        'some really really really really really really really really really really really really long stack trace');
+    const testCase4 = this.createMockTestCaseResult(
+        moduleId, 'test.case.Four', model.TestStatus.UNKNOWN, '', '');
+    const testCase5 = this.createMockTestCaseResult(
+        moduleId, 'another_really_really_long.test.case.name_with_lots_of_text',
+        model.TestStatus.IGNORED,
+        'some other failure message that is really really really long',
+        'some really really really really really really really really really really really really long stack trace');
+    const fillerTestCase = this.createMockTestCaseResult();
+
+    // Return first page of test cases
+    if (!pageToken) {
+      const results = [testCase1, testCase2, testCase3, testCase4, testCase5];
+      for (let i = 0; i < 5; i++) {
+        results.push(fillerTestCase);
+      }
+      return observableOf({results, next_page_token: 'a'});
+    }
+
+    // Stop after 5 additional pages have been loaded
+    if (pageToken.length === 5) {
+      return observableOf({results: [fillerTestCase]});
+    }
+
+    // Otherwise, return list of filler test cases and increase token length
+    const results = [];
+    for (let i = 0; i < 10; i++) {
+      results.push(fillerTestCase);
+    }
+    return observableOf({results, next_page_token: pageToken + 'a'});
   }
 }

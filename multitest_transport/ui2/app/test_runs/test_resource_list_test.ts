@@ -21,7 +21,7 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {FileService} from '../services/file_service';
 import {Test, TestResourceObj, TestRun, TestRunState} from '../services/mtt_models';
 import {getTextContent} from '../testing/jasmine_util';
-import {newMockTest, newMockTestResourceObj, newMockTestRun} from '../testing/test_util';
+import {newMockTest, newMockTestResourceObj, newMockTestRun} from '../testing/mtt_mocks';
 import {TestResourceList} from './test_resource_list';
 import {TestRunsModule} from './test_runs_module';
 import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';

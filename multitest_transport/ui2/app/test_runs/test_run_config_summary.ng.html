@@ -1,0 +1,123 @@
+<!--
+ Copyright 2021 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-card>
+
+  <div>
+    <h4 fxFlex>
+      {{title}}
+    </h4>
+    <div *ngIf="editable">
+      <!-- Edit button -->
+      <button mat-icon-button type="button" aria-label="Edit" matTooltip="Edit"
+              (click)="editConfig()">
+        <mat-icon> edit </mat-icon>
+      </button>
+      <!-- Delete button -->
+      <button
+        mat-icon-button type="button" aria-label="Delete" matTooltip="Delete" class="delete-button"
+              (click)="deleteConfig()">
+        <mat-icon> delete </mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <mat-card-content>
+    <div fxLayout="row" fxLayoutGap="10px">
+      <div fxFlex="40" fxLayout="column">
+        <h5>Configuration Details</h5>
+        <div fxFlex fxLayout="row" class="config-row">
+          <div fxFlex="100px">
+            Test:
+          </div>
+          <div fxFlex class="overflow" title="{{getTestName(config.test_id)}}">
+            {{getTestName(config.test_id)}}
+          </div>
+        </div>
+        <div fxFlex fxLayout="row" *ngIf="viewDetails" class="config-row">
+          <div fxFlex="100px">
+            Command:
+          </div>
+          <div fxFlex class="overflow" title="{{config.command}}">
+            {{config.command}}
+          </div>
+        </div>
+        <div fxFlex fxLayout="row" *ngIf="viewDetails" class="config-row">
+          <div fxFlex="100px">
+            Run Count:
+          </div>
+          <div fxFlex>
+            {{config.run_count}}
+          </div>
+        </div>
+        <div fxFlex fxLayout="row" *ngIf="viewDetails" class="config-row">
+          <div fxFlex="100px">
+            Max Retries:
+          </div>
+          <div fxFlex>
+            {{config.max_retry_on_test_failures}}
+          </div>
+        </div>
+      </div>
+      <div class="overflow" fxFlex="15">
+        <h5>Device Specs</h5>
+        <div *ngIf="!viewDetails; else runTargetDetails" class="overflow">
+          {{config.device_specs.length}}
+          {{getPreview(config.device_specs)}}
+        </div>
+        <ng-template #runTargetDetails>
+          <div *ngFor="let spec of config.device_specs"
+               class=" config-row overflow" title="{{target}}">
+            {{spec}}
+          </div>
+        </ng-template>
+      </div>
+      <div class="overflow" fxFlex="20">
+        <h5>Device Actions</h5>
+        <div *ngIf="!viewDetails; else deviceActionDetails" class="overflow">
+          {{(config.before_device_action_ids || []).length}}
+          {{getPreview(getDeviceActionNameList(config.before_device_action_ids))}}
+        </div>
+        <ng-template #deviceActionDetails>
+          <div *ngFor="let name of getDeviceActionNameList(config.before_device_action_ids)"
+               class="config-row overflow" title="{{this.getDeviceActionName(id)}}">
+            {{name}}
+          </div>
+        </ng-template>
+      </div>
+      <div class="overflow" fxFlex="20">
+        <h5>Test Resources</h5>
+        <div *ngIf="!viewDetails; else testResourceDetails" class="overflow">
+          {{(config.test_resource_objs || []).length}}
+          {{getPreview(getTestResourceNameList(config.test_resource_objs))}}
+        </div>
+        <ng-template #testResourceDetails>
+          <div *ngFor="let resource of config.test_resource_objs" class="config-row overflow"
+             title="{{resource.url}}">
+          {{resource.name}}
+          </div>
+        </ng-template>
+      </div>
+    </div>
+
+    <button mat-button color="accent" (click)="toggleViewDetails()" class="view-details-button"
+        aria-label="View details" matTooltip="View details">
+      {{viewDetails ? 'Hide' : 'View'}} details
+      <mat-icon>{{viewDetails ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}}</mat-icon>
+    </button>
+  </mat-card-content>
+
+</mat-card>

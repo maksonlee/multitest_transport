@@ -20,7 +20,7 @@ import {By} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
-import {newMockNameValuePairList} from '../testing/test_util';
+import {newMockNameValuePairList} from '../testing/mtt_mocks';
 import {NameValuePairListForm} from './name_value_pair_list_form';
 import {SharedModule} from './shared_module';
 import {SharedModuleNgSummary} from './shared_module.ngsummary';

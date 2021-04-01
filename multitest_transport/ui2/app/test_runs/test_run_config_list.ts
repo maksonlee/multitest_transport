@@ -17,8 +17,10 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 
-import {initTestRunConfig, Test, TestRunConfig} from '../services/mtt_models';
-import {assertRequiredInput, deepCopy} from '../shared/util';
+import * as mttModels from '../services/mtt_models';
+import {MttObjectMapService} from '../services/mtt_object_map';
+import {deepCopy} from '../shared/util';
+
 import {TestRunConfigEditor, TestRunConfigEditorData} from './test_run_config_editor';
 
 /**
@@ -30,59 +32,56 @@ import {TestRunConfigEditor, TestRunConfigEditorData} from './test_run_config_ed
   templateUrl: './test_run_config_list.ng.html',
 })
 export class TestRunConfigList implements OnInit {
-  @Input() data: TestRunConfig[] = [];
-  @Input() testMap: {[id: string]: Test} = {};
+  @Input() data: mttModels.TestRunConfig[] = [];
+  @Input() configTemplate?: Partial<mttModels.TestRunConfig>;
+  @Input() configTitle = 'Test Run Config';
   @Output() dataChange = new EventEmitter();
 
-  constructor(private readonly matDialog: MatDialog) {}
+  constructor(
+      private readonly mttObjectMapService: MttObjectMapService,
+      private readonly matDialog: MatDialog,
+  ) {}
 
   ngOnInit() {
-    assertRequiredInput(this.testMap, 'testMap', 'test-run-config-list');
+    if (!this.configTemplate) {
+      this.mttObjectMapService.getMttObjectMap(true /* forceUpdate */)
+          .subscribe((res) => {
+            this.configTemplate =
+                mttModels.initTestRunConfig(Object.values(res.testMap)[0]);
+          });
+    }
   }
 
-  add() {
-    this.openTestRunConfigEditor();
-  }
-
-  edit(index: number) {
-    this.openTestRunConfigEditor(index);
-  }
-
-  delete(index: number) {
-    this.data.splice(index, 1);
-    this.dataChange.emit(this.data);
-  }
-
-  private openTestRunConfigEditor(
-      index?: number,
-  ) {
-    // If index is given, edit that config. Otherwise add a new config.
-    const editMode = typeof index !== 'undefined';
-    const testRunConfig = editMode ? this.data[index!] : initTestRunConfig();
-    // Pass in a copy rather than reference to avoid data maniputlation
-    // on parent component
-    const testRunConfigCopy = deepCopy(testRunConfig);
+  addConfig() {
+    let testRunConfig: Partial<mttModels.TestRunConfig>;
+    if (this.data.length === 0) {
+      testRunConfig = deepCopy(this.configTemplate!);
+    } else {
+      testRunConfig = deepCopy(this.data[this.data.length - 1]);
+    }
     const testRunConfigEditorData: TestRunConfigEditorData = {
-      editMode,
-      testMap: this.testMap,
-      testRunConfig: testRunConfigCopy,
+      editMode: false,
+      testRunConfig,
     };
 
     const dialogRef = this.matDialog.open(TestRunConfigEditor, {
-      width: '1200px',
-      height: '600px',
-      panelClass: 'no-padding-container',
-      data: testRunConfigEditorData
+      panelClass: 'test-run-config-editor-dialog',
+      data: testRunConfigEditorData,
     });
 
     dialogRef.componentInstance.configSubmitted.subscribe(
-        (result: TestRunConfig) => {
-          if (editMode) {
-            this.data[index!] = result;
-          } else {
+        (result: mttModels.TestRunConfig) => {
             this.data.push(result);
-          }
           this.dataChange.emit(this.data);
         });
+  }
+
+  updateConfig(index: number, config: mttModels.TestRunConfig) {
+    this.data[index] = config;
+  }
+
+  deleteConfig(index: number) {
+    this.data.splice(index, 1);
+    this.dataChange.emit(this.data);
   }
 }

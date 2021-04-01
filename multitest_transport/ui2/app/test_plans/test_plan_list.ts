@@ -37,14 +37,16 @@ import {buildApiErrorMessage} from '../shared/util';
 export class TestPlanList implements OnInit, OnDestroy {
   readonly OverflowListType = OverflowListType;
 
-  @Input() displayColumns = ['name', 'next_run_time', 'labels', 'actions'];
+  @Input()
+  displayColumns =
+      ['name', 'next_run_time', 'last_run_info', 'labels', 'actions'];
 
   isLoading = false;
   dataSource = new MatTableDataSource<TestPlan>();
 
   @ViewChild(MatTable, {static: false}) table!: MatTable<{}>;
 
-  private readonly destroy = new ReplaySubject();
+  private readonly destroy = new ReplaySubject<void>();
 
   constructor(
       private readonly notifier: Notifier,

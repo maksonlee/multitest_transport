@@ -107,7 +107,7 @@ class TestApiTest(api_test_util.TestCase):
     data = test.to_dict()
     data['name'] = 'bar'
 
-    res = self.app.post_json('/_ah/api/mtt/v1/tests/%s' % test.key.id(), data)
+    res = self.app.put_json('/_ah/api/mtt/v1/tests/%s' % test.key.id(), data)
 
     obj = json.loads(res.body)
     self.assertEqual(str(test.key.id()), obj['id'])
@@ -118,7 +118,7 @@ class TestApiTest(api_test_util.TestCase):
     test = self._CreateMockTest()
     self.assertIsNotNone(test.key.get())
 
-    self.app.post('/_ah/api/mtt/v1/tests/%s/delete' % test.key.id())
+    self.app.delete('/_ah/api/mtt/v1/tests/%s' % test.key.id())
 
     self.assertIsNone(test.key.get())
 

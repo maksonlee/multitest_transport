@@ -20,7 +20,7 @@ import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
 import * as util from '../shared/util';
-import {newMockPrivateNodeConfig} from '../testing/test_util';
+import {newMockPrivateNodeConfig} from '../testing/mtt_mocks';
 
 import {SetupWizardDialog} from './setup_wizard_dialog';
 import {SetupWizardModule} from './setup_wizard_module';

@@ -14,94 +14,146 @@
  * limitations under the License.
  */
 
-import {DebugElement} from '@angular/core';
+import {WeekDay} from '@angular/common';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
-import {PeriodicTimeType, ScheduleTimeType} from '../services/mtt_models';
-import {getEl} from '../testing/jasmine_util';
-
-import {ScheduleTimeForm} from './schedule_time_form';
+import {getPeriodicType, PeriodicType, ScheduleTimeForm, ScheduleType} from './schedule_time_form';
 import {SharedModule} from './shared_module';
 import {SharedModuleNgSummary} from './shared_module.ngsummary';
 
+describe('PeriodicType', () => {
+  it('can detect hourly expressions', () => {
+    expect(getPeriodicType('0 * * * *')).toBe(PeriodicType.HOUR);
+    expect(getPeriodicType('59 * * * *')).toBe(PeriodicType.HOUR);
+    expect(getPeriodicType('60 * * * *')).toBeUndefined();
+  });
+
+  it('can detect daily expressions', () => {
+    expect(getPeriodicType('0 0 * * *')).toBe(PeriodicType.DAY);
+    expect(getPeriodicType('0 23 * * *')).toBe(PeriodicType.DAY);
+    expect(getPeriodicType('0 24 * * *')).toBeUndefined();
+  });
+
+  it('can detect weekly expressions', () => {
+    expect(getPeriodicType('0 0 * * 0')).toBe(PeriodicType.WEEK);
+    expect(getPeriodicType('0 0 * * 6')).toBe(PeriodicType.WEEK);
+    expect(getPeriodicType('0 0 * * 7')).toBeUndefined();
+  });
+
+  it('can detect monthly expressions', () => {
+    expect(getPeriodicType('0 0 1 * *')).toBe(PeriodicType.MONTH);
+    expect(getPeriodicType('0 0 31 * *')).toBe(PeriodicType.MONTH);
+    expect(getPeriodicType('0 0 0 * *')).toBeUndefined();
+    expect(getPeriodicType('0 0 32 * *')).toBeUndefined();
+  });
+});
+
 describe('ScheduleTimeForm', () => {
-  let scheduleTimeForm: ScheduleTimeForm;
-  let scheduleTimeFormFixture: ComponentFixture<ScheduleTimeForm>;
-  let el: DebugElement;
+  let component: ScheduleTimeForm;
+  let fixture: ComponentFixture<ScheduleTimeForm>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
       aotSummaries: SharedModuleNgSummary,
     });
-    scheduleTimeFormFixture = TestBed.createComponent(ScheduleTimeForm);
-    el = scheduleTimeFormFixture.debugElement;
-    scheduleTimeForm = scheduleTimeFormFixture.componentInstance;
-    scheduleTimeForm.cronExpression = '';
-    scheduleTimeFormFixture.detectChanges();
+
+    fixture = TestBed.createComponent(ScheduleTimeForm);
+    component = fixture.componentInstance;
+    spyOn(component, 'onChange');
   });
 
-  it('should get initialized correctly', () => {
-    expect(scheduleTimeForm).toBeTruthy();
+  it('can initialize component', () => {
+    expect(component).toBeTruthy();
   });
 
-  it('should display the right schedule time type', () => {
-    expect(scheduleTimeForm.selectedScheduleTimeType)
-        .toEqual(ScheduleTimeType.MANUAL);
+  it('can detect schedule type', () => {
+    component.writeValue('');
+    expect(component.selectedScheduleType).toEqual(ScheduleType.MANUAL);
 
-    scheduleTimeForm.cronExpression = '* * * * *';
-    scheduleTimeForm.initInputSelector(scheduleTimeForm.cronExpression);
-    expect(scheduleTimeForm.selectedScheduleTimeType)
-        .toEqual(ScheduleTimeType.PERIODIC);
+    component.writeValue('0 * * * *');
+    expect(component.selectedScheduleType).toEqual(ScheduleType.PERIODIC);
 
-    scheduleTimeForm.cronExpression = '31/4 2 1 * *';
-    scheduleTimeForm.initInputSelector(scheduleTimeForm.cronExpression);
-    expect(scheduleTimeForm.selectedScheduleTimeType)
-        .toEqual(ScheduleTimeType.CUSTOM);
+    component.writeValue('31/4 2 1 * *');
+    expect(component.selectedScheduleType).toEqual(ScheduleType.CUSTOM);
   });
 
-  it('should output cron expression string on schedule selector change', () => {
-    spyOn(scheduleTimeForm.cronExpressionChange, 'emit');
-    getEl(el, 'mat-select').click();
-    scheduleTimeFormFixture.detectChanges();
-    getEl(el, 'mat-option').click();
-    scheduleTimeFormFixture.detectChanges();
-    expect(scheduleTimeForm.cronExpressionChange.emit).toHaveBeenCalledWith('');
+  it('outputs cron expression on schedule type change', () => {
+    component.changeScheduleType(ScheduleType.MANUAL);
+    expect(component.onChange).toHaveBeenCalledWith('');
+
+    component.changeScheduleType(ScheduleType.PERIODIC);
+    expect(component.onChange).toHaveBeenCalledWith('0 * * * *');
+
+    component.cronExpression = '31/4 2 1 * *';
+    component.changeScheduleType(ScheduleType.CUSTOM);
+    expect(component.onChange).toHaveBeenCalledWith('31/4 2 1 * *');
   });
 
-  it('should return the right periodic time type', () => {
-    const minuteResult = scheduleTimeForm.getCronPeriodicTimeType('* * * * *');
-    expect(minuteResult).toEqual(PeriodicTimeType.MINUTE);
+  it('can initialize periodic parameters', () => {
+    component.writeValue('1 * * * *');
+    expect(component.selectedPeriodicType).toEqual(PeriodicType.HOUR);
+    expect(component.selectedMinute).toEqual(1);
 
-    const hourResult = scheduleTimeForm.getCronPeriodicTimeType('1 * * * *');
-    expect(hourResult).toEqual(PeriodicTimeType.HOUR);
+    component.writeValue('2 3 * * *');
+    expect(component.selectedPeriodicType).toEqual(PeriodicType.DAY);
+    expect(component.selectedMinute).toEqual(2);
+    expect(component.selectedHour).toEqual(3);
 
-    const dayResult = scheduleTimeForm.getCronPeriodicTimeType('1 1 * * *');
-    expect(dayResult).toEqual(PeriodicTimeType.DAY);
+    component.writeValue('4 5 * * 6');
+    expect(component.selectedPeriodicType).toEqual(PeriodicType.WEEK);
+    expect(component.selectedMinute).toEqual(4);
+    expect(component.selectedHour).toEqual(5);
+    expect(component.selectedWeekDay).toEqual(WeekDay.Saturday);
 
-    const weekResult = scheduleTimeForm.getCronPeriodicTimeType('1 1 * * 2');
-    expect(weekResult).toEqual(PeriodicTimeType.WEEK);
-
-    const monthResult = scheduleTimeForm.getCronPeriodicTimeType('0 0 1 * *');
-    expect(monthResult).toEqual(PeriodicTimeType.MONTH);
-
-    const yearResult = scheduleTimeForm.getCronPeriodicTimeType('3 3 1 1 *');
-    expect(yearResult).toEqual(PeriodicTimeType.YEAR);
+    component.writeValue('7 8 9 * *');
+    expect(component.selectedPeriodicType).toEqual(PeriodicType.MONTH);
+    expect(component.selectedMinute).toEqual(7);
+    expect(component.selectedHour).toEqual(8);
+    expect(component.selectedMonthDay).toEqual(9);
   });
 
-  it('should generate the correct cron expression', () => {
-    spyOn(scheduleTimeForm.cronExpressionChange, 'emit');
+  it('can generate periodic expressions', () => {
+    component.selectedPeriodicType = PeriodicType.HOUR;
+    component.selectedMinute = 1;
+    component.updatePeriodicCron();
+    expect(component.onChange).toHaveBeenCalledWith('1 * * * *');
 
-    scheduleTimeForm.selectedPeriodicTimeType = PeriodicTimeType.MINUTE;
-    scheduleTimeForm.getCronExpression();
-    expect(scheduleTimeForm.cronExpressionChange.emit)
-        .toHaveBeenCalledWith('* * * * *');
+    component.selectedPeriodicType = PeriodicType.DAY;
+    component.selectedHour = 2;
+    component.updatePeriodicCron();
+    expect(component.onChange).toHaveBeenCalledWith('1 2 * * *');
 
-    scheduleTimeForm.selectedPeriodicTimeType = PeriodicTimeType.HOUR;
-    scheduleTimeForm.getCronExpression();
-    expect(scheduleTimeForm.cronExpressionChange.emit)
-        .toHaveBeenCalledWith(
-            String(scheduleTimeForm.selectedMinute) + ' * * * *');
+    component.selectedPeriodicType = PeriodicType.WEEK;
+    component.selectedWeekDay = WeekDay.Wednesday;
+    component.updatePeriodicCron();
+    expect(component.onChange).toHaveBeenCalledWith('1 2 * * 3');
+
+    component.selectedPeriodicType = PeriodicType.MONTH;
+    component.selectedMonthDay = 4;
+    component.updatePeriodicCron();
+    expect(component.onChange).toHaveBeenCalledWith('1 2 4 * *');
+  });
+
+  it('can provide timezone options', () => {
+    // Local timezone is America/Los_Angeles
+    spyOn(Intl, 'DateTimeFormat').and.returnValue({
+      resolvedOptions: () => ({timeZone: 'America/Los_Angeles'})
+    });
+
+    component.timezone = '';  // ignores empty values
+    component.ngOnChanges();
+    expect(component.timezoneOptions).toEqual(['UTC', 'America/Los_Angeles']);
+
+    component.timezone = 'America/Los_Angeles';  // ignores duplicates
+    component.ngOnChanges();
+    expect(component.timezoneOptions).toEqual(['UTC', 'America/Los_Angeles']);
+
+    component.timezone = 'Asia/Taipei';
+    component.ngOnChanges();
+    expect(component.timezoneOptions).toEqual([
+      'UTC', 'America/Los_Angeles', 'Asia/Taipei'
+    ]);
   });
 });

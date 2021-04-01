@@ -28,25 +28,45 @@ import {FormChangeTracker} from '../shared/can_deactivate';
 
 })
 export class TestRunTargetPicker extends FormChangeTracker {
-  @Input() runTarget = '';
+  @Input() deviceSpecs: string[] = [];
   @Input() shardCount = 0;
   @Input() autoUpdate = false;
 
-  @Output() runTargetChange = new EventEmitter<string>();
+  @Output() deviceSpecsChange = new EventEmitter<string[]>();
   @Output() shardCountChange = new EventEmitter<number>();
 
-  manualRunTarget = false;
+  manualDeviceSpecs = false;
+
+  getDeviceSerials(): string[] {
+    const deviceSerials = [];
+    for (const spec of this.deviceSpecs || []) {
+      const match = /^device_serial:(\S*)+$/.exec(spec);
+      if (match) {
+        deviceSerials.push(match[1]);
+      }
+    }
+    return deviceSerials;
+  }
+
+  getDeviceSpecsString(): string {
+    return (this.deviceSpecs || []).join(';');
+  }
+
+  onDeviceSpecsStringChange(deviceSpecsString: string) {
+    this.deviceSpecs = (deviceSpecsString || '').split(';');
+    this.deviceSpecsChange.emit(this.deviceSpecs);
+  }
 
   /**
    * When devices are selected in device list section, update shard count and
    * run target info.
    */
   onDeviceListSelectionChange(deviceSerials: string[]) {
-    if (!this.manualRunTarget) {
+    if (!this.manualDeviceSpecs) {
+      this.deviceSpecs =
+          deviceSerials.map(serial => `device_serial:${serial}`);
+      this.deviceSpecsChange.emit(this.deviceSpecs);
       this.shardCount = deviceSerials.length;
-      this.runTarget = deviceSerials.join(';');
-
-      this.runTargetChange.emit(this.runTarget);
       this.shardCountChange.emit(this.shardCount);
     }
   }

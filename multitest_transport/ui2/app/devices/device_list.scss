@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Google LLC
+ * Copyright 2020 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,90 @@
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
-table {
-  width: 100%;
+a:hover {
+  cursor: pointer;
 }
 
-.battery-danger {
-  color: $text-danger-small;
+mat-table {
+  overflow-x: auto;
+
+  mat-cell,
+  mat-header-cell {
+    margin-right: 10px;
+  }
+
+  mat-header-row,
+  mat-row {
+    display: inline-flex;
+    min-width: 100%;
+    width: max-content;
+  }
+
+  mat-header-cell:last-of-type,
+  mat-cell:last-of-type {
+    padding: 0 0 0 1px;
+  }
+
+  &:not(.scrolled) {
+    mat-header-cell:last-of-type,
+    mat-cell:last-of-type {
+      border-left: 1px solid $primary-less;
+      padding: 0;
+    }
+  }
 }
 
-.container {
-  height: calc(100% - 40px);
+.action-row {
+  background-color: $background-default;
+  font-size: 13px;
+  margin: 10px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 101;
 }
 
-.mat-table {
-  height: 100%;
-  overflow: overlay;
+.back {
+  cursor: pointer;
+}
+
+.device-serial,
+.host-group,
+.host-name,
+.notes-info {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter {
+  align-items: center;
+  padding: 0 16px;
+
+  mat-divider {
+    align-self: center;
+    height: 30px;
+    margin: 0 20px;
+  }
+}
+
+.filter-icon {
+  margin: 0 8px;
+  vertical-align: bottom;
+}
+
+.no-match {
+  line-height: 48px;
+  padding-left: 16px;
+}
+
+.view-columns,
+.refresh-button {
+  margin-top: 10px;
+  line-height: 40px;
+}
+
+::ng-deep .device-list-toolbar {
+  .mat-form-field-wrapper {
+    padding: 0;
+  }
 }

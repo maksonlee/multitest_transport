@@ -17,16 +17,19 @@
 import datetime
 import logging
 
+import flask
 
-
-import webapp2
-
+from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import test_kicker
 from multitest_transport.test_scheduler import test_plan_kicker
 from multitest_transport.test_scheduler import test_run_manager
+from tradefed_cluster import common
+from tradefed_cluster.util import ndb_shim as ndb
 
 _PENDING_TEST_RUN_TTL = 86400
+
+APP = flask.Flask(__name__)
 
 
 def CheckPendingTestRuns():
@@ -58,14 +61,72 @@ def ScheduleTestPlanCronJob(test_plan_id):
   test_plan_kicker.ScheduleCronKick(test_plan_id)
 
 
-class CronHandler(webapp2.RequestHandler):
+@ndb.transactional()
+def _GetNextTestRunConfig(sequence_id, previous_test_run):
+  """Gets the next config from a sequence and updates it."""
+  sequence_key = ndb.Key(ndb_models.TestRunSequence, sequence_id)
+  sequence = sequence_key.get()
+
+  if not sequence:
+    logging.warning('Cannot find test run sequence %s', sequence_id)
+    return None
+
+  previous_test_run_id = previous_test_run.key.id()
+  if previous_test_run_id in sequence.finished_test_run_ids:
+    logging.warning('Rerun already scheduled for run %s in sequence %s.',
+                    sequence_id, previous_test_run_id)
+    return None
+
+  sequence.finished_test_run_ids.append(previous_test_run_id)
+  sequence.put()
+
+  if previous_test_run.state == ndb_models.TestRunState.ERROR:
+    sequence.state = ndb_models.TestRunSequenceState.ERROR
+    sequence.put()
+    logging.info('Test run %s errored out. Test run sequence %s stopped.',
+                 previous_test_run_id, sequence_id)
+    return None
+
+  if previous_test_run.state == ndb_models.TestRunState.CANCELED:
+    sequence.state = ndb_models.TestRunSequenceState.CANCELED
+    sequence.put()
+    logging.info('Test run %s canceled. Test run sequence %s stopped.',
+                 previous_test_run_id, sequence_id)
+    return None
+
+  if len(sequence.test_run_configs) <= len(sequence.finished_test_run_ids):
+    sequence.state = ndb_models.TestRunSequenceState.COMPLETED
+    sequence.put()
+    logging.info('Test run sequence %s completed.', sequence_id)
+    return None
+
+  return sequence.test_run_configs[len(sequence.finished_test_run_ids)]
+
+
+def ScheduleNextTestRun(sequence_id, previous_test_run_key):
+  """Schedules the next run in sequence."""
+  previous_test_run = previous_test_run_key.get()
+
+  next_run_config = _GetNextTestRunConfig(sequence_id, previous_test_run)
+  if not next_run_config:
+    return
+
+  next_run_config.prev_test_run_key = previous_test_run_key
+  rerun_context = mtt_messages.RerunContext()
+  rerun_context.test_run_id = previous_test_run_key.id()
+
+  logging.info('Scheduling rerun for sequence %s', sequence_id)
+  test_kicker.CreateTestRun(
+      # TODO: Move labels to TestRunConfig
+      labels=previous_test_run.labels,
+      test_run_config=next_run_config,
+      rerun_context=rerun_context,
+      rerun_configs=[],
+      sequence_id=sequence_id)
+
+
+@APP.route('/test_scheduler/cron')
+def CronHandler():
   """A cron handler for periodic schedule checks."""
-
-  def get(self):
-    """Check test plan schedule."""
-    test_plan_kicker.CheckTestPlanNextRuns()
-
-
-APP = webapp2.WSGIApplication([
-    ('/test_scheduler/cron', CronHandler),
-], debug=True)
+  test_plan_kicker.CheckTestPlanNextRuns()
+  return common.HTTP_OK

@@ -5,7 +5,7 @@ licenses(["notice"])
 per_file_sass_binaries(
     name = "styles",
     srcs = glob(["*.scss"]),
-    visibility = ["//multitest_transport"],
+    visibility = ["//visibility:private"],
     deps = ["//multitest_transport/ui2:constants"],
 )
 

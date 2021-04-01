@@ -16,8 +16,9 @@ ng_module(
     srcs = [
         "test_run_failures_scuba_test.ts",
         "test_run_progress_scuba_test.ts",
+        "test_run_target_picker_scuba_test.ts",
     ],
-    visibility = ["//multitest_transport"],
+    visibility = ["//visibility:private"],
     deps = [
         third_party_js("angular2:cdk_a11y"),
         third_party_js("angular2:core"),

@@ -13,32 +13,21 @@
 # limitations under the License.
 
 """Unit tests for test_run_manager module."""
-
-
+from absl.testing import absltest
 import mock
 
-from google.appengine.ext import testbed
-from absl.testing import absltest
+from tradefed_cluster import testbed_dependent_test
+
 from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import test_run_manager
 from multitest_transport.util import tfc_client
 
 
-class TestRunManagerTest(absltest.TestCase):
+class TestRunManagerTest(testbed_dependent_test.TestbedDependentTest):
   """Unit tests for test_run_manager module."""
 
-  def setUp(self):
-    super(TestRunManagerTest, self).setUp()
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
-
-  def tearDown(self):
-    super(TestRunManagerTest, self).tearDown()
-    self.testbed.deactivate()
-
   def _CreateTestRun(self, state):
-    """Creates a dummy test run."""
+    """Creates a placeholder test run."""
     test_run = ndb_models.TestRun(state=state)
     test_run.put()
     return test_run

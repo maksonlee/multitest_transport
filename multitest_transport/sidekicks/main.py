@@ -13,23 +13,21 @@
 # limitations under the License.
 
 """A main app for sidekick modules."""
-import webapp2
+import flask
 
-from multitest_transport.sidekicks import gcs_cleaner
 from multitest_transport.test_scheduler import download_util
 from multitest_transport.util import analytics
 
-
-class GcsCleanerHandler(webapp2.RequestHandler):
-  """A request handler for periodic schedule checks."""
-
-  def get(self):
-    """Start GCS cleaner."""
-    gcs_cleaner.Start()
-
-APP = webapp2.WSGIApplication([
-    ('/sidekicks/gcs_cleaner', GcsCleanerHandler),
-    ('/sidekicks/heartbeat_sender', analytics.HeartbeatSender),
-    ('/sidekicks/test_resource_tracker_cleaner',
-     download_util.TestResourceTrackerCleaner),
-], debug=True)
+APP = flask.Flask(__name__)
+APP.add_url_rule(
+    '/sidekicks/heartbeat_sender',
+    endpoint='analytics.HeartbeatSender',
+    view_func=analytics.HeartbeatSender)
+APP.add_url_rule(
+    '/sidekicks/test_resource_cache_cleaner',
+    endpoint='download_util.TestResourceCacheCleaner',
+    view_func=download_util.TestResourceCacheCleaner)
+APP.add_url_rule(
+    '/sidekicks/test_resource_tracker_cleaner',
+    endpoint='download_util.TestResourceTrackerCleaner',
+    view_func=download_util.TestResourceTrackerCleaner)

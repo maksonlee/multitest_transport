@@ -18,23 +18,22 @@ import {HttpClient} from '@angular/common/http';
 import {of as observableOf, throwError} from 'rxjs';
 import {toArray} from 'rxjs/operators';
 
-import {FileNode, FileService, FileType, joinPath, PROXY_PATH} from './file_service';
+import {AppData} from './app_data';
+import {DEFAULT_UPLOAD_CONFIG, FileNode, FileService, FileType, joinPath, PROXY_PATH, getDirectoryPath, encodePath} from './file_service';
 import {TestRun} from './mtt_models';
 import {CommandAttempt, CommandState} from './tfc_models';
-import {AppData} from './app_data';
 
 describe('FileService', () => {
+  const appData: AppData = {
+    fileBrowserUrl: 'http://localhost:1234/',
+    fileServerRoot: '/root',
+  };
   let http: jasmine.SpyObj<HttpClient>;
   let fs: FileService;
 
   beforeEach(() => {
-    const appData: AppData = {
-      fileBrowseUrl: 'browse',
-      fileOpenUrl: 'open',
-      fileServerRoot: '/root',
-    };
     http = jasmine.createSpyObj<HttpClient>(['get', 'put', 'delete']);
-    fs = new FileService(appData, http);
+    fs = new FileService(appData, http, DEFAULT_UPLOAD_CONFIG);
   });
 
   it('can get file URL for active attempts', () => {
@@ -63,25 +62,29 @@ describe('FileService', () => {
 
   it('can get file browse URL for absolute file URLs', () => {
     const url = 'file:///root/path/to/file';
-    const expected = 'browse/path/to/file';
+    const expected = `${location.protocol}//${
+      location.hostname}:1234/browse/path/to/file`;
     expect(fs.getFileBrowseUrl(url)).toEqual(expected);
   });
 
   it('can get file browse URL for relative file paths', () => {
     const path = 'path/to/file';
-    const expected = 'browse/path/to/file';
+    const expected = `${location.protocol}//${
+        location.hostname}:1234/browse/path/to/file`;
     expect(fs.getFileBrowseUrl(path)).toEqual(expected);
   });
 
   it('can get file open URL for absolute file URLs', () => {
     const url = 'file:///root/path/to/file';
-    const expected = 'open/path/to/file';
+    const expected = `${location.protocol}//${
+        location.hostname}:1234/open/path/to/file`;
     expect(fs.getFileOpenUrl(url)).toEqual(expected);
   });
 
   it('can get file open URL for relative file paths', () => {
     const path = 'path/to/file';
-    const expected = 'open/path/to/file';
+    const expected = `${location.protocol}//${
+        location.hostname}:1234/open/path/to/file`;
     expect(fs.getFileOpenUrl(path)).toEqual(expected);
   });
 
@@ -139,28 +142,84 @@ describe('FileService', () => {
   });
 
   it('can upload a file in chunks', done => {
-    const file = new Blob(['test']);
+    const file = new Blob(['chunk test']);
+    fs = new FileService(appData, http, {
+      initialChunkSize: 4,
+      minChunkSize: 2,
+      maxChunkSize: 8,
+      minChunkUploadTime: Number.MIN_SAFE_INTEGER,  // Upload time never lower
+      maxChunkUploadTime: Number.MAX_SAFE_INTEGER,  // Upload time never higher
+    });
     http.put.and.returnValue(observableOf(null));
 
-    fs.uploadFile(file, 'path', 2).pipe(toArray()).subscribe(events => {
-      // Sent in two requests
-      expect(events.length).toEqual(2);
-      // First sent half the content
+    fs.uploadFile(file, 'path').pipe(toArray()).subscribe(events => {
+      expect(events.length).toEqual(3);
+      // First request sends first 4 characters
       expect(events[0].done).toBeFalsy();
-      expect(events[0].progress).toEqual(50);
-      expect(events[0].uploaded).toEqual(2);
+      expect(events[0].progress).toEqual(40);
+      expect(events[0].uploaded).toEqual(4);
       expect(http.put).toHaveBeenCalledWith(
-          PROXY_PATH + '/file/path', bufferOf('te'),
+          PROXY_PATH + '/file/path', bufferOf('chun'),
           jasmine.objectContaining(
-              {headers: {'Content-Range': 'bytes 0-1/4'}}));
-      // Second has the remaining content
-      expect(events[1].done).toBeTruthy();
-      expect(events[1].progress).toEqual(100);
-      expect(events[1].uploaded).toEqual(4);
+              {headers: {'Content-Range': 'bytes 0-3/10'}}));
+      // Second request has next four characters (no chunk size adjustment)
+      expect(events[1].done).toBeFalsy();
+      expect(events[1].progress).toEqual(80);
+      expect(events[1].uploaded).toEqual(8);
+      expect(http.put).toHaveBeenCalledWith(
+          PROXY_PATH + '/file/path', bufferOf('k te'),
+          jasmine.objectContaining(
+              {headers: {'Content-Range': 'bytes 4-7/10'}}));
+      // Third request has the remaining content
+      expect(events[2].done).toBeTruthy();
+      expect(events[2].progress).toEqual(100);
+      expect(events[2].uploaded).toEqual(10);
       expect(http.put).toHaveBeenCalledWith(
           PROXY_PATH + '/file/path', bufferOf('st'),
           jasmine.objectContaining(
-              {headers: {'Content-Range': 'bytes 2-3/4'}}));
+              {headers: {'Content-Range': 'bytes 8-9/10'}}));
+      done();
+    });
+  });
+
+  it('should increase chunk size if upload is fast', done => {
+    const file = new Blob(['x'.repeat(22)]);
+    fs = new FileService(appData, http, {
+      initialChunkSize: 2,
+      minChunkSize: 2,
+      maxChunkSize: 8,
+      minChunkUploadTime: Number.MAX_SAFE_INTEGER,  // Upload time always lower
+      maxChunkUploadTime: Number.MAX_SAFE_INTEGER,
+    });
+    http.put.and.returnValue(observableOf(null));
+
+    fs.uploadFile(file, 'path').pipe(toArray()).subscribe(events => {
+      expect(events.length).toEqual(4);
+      expect(events[0].uploaded).toEqual(2);   // initial chunk size of 2
+      expect(events[1].uploaded).toEqual(6);   // chunk size doubled to 4
+      expect(events[2].uploaded).toEqual(14);  // chunk size capped at 8
+      expect(events[3].uploaded).toEqual(22);  // chunk size capped at 8
+      done();
+    });
+  });
+
+  it('should decrease chunk size if upload is slow', done => {
+    const file = new Blob(['x'.repeat(16)]);
+    fs = new FileService(appData, http, {
+      initialChunkSize: 8,
+      minChunkSize: 2,
+      maxChunkSize: 8,
+      minChunkUploadTime: Number.MIN_SAFE_INTEGER,
+      maxChunkUploadTime: Number.MIN_SAFE_INTEGER,  // Upload time always higher
+    });
+    http.put.and.returnValue(observableOf(null));
+
+    fs.uploadFile(file, 'path').pipe(toArray()).subscribe(events => {
+      expect(events.length).toEqual(4);
+      expect(events[0].uploaded).toEqual(8);   // initial chunk size of 8
+      expect(events[1].uploaded).toEqual(12);  // chunk size reduced to 4
+      expect(events[2].uploaded).toEqual(14);  // chunk size capped at 2
+      expect(events[3].uploaded).toEqual(16);  // chunk size capped at 2
       done();
     });
   });
@@ -205,6 +264,13 @@ describe('FileService', () => {
   });
 });
 
+describe('encodePath', () => {
+  it('should encode the path segments', () => {
+    expect(encodePath('/one/two')).toBe('/one/two');
+    expect(encodePath('/o n&e/t#w@o')).toBe('/o%20n%26e/t%23w%40o');
+  });
+});
+
 describe('joinPath', () => {
   it('can handle a single path substring', () => {
     expect(joinPath('one/two')).toBe('one/two');
@@ -216,6 +282,17 @@ describe('joinPath', () => {
 
   it('can handle paths with leading/trailing slashes', () => {
     expect(joinPath('one/two/', '/three/four')).toBe('one/two/three/four');
+  });
+});
+
+describe('getDirectoryPath', () => {
+  it('should return the directory path', () => {
+    expect(getDirectoryPath('')).toBe('');
+    expect(getDirectoryPath('file')).toBe('');
+    expect(getDirectoryPath('/')).toBe('/');
+    expect(getDirectoryPath('/file')).toBe('/');
+    expect(getDirectoryPath('/dir/')).toBe('/dir');
+    expect(getDirectoryPath('/dir/file')).toBe('/dir');
   });
 });
 

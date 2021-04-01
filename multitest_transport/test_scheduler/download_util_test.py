@@ -15,204 +15,252 @@
 """Unit tests for download_util."""
 import datetime
 
-
-import cloudstorage as gcs
-import mock
-
-from google.appengine.ext import testbed
 from absl.testing import absltest
+import mock
+from tradefed_cluster import api_common
+from tradefed_cluster import testbed_dependent_test
+
 from multitest_transport.models import build
 from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import download_util
 from multitest_transport.util import file_util
-from multitest_transport.util import gcs_util
 
 
-class DownloadUtilTest(absltest.TestCase):
+class DownloadUtilTest(testbed_dependent_test.TestbedDependentTest):
 
   def setUp(self):
     super(DownloadUtilTest, self).setUp()
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
-    self.addCleanup(self.testbed.deactivate)
     # Prevent auto-updating timestamp
     ndb_models.TestResourceTracker.update_time._auto_now = False
 
   def CreateMockTracker(self, url, timedelta):
-    """Create a dummy resource tracker."""
+    """Create a placeholder resource tracker."""
     update_time = datetime.datetime.utcnow() + timedelta
-    tracker = ndb_models.TestResourceTracker(id=url,
-                                             download_progress=0.0,
-                                             update_time=update_time)
+    tracker = ndb_models.TestResourceTracker(
+        id=url, download_progress=0.0, update_time=update_time)
     tracker.put()
     return tracker
 
+  @mock.patch.object(download_util, 'DownloadResource')
+  @mock.patch.object(api_common, 'with_ndb_context')
+  def testDownloadResources(self, mock_ndb_wrapper, mock_download):
+    """Tests that multiple resources can be downloaded in parallel."""
+    def _MockDownload(url, **_):
+      return {'a': 'cached_a', 'b': 'cached_b'}[url]
+    mock_download.side_effect = _MockDownload
+    def _MockWrapper(method):
+      return method
+    mock_ndb_wrapper.side_effect = _MockWrapper
+    # Resources are downloaded and a map of urls to cache_urls is returned
+    cached_urls = download_util.DownloadResources(['a', 'b'])
+    self.assertEqual({'a': 'cached_a', 'b': 'cached_b'}, cached_urls)
+    mock_download.assert_has_calls([
+        mock.call('a', test_run=None),
+        mock.call('b', test_run=None),
+    ], any_order=True)
+
+  @mock.patch.object(download_util, 'DownloadResource')
+  @mock.patch.object(api_common, 'with_ndb_context')
+  def testDownloadResources_error(self, mock_ndb_wrapper, mock_download):
+    """Tests that errors are handled when downloading multiple resources."""
+    def _MockDownload(url, **_):
+      if url == 'a':
+        return 'cached_a'
+      raise ValueError()
+    mock_download.side_effect = _MockDownload
+    def _MockWrapper(method):
+      return method
+    mock_ndb_wrapper.side_effect = _MockWrapper
+    # Resources are downloaded and the first error is raised
+    with self.assertRaises(ValueError):
+      download_util.DownloadResources(['a', 'b'])
+    mock_download.assert_has_calls([
+        mock.call('a', test_run=None),
+        mock.call('b', test_run=None),
+    ], any_order=True)
+
   @mock.patch.object(file_util, 'DownloadFile')
   @mock.patch.object(file_util.FileHandle, 'Get')
-  def testDownloadResource(self, mock_handler_factory, mock_download_file):
+  def testDownloadResource(self, mock_handle_factory, mock_download_file):
+    # Source URL and mock handle
     url = 'http://www.foo.com/bar/zzz.ext'
-    dst_path = download_util.GetCacheFilename(url)
-    mock_handler_factory.return_value = mock.MagicMock()
-
-    def MockDownload(_):
-      yield 'hello', 5, 10
-      yield 'world', 5, 10
-    mock_download_file.side_effect = MockDownload
+    src_handle = mock.MagicMock()
+    # Destination URL and mock handle (not cached and tracks writing)
+    dst_url = download_util.GetCacheUrl(url)
+    dst_file = mock.MagicMock()
+    dst_handle = mock.MagicMock()
+    dst_handle.Info.return_value = None
+    dst_handle.Open.return_value.__enter__.return_value = dst_file
+    # Return right handle based on URL
+    mock_handle_factory.side_effect = {url: src_handle, dst_url: dst_handle}.get
+    # File downloaded in two chunks
+    mock_download_file.return_value = [('hello', 5, 10), ('world', 5, 10)]
 
     cache_url = download_util.DownloadResource(url)
-
-    # downloader called with right arguments, and tracker updated
+    self.assertEqual(dst_url, cache_url)
+    # File downloaded, written to destination, and tracker updated
     mock_download_file.assert_called_with(url)
+    dst_file.write.assert_has_calls([mock.call('hello'), mock.call('world')])
     tracker = ndb_models.TestResourceTracker.get_by_id(url)
     self.assertEqual(1.0, tracker.download_progress)
     self.assertTrue(tracker.completed)
 
-    # file downloaded to local GCS
-    self.assertEqual(gcs_util.GetDownloadUrl(dst_path), cache_url)
-    stat = gcs.stat(dst_path)
-    self.assertIsNotNone(stat)
-    self.assertEqual(10, stat.st_size)
-
+  @mock.patch.object(file_util.FileHandle, 'Get')
   @mock.patch.object(build, 'FindBuildChannel')
-  def testDownloadResource_fromBuildChannel(self, mock_find_build_channel):
+  def testDownloadResource_fromBuildChannel(self, mock_find_build_channel,
+                                            mock_handle_factory):
+    # Source URL, path, and mock build channel
     url = 'mtt:///build_channel_id/build_item_path'
     src_path = 'build_item_path'
-    dst_path = download_util.GetCacheFilename(url)
     mock_build_channel = mock.MagicMock()
     mock_build_channel.GetBuildItem.return_value = build.BuildItem(
-        name='name',
-        path=src_path,
-        is_file=True)
+        name='name', path=src_path, is_file=True)
     mock_find_build_channel.return_value = mock_build_channel, src_path
-
-    def MockDownload(_):
-      yield 'hello', 5, 10
-      yield 'world', 5, 10
-    mock_build_channel.DownloadFile.side_effect = MockDownload
+    # Destination URL and mock handle (not cached and tracks writing)
+    dst_url = download_util.GetCacheUrl(url)
+    dst_file = mock.MagicMock()
+    dst_handle = mock.MagicMock()
+    dst_handle.Open.return_value.__enter__.return_value = dst_file
+    mock_handle_factory.side_effect = {dst_url: dst_handle}.get
+    # File downloaded in two chunks
+    mock_build_channel.DownloadFile.return_value = [('hello', 5, 10),
+                                                    ('world', 5, 10)]
 
     cache_url = download_util.DownloadResource(url)
-
-    # build channel downloader called with right arguments, and tracker updated
+    self.assertEqual(dst_url, cache_url)
+    # File downloaded from channel, written to destination, and tracker updated
     mock_find_build_channel.assert_called_with(url)
     mock_build_channel.DownloadFile.assert_called_with(src_path)
+    dst_file.write.assert_has_calls([mock.call('hello'), mock.call('world')])
     tracker = ndb_models.TestResourceTracker.get_by_id(url)
     self.assertEqual(1.0, tracker.download_progress)
     self.assertTrue(tracker.completed)
 
-    # file downloaded to local GCS
-    self.assertEqual(gcs_util.GetDownloadUrl(dst_path), cache_url)
-    stat = gcs.stat(dst_path)
-    self.assertIsNotNone(stat)
-    self.assertEqual(10, stat.st_size)
-
   @mock.patch.object(file_util, 'DownloadFile')
   @mock.patch.object(file_util.FileHandle, 'Get')
-  @mock.patch.object(gcs, 'stat')
-  def testDownloadResource_existingFile(self, mock_stat, mock_handler_factory,
+  def testDownloadResource_existingFile(self, mock_handle_factory,
                                         mock_download_file):
+    # Source URL nad mock handle (with size and timestamp)
     url = 'http://www.foo.com/bar/zzz.ext'
-    dst_path = download_util.GetCacheFilename(url)
-    # cached file is still valid
-    mock_stat.return_value = mock.MagicMock(st_ctime=631152000)
-    mock_handler = mock.MagicMock()
-    mock_handler.Info.return_value = file_util.FileInfo(
-        0, 'type', datetime.datetime(1990, 1, 1))
-    mock_handler_factory.return_value = mock_handler
+    src_handle = mock.MagicMock()
+    src_handle.Info.return_value = file_util.FileInfo(
+        url=url, total_size=123, timestamp=datetime.datetime(1990, 1, 1))
+    # Destination URL and mock handle (valid size and up-to-date timestamp)
+    dst_url = download_util.GetCacheUrl(url)
+    dst_handle = mock.MagicMock()
+    dst_handle.Info.return_value = file_util.FileInfo(
+        url=dst_url, total_size=123, timestamp=datetime.datetime(1990, 1, 1))
+    # Return right handle based on URL
+    mock_handle_factory.side_effect = {url: src_handle, dst_url: dst_handle}.get
 
     cache_url = download_util.DownloadResource(url)
-
-    # download skipped due to cached file
-    mock_stat.assert_called_with(dst_path)
+    self.assertEqual(dst_url, cache_url)
+    # Download skipped due to cached file
     mock_download_file.assert_not_called()
-    self.assertEqual(gcs_util.GetDownloadUrl(dst_path), cache_url)
 
   @mock.patch.object(file_util, 'DownloadFile')
   @mock.patch.object(file_util.FileHandle, 'Get')
-  @mock.patch.object(gcs, 'stat')
-  def testDownloadResource_outOfDate(self, mock_stat, mock_handler_factory,
+  def testDownloadResource_outOfDate(self, mock_handle_factory,
                                      mock_download_file):
+    # Source URL nad mock handle (with size and timestamp)
     url = 'http://www.foo.com/bar/zzz.ext'
-    dst_path = download_util.GetCacheFilename(url)
-    # cached file is out of date
-    mock_stat.return_value = mock.MagicMock(st_ctime=631152000)
-    mock_handler = mock.MagicMock()
-    mock_handler.Info.return_value = file_util.FileInfo(
-        0, 'type', datetime.datetime(2000, 1, 1))
-    mock_handler_factory.return_value = mock_handler
+    src_handle = mock.MagicMock()
+    src_handle.Info.return_value = file_util.FileInfo(
+        123, 'type', datetime.datetime(2000, 1, 1))
+    # Destination URL and mock handle (timestamp out of date)
+    dst_url = download_util.GetCacheUrl(url)
+    dst_handle = mock.MagicMock()
+    dst_handle.Info.return_value = file_util.FileInfo(
+        123, 'type', datetime.datetime(1990, 1, 1))
+    # Return right handle based on URL
+    mock_handle_factory.side_effect = {url: src_handle, dst_url: dst_handle}.get
 
     cache_url = download_util.DownloadResource(url)
-
+    self.assertEqual(dst_url, cache_url)
     # downloaded file despite cached file
     mock_download_file.assert_called_with(url)
-    self.assertEqual(gcs_util.GetDownloadUrl(dst_path), cache_url)
 
-  @mock.patch.object(download_util, '_WaitForDownload')
-  @mock.patch.object(download_util, '_TryAcquireDownloadLock')
+  @mock.patch.object(download_util.TestResourceDownloader, '_WaitForDownload')
+  @mock.patch.object(download_util.TestResourceDownloader,
+                     '_TryAcquireDownloadLock')
   @mock.patch.object(file_util, 'DownloadFile')
   @mock.patch.object(file_util.FileHandle, 'Get')
-  def testDownloadResource_alreadyDownloading(self, mock_handler_factory,
+  def testDownloadResource_alreadyDownloading(self, mock_handle_factory,
                                               mock_download_file,
                                               mock_acquire_lock, mock_wait):
+    # Source and destination URLs and handles
     url = 'http://www.foo.com/bar/zzz.ext'
-    dst_path = download_util.GetCacheFilename(url)
-    mock_handler_factory.return_value = mock.MagicMock()
-    # did not acquire download lock
+    src_handle = mock.MagicMock()
+    dst_url = download_util.GetCacheUrl(url)
+    dst_handle = mock.MagicMock()
+    dst_handle.Info.return_value = None
+    mock_handle_factory.side_effect = {url: src_handle, dst_url: dst_handle}.get
+    # Did not acquire download lock
     mock_acquire_lock.return_value = False
 
     cache_url = download_util.DownloadResource(url)
-
-    # waited for download instead of downloading
+    self.assertEqual(dst_url, cache_url)
+    # Waited for download instead of downloading
     mock_download_file.assert_not_called()
-    mock_wait.assert_called_with(url)
-    self.assertEqual(gcs_util.GetDownloadUrl(dst_path), cache_url)
+    mock_wait.assert_called_once()
 
   @mock.patch.object(file_util, 'DownloadFile')
   @mock.patch.object(file_util.FileHandle, 'Get')
-  def testDownloadResource_error(self, mock_handler_factory,
-                                 mock_download_file):
+  def testDownloadResource_error(self, mock_handle_factory, mock_download_file):
+    # Source and destination URLs and handles
     url = 'http://www.foo.com/bar/zzz.ext'
-    mock_handler_factory.return_value = mock.MagicMock()
-    # download will encounter an error
+    src_handle = mock.MagicMock()
+    dst_url = download_util.GetCacheUrl(url)
+    dst_handle = mock.MagicMock()
+    dst_handle.Info.return_value = None
+    mock_handle_factory.side_effect = {url: src_handle, dst_url: dst_handle}.get
+    # Download will encounter an error
     mock_download_file.side_effect = RuntimeError('download error')
 
-    # error is propagated
+    # Error is propagated
     with self.assertRaises(RuntimeError):
       download_util.DownloadResource(url)
-
-    # download tracker has error message
+    # Download tracker has error message
     tracker = ndb_models.TestResourceTracker.get_by_id(url)
     error = tracker.error
     self.assertEqual('download error', error)
 
-  def testTryAcquireDownloadLock(self):
+  @mock.patch.object(file_util.FileHandle, 'Get')
+  def testTryAcquireDownloadLock(self, mock_handle_factory):
+    mock_handle_factory.return_value = mock.MagicMock()
+    downloader = download_util.TestResourceDownloader('url')
+
     # lock acquired if tracker does not exist
-    self.assertTrue(download_util._TryAcquireDownloadLock('url'))
+    self.assertTrue(downloader._TryAcquireDownloadLock())
 
     # tracker was created
     self.assertIsNotNone(ndb_models.TestResourceTracker.get_by_id('url'))
 
     # lock not acquired from subsequent attempts
-    self.assertFalse(download_util._TryAcquireDownloadLock('url'))
+    self.assertFalse(downloader._TryAcquireDownloadLock())
 
     # lock re-acquired if tracker has an error, and error is cleared
-    download_util._UpdateTracker('url', 0.0, error='test')
-    self.assertTrue(download_util._TryAcquireDownloadLock('url'))
+    downloader._UpdateTracker(0.0, error='test')
+    self.assertTrue(downloader._TryAcquireDownloadLock())
     tracker = ndb_models.TestResourceTracker.get_by_id('url')
     self.assertIsNone(tracker.error)
 
-  def testIsDownloadComplete(self):
+  @mock.patch.object(file_util.FileHandle, 'Get')
+  def testIsDownloadComplete(self, mock_handle_factory):
+    mock_handle_factory.return_value = mock.MagicMock()
+    downloader = download_util.TestResourceDownloader('url')
+
     # throws if download tracker not found
     with self.assertRaises(RuntimeError):
-      download_util._IsDownloadComplete('url')
+      downloader._IsDownloadComplete()
 
     # create download tracker, initially not complete
-    download_util._TryAcquireDownloadLock('url')
-    self.assertFalse(download_util._IsDownloadComplete('url'))
+    downloader._TryAcquireDownloadLock()
+    self.assertFalse(downloader._IsDownloadComplete())
 
     # can mark download as complete
-    download_util._UpdateTracker('url', 1.0, completed=True)
-    self.assertTrue(download_util._IsDownloadComplete('url'))
+    downloader._UpdateTracker(1.0, completed=True)
+    self.assertTrue(downloader._IsDownloadComplete())
 
   def testReleaseDownloadLocks(self):
     # create trackers with varying update times
@@ -238,6 +286,63 @@ class DownloadUtilTest(absltest.TestCase):
     self.assertIsNotNone(ndb_models.TestResourceTracker.get_by_id('2'))
     self.assertIsNone(ndb_models.TestResourceTracker.get_by_id('3'))
     self.assertIsNone(ndb_models.TestResourceTracker.get_by_id('4'))
+
+  @mock.patch.object(file_util.FileHandle, 'Get')
+  def testCleanTestResourceCache(self, mock_handle_factory):
+    """Tests that cached test resources can be deleted."""
+    mock_handle_factory.return_value.ListFiles.return_value = [
+        file_util.FileInfo(
+            url='url',
+            is_file=True,
+            timestamp=datetime.datetime.utcnow() - datetime.timedelta(hours=1))
+    ]
+    # File is deleted
+    download_util.CleanTestResourceCache()
+    mock_handle_factory.return_value.Delete.assert_called()
+
+  @mock.patch.object(file_util.FileHandle, 'Get')
+  def testCleanTestResourceCache_directory(self, mock_handle_factory):
+    """Tests that directories are ignored when cleaning cache."""
+    mock_handle_factory.return_value.ListFiles.return_value = [
+        file_util.FileInfo(
+            url='url',
+            is_file=False,
+            timestamp=datetime.datetime.utcnow() - datetime.timedelta(hours=1))
+    ]
+    # Directory is not deleted
+    download_util.CleanTestResourceCache()
+    mock_handle_factory.return_value.Delete.assert_not_called()
+
+  @mock.patch.object(file_util.FileHandle, 'Get')
+  def testCleanTestResourceCache_recentlyUpdated(self, mock_handle_factory):
+    """Tests that recently updated files are ignored when cleaning cache."""
+    mock_handle_factory.return_value.ListFiles.return_value = [
+        file_util.FileInfo(
+            url='url', is_file=True, timestamp=datetime.datetime.utcnow())
+    ]
+    # Recently updated file is not deleted (timestamp > min_access_time)
+    min_access_time = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+    download_util.CleanTestResourceCache(min_access_time=min_access_time)
+    mock_handle_factory.return_value.Delete.assert_not_called()
+
+  @mock.patch.object(file_util.FileHandle, 'Get')
+  def testCleanTestResourceCache_recentlyUsed(self, mock_handle_factory):
+    """Tests that recently used files are ignored when cleaning cache."""
+    test_run = ndb_models.TestRun(test_resources=[
+        ndb_models.TestResourceObj(name='resource', url='resource_url')
+    ])
+    test_run.put()
+    # Cached resource is old but recently referenced
+    mock_handle_factory.return_value.ListFiles.return_value = [
+        file_util.FileInfo(
+            url=download_util.GetCacheUrl('resource_url'),
+            is_file=True,
+            timestamp=datetime.datetime.utcnow() - datetime.timedelta(days=1))
+    ]
+    # Recently used file is not deleted (test_run > min_access_time)
+    min_access_time = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+    download_util.CleanTestResourceCache(min_access_time=min_access_time)
+    mock_handle_factory.return_value.Delete.assert_not_called()
 
 
 if __name__ == '__main__':

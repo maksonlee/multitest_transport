@@ -102,7 +102,7 @@ class DeviceActionApiTest(api_test_util.TestCase):
         'name': 'bar'
     }
 
-    res = self.app.post_json(
+    res = self.app.put_json(
         '/_ah/api/mtt/v1/device_actions/%s' % device_action_id, data)
 
     device_action = device_action.key.get()
@@ -115,8 +115,7 @@ class DeviceActionApiTest(api_test_util.TestCase):
     device_action = self._CreateDeviceAction()
     device_action_id = str(device_action.key.id())
 
-    self.app.post(
-        '/_ah/api/mtt/v1/device_actions/%s/delete' % device_action_id)
+    self.app.delete('/_ah/api/mtt/v1/device_actions/%s' % device_action_id)
 
     device_action = device_action.key.get()
     self.assertIsNone(device_action)

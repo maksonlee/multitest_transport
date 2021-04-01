@@ -13,31 +13,77 @@
 # limitations under the License.
 
 """A module to kick test plans."""
-
 import datetime
+import functools
 import json
 import logging
-import croniter
-import pytz
-import webapp2
+import sys
 
-from google.appengine.api import taskqueue
-from multitest_transport.models import build
+import croniter
+import flask
+import pytz
+from retry import api as retry
+import six
+
+
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import test_kicker
+from multitest_transport.test_scheduler import test_run_manager
+from tradefed_cluster import common
+from tradefed_cluster.services import task_scheduler
 
 TEST_PLAN_KICKER_QUEUE = 'test-plan-kicker-queue'
 MAX_NEXT_RUN_DELAY_SECONDS = 5 * 60
 
+# Retry parameters and wrapper function
+MAX_RETRY_COUNT = 3
+retry_wrapper = functools.partial(
+    retry.retry_call, tries=MAX_RETRY_COUNT, delay=1, backoff=2, logger=logging)
+
+APP = flask.Flask(__name__)
+
 
 def _GetCurrentTime():
-  """Returns the current time in UTC.
-
-  Returns:
-    a datetime.datetime object.
-  """
+  """Return naive current UTC time, visible for testing."""
   return datetime.datetime.utcnow()
+
+
+def _GetTestPlanAndStatus(test_plan_id):
+  """Fetch a test plan and its status."""
+  test_plan = messages.ConvertToKey(ndb_models.TestPlan, test_plan_id).get()
+  if not test_plan:
+    logging.warning('Test plan %s not found', test_plan_id)
+    return None, None
+  status = ndb_models.TestPlanStatus.query(ancestor=test_plan.key).get()
+  return test_plan, status or ndb_models.TestPlanStatus(parent=test_plan.key)
+
+
+def _ParseTimezone(timezone):
+  """Try to parse a timezone string (e.g. 'America/Los_Angeles')."""
+  try:
+    return pytz.timezone(timezone)
+  except pytz.exceptions.UnknownTimeZoneError:
+    return None
+
+
+def _ClearNextRun(test_plan_status):
+  """Clear the next run information in a test plan's status."""
+  test_plan_status.next_run_time = None
+  test_plan_status.next_run_task_name = None
+  test_plan_status.put()
+
+
+def _GetNextRunTime(cron_expression, timezone):
+  """Calculate the next run time for a cron expression and timezone."""
+  utc_time = pytz.UTC.localize(_GetCurrentTime())
+  # Determine next run time relative to the requested timezone
+  relative_time = utc_time.astimezone(timezone)
+  cron = croniter.croniter(cron_expression, relative_time)
+  relative_next_run = cron.get_next(datetime.datetime)
+  # Convert back to a naive UTC datetime as NDB doesn't support timezones
+  utc_next_run = relative_next_run.astimezone(pytz.UTC)
+  return utc_next_run.replace(tzinfo=None)
 
 
 def ScheduleCronKick(test_plan_id, next_run_time=None):
@@ -45,108 +91,97 @@ def ScheduleCronKick(test_plan_id, next_run_time=None):
 
   Args:
     test_plan_id: a test plan ID.
-    next_run_time: next run time. It would be calculated based on cron_exp if
-        not given.
+    next_run_time: next run time, calculated based on cron_exp if not given.
   """
-  test_plan = messages.ConvertToKey(ndb_models.TestPlan, test_plan_id).get()
-  if not test_plan:
-    logging.warn('test plan %s does not exist', test_plan_id)
+  test_plan, test_plan_status = _GetTestPlanAndStatus(test_plan_id)
+  if not test_plan or not test_plan_status:
     return
-  test_plan_status = ndb_models.TestPlanStatus.query(
-      ancestor=test_plan.key).get()
-  if not test_plan_status:
-    test_plan_status = ndb_models.TestPlanStatus(parent=test_plan.key)
 
-  if test_plan.cron_exp:
-    now = _GetCurrentTime()
-    if next_run_time:
-      test_plan_status.next_run_time = next_run_time
-    else:
-      cron = croniter.croniter(test_plan.cron_exp, now)
-      test_plan_status.next_run_time = cron.get_next(datetime.datetime)
-    payload = json.dumps({
-        'test_plan_id': test_plan_id,
-        'is_cron': True
-    })
-    task = taskqueue.Task(
-        payload=payload, eta=pytz.UTC.localize(test_plan_status.next_run_time))
-    task.add(queue_name=TEST_PLAN_KICKER_QUEUE)
-    test_plan_status.next_run_task_name = task.name
-    logging.info(
-        'Scheduled the next kick task %s (eta=%s)', task.name, task.eta)
-  else:
-    logging.warn(
+  if not test_plan.cron_exp:
+    logging.warning(
         'Cannot schedule next kick for test plan %s: cron_exp is None.',
         test_plan_id)
-    test_plan_status.next_run_time = None
-    test_plan_status.next_run_task_name = None
+    _ClearNextRun(test_plan_status)
+    return
+
+  timezone = _ParseTimezone(test_plan.cron_exp_timezone)
+  if not timezone:
+    logging.warning(
+        'Cannot schedule next kick for test plan %s: unknown timezone %s.',
+        test_plan_id, test_plan.cron_exp_timezone)
+    _ClearNextRun(test_plan_status)
+    return
+
+  if not next_run_time:
+    next_run_time = _GetNextRunTime(test_plan.cron_exp, timezone)
+  test_plan_status.next_run_time = next_run_time
+  payload = json.dumps({'test_plan_id': test_plan_id})
+  task = task_scheduler.AddTask(
+      queue_name=TEST_PLAN_KICKER_QUEUE,
+      payload=payload,
+      eta=pytz.UTC.localize(test_plan_status.next_run_time))
+  test_plan_status.next_run_task_name = task.name
   test_plan_status.put()
+  logging.info('Scheduled the next kick task %s (eta=%s)', task.name, task.eta)
 
 
-def KickTestPlan(test_plan_id, is_cron=False, task_name=None):
+def KickTestPlan(test_plan_id, task_name=None):
   """Kicks a test plan.
 
   Args:
     test_plan_id: a test plan ID.
-    is_cron: whether a kick is triggered by cron or not.
     task_name: a task name.
+  Returns:
+    True if the test plan was kicked, False if skipped
   Raises:
     NoBuildError: if any of build channels doesn't return any builds.
   """
   logging.info('Kicking test plan %s', test_plan_id)
-  test_plan = messages.ConvertToKey(ndb_models.TestPlan, test_plan_id).get()
-  if not test_plan:
-    logging.warn('test plan %s does not exist', test_plan_id)
-    return
-  test_plan_status = ndb_models.TestPlanStatus.query(
-      ancestor=test_plan.key).get()
-  if not test_plan_status:
-    test_plan_status = ndb_models.TestPlanStatus(parent=test_plan.key)
+  test_plan, test_plan_status = _GetTestPlanAndStatus(test_plan_id)
+  if not test_plan or not test_plan_status:
+    return False
 
-  if is_cron:
+  if task_name:
     if test_plan_status.next_run_task_name != task_name:
-      logging.warn(
-          'unexpected cron task name: %s != %s; ignoring',
-          task_name, test_plan_status.next_run_task_name)
-      return
+      logging.warning('Unexpected cron task name: %s != %s; ignoring',
+                      task_name, test_plan_status.next_run_task_name)
+      return False
     test_plan_status.next_run_task_name = None
 
-  test_resource_objs = build.FindTestResources(test_plan.test_resource_pipes)
-
-  # Schedule all tests
+  # Schedule all test runs
   test_runs = []
+  exc_info = None
   try:
     for config in test_plan.test_run_configs:
-      # Test plan's before device actions run before those of a test run config.
-      config.before_device_action_keys = (
-          test_plan.before_device_action_keys +
-          config.before_device_action_keys)
-      test_run = test_kicker.CreateTestRun(
-          labels=test_plan.labels,
-          test_plan_key=test_plan.key,
-          test_run_config=config,
-          test_resources=test_resource_objs)
+      test_run = retry_wrapper(
+          test_kicker.CreateTestRun,
+          fkwargs=dict(
+              labels=test_plan.labels,
+              test_plan_key=test_plan.key,
+              test_run_config=config))
       test_runs.append(test_run)
-  except Exception:
-    # TODO: cancel test runs if a test plan fails to be executed.
-    raise
+  except Exception:      # Record exception info and cancel all scheduled runs
+    exc_info = sys.exc_info()
+    for test_run in test_runs:
+      test_run_manager.SetTestRunState(
+          test_run_id=test_run.key.id(), state=ndb_models.TestRunState.CANCELED)
 
-  # Add a task for the next run.
-  now = _GetCurrentTime()
-  test_plan_status.last_run_time = now
-  if test_plan_status.next_run_task_name == task_name:
-    test_plan_status.next_run_task_name = None
+  # Update last run info
+  test_plan_status.last_run_time = _GetCurrentTime()
+  test_plan_status.last_run_keys = [test_run.key for test_run in test_runs]
+  test_plan_status.last_run_error = str(exc_info[1]) if exc_info else None
   test_plan_status.put()
 
-  if is_cron and test_plan.cron_exp:
-    ScheduleCronKick(test_plan_id)
+  # Re-raise any caught exception
+  if exc_info:
+    raise six.reraise(*exc_info)
+  return True
 
 
 def CheckTestPlanNextRuns():
   """Check next runs of test plans to reschedule non-executed ones."""
   now = _GetCurrentTime()
-  cutoff_time = now - datetime.timedelta(
-      seconds=MAX_NEXT_RUN_DELAY_SECONDS)
+  cutoff_time = now - datetime.timedelta(seconds=MAX_NEXT_RUN_DELAY_SECONDS)
   query = ndb_models.TestPlanStatus.query(
       ndb_models.TestPlanStatus.next_run_time < cutoff_time)
   for status in query:
@@ -154,24 +189,27 @@ def CheckTestPlanNextRuns():
       continue
     test_plan_id = status.key.parent().id()
     logging.info(
-        'test plan %s did not run until %s (next_run_time=%s); rescheduling',
+        'Test plan %s did not run until %s (next_run_time=%s); rescheduling',
         test_plan_id, now, status.next_run_time)
     ScheduleCronKick(test_plan_id, next_run_time=now)
 
 
-class TaskHandler(webapp2.RequestHandler):
+@APP.route('/', methods=['POST'])
+# This matchs all path start with '/'.
+@APP.route('/<path:fake>', methods=['POST'])
+def TaskHandler(fake):
   """A web request handler to handle tasks from the test kicker queue."""
-
-  def post(self):
-    """Process a request message."""
-    payload = json.loads(self.request.body)
-    test_plan_id = payload['test_plan_id']
-    is_cron = payload.get('is_cron', False)
-    KickTestPlan(
-        test_plan_id, is_cron,
-        task_name=self.request.headers.get('X-AppEngine-TaskName'))
-
-
-APP = webapp2.WSGIApplication([
-    ('.*', TaskHandler),
-], debug=True)
+  del fake
+  payload = json.loads(flask.request.get_data())
+  test_plan_id = payload['test_plan_id']
+  task_name = flask.request.headers.get('X-AppEngine-TaskName')
+  # Kick off the test plan
+  reschedule = True
+  try:
+    reschedule = KickTestPlan(test_plan_id, task_name=task_name)
+  except Exception:      logging.exception('Failed to start test plan %s; skipping cron kick',
+                      test_plan_id)
+  # Reschedule if the kick was successful or if an error occurred
+  if reschedule:
+    ScheduleCronKick(test_plan_id)
+  return common.HTTP_OK

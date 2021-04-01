@@ -33,7 +33,8 @@
   <div *ngIf="buildChannels.length && !isBuildChannelAvailable(buildChannels[0])"
        class="build-channel-container">
     <div class="description">
-      Please authenticate with your Google Cloud Storage account to access this feature.
+      If you have a service account whitelisted by Google, you can upload it here to access Android
+      partner config sets.
     </div>
     <build-channel-item [buildChannel]="buildChannels[0]" [edit]="false"
                         (authChange)="load()" *ngIf="buildChannels[0]">

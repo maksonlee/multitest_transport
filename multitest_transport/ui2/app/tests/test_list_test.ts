@@ -16,33 +16,52 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {DebugElement} from '@angular/core';
-import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
-import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
+import {MttObjectMap, MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
+import {Notifier} from '../services/notifier';
+import {getEl, getTextContent} from '../testing/jasmine_util';
+import * as mttMocks from '../testing/mtt_mocks';
 
 import {TestList} from './test_list';
 import {TestModule} from './test_module';
 import {TestModuleNgSummary} from './test_module.ngsummary';
 
 describe('TestList', () => {
-  const TESTS = [{id: 'id', name: 'name'}, {id: 'id2', name: 'name2'}];
+  const TEST_MAP = {
+    id1: {id: 'id1', name: 'name1'},
+    id2: {id: 'id2', name: 'name2'},
+  };
 
   let testList: TestList;
   let testListFixture: ComponentFixture<TestList>;
   let mttClient: jasmine.SpyObj<MttClient>;
+  let mttObjectMapService: jasmine.SpyObj<MttObjectMapService>;
+  let mttObjectMap: MttObjectMap;
   let el: DebugElement;
   let liveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
+  let notifier: jasmine.SpyObj<Notifier>;
 
   beforeEach(() => {
     liveAnnouncer =
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
-    mttClient = jasmine.createSpyObj('mttClient', ['getTests', 'deleteTest']);
-    mttClient.getTests.and.returnValue(observableOf({tests: [...TESTS]}));
-    mttClient.deleteTest.and.returnValue(observableOf({}));
+    notifier = jasmine.createSpyObj(['confirm', 'showError']);
+
+    mttClient =
+        jasmine.createSpyObj('mttClient', ['deleteTest', 'deleteConfigSet']);
+    mttClient.deleteTest.and.returnValue(observableOf(null));
+    mttClient.deleteConfigSet.and.returnValue(observableOf(null));
+
+    mttObjectMapService =
+        jasmine.createSpyObj('mttObjectMapService', ['getMttObjectMap']);
+    mttObjectMap = newMttObjectMap();
+    mttObjectMap.testMap = TEST_MAP;
+    mttObjectMapService.getMttObjectMap.and.returnValue(
+        observableOf(mttObjectMap));
 
     TestBed.configureTestingModule({
       imports: [
@@ -53,6 +72,8 @@ describe('TestList', () => {
       aotSummaries: TestModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
+        {provide: MttObjectMapService, useValue: mttObjectMapService},
+        {provide: Notifier, useValue: notifier},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
       ],
     });
@@ -66,51 +87,84 @@ describe('TestList', () => {
     testListFixture.destroy();
   });
 
+  function reload(mttObjectMap: MttObjectMap) {
+    mttObjectMapService.getMttObjectMap.and.returnValue(
+        observableOf(mttObjectMap));
+    testList.load();
+    testListFixture.detectChanges();
+  }
+
   it('gets initialized correctly', () => {
     expect(testList).toBeTruthy();
-  });
 
-  it('calls API correctly', fakeAsync(() => {
-       tick(200);
-       testListFixture.whenStable().then(() => {
-         expect(mttClient.getTests).toHaveBeenCalled();
-       });
-     }));
-
-  it('displays tests correctly', fakeAsync(() => {
-       tick(200);
-       testListFixture.whenStable().then(() => {
-         const textContent = getTextContent(el);
-         for (const test of TESTS) {
-           expect(textContent).toContain(test.name);
-         }
-       });
-     }));
-
-  it('deletes a test correctly', fakeAsync(() => {
-       tick(200);
-       testListFixture.whenStable().then(() => {
-         // Delete the first test.
-         getEl(el, '#menuButton').click();
-         getEl(el, '#deleteButton').click();
-         expect(mttClient.deleteTest).toHaveBeenCalledWith(TESTS[0].id);
-         expect(getEls(el, 'mat-row').length).toBe(1);
-       });
-     }));
-
-  it('renders page header correctly', () => {
     const header = getEl(el, 'h1');
     expect(header).toBeTruthy();
     expect(header.innerText).toBe('Test Suites');
-  });
 
-  it('displayed correct aria label for table', () => {
+    expect(liveAnnouncer.announce).toHaveBeenCalledWith('Loading', 'polite');
     const matTable = getEl(el, 'mat-table');
     expect(matTable).toBeTruthy();
     expect(matTable.getAttribute('aria-label')).toBe('Test suites');
   });
 
-  it('displays and announces a loading mask', () => {
-    expect(liveAnnouncer.announce).toHaveBeenCalledWith('Loading', 'polite');
+  it('displays tests correctly', () => {
+    expect(mttObjectMapService.getMttObjectMap).toHaveBeenCalled();
+    const textContent = getTextContent(el);
+    for (const test of Object.values(TEST_MAP)) {
+      expect(textContent).toContain(test.name);
+    }
+  });
+
+  it('can display namespaced tests',
+     () => {
+       const NAMESPACED_TEST_MAP = {
+         id1: {id: 'ns1::id1', name: 'Valid namespace'},
+         id2: {id: 'id2', name: 'No namespace'},
+         id3: {id: 'ns2::id3', name: 'Unmatched namepsace'},
+       };
+       const CONFIG_SET_MAP = {
+         ns1: mttMocks.newMockConfigSetInfo('ns1', 'Namespace 1'),
+       };
+
+       mttObjectMap = newMttObjectMap();
+       mttObjectMap.testMap = NAMESPACED_TEST_MAP;
+       mttObjectMap.configSetInfoMap = CONFIG_SET_MAP;
+       reload(mttObjectMap);
+
+       const textContent = getTextContent(el);
+       for (const test of Object.values(NAMESPACED_TEST_MAP)) {
+         expect(textContent).toContain(test.name);
+       }
+       expect(textContent).toContain('Default/Custom Test Suites');
+       expect(textContent).toContain('Namespace 1');
+       expect(textContent).toContain('Unknown Config Set (ns2)');
+     });
+
+  it('deletes a test correctly', () => {
+    // Delete the first test.
+    notifier.confirm.and.returnValue(observableOf(true));  // confirm delete
+    getEl(el, '#menuButton').click();
+    getEl(el, '#deleteButton').click();
+    expect(mttClient.deleteTest).toHaveBeenCalledWith('id1');
+  });
+
+  it('can delete config sets', () => {
+    const NAMESPACED_TEST_MAP = {
+      id1: {id: 'ns1::id1', name: 'Valid namespace'},
+      id2: {id: 'id2', name: 'No namespace'},
+    };
+    const CONFIG_SET_MAP = {
+      ns1: mttMocks.newMockConfigSetInfo('ns1', 'Namespace 1'),
+    };
+
+    mttObjectMap = newMttObjectMap();
+    mttObjectMap.testMap = NAMESPACED_TEST_MAP;
+    mttObjectMap.configSetInfoMap = CONFIG_SET_MAP;
+    reload(mttObjectMap);
+    notifier.confirm.and.returnValue(observableOf(true));  // confirm delete
+
+    getEl(el, '#configSetMenuButton').click();
+    getEl(el, '#configSetDeleteButton').click();
+    expect(mttClient.deleteConfigSet).toHaveBeenCalledWith('ns1');
   });
 });

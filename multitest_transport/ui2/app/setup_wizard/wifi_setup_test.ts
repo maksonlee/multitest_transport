@@ -21,7 +21,7 @@ import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
 import {getTextContent} from '../testing/jasmine_util';
-import {newMockNameValuePair} from '../testing/test_util';
+import {newMockNameValuePair} from '../testing/mtt_mocks';
 
 import {SetupWizardModule} from './setup_wizard_module';
 import {SetupWizardModuleNgSummary} from './setup_wizard_module.ngsummary';

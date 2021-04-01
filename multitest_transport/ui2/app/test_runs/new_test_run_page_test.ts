@@ -21,13 +21,15 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
+import {DeviceInfoService} from '../services/device_info_service';
 import {FileService} from '../services/file_service';
-import {MttClient, TestRunActionClient} from '../services/mtt_client';
+import {MttClient} from '../services/mtt_client';
 import {Test, TestRun} from '../services/mtt_models';
-import {TfcClient} from '../services/tfc_client';
+import {MttObjectMap, MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
 import {DeviceInfo} from '../services/tfc_models';
 import {getEl} from '../testing/jasmine_util';
-import {newMockDevice, newMockNodeConfig, newMockTest, newMockTestRun} from '../testing/test_util';
+import {newMockDeviceInfo} from '../testing/mtt_lab_mocks';
+import {newMockDeviceAction, newMockNodeConfig, newMockTest, newMockTestRun} from '../testing/mtt_mocks';
 
 import {NewTestRunPage} from './new_test_run_page';
 import {TestRunsModule} from './test_runs_module';
@@ -42,7 +44,8 @@ describe('NewTestRunPage', () => {
   let newTestRunPageFixture: ComponentFixture<NewTestRunPage>;
   let liveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
   let mttClient: jasmine.SpyObj<MttClient>;
-  let tfcClient: jasmine.SpyObj<TfcClient>;
+  let mttObjectMapService: jasmine.SpyObj<MttObjectMapService>;
+  let deviceInfoService: jasmine.SpyObj<DeviceInfoService>;
 
   let el: DebugElement;
   let connectedDevice: DeviceInfo;
@@ -50,29 +53,22 @@ describe('NewTestRunPage', () => {
   let testRun: TestRun;
 
   beforeEach(() => {
-    connectedDevice = newMockDevice('connectedDevice123');
+    connectedDevice = newMockDeviceInfo('connectedDevice123');
     test = newMockTest();
     testRun = newMockTestRun(test);
 
     liveAnnouncer =
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
 
-    mttClient = {
-      ...jasmine.createSpyObj([
-        'getBuildChannels', 'getDeviceActionList', 'getNodeConfig', 'getTests'
-      ]),
-      testRunActions:
-          jasmine.createSpyObj<TestRunActionClient>({list: observableOf([])}),
-    } as jasmine.SpyObj<MttClient>;
-
-    mttClient.getBuildChannels.and.returnValue(observableOf([]));
-    mttClient.getDeviceActionList.and.returnValue(observableOf([]));
+    mttClient = jasmine.createSpyObj(['getNodeConfig']);
     mttClient.getNodeConfig.and.returnValue(observableOf(newMockNodeConfig()));
-    mttClient.getTests.and.returnValue(observableOf([test]));
 
-    tfcClient = jasmine.createSpyObj('tfcClient', ['getDeviceInfos']);
-    tfcClient.getDeviceInfos.and.returnValue(
-        observableOf({device_infos: [connectedDevice]}));
+    mttObjectMapService = jasmine.createSpyObj(['getMttObjectMap']);
+    mttObjectMapService.getMttObjectMap.and.returnValue(
+        observableOf(newMttObjectMap()));
+
+    deviceInfoService =
+        jasmine.createSpyObj({getDeviceInfos: observableOf([connectedDevice])});
 
     TestBed.configureTestingModule({
       declarations: [DeviceListStubComponent],
@@ -82,7 +78,8 @@ describe('NewTestRunPage', () => {
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: FileService, useValue: {}},
         {provide: MttClient, useValue: mttClient},
-        {provide: TfcClient, useValue: tfcClient},
+        {provide: MttObjectMapService, useValue: mttObjectMapService},
+        {provide: DeviceInfoService, useValue: deviceInfoService},
       ],
     });
     newTestRunPageFixture = TestBed.createComponent(NewTestRunPage);
@@ -90,6 +87,13 @@ describe('NewTestRunPage', () => {
     el = newTestRunPageFixture.debugElement;
     newTestRunPage = newTestRunPageFixture.componentInstance;
   });
+
+  function reload(objectMap: MttObjectMap) {
+    mttObjectMapService.getMttObjectMap.and.returnValue(
+        observableOf(newMttObjectMap()));
+    newTestRunPage.loadData();
+    newTestRunPageFixture.detectChanges();
+  }
 
   it('initializes a component', () => {
     expect(newTestRunPage).toBeTruthy();
@@ -104,6 +108,21 @@ describe('NewTestRunPage', () => {
   it('loads previous test run data', () => {
     newTestRunPage.loadPrevTestRun(testRun);
     expect(newTestRunPage.testRunConfig.test_id).toBe(test.id!);
+  });
+
+  it('can update the selected device action ids', () => {
+    const objectMap = newMttObjectMap();
+    const deviceAction = newMockDeviceAction('action.id');
+    objectMap.deviceActionMap = {'action.id': deviceAction};
+    reload(objectMap);
+
+    expect(newTestRunPage.testRunConfig.before_device_action_ids!.length)
+        .toEqual(0);
+    newTestRunPage.selectedDeviceActions = [deviceAction];
+    newTestRunPage.updateConfigDeviceActionIds();
+    expect(newTestRunPage.testRunConfig.before_device_action_ids!).toEqual([
+      'action.id'
+    ]);
   });
 
   it('adds labels', () => {

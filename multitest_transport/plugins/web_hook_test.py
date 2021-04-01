@@ -17,24 +17,14 @@ from absl.testing import absltest
 import mock
 from six.moves import urllib
 
-from google.appengine.ext import testbed
+from tradefed_cluster import testbed_dependent_test
 
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base as plugins
 from multitest_transport.plugins.web_hook import WebHook
 
 
-class WebHookTest(absltest.TestCase):
-
-  def setUp(self):
-    super(WebHookTest, self).setUp()
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
-
-  def tearDown(self):
-    self.testbed.deactivate()
-    super(WebHookTest, self).tearDown()
+class WebHookTest(testbed_dependent_test.TestbedDependentTest):
 
   @mock.patch.object(urllib.request, 'urlopen')
   @mock.patch.object(urllib.request, 'Request')

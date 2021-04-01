@@ -19,11 +19,12 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {Subject} from 'rxjs';
+import {Subject, throwError} from 'rxjs';
 
 import {FileService, FileUploadEvent} from '../services/file_service';
 import {Test, TestRunConfig} from '../services/mtt_models';
-import {newMockTest, newMockTestRunConfig} from '../testing/test_util';
+import {Notifier} from '../services/notifier';
+import {newMockTest, newMockTestRunConfig} from '../testing/mtt_mocks';
 
 import {SharedModule} from './shared_module';
 import {SharedModuleNgSummary} from './shared_module.ngsummary';
@@ -32,25 +33,34 @@ import {TestRunConfigForm} from './test_run_config_form';
 describe('TestRunConfigForm', () => {
   let fs: jasmine.SpyObj<FileService>;
   let liveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
+  let notifier: jasmine.SpyObj<Notifier>;
   let fixture: ComponentFixture<TestRunConfigForm>;
   let debugEl: DebugElement;
   let configForm: TestRunConfigForm;
 
-  let test: Test;
+  let test1: Test;
+  let test2: Test;
   let testRunConfig: TestRunConfig;
 
   beforeEach(() => {
     liveAnnouncer =
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
     fs = jasmine.createSpyObj(['getFileUrl', 'uploadFile']);
-    test = newMockTest();
-    testRunConfig = newMockTestRunConfig(test.id!);
+    notifier = jasmine.createSpyObj(['showError']);
+    test1 = newMockTest('test1');
+    test2 = newMockTest('test2', 'name2', 'second command');
+    test2.default_test_run_parameters = {
+      max_retry_on_test_failures: 2,
+      output_idle_timeout_seconds: 2000
+    };
+    testRunConfig = newMockTestRunConfig(test1.id!, 'modified command');
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
       providers: [
         {provide: FileService, useValue: fs},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
+        {provide: Notifier, useValue: notifier},
       ],
       aotSummaries: SharedModuleNgSummary,
     });
@@ -58,8 +68,8 @@ describe('TestRunConfigForm', () => {
     fixture = TestBed.createComponent(TestRunConfigForm);
     debugEl = fixture.debugElement;
     configForm = fixture.componentInstance;
-    configForm.testMap = {[test.id!]: test};
-    configForm.testId = test.id!;
+    configForm.testMap = {[test1.id!]: test1, [test2.id!]: test2};
+    configForm.testId = test1.id!;
     configForm.testRunConfig = testRunConfig;
     spyOn(configForm.rerunContext, 'emit');
     fixture.detectChanges();
@@ -69,11 +79,17 @@ describe('TestRunConfigForm', () => {
     expect(configForm).toBeTruthy();
   });
 
-  it('can handle configs without commands', () => {
-    const configWithoutCommand = newMockTestRunConfig(test.id!, '', '');
-    configForm.testRunConfig = configWithoutCommand;
-    configForm.load();
-    expect(configForm.testRunConfig.command).toEqual(test.command!);
+  it('can load a previous test run', () => {
+    expect(configForm.testRunConfig.command).toEqual('modified command');
+    expect(configForm.testRunConfig.max_retry_on_test_failures).toEqual(1);
+    expect(configForm.testRunConfig.output_idle_timeout_seconds).toEqual(3600);
+  });
+
+  it('can load test defaults when changing tests', () => {
+    configForm.loadTest(test2.id!);
+    expect(configForm.testRunConfig.command).toEqual(test2.command);
+    expect(configForm.testRunConfig.max_retry_on_test_failures).toEqual(2);
+    expect(configForm.testRunConfig.output_idle_timeout_seconds).toEqual(2000);
   });
 
   it('can disable reruns', () => {
@@ -168,4 +184,13 @@ describe('TestRunConfigForm', () => {
        expect(liveAnnouncer.announce)
            .toHaveBeenCalledWith('filename uploaded', 'assertive');
      }));
+
+  it('should display error if results file upload fails', fakeAsync(() => {
+    configForm.isRemoteRerun = true;
+    const file = {name: 'filename', size: 100} as File;
+    fs.uploadFile.and.returnValue(throwError('Upload error'));
+    configForm.uploadResultsFile(file);
+    tick();
+    expect(notifier.showError).toHaveBeenCalled();
+  }));
 });

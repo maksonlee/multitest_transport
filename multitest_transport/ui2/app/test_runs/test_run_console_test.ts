@@ -24,7 +24,7 @@ import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
 import {TestRunOutput} from '../services/mtt_models';
 import {CommandAttempt, CommandState} from '../services/tfc_models';
-import {newMockRequest, newMockTest, newMockTestRun, newMockTestRunOutput} from '../testing/test_util';
+import {newMockRequest, newMockTest, newMockTestRun, newMockTestRunOutput} from '../testing/mtt_mocks';
 
 import {MAX_CONSOLE_LENGTH, POLL_INTERVAL, TestRunConsole} from './test_run_console';
 import {TestRunsModule} from './test_runs_module';

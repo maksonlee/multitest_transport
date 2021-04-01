@@ -1,7 +1,7 @@
 # Frontend application for MTT
 
 load("//multitest_transport:adapter.bzl", "COMPILER_FLAGS", "js_binary", "karma_web_test_suite", "ng_module", "sass_binary", "sass_library", "third_party_js", "ts_config", "ts_development_sources")
-load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "Fileset", "FilesetEntry", "py_appengine_library", "third_party")
+load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "Fileset", "FilesetEntry", "pytype_strict_library", "third_party")
 
 licenses(["notice"])
 
@@ -29,6 +29,7 @@ ng_module(
 sass_library(
     name = "constants",
     srcs = ["_constants.scss"],
+    strict_deps = False,
     visibility = ["//multitest_transport"],
 )
 
@@ -36,6 +37,7 @@ sass_library(
 sass_library(
     name = "styles_lib",
     srcs = ["styles.scss"],
+    strict_deps = False,
     visibility = ["//multitest_transport"],
     deps = [
         ":constants",
@@ -47,6 +49,8 @@ sass_binary(
     name = "styles",
     src = "styles.scss",
     output_name = "styles.css",
+    sass_stack = False,
+    strict_deps = False,
     visibility = ["//multitest_transport"],
     deps = [
         ":constants",
@@ -56,11 +60,6 @@ sass_binary(
 ################################################################################
 # Static files                                                                 #
 ################################################################################
-
-filegroup(
-    name = "images",
-    srcs = glob(["images/*"]),
-)
 
 Fileset(
     name = "static_files",
@@ -72,10 +71,8 @@ Fileset(
         ),
         FilesetEntry(
             files = glob(["images/*"]),
-            destdir = "images",
         ),
     ],
-    visibility = ["//multitest_transport"],
 )
 
 ################################################################################
@@ -84,7 +81,6 @@ Fileset(
 
 ts_development_sources(
     name = "dev_sources",
-    visibility = ["//multitest_transport"],
     runtime_deps = [
         third_party_js("moment"),
         third_party_js("moment_duration_format"),
@@ -129,36 +125,54 @@ genrule(
     ],
     outs = ["app.js"],
     cmd = "cat $(SRCS) > $@",
-    visibility = ["//multitest_transport"],
+)
+
+# Development mode flag
+config_setting(
+    name = "dev_mode",
+    define_values = {
+        "dev_mode": "true",
+    },
 )
 
 # Python server
-py_appengine_library(
+pytype_strict_library(
     name = "ui2",
     srcs = [
-        "javascript_sources.py",
         "main.py",
     ],
     data = [
         "index.html",
-    ],
+        ":static_files",
+    ] + select({
+        ":dev_mode": [":dev_sources.concat.js"],
+        "//conditions:default": ["app.js"],
+    }),
+    srcs_version = "PY3",
     visibility = ["//multitest_transport"],
     deps = [
-        third_party("jinja2"),
-        third_party("webapp2"),
+        "//multitest_transport/models",
+        "//multitest_transport/util",
+        third_party("flask"),
     ],
 )
 
 ts_development_sources(
     name = "dev_sources_for_testing",
     testonly = 1,
-    runtime_deps = THIRD_PARTY_JS,
+    runtime_deps = THIRD_PARTY_JS + [
+        "//multitest_transport/ui2/app/testing:init_tests",
+    ],
     deps = [
         "//multitest_transport/ui2/app:tests",
+        "//multitest_transport/ui2/app/auth:tests",
         "//multitest_transport/ui2/app/build_channels:tests",
         "//multitest_transport/ui2/app/config_sets:tests",
         "//multitest_transport/ui2/app/device_actions:tests",
         "//multitest_transport/ui2/app/devices:tests",
+        "//multitest_transport/ui2/app/hosts:tests",
+        "//multitest_transport/ui2/app/notes:tests",
+        "//multitest_transport/ui2/app/recovery:tests",
         "//multitest_transport/ui2/app/services:tests",
         "//multitest_transport/ui2/app/settings:tests",
         "//multitest_transport/ui2/app/setup_wizard:tests",
@@ -176,10 +190,14 @@ ts_config(
     deps = [
         ":app_lib",
         "//multitest_transport/ui2/app:tests",
+        "//multitest_transport/ui2/app/auth:tests",
         "//multitest_transport/ui2/app/build_channels:tests",
         "//multitest_transport/ui2/app/config_sets:tests",
         "//multitest_transport/ui2/app/device_actions:tests",
         "//multitest_transport/ui2/app/devices:tests",
+        "//multitest_transport/ui2/app/hosts:tests",
+        "//multitest_transport/ui2/app/notes:tests",
+        "//multitest_transport/ui2/app/recovery:tests",
         "//multitest_transport/ui2/app/services:tests",
         "//multitest_transport/ui2/app/settings:tests",
         "//multitest_transport/ui2/app/setup_wizard:tests",
@@ -201,5 +219,6 @@ karma_web_test_suite(
         "tsconfig",
     ],
     manifest = ":dev_sources_for_testing",
+    shard_count = 10,
 )
 

@@ -15,12 +15,14 @@
 """Tests for private_node_config_api."""
 
 import json
-
 from absl.testing import absltest
+import mock
+
 
 from multitest_transport.api import api_test_util
 from multitest_transport.api import private_node_config_api
 from multitest_transport.models import ndb_models
+from google.oauth2 import service_account
 
 
 class PrivateNodeConfigApiTest(api_test_util.TestCase):
@@ -52,9 +54,40 @@ class PrivateNodeConfigApiTest(api_test_util.TestCase):
         'metrics_enabled': True,
     }
 
-    self.app.post_json('/_ah/api/mtt/v1/private_node_config', data)
+    self.app.put_json('/_ah/api/mtt/v1/private_node_config', data)
     self.assertEqual(self._CreatePrivateNodeConfig(data),
                      ndb_models.GetPrivateNodeConfig())
+
+  @mock.patch.object(service_account.Credentials, 'from_service_account_info')
+  def testSetDefaultServiceAccount(self, mock_parse_key):
+    """Tests setting the default service account."""
+
+    # Mock parsing service account JSON key
+    mock_parse_key.return_value = service_account.Credentials(None, None, None)
+    # Set default auth
+    self.app.put_json(
+        '/_ah/api/mtt/v1/private_node_config/default_service_account',
+        {'value': '{}'})
+
+    # Verify that credentials were set
+    private_node_config = ndb_models.GetPrivateNodeConfig()
+    self.assertIsNotNone(private_node_config.default_credentials)
+
+  def testRemoveDefaultServiceAccount(self):
+    """Tests removing the default service account."""
+    credentials = service_account.Credentials(None, None, None)
+    private_node_config = ndb_models.GetPrivateNodeConfig()
+    private_node_config.default_credentials = credentials
+    private_node_config.put()
+
+    # Remove default auth
+    self.app.delete(
+        '/_ah/api/mtt/v1/private_node_config/default_service_account')
+
+    # Verify that credentials were cleared
+    private_node_config = ndb_models.GetPrivateNodeConfig()
+    self.assertIsNone(private_node_config.default_credentials)
+
 
 if __name__ == '__main__':
   absltest.main()

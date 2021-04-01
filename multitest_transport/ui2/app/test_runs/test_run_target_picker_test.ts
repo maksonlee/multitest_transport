@@ -55,9 +55,11 @@ describe('TestRunTargetPicker', () => {
 
     testRunTargetPicker.onDeviceListSelectionChange(['p1']);
     expect(testRunTargetPicker.shardCount).toBe(1);
-    expect(testRunTargetPicker.runTarget).toBe('p1');
+    expect(testRunTargetPicker.deviceSpecs).toEqual(['device_serial:p1']);
 
     testRunTargetPicker.onDeviceListSelectionChange(['p1', 'p2']);
-    expect(testRunTargetPicker.runTarget).toBe('p1;p2');
+    expect(testRunTargetPicker.deviceSpecs).toEqual([
+      'device_serial:p1', 'device_serial:p2'
+    ]);
   });
 });

@@ -27,7 +27,8 @@ def Discover():
   for _, name, ispkg in pkgutil.iter_modules([os.path.dirname(__file__)]):
     if ispkg or name in ['base', 'constant', 'registry']:
       continue
-    name = __package__ + '.' + name
+    if __package__:
+      name = __package__ + '.' + name
     logging.info('Importing plugin %s...', name)
     importlib.import_module(name)
 

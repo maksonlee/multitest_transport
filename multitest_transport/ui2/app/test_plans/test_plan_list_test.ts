@@ -23,7 +23,7 @@ import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
 import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
-import {newMockTestPlan} from '../testing/test_util';
+import {newMockTestPlan} from '../testing/mtt_mocks';
 
 import {TestPlanList} from './test_plan_list';
 import {TestPlansModule} from './test_plans_module';

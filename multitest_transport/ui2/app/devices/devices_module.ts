@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Google LLC
+ * Copyright 2020 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,46 @@
  * A module for devices page
  */
 import {NgModule} from '@angular/core';
+import {ReactiveFormsModule} from '@angular/forms';
 import {Title} from '@angular/platform-browser';
+import {RouterModule} from '@angular/router';
 
+import {NotesModule} from '../notes/notes_module';
+import {ServicesModule} from '../services';
 import {SharedModule} from '../shared/shared_module';
 
+import {DeviceDetails} from './device_details';
+import {DeviceDetailsExtraInfos} from './device_details_extra_infos';
+import {DeviceDetailsHistory} from './device_details_history';
+import {DeviceDetailsPage} from './device_details_page';
+import {DeviceDetailsSummary} from './device_details_summary';
 import {DeviceList} from './device_list';
-import {DeviceListPage} from './device_list_page';
+import {DeviceListTable} from './device_list_table';
+import {DevicePicker} from './device_picker';
+
+const COMPONENTS = [
+  DeviceDetails,
+  DeviceDetailsExtraInfos,
+  DeviceDetailsHistory,
+  DeviceDetailsPage,
+  DeviceDetailsSummary,
+  DeviceListTable,
+  DeviceList,
+  DevicePicker,
+];
 
 @NgModule({
-  declarations: [DeviceList, DeviceListPage],
+  declarations: COMPONENTS,
   providers: [Title],
-  imports: [SharedModule],
-  exports: [DeviceList, DeviceListPage],
+  imports: [
+    NotesModule,
+    ReactiveFormsModule,
+    RouterModule,
+    ServicesModule,
+    SharedModule,
+  ],
+  exports: COMPONENTS,
+  entryComponents: [DeviceDetails],
 })
 export class DevicesModule {
 }

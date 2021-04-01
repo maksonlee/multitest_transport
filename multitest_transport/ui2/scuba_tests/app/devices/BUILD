@@ -14,9 +14,12 @@ ng_module(
     name = "devices_scuba_tests",
     testonly = True,
     srcs = [
-        "device_list_scuba_test.ts",
+        "device_details_extra_infos_scuba_test.ts",
+        "device_details_summary_scuba_test.ts",
+        "device_list_table_scuba_test.ts",
+        "device_picker_scuba_test.ts",
     ],
-    visibility = ["//multitest_transport"],
+    visibility = ["//visibility:private"],
     deps = [
         "//multitest_transport/ui2/app/devices",
         third_party_js("angular2:cdk_a11y"),
@@ -30,6 +33,7 @@ ng_module(
         "//javascript/angular2/testing/catalyst",
         "//third_party/javascript/angular2:platform_browser_dynamic_testing",
         "//multitest_transport/ui2/app/services",
+        "//multitest_transport/ui2/app/testing:test_util",
         "//multitest_transport/ui2/scuba_tests/testing:karma",
     ],
 )

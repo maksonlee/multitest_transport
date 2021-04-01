@@ -1,0 +1,155 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="action-row" fxLayout="row wrap" fxLayoutGap="20px">
+  <button
+    mat-stroked-button
+    color="accent"
+    matTooltip="Add predefined message"
+    aria-label="Add predefined message"
+    [disabled]="!(selectedLab | permissionCheck)"
+    (click)="openPredefinedMessagesEditor()"
+  >
+    + Create a new predefined message
+  </button>
+</div>
+<div class="filter-row" fxLayout="row wrap" fxLayoutAlign="start center">
+  <mat-form-field fxFlex="300px">
+    <mat-select
+      placeholder="Lab"
+      [(ngModel)]="selectedLab"
+      (selectionChange)="reloadPredefinedMessages()"
+    >
+      <mat-option *ngFor="let lab of labs" [value]="lab">
+        {{ lab }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field fxFlex="300px">
+    <mat-select
+      placeholder="Category"
+      [(ngModel)]="selectedMessageCategory"
+      (selectionChange)="reloadPredefinedMessages()"
+    >
+      <mat-option *ngFor="let messageCategory of messageCategories" [value]="messageCategory">
+        {{ messageCategory | titlecase }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field fxFlex="300px">
+    <mat-select
+      placeholder="Type"
+      [(ngModel)]="selectedMessageType"
+      (selectionChange)="reloadPredefinedMessages()"
+    >
+      <mat-option *ngFor="let messageType of messageTypes" [value]="messageType">
+        {{ messageType | titlecase }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <button
+    mat-icon-button
+    matTooltip="Refresh the data"
+    aria-label="Refresh the data"
+    (click)="reloadPredefinedMessages()"
+  >
+    <mat-icon>refresh</mat-icon>
+  </button>
+</div>
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+<div class="predefined-message-list-container" [class.loading-mask]="isLoading">
+  <mat-table #table matSort [dataSource]="tableDataSource" (matSortChange)="changeSort($event)">
+    <!-- Content -->
+    <ng-container matColumnDef="content">
+      <mat-header-cell *matHeaderCellDef fxFlex="400px"> Message </mat-header-cell>
+      <mat-cell
+        *matCellDef="let predefinedMessage"
+        [matTooltip]="predefinedMessage.content"
+        fxFlex="400px"
+      >
+        <div class="message-content">{{ predefinedMessage.content }}</div>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Predefined Message Type -->
+    <ng-container matColumnDef="type">
+      <mat-header-cell *matHeaderCellDef fxFlex="200px"> Type </mat-header-cell>
+      <mat-cell *matCellDef="let predefinedMessage" fxFlex="200px">
+        {{ predefinedMessage.type }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Create At -->
+    <ng-container matColumnDef="create_timestamp">
+      <mat-header-cell *matHeaderCellDef mat-sort-header fxFlex="200px">
+        Create At
+      </mat-header-cell>
+      <mat-cell
+        *matCellDef="let predefinedMessage"
+        [matTooltip]="predefinedMessage.create_timestamp | utc | date: 'MM/dd/yyyy h:mma'"
+        fxFlex="200px"
+      >
+        {{ predefinedMessage.create_timestamp | utc | fromNow }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Used Count -->
+    <ng-container matColumnDef="used_count">
+      <mat-header-cell *matHeaderCellDef mat-sort-header> Used Count </mat-header-cell>
+      <mat-cell *matCellDef="let predefinedMessage">
+        {{ predefinedMessage.used_count }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Actions: Edit and Remove predefined message -->
+    <ng-container matColumnDef="actions" stickyEnd>
+      <mat-header-cell *matHeaderCellDef fxFlex="250px"></mat-header-cell>
+      <mat-cell *matCellDef="let predefinedMessage" fxFlex="250px">
+        <button
+          mat-button
+          color="accent"
+          type="button"
+          aria-label="Edit predefined message"
+          [disabled]="!(selectedLab | permissionCheck)"
+          (click)="openPredefinedMessagesEditor(predefinedMessage)"
+        >
+          Edit
+        </button>
+        <button
+          mat-button
+          color="accent"
+          type="button"
+          aria-label="Remove predefined message"
+          [disabled]="!(selectedLab | permissionCheck)"
+          (click)="deletePredefinedMessage(predefinedMessage.id)"
+        >
+          Remove
+        </button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+  </mat-table>
+
+  <div class="empty" *ngIf="dataSource && dataSource.length === 0">
+    No predefined messages found.
+  </div>
+</div>

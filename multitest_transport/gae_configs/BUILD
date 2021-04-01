@@ -7,13 +7,23 @@ filegroup(
     srcs = [
         "app.yaml",
         "core.yaml",
-        "cron.yaml",
         "tfc.yaml",
+        ":cron_yaml",
         ":index_yaml",
         ":queue_yaml",
-        "@tradefed_cluster//tradefed_cluster/gae_configs:handler_yamls",
     ],
     visibility = ["//multitest_transport"],
+)
+
+genrule(
+    name = "cron_yaml",
+    srcs = [
+        "cron_ext.yaml",
+        "@tradefed_cluster//tradefed_cluster/gae_configs:cron_yaml",
+    ],
+    outs = ["cron.yaml"],
+    cmd = "$(location @tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls) $(SRCS) > \"$@\"",
+    exec_tools = ["@tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls"],
 )
 
 genrule(
@@ -24,7 +34,7 @@ genrule(
     ],
     outs = ["index.yaml"],
     cmd = "$(location @tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls) $(SRCS) > \"$@\"",
-    tools = ["@tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls"],
+    exec_tools = ["@tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls"],
 )
 
 genrule(
@@ -35,5 +45,5 @@ genrule(
     ],
     outs = ["queue.yaml"],
     cmd = "$(location @tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls) $(SRCS) > \"$@\"",
-    tools = ["@tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls"],
+    exec_tools = ["@tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls"],
 )

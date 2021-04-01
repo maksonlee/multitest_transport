@@ -50,8 +50,8 @@ _DRIVE_ROOT_ID = 'root'
 _FOLDER_TYPE = 'application/vnd.google-apps.folder'
 _GOOGLE_DRIVE_BUILD_API_NAME = 'drive'
 _GOOGLE_DRIVE_BUILD_API_VERSION = 'v3'
-_GOOGLE_DRIVE_OAUTH2_SCOPES = ['https://www.googleapis.com/auth/drive']
-_PATH_DELIMETER = '/'
+_GOOGLE_DRIVE_OAUTH2_SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
+_PATH_DELIMITER = '/'
 _PAGE_SIZE = 10
 # Google Drive file attributes that this plugin needs
 _FIELDS = 'mimeType, modifiedTime, name, size'
@@ -98,18 +98,27 @@ class GoogleDriveBuildProvider(base.BuildProvider):
   listing builds with pagination.
   """
   name = 'Google Drive'
+  auth_methods = [
+      base.AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
+      base.AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
+  ]
+  oauth2_config = oauth2_util.OAuth2Config(
+      client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
+      client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
+      scopes=_GOOGLE_DRIVE_OAUTH2_SCOPES)
+  url_patterns = [
+      base.UrlPattern(
+          r'https://drive.google.com/file/d/(?P<id>.*)/view.*',
+          _FILE_ID_PATH_PREFIX + '{id}'),
+      base.UrlPattern(
+          r'https://drive.google.com/open\?id=(?P<id>.*)',
+          _FILE_ID_PATH_PREFIX + '{id}'),
+  ]
 
   def __init__(self):
-    super(GoogleDriveBuildProvider, self).__init__(
-        url_patterns=[
-            base.UrlPattern(
-                r'https://drive.google.com/file/d/(?P<id>.*)/view.*',
-                _FILE_ID_PATH_PREFIX + '{id}'),
-            base.UrlPattern(
-                r'https://drive.google.com/open\?id=(?P<id>.*)',
-                _FILE_ID_PATH_PREFIX + '{id}'),
-        ])
+    super(GoogleDriveBuildProvider, self).__init__()
     self._client = None
+    self._file_id_map = {}
 
   def _GetClient(self):
     """Initialize client.
@@ -129,13 +138,6 @@ class GoogleDriveBuildProvider(base.BuildProvider):
         _GOOGLE_DRIVE_BUILD_API_VERSION,
         http=http)
     return self._client
-
-  def GetOAuth2Config(self):
-    """Provide base with params needed for OAuth2 authentication."""
-    return oauth2_util.OAuth2Config(
-        client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
-        client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
-        scopes=_GOOGLE_DRIVE_OAUTH2_SCOPES)
 
   def _GetFileIds(self, param):
     """Get List of file ids.
@@ -158,8 +160,8 @@ class GoogleDriveBuildProvider(base.BuildProvider):
       return file_ids, next_page_token
     except apiclient.errors.HttpError as e:
       if e.resp.status == constant.HTTP_NOT_FOUND_ERROR_CODE:
-        raise errors.InvalidParamError(
-            _PARAM_NOT_VALID_ERROR % json.dumps(param))
+        raise errors.PluginError(_PARAM_NOT_VALID_ERROR % json.dumps(param))
+      raise
 
   def _GetFileItem(self, file_id):
     """Get a file item from file id.
@@ -182,8 +184,8 @@ class GoogleDriveBuildProvider(base.BuildProvider):
       return file_item
     except apiclient.errors.HttpError as e:
       if e.resp.status == constant.HTTP_NOT_FOUND_ERROR_CODE:
-        raise errors.FileNotFoundError(
-            _INVALID_FILE_ID_ERROR % file_id)
+        raise errors.FileNotFoundError(_INVALID_FILE_ID_ERROR % file_id)
+      raise
 
   def _ConvertFileToBuildItem(self, file_item, path):
     """Convert a file_item to a build_item.
@@ -200,13 +202,13 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     if is_file:
       timestamp = _ParseTimeStamp(file_item['modifiedTime'])
     else:
-      name = name + _PATH_DELIMETER
+      name = name + _PATH_DELIMITER
       timestamp = None
     return base.BuildItem(
         name=name,
         path=path,
         is_file=is_file,
-        size=long(file_item.get('size', 0)),
+        size=int(file_item.get('size', 0)),
         timestamp=timestamp)
 
   def _GetFileIdHelper(
@@ -222,7 +224,7 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     Returns:
       subfolder's id: (e.g. some_hash_value)
     Raises:
-      errors.DuplicatedNameError: if duplicated name are found.
+      errors.PluginError: if the filename is not unique.
       errors.FileNotFoundError: if no file matched the subfolder's name
         or no matching file id was found.
     """
@@ -231,42 +233,49 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     child_ids, _ = self._GetFileIds(param)
 
     if len(child_ids) >= 2:
-      raise errors.DuplicatedNameError(_DUPLICATED_OBJECT_NAME_ERROR % name)
+      raise errors.PluginError(_DUPLICATED_OBJECT_NAME_ERROR % name)
     if not child_ids:
       raise errors.FileNotFoundError(_FILE_NOT_FOUND_ERROR % name)
     return child_ids[0]
 
   def _GetFileId(self, path=None):
-    """Get object id.
+    """Returns an object id for a given path.
 
-    Get an object's id from path. If path is a/b/c/d, the function will return
-    d's id.
+    A path can be in one of two types: an absolute path and a relative path.
 
-    The reason that we are returning a list of file ids instead of a list of
-    file objects is because the returned file objects missed some of the fields
-    (created_time, size) that MTT plugin needs. Thus, after getting each file's
-    id, we will make extra requests again to get all those fields.
+    An absolute path starts with a "_id/" prefix which is followed by an object
+    ID. The object ID can point to either a file or a folder. If the ID points
+    to a folder, the path may include a path part
+    (e.g. _id/(file_id)/foo/bar.txt) which is resolved relative to the folder
+    denoted by the ID.
 
-    If a path starts with a _FILE_ID_PATH_PREFIX
-    (e.g. /_id/1YfLO2Se0QoqjjJ9tyULr-6SWvYXeDFbA), parse a file ID from it.
+    A path which doesn't have a "_id" is considered as a relative path. A
+    relative path is resolved from a user's root folder (e.g. My Drive).
+
 
     Args:
-      path: (e.g. folderA/folderB/, folderA/cat.img, None).
+      path: an absolute/relative path.
     Returns:
-      object id: (e.g. some_hash_value)
+      An object ID.
     """
+    if path in self._file_id_map:
+      return self._file_id_map[path]
+
+    file_id = _DRIVE_ROOT_ID
     if not path:
-      return _DRIVE_ROOT_ID
+      return file_id
     if path.startswith(_FILE_ID_PATH_PREFIX):
-      return path[len(_FILE_ID_PATH_PREFIX):]
-    folder_list = path.split(_PATH_DELIMETER)
-    result_folder_id = _DRIVE_ROOT_ID
-    for folder_name in folder_list:
-      if not folder_name:  # needed due to trailing '/'
+      tokens = path[len(_FILE_ID_PATH_PREFIX):].split(_PATH_DELIMITER)
+      file_id = tokens.pop(0)
+    else:
+      tokens = path.split(_PATH_DELIMITER)
+    for token in tokens:
+      if not token:  # needed due to trailing '/'
         continue
-      result_folder_id = self._GetFileIdHelper(
-          result_folder_id, folder_name)
-    return result_folder_id
+      file_id = self._GetFileIdHelper(file_id, token)
+
+    self._file_id_map[path] = file_id
+    return file_id
 
   def GetBuildItem(self, path=None):
     """Get a build item.
@@ -292,9 +301,7 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     Returns:
       (a list of base.BuildItem objects, the next page token)
     """
-    if path and not path.endswith(_PATH_DELIMETER):
-      path = path + _PATH_DELIMETER
-
+    path = path.rstrip('/')
     folder_id = self._GetFileId(path)
 
     param = {}
@@ -315,7 +322,7 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     for child_id in child_ids:
       file_item = self._GetFileItem(child_id)
       name = file_item['name']
-      if _PATH_DELIMETER in name:
+      if _PATH_DELIMITER in name:
         logging.info(
             "File %s contains invalid character '/', please remove", name)
         continue
@@ -352,11 +359,11 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     Yields:
       FileChunks (data read, current position, total file size)
     Raises:
-      base.FileNotFoundError: if a path is invalid
+      errors.FileNotFoundError: if a path is invalid
     """
     build_item = self.GetBuildItem(path)
     if (build_item is None) or (not build_item.is_file):
-      raise base.FileNotFoundError(_FILE_NOT_FOUND_ERROR % path)
+      raise errors.FileNotFoundError(_FILE_NOT_FOUND_ERROR % path)
 
     buffer_ = six.StringIO()
     downloader = self._CreateMediaDownloader(path, buffer_,

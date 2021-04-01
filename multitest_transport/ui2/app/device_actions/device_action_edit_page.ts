@@ -23,7 +23,8 @@ import {MttClient} from '../services/mtt_client';
 import {BuildChannel, DeviceAction, newDeviceAction, TestResourceType} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {FormChangeTracker} from '../shared/can_deactivate';
-import {buildApiErrorMessage} from '../shared/util';
+import {buildApiErrorMessage, FormMode} from '../shared/util';
+import {OptionValueChangeEvent} from './tradefed_config_option_form';
 
 /**
  * Form for creating a device action
@@ -35,10 +36,10 @@ import {buildApiErrorMessage} from '../shared/util';
 })
 export class DeviceActionEditPage extends FormChangeTracker implements
     OnInit, AfterViewInit {
-  editMode = false;
+  formMode: FormMode = FormMode.NEW;
   data: Partial<DeviceAction> = newDeviceAction();
-  options = Object.values(TestResourceType);
   buildChannels: BuildChannel[] = [];
+  readonly FormMode = FormMode;
 
   @ViewChild('backButton', {static: false}) backButton?: MatButton;
   @ViewChildren(FormChangeTracker) trackers!: QueryList<FormChangeTracker>;
@@ -53,14 +54,23 @@ export class DeviceActionEditPage extends FormChangeTracker implements
   ngOnInit() {
     this.route.params.pipe(first()).subscribe(params => {
       if (params['id']) {
-        this.editMode = true;
+        this.formMode = FormMode.EDIT;
         this.loadDeviceAction(params['id']);
       }
+      if (params['view_id']) {
+        this.formMode = FormMode.VIEW;
+        this.loadDeviceAction(params['view_id']);
+      }
       if (params['copy_id']) {
+        this.formMode = FormMode.NEW;
         this.loadDeviceAction(params['copy_id']);
       }
     });
     this.loadBuildChannels();
+  }
+
+  canEdit() {
+    return this.formMode !== FormMode.VIEW;
   }
 
   ngAfterViewInit() {
@@ -86,7 +96,8 @@ export class DeviceActionEditPage extends FormChangeTracker implements
           this.data.test_resource_defs = result.test_resource_defs || [];
           this.data.tradefed_target_preparers =
               result.tradefed_target_preparers || [];
-          if (!this.editMode) {
+          this.data.tradefed_options = result.tradefed_options || [];
+          if (this.formMode === FormMode.NEW) {
             // Clear ID to ensure a new device action is created
             delete this.data.id;
             this.data.name = `${this.data.name} (copy)`;
@@ -98,6 +109,18 @@ export class DeviceActionEditPage extends FormChangeTracker implements
               buildApiErrorMessage(error));
         },
     );
+  }
+
+  onAddOption() {
+    this.data.tradefed_options!.push({name: '', values: []});
+  }
+
+  onRemoveOption(i: number) {
+    this.data.tradefed_options!.splice(i, 1);
+  }
+
+  onOptionValueChange(event: OptionValueChangeEvent) {
+    this.data.tradefed_options![event.index].values = event.value.split('\n');
   }
 
   onAddTargetPreparer() {
@@ -120,6 +143,19 @@ export class DeviceActionEditPage extends FormChangeTracker implements
     this.data.test_resource_defs!.splice(i, 1);
   }
 
+  getPageTitle(formMode: FormMode): string {
+    switch (formMode) {
+      case FormMode.NEW:
+        return 'New Device Action';
+      case FormMode.EDIT:
+        return 'Edit Device Action';
+      case FormMode.VIEW:
+        return 'View Device Action';
+      default:
+        return 'Device Action';
+    }
+  }
+
   back() {
     this.router.navigate(['/', 'settings', 'device_actions']);
   }
@@ -137,12 +173,12 @@ export class DeviceActionEditPage extends FormChangeTracker implements
       return;
     }
     const resultDeviceAction: DeviceAction = {...this.data} as DeviceAction;
-    if (this.editMode) {
+    if (this.formMode === FormMode.EDIT) {
       this.mttClient
           .updateDeviceAction(resultDeviceAction.id, resultDeviceAction)
           .pipe(first())
           .subscribe(
-              result => {
+              () => {
                 // Reset form state, because we prevent dirty forms from
                 // navigating away
                 super.resetForm();
@@ -157,11 +193,11 @@ export class DeviceActionEditPage extends FormChangeTracker implements
                     buildApiErrorMessage(error));
               },
           );
-    } else {
+    } else if (this.formMode === FormMode.NEW) {
       this.mttClient.createDeviceAction(resultDeviceAction)
           .pipe(first())
           .subscribe(
-              result => {
+              () => {
                 // Reset form state, because we prevent dirty forms from
                 // navigating away
                 super.resetForm();

@@ -23,7 +23,7 @@ import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
 import {getEl, getTextContent} from '../testing/jasmine_util';
-import {newMockDeviceAction} from '../testing/test_util';
+import {newMockDeviceAction} from '../testing/mtt_mocks';
 
 import {DeviceActionEditPage} from './device_action_edit_page';
 import {DeviceActionsModule} from './device_actions_module';
@@ -75,6 +75,26 @@ describe('DeviceActionEditPage', () => {
     expect(textContent).toContain('Edit Device Action');
     expect(textContent).toContain('Device Action Information');
     expect(textContent).toContain('Description');
+    expect(textContent).toContain('Target Device Type');
+    expect(textContent).toContain('TradeFed Options');
+  });
+
+  it('handles TradeFed option events', () => {
+    expect(deviceActionEditPage.data.tradefed_options).toBeDefined();
+    deviceActionEditPage.onAddOption();
+    deviceActionEditPage.onAddOption();
+    expect(deviceActionEditPage.data.tradefed_options!.length).toBe(2);
+
+    deviceActionEditPage.onOptionValueChange({index: 1, value: 'a\nb'});
+    expect(deviceActionEditPage.data.tradefed_options![1].values).toEqual([
+      'a', 'b'
+    ]);
+
+    deviceActionEditPage.onRemoveOption(0);
+    expect(deviceActionEditPage.data.tradefed_options!.length).toBe(1);
+    expect(deviceActionEditPage.data.tradefed_options![0].values).toEqual([
+      'a', 'b'
+    ]);
   });
 
   describe('back button', () => {

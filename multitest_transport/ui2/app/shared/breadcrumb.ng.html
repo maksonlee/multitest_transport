@@ -14,10 +14,10 @@
  limitations under the License.
 -->
 
-<button *ngIf="data" mat-button color="accent" (click)="onPathClick()"> {{data.name}} </button>
+<button *ngIf="prefix" mat-button color="accent" (click)="onPathClick()"> {{prefix}} </button>
 <ng-container *ngIf="pathArray.length">
   <ng-container *ngFor="let path of pathArray; let i = index">
-    <mat-icon>navigate_next</mat-icon>
+    <mat-icon *ngIf="i > 0 || prefix">navigate_next</mat-icon>
     <button mat-button color="accent" (click)="onPathClick(i)">
       {{ path }}
     </button>

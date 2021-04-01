@@ -22,7 +22,7 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
-import {newMockBuildChannelConfig, newMockBuildChannelProviderList} from '../testing/test_util';
+import {newMockBuildChannelConfig, newMockBuildChannelProviderList} from '../testing/mtt_mocks';
 
 import {BuildChannelEditPage} from './build_channel_edit_page';
 import {BuildChannelsModule} from './build_channels_module';

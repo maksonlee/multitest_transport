@@ -22,7 +22,7 @@ import {of as observableOf} from 'rxjs';
 import {MttClient} from '../services/mtt_client';
 import {ConfigSetInfo} from '../services/mtt_models';
 import {getTextContent} from '../testing/jasmine_util';
-import * as testUtil from '../testing/test_util';
+import * as testUtil from '../testing/mtt_mocks';
 
 import {ConfigSetPicker} from './config_set_picker';
 import {ConfigSetsModule} from './config_sets_module';

@@ -98,7 +98,7 @@ export class InfiniteScroll implements OnChanges, OnInit, OnDestroy {
    */
   @Input() scrollThreshold = DEFAULT_THRESHOLD_PCT;
 
-  private readonly destroyed = new Subject();
+  private readonly destroyed = new Subject<void>();
   private hasMoreContent = false;
   private isLoading = false;
   private readonly loading = new BehaviorSubject(false);

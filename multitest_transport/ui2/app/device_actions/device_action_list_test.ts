@@ -22,14 +22,16 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
+import {MttObjectMap, MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
 import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
-import {newMockDeviceAction} from '../testing/test_util';
+import * as mttMocks from '../testing/mtt_mocks';
 
 import {DeviceActionList} from './device_action_list';
 import {DeviceActionsModule} from './device_actions_module';
 import {DeviceActionsModuleNgSummary} from './device_actions_module.ngsummary';
 
-const FACTORY_RESET_ACTION = newMockDeviceAction('reset', 'Factory Reset');
+const FACTORY_RESET_ACTION =
+    mttMocks.newMockDeviceAction('reset', 'Factory Reset');
 
 describe('DeviceActionList', () => {
   let deviceActionList: DeviceActionList;
@@ -37,15 +39,24 @@ describe('DeviceActionList', () => {
   let el: DebugElement;
   let liveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
   let mttClient: jasmine.SpyObj<MttClient>;
+  let mttObjectMapService: jasmine.SpyObj<MttObjectMapService>;
+  let mttObjectMap: MttObjectMap;
 
   beforeEach(() => {
     liveAnnouncer =
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
-    mttClient = jasmine.createSpyObj(
-        'mttClient', ['getDeviceActionList', 'deleteDeviceAction']);
-    mttClient.getDeviceActionList.and.returnValue(
-        observableOf({device_actions: [FACTORY_RESET_ACTION]}));
+    mttClient = jasmine.createSpyObj('mttClient', ['deleteDeviceAction']);
     mttClient.deleteDeviceAction.and.returnValue(observableOf({}));
+
+    mttObjectMapService =
+        jasmine.createSpyObj('mttObjectMapService', ['getMttObjectMap']);
+    mttObjectMap = newMttObjectMap();
+    mttObjectMap.deviceActionMap = {
+      'reset': FACTORY_RESET_ACTION,
+    };
+    mttObjectMapService.getMttObjectMap.and.returnValue(
+        observableOf(mttObjectMap));
+
 
     TestBed.configureTestingModule({
       imports: [DeviceActionsModule, NoopAnimationsModule, RouterTestingModule],
@@ -53,6 +64,7 @@ describe('DeviceActionList', () => {
       providers: [
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: MttClient, useValue: mttClient},
+        {provide: MttObjectMapService, useValue: mttObjectMapService},
       ],
     });
     deviceActionListFixture = TestBed.createComponent(DeviceActionList);
@@ -77,12 +89,78 @@ describe('DeviceActionList', () => {
      }));
 
   it('displayed correct HTML text content', fakeAsync(() => {
+       const NAMESPACED_ACTION =
+           mttMocks.newMockDeviceAction('ns1::action', 'Namespaced Action');
+       const MISSING_NAMESPACE_ACTION = mttMocks.newMockDeviceAction(
+           'ns2::action', 'Missing Namespace Action');
+       const CONFIG_SET_MAP = {
+         ns1: mttMocks.newMockConfigSetInfo('ns1', 'Namespace 1'),
+       };
+       mttObjectMap.deviceActionMap = {
+         'reset': FACTORY_RESET_ACTION,
+         'ns1::action': NAMESPACED_ACTION,
+         'ns2::action': MISSING_NAMESPACE_ACTION,
+       };
+       mttObjectMap.configSetInfoMap = CONFIG_SET_MAP;
+       mttObjectMapService.getMttObjectMap.and.returnValue(
+           observableOf(mttObjectMap));
+
        tick(100);
        deviceActionListFixture.whenStable().then(() => {
          const textContent = getTextContent(el);
          expect(textContent).toContain('Factory Reset');
+         expect(textContent).toContain('Namespaced Action');
+         expect(textContent).toContain('Missing Namespace Action');
+         expect(textContent).toContain('Default/Custom Device Actions');
+         expect(textContent).toContain('Namespace 1');
+         expect(textContent).toContain('Unknown Namespace (ns2)');
        });
      }));
+
+  it('displays default action buttons', fakeAsync(() => {
+       mttObjectMap.deviceActionMap = {
+         'reset': FACTORY_RESET_ACTION,
+       };
+       mttObjectMapService.getMttObjectMap.and.returnValue(
+           observableOf(mttObjectMap));
+       deviceActionListFixture.detectChanges();
+
+       tick(100);
+       deviceActionListFixture.whenStable().then(() => {
+         const updateButton = getEl(el, '.update-button');
+         expect(updateButton).toBeTruthy();
+         const deleteButton = getEl(el, '.delete-button');
+         expect(deleteButton).toBeTruthy();
+         const viewButton = getEl(el, '.view-button');
+         expect(viewButton).toBeFalsy();
+       });
+     }));
+
+  it('displays namespaced action buttons', fakeAsync(() => {
+       const NAMESPACED_ACTION =
+           mttMocks.newMockDeviceAction('ns1::action', 'Namespaced Action');
+       const CONFIG_SET_MAP = {
+         ns1: mttMocks.newMockConfigSetInfo('ns1', 'Namespace 1'),
+       };
+       mttObjectMap.deviceActionMap = {
+         'reset': FACTORY_RESET_ACTION,
+         'ns1::action': NAMESPACED_ACTION,
+       };
+       mttObjectMap.configSetInfoMap = CONFIG_SET_MAP;
+       mttObjectMapService.getMttObjectMap.and.returnValue(
+           observableOf(mttObjectMap));
+
+       tick(100);
+       deviceActionListFixture.whenStable().then(() => {
+         const updateButton = getEl(el, '.update-button');
+         expect(updateButton).toBeFalsy();
+         const deleteButton = getEl(el, '.delete-button');
+         expect(deleteButton).toBeFalsy();
+         const viewButton = getEl(el, '.view-button');
+         expect(viewButton).toBeTruthy();
+       });
+     }));
+
 
   it('displays and announces a loading mask', fakeAsync(() => {
        tick(100);

@@ -25,35 +25,38 @@ class TestSchedulerIntegrationTest(integration_util.DockerContainerTest):
   """Tests that test run requests get correctly converted into tasks."""
 
   def testScheduleRun(self):
-    run_target = str(uuid.uuid4())
+    device_serial = str(uuid.uuid4())
     # Schedule test run
-    test_run_id = self.container.ScheduleTestRun(run_target)['id']
+    test_run_id = self.container.ScheduleTestRun(device_serial)['id']
     self.container.WaitForState(test_run_id, 'QUEUED')
     # Should be able to lease with matching run target
-    task = self.container.LeaseTask(integration_util.DeviceInfo(run_target))
+    task = self.container.LeaseTask(integration_util.DeviceInfo(device_serial))
     self.assertIsNotNone(task)
-    self.assertEqual([run_target], task['device_serials'])
-    self.assertEqual('util/timewaster', task['command_line'])
+    self.assertEqual([device_serial], task['device_serials'])
+    self.assertEqual(
+        'util/timewaster --invocation-data mtt=1', task['command_line'])
 
   def testScheduleRun_extraArgs(self):
-    run_target = str(uuid.uuid4())
+    device_serial = str(uuid.uuid4())
     # Schedule test run
     test_run = self.container.ScheduleTestRun(
-        run_target, extra_args='extra_args')
+        device_serial, extra_args='extra_args')
     test_run_id = test_run['id']
     self.container.WaitForState(test_run_id, 'QUEUED')
     # Task should have extra command line arguments
-    task = self.container.LeaseTask(integration_util.DeviceInfo(run_target))
-    self.assertEqual('util/timewaster extra_args', task['command_line'])
+    task = self.container.LeaseTask(integration_util.DeviceInfo(device_serial))
+    self.assertEqual(
+        'util/timewaster extra_args --invocation-data mtt=1',
+        task['command_line'])
 
   def testCancelRun(self):
-    run_target = str(uuid.uuid4())
+    device_serial = str(uuid.uuid4())
     # Schedule test run and cancel it
-    test_run_id = self.container.ScheduleTestRun(run_target)['id']
+    test_run_id = self.container.ScheduleTestRun(device_serial)['id']
     self.container.WaitForState(test_run_id, 'QUEUED')
     self.container.CancelTestRun(test_run_id)
     # Can't lease with matching run target, task was cancelled
-    task = self.container.LeaseTask(integration_util.DeviceInfo(run_target))
+    task = self.container.LeaseTask(integration_util.DeviceInfo(device_serial))
     self.assertIsNone(task)
 
 

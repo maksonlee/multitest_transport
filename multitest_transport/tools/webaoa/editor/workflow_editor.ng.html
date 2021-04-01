@@ -1,0 +1,192 @@
+<!--
+ Copyright 2020 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-card class="mat-elevation-z0">
+  <!-- device information -->
+  <mat-card-title *ngIf="device">{{device.manufacturerName}} {{device.productName}}
+    ({{device.serialNumber}})
+  </mat-card-title>
+  <mat-card-subtitle *ngIf="device && device.isConnected()">
+    <ng-template [ngIf]="!device.isAccessoryMode()">Default Mode</ng-template>
+    <ng-template [ngIf]="device.isAccessoryMode()">
+      Accessory Mode
+      <ng-template [ngIf]="device.isAdbEnabled()">with ADB</ng-template>
+    </ng-template>
+  </mat-card-subtitle>
+
+  <!-- device not found -->
+  <mat-card-title *ngIf="!device">No device selected</mat-card-title>
+  <mat-card-subtitle *ngIf="!device || !device.isConnected()">Disconnected</mat-card-subtitle>
+
+  <!-- controls -->
+  <mat-card-content>
+    <div class="buttons">
+      <!-- system buttons -->
+      <button mat-icon-button class="wake" matTooltip="Wake" matTooltipPosition="right"
+              [disabled]="isDeviceBusy" (click)="appendWakeAction()">
+        <mat-icon>power_settings_new</mat-icon>
+      </button>
+      <button mat-icon-button class="back" matTooltip="Back" matTooltipPosition="right"
+              [disabled]="isDeviceBusy" (click)="appendBackAction()">
+        <mat-icon style="transform:rotate(270deg) translateY(-1px)">change_history</mat-icon>
+      </button>
+      <button mat-icon-button class="home" matTooltip="Home" matTooltipPosition="right"
+              [disabled]="isDeviceBusy" (click)="appendHomeAction()">
+        <mat-icon>panorama_fish_eye</mat-icon>
+      </button>
+
+      <!-- sleep buttons -->
+      <span class="divider"></span>
+      <button mat-icon-button class="sleep-one" matTooltip="Sleep 1s" matTooltipPosition="right"
+              [disabled]="isDeviceBusy" (click)="appendSleepAction(1000)">
+        <mat-icon style="transform:scaleX(-1)">replay</mat-icon>
+      </button>
+      <button mat-icon-button class="sleep-five" matTooltip="Sleep 5s" matTooltipPosition="right"
+              [disabled]="isDeviceBusy" (click)="appendSleepAction(5000)">
+        <mat-icon>forward_5</mat-icon>
+      </button>
+      <button mat-icon-button class="sleep-ten" matTooltip="Sleep 10s" matTooltipPosition="right"
+              [disabled]="isDeviceBusy" (click)="appendSleepAction(10000)">
+        <mat-icon>forward_10</mat-icon>
+      </button>
+
+      <!-- write button -->
+      <span class="divider"></span>
+      <button mat-icon-button class="write" matTooltip="Write" matTooltipPosition="right"
+              [disabled]="isDeviceBusy" (click)="appendWriteAction()">
+        <mat-icon>keyboard</mat-icon>
+      </button>
+
+      <!-- key buttons -->
+      <span class="divider"></span>
+      <button mat-icon-button class="key-enter" matTooltip="Enter" matTooltipPosition="right"
+              [disabled]="isDeviceBusy" (click)="appendKeyAction(ENTER)">
+        <mat-icon>keyboard_return</mat-icon>
+      </button>
+      <button mat-icon-button class="key-tab" matTooltip="Tab" matTooltipPosition="right"
+              [disabled]="isDeviceBusy" (click)="appendKeyAction(TAB)">
+        <mat-icon>keyboard_tab</mat-icon>
+      </button>
+      <button mat-icon-button class="key-up" matTooltip="Up" matTooltipPosition="right"
+              [disabled]="isDeviceBusy" (click)="appendKeyAction(UP)">
+        <mat-icon>keyboard_arrow_up</mat-icon>
+      </button>
+      <button mat-icon-button class="key-right" matTooltip="Right" matTooltipPosition="right"
+              [disabled]="isDeviceBusy" (click)="appendKeyAction(RIGHT)">
+        <mat-icon>keyboard_arrow_right</mat-icon>
+      </button>
+      <button mat-icon-button class="key-down" matTooltip="Down" matTooltipPosition="right"
+              [disabled]="isDeviceBusy" (click)="appendKeyAction(DOWN)">
+        <mat-icon>keyboard_arrow_down</mat-icon>
+      </button>
+      <button mat-icon-button class="key-left" matTooltip="Left" matTooltipPosition="right"
+              [disabled]="isDeviceBusy" (click)="appendKeyAction(LEFT)">
+        <mat-icon>keyboard_arrow_left</mat-icon>
+      </button>
+    </div>
+
+    <!-- touch screen -->
+    <touch-screen [class.disabled]="isDeviceBusy" (action)="appendAction($event)"></touch-screen>
+  </mat-card-content>
+</mat-card>
+
+<div class="editor">
+  <!-- workflow buttons -->
+  <div class="buttons">
+    <button mat-flat-button class="run-all" color="accent"
+            *ngIf="!executing" [disabled]="isDeviceBusy || !device || !actions.length"
+            (click)="executeActions(actions)">
+      <mat-icon>play_arrow</mat-icon>
+      Run
+    </button>
+    <button mat-flat-button class="stop" color="accent" *ngIf="executing" (click)="cancel.next()">
+      <mat-icon>stop</mat-icon>
+      Stop
+    </button>
+    <button mat-flat-button class="copy"
+            [disabled]="!actions.length" (click)="copyWorkflowToClipboard()">
+      <mat-icon>content_copy</mat-icon>
+      Copy
+    </button>
+    <button mat-flat-button class="save"
+            [disabled]="!actions.length" (click)="saveWorkflowToFile()">
+      <a #downloader style="display:none"></a>
+      <mat-icon>save</mat-icon>
+      Save
+    </button>
+    <button mat-flat-button class="clear"
+            [disabled]="isDeviceBusy || !actions.length"
+            (click)="clearWorkflow()">
+      <mat-icon>delete_forever</mat-icon>
+      Clear
+    </button>
+  </div>
+
+  <!-- action list -->
+  <mat-list cdkDropList (cdkDropListDropped)="moveAction($event)"
+            [cdkDropListDisabled]="isDeviceBusy">
+    <mat-list-item class="action" *ngFor="let action of actions; index as i" cdkDrag>
+      <mat-icon cdkDragHandle>drag_indicator</mat-icon>
+      <span class="expression">{{action}}</span>
+      <button mat-icon-button class="run" matTooltip="Run"
+              [disabled]="isDeviceBusy || !device" (click)="executeActions([action])">
+        <mat-icon>play_arrow</mat-icon>
+      </button>
+      <button mat-icon-button class="run-from" matTooltip="Run from here"
+              [disabled]="isDeviceBusy || !device" (click)="executeActions(actions.slice(i))">
+        <mat-icon>playlist_play</mat-icon>
+      </button>
+      <button mat-icon-button class="edit" matTooltip="Edit"
+              [disabled]="isDeviceBusy" (click)="editAction(i)">
+        <mat-icon>edit</mat-icon>
+      </button>
+      <button mat-icon-button class="delete" matTooltip="Delete"
+              [disabled]="isDeviceBusy" (click)="deleteAction(i)">
+        <mat-icon>delete</mat-icon>
+      </button>
+      <div class="placeholder" *cdkDragPlaceholder></div>
+      <mat-progress-bar mode="indeterminate" color="accent"
+                        *ngIf="action === executing"></mat-progress-bar>
+    </mat-list-item>
+
+    <div class="empty" *ngIf="!actions.length"
+         (dragover)="$event.preventDefault()"
+         (drop)="dropWorkflowFile($event)"
+         (paste)="pasteWorkflowData($event)">
+      <div>
+        <mat-icon>smartphone</mat-icon>
+        Use touchscreen and controls
+      </div>
+      <div>or</div>
+      <div>
+        <mat-icon>content_paste</mat-icon>
+        Paste workflow here
+      </div>
+      <div>or</div>
+      <div>
+        <mat-icon>file_copy</mat-icon>
+        Drag workflow file here
+      </div>
+      <div>or</div>
+      <button mat-flat-button color="accent" (click)="uploader.click()">
+        <input #uploader type="file" style="display:none"
+               (change)="uploadWorkflowFile(); uploader.value = ''">
+        <mat-icon>folder_open</mat-icon>
+        Browse for workflow file
+      </button>
+    </div>
+  </mat-list>
+</div>

@@ -14,20 +14,14 @@
 
 """Unit tests for event_log."""
 from absl.testing import absltest
-from google.appengine.ext import ndb
-from google.appengine.ext import testbed
+from tradefed_cluster import testbed_dependent_test
+from tradefed_cluster.util import ndb_shim as ndb
 
 from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 
 
-class EventLogTest(absltest.TestCase):
-
-  def setUp(self):
-    super(EventLogTest, self).setUp()
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
+class EventLogTest(testbed_dependent_test.TestbedDependentTest):
 
   def _VerifyEntry(self, actual, level, message):
     """Verifies a log entry's level and message."""

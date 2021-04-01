@@ -41,12 +41,13 @@ class AbstractFileUploadHook(base.TestRunHook):
         continue
       src = file_util.GetOutputFileUrl(test_run, attempt, filename)
       dest = self.upload_prefix + filename
-      self.UploadFile(src, dest)
+      self.UploadFile(test_run, src, dest)
 
-  def UploadFile(self, source_url, dest_file_path):
+  def UploadFile(self, test_run, source_url, dest_file_path):
     """Uploads a file.
 
     Args:
+      test_run: test run
       source_url: source URL
       dest_file_path: destination path
     """

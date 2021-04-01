@@ -16,21 +16,13 @@
 
 from absl.testing import absltest
 from tradefed_cluster import common
-
-from google.appengine.ext import testbed
+from tradefed_cluster import testbed_dependent_test
 
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 
 
-class MessagesTest(absltest.TestCase):
-
-  def setUp(self):
-    super(MessagesTest, self).setUp()
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_all_stubs()
-    self.addCleanup(self.testbed.deactivate)
+class MessagesTest(testbed_dependent_test.TestbedDependentTest):
 
   def testConvertNameValuePairs(self):
     models = [ndb_models.NameValuePair(name='foo', value='BAR'),
@@ -61,12 +53,24 @@ class MessagesTest(absltest.TestCase):
   def assertSameTestResourceDef(self, obj, msg):
     self.assertEqual(obj.name, msg.name)
     self.assertEqual(obj.default_download_url, msg.default_download_url)
+    self.assertEqual(obj.decompress, msg.decompress)
+    self.assertEqual(obj.decompress_dir, msg.decompress_dir)
 
   def testConvert_TestResourceDef(self):
-    obj = ndb_models.TestResourceDef(name='foo', default_download_url='bar')
+    obj = ndb_models.TestResourceDef(
+        name='foo', default_download_url='bar', decompress=True,
+        decompress_dir='dir')
     msg = messages.Convert(obj, messages.TestResourceDef)
     self.assertIsInstance(msg, messages.TestResourceDef)
     self.assertSameTestResourceDef(obj, msg)
+
+  def assertSameTestRunParameter(self, obj, msg):
+    self.assertEqual(
+        obj.max_retry_on_test_failures, msg.max_retry_on_test_failures)
+    self.assertEqual(
+        obj.invocation_timeout_seconds, msg.invocation_timeout_seconds)
+    self.assertEqual(
+        obj.output_idle_timeout_seconds, msg.output_idle_timeout_seconds)
 
   def assertSameTest(self, obj, msg):
     self.assertEqual(obj.name, msg.name)
@@ -77,6 +81,12 @@ class MessagesTest(absltest.TestCase):
       self.assertSameNameValuePair(o, m)
     self.assertEqual(obj.output_file_patterns, msg.output_file_patterns)
     self.assertEqual(obj.setup_scripts, msg.setup_scripts)
+    if msg.default_test_run_parameters is None:
+      self.assertIsNone(obj.default_test_run_parameters)
+    else:
+      self.assertIsNotNone(obj.default_test_run_parameters)
+      self.assertSameTestRunParameter(
+          obj.default_test_run_parameters, msg.default_test_run_parameters)
 
   def testConvert_Test(self):
     obj = ndb_models.Test(
@@ -124,7 +134,7 @@ class MessagesTest(absltest.TestCase):
         # resource already has cache URL (already downloaded)
         test_resources=[ndb_models.TestResourceObj(name='resource', url='url',
                                                    cache_url='cache')])
-    self.assertEqual(None, messages._GetTestRunStateInfo(obj))
+    self.assertIsNone(messages._GetTestRunStateInfo(obj))
 
 
 if __name__ == '__main__':

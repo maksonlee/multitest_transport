@@ -58,7 +58,7 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
   output: string[] = [];
 
   /** Notified when the component is destroyed. */
-  private readonly destroy = new ReplaySubject();
+  private readonly destroy = new ReplaySubject<void>();
   /** Periodically polls for new content. */
   private polling: Subscription|null = null;
 

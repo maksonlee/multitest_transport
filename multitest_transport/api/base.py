@@ -14,21 +14,49 @@
 
 """A base class for API handlers."""
 import functools
-import httplib
-import json
+import logging
 import sys
 import traceback
 
-from google3.third_party.apphosting.python.endpoints.v1_1 import endpoints
+import endpoints
+import six
+from six.moves import http_client as httplib
+from tradefed_cluster import api_common
+
+from multitest_transport.api import openapi
 
 DEFAULT_MAX_RESULTS = 25  # The default number of max results per page.
 
 MTT_API = endpoints.api(
     name='mtt',
     version='v1',
-    description='MTT API',
+    description='Android Test Station API',
     allowed_client_ids=['anonymous', endpoints.API_EXPLORER_CLIENT_ID],
     scopes=[endpoints.EMAIL_SCOPE])
+
+
+def ApiMethod(request_type, response_type, **kwargs):
+  """API method decorator."""
+  endpoints_wrapper = endpoints.method(request_type, response_type, **kwargs)
+  def _Decorator(method):
+    # Wraps execution in an NDB context
+    api_method = api_common.with_ndb_context(method)
+    # Configures endpoint
+    api_method = endpoints_wrapper(api_method)
+    # Add method summary and description
+    descriptor_wrapper = openapi.ApiMethodDescriptor(
+        summary=method.__doc__.splitlines()[0] if method.__doc__ else None,
+        description=method.__doc__)
+    api_method = descriptor_wrapper(api_method)
+    # Handles any uncaught exceptions
+    api_method = ConvertExceptions(api_method)
+    return api_method
+  return _Decorator
+
+
+def _BuildErrorMessage(**kwargs):
+  """Builds an error message with given kwargs."""
+  return ','.join('%s=%s' % item for item in six.iteritems(kwargs))
 
 
 class ApiError(endpoints.ServiceException):
@@ -37,19 +65,18 @@ class ApiError(endpoints.ServiceException):
   def __init__(self, cause=None, status=None, message=None, **kwargs):
     self.cause = cause
     self.http_status = status or httplib.INTERNAL_SERVER_ERROR
-    kwargs['message'] = message or httplib.responses[self.status]
+    kwargs['message'] = message or httplib.responses[self.http_status]
     kwargs['stacktrace'] = traceback.extract_tb(sys.exc_info()[2])
-    super(ApiError, self).__init__(json.dumps(kwargs))
+    super(ApiError, self).__init__(_BuildErrorMessage(**kwargs))
 
 
-def convert_exception(func):
-  """Converts exception into ApiErrors, to include error and stacktrace."""
-
-  @functools.wraps(func)
-  def wrap(*args, **kwargs):
+def ConvertExceptions(method):
+  """Converts exceptions into ApiErrors, to include error and stacktrace."""
+  @functools.wraps(method)
+  def _Wrapper(*args, **kwargs):
     try:
-      return func(*args, **kwargs)
-    except Exception as e:        raise ApiError(
+      return method(*args, **kwargs)
+    except Exception as e:        logging.exception('API handler exception:')
+      raise ApiError(
           cause=e, status=getattr(e, 'http_status', None), message=str(e))
-
-  return wrap
+  return _Wrapper

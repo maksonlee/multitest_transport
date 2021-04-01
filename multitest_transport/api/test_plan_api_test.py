@@ -44,12 +44,12 @@ class TestPlanApiTest(api_test_util.TestCase):
 
   def _VerifyTestPlan(self, data, test_plan):
     """Verifies whether a test plan is same as the given data object."""
-    self.assertEquals(data['name'], test_plan.name)
-    self.assertEquals(
+    self.assertEqual(data['name'], test_plan.name)
+    self.assertEqual(
         len(data['test_run_configs']), len(test_plan.test_run_configs))
-    self.assertEquals(
+    self.assertEqual(
         len(data['test_resource_pipes']), len(test_plan.test_resource_pipes))
-    self.assertEquals(
+    self.assertEqual(
         len(data['before_device_action_ids']),
         len(test_plan.before_device_action_keys))
 
@@ -63,6 +63,9 @@ class TestPlanApiTest(api_test_util.TestCase):
         provider_name='mock_build_provider')
     self.mock_build_channel.put()
     self.mock_build_channel_id = self.mock_build_channel.key.id()
+    self.mock_device_action = ndb_models.DeviceAction(name='mock_device_action')
+    self.mock_device_action.put()
+    self.mock_device_action_id = str(self.mock_device_action.key.id())
 
     build_item = base.BuildItem(name='zz', path='/foo/bar/zz', is_file=True)
     self.mock_test_resource_url = build.BuildUrl(self.mock_build_channel_id,
@@ -92,7 +95,9 @@ class TestPlanApiTest(api_test_util.TestCase):
                 'url': self.mock_test_resource_url,
             }
         ],
-        'before_device_action_ids': []
+        'before_device_action_ids': [
+            self.mock_device_action_id,
+        ]
     }
 
     res = self.app.post_json('/_ah/api/mtt/v1/test_plans', data)
@@ -115,19 +120,25 @@ class TestPlanApiTest(api_test_util.TestCase):
     test_data['cron_exp'] = 'invalid'
     res = self.app.post_json(
         '/_ah/api/mtt/v1/test_plans', test_data, expect_errors=True)
-    self.assertEquals(HTTP_STATUS_400, res.status)
+    self.assertEqual(HTTP_STATUS_400, res.status)
 
     test_data = dict(data)
     test_data['test_run_configs'].append({'test_id': 'invalid'})
     res = self.app.post_json(
         '/_ah/api/mtt/v1/test_plans', test_data, expect_errors=True)
-    self.assertEquals(HTTP_STATUS_400, res.status)
+    self.assertEqual(HTTP_STATUS_400, res.status)
 
     test_data = dict(data)
     test_data['test_resource_pipes'].append({'url': 'mtt://invalid'})
     res = self.app.post_json(
         '/_ah/api/mtt/v1/test_plans', test_data, expect_errors=True)
-    self.assertEquals(HTTP_STATUS_400, res.status)
+    self.assertEqual(HTTP_STATUS_400, res.status)
+
+    test_data = dict(data)
+    test_data['before_device_action_ids'].append('invalid')
+    res = self.app.post_json(
+        '/_ah/api/mtt/v1/test_plans', test_data, expect_errors=True)
+    self.assertEqual(HTTP_STATUS_400, res.status)
 
   def testGet(self):
     """Tests test_plans.get API."""
@@ -147,7 +158,7 @@ class TestPlanApiTest(api_test_util.TestCase):
     """Tests test_plans.get with unknown ID."""
     res = self.app.get('/_ah/api/mtt/v1/test_plans/%s' % 666,
                        expect_errors=True)
-    self.assertEquals(HTTP_STATUS_404, res.status)
+    self.assertEqual(HTTP_STATUS_404, res.status)
 
   @mock.patch.object(test_scheduler, 'ScheduleTestPlanCronJob', autospec=True)
   def testUpdate(self, mock_schedule_test_plan_cron_job):
@@ -169,14 +180,16 @@ class TestPlanApiTest(api_test_util.TestCase):
                 'url': self.mock_test_resource_url,
             }
         ],
-        'before_device_action_ids': []
+        'before_device_action_ids': [
+            self.mock_device_action_id,
+        ]
     }
 
-    res = self.app.post_json(
+    res = self.app.put_json(
         '/_ah/api/mtt/v1/test_plans/%s' % test_plan_id, data)
 
     msg = protojson.decode_message(messages.TestPlan, res.body)
-    self.assertEquals(test_plan_id, int(msg.id))
+    self.assertEqual(test_plan_id, int(msg.id))
     test_plan = ndb_models.TestPlan.get_by_id(test_plan_id)
     self.assertIsNotNone(test_plan)
     self._VerifyTestPlan(data, test_plan)
@@ -195,28 +208,39 @@ class TestPlanApiTest(api_test_util.TestCase):
     }
     test_data = dict(data)
     test_data['cron_exp'] = 'invalid'
-    res = self.app.post_json(path, test_data, expect_errors=True)
-    self.assertEquals(HTTP_STATUS_400, res.status)
+    res = self.app.put_json(path, test_data, expect_errors=True)
+    self.assertEqual(HTTP_STATUS_400, res.status)
 
     test_data = dict(data)
     test_data['test_run_configs'].append({'test_id': 'invalid'})
-    res = self.app.post_json(path, test_data, expect_errors=True)
-    self.assertEquals(HTTP_STATUS_400, res.status)
+    res = self.app.put_json(path, test_data, expect_errors=True)
+    self.assertEqual(HTTP_STATUS_400, res.status)
 
     test_data = dict(data)
     test_data['test_resource_pipes'].append({'url': 'mtt://invalid'})
-    res = self.app.post_json(path, test_data, expect_errors=True)
-    self.assertEquals(HTTP_STATUS_400, res.status)
+    res = self.app.put_json(path, test_data, expect_errors=True)
+    self.assertEqual(HTTP_STATUS_400, res.status)
+
+    test_data = dict(data)
+    test_data['before_device_action_ids'].append('invalid')
+    res = self.app.put_json(path, test_data, expect_errors=True)
+    self.assertEqual(HTTP_STATUS_400, res.status)
 
   def testDelete(self):
     """Tests test_plans.delete API."""
     test_plan = _CreateMockTestPlan('foo')
     test_plan_id = test_plan.key.id()
+    ndb_models.TestPlanStatus(parent=test_plan.key).put()
+    # Test plan and status exist initially
     self.assertIsNotNone(ndb_models.TestPlan.get_by_id(test_plan_id))
+    self.assertIsNotNone(
+        ndb_models.TestPlanStatus.query(ancestor=test_plan.key).get())
 
-    self.app.post('/_ah/api/mtt/v1/test_plans/%s/delete' % test_plan_id)
-
+    self.app.delete('/_ah/api/mtt/v1/test_plans/%s' % test_plan_id)
+    # Test plan and status were both deleted
     self.assertIsNone(ndb_models.TestPlan.get_by_id(test_plan_id))
+    self.assertIsNone(
+        ndb_models.TestPlanStatus.query(ancestor=test_plan.key).get())
 
   @mock.patch.object(test_plan_kicker, 'KickTestPlan')
   def testRun(self, mock_test_plan_runner):
@@ -236,13 +260,13 @@ class TestPlanApiTest(api_test_util.TestCase):
     res = self.app.post(
         '/_ah/api/mtt/v1/test_plans/%s/run' % test_plan.key.id(),
         expect_errors=True)
-    self.assertEquals(HTTP_STATUS_400, res.status)
+    self.assertEqual(HTTP_STATUS_400, res.status)
 
   def testRun_notFound(self):
     """Tests test_plans.run API with unknown ID."""
     res = self.app.post(
         '/_ah/api/mtt/v1/test_plans/%s/run' % 666, expect_errors=True)
-    self.assertEquals(HTTP_STATUS_404, res.status)
+    self.assertEqual(HTTP_STATUS_404, res.status)
 
 
 if __name__ == '__main__':

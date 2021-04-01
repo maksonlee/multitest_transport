@@ -19,36 +19,40 @@
     <span fxFlex>
       <h3>{{buildChannel.name}}</h3>
       <status-button
-          *ngIf="buildChannel.auth_state && buildChannel.auth_state !== AuthorizationState.NOT_APPLICABLE"
+          *ngIf="buildChannel.auth_state &&
+                 buildChannel.auth_state !== AuthorizationState.NOT_APPLICABLE"
           [state]='buildChannel.auth_state'>
       </status-button>
     </span>
 
-    <button *ngIf="buildChannel.auth_state === AuthorizationState.UNAUTHORIZED"
+    <button *ngIf="canAuthWith(AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE)"
             class="auth-button"
             mat-stroked-button
             aria-label="Authorize"
             color='accent'
             (click)="authorize()">
-      Authorize
+      {{buildChannel.auth_state === AuthorizationState.AUTHORIZED ?
+      'Use Different User Account' : 'Authorize'}}
     </button>
     <input type="file" #keyfileInput
            (change)="uploadKeyfile($event.target.files[0]); keyfileInput.value = ''"/>
-    <button *ngIf="buildChannel.auth_state === AuthorizationState.UNAUTHORIZED"
+    <button *ngIf="canAuthWith(AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT)"
             class="keyfile-button"
             mat-stroked-button
             aria-label="Upload Keyfile"
             color='accent'
             (click)="keyfileInput.click()">
-      Upload Service Account Key
+      {{buildChannel.auth_state === AuthorizationState.AUTHORIZED ?
+      'Use Different Service Account' : 'Upload Service Account Key'}}
     </button>
-    <button *ngIf="buildChannel.auth_state === AuthorizationState.AUTHORIZED"
+    <button *ngIf="buildChannel.auth_state === AuthorizationState.AUTHORIZED
+                   && buildChannel.credentials?.email"
             class="revoke-button"
             mat-stroked-button
-            aria-label="Revoke Authorization"
+            aria-label="Reset Authorization"
             color='accent'
             (click)="revokeAuthorization()">
-      Revoke Authorization
+      Reset Authorization
     </button>
     <button *ngIf="edit"
             class="edit-button"
@@ -67,6 +71,11 @@
       <mat-icon>delete</mat-icon>
     </button>
   </div>
+
+  <mat-card-content class='description'
+                    *ngIf="buildChannel.credentials?.email">
+    Authorized as {{buildChannel.credentials?.email}}
+  </mat-card-content>
 
   <!-- TODO: add build channel description -->
 </mat-card>

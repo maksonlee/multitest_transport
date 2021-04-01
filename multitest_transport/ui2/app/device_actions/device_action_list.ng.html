@@ -17,58 +17,83 @@
 <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
 
 <div [class.loading-mask]="isLoading" class="page">
-  <mat-card *ngFor="let deviceAction of deviceActions" class="hover-mat-card">
-    <h2>
-      <span>{{deviceAction.name}}</span>
-      <div class="button-group">
-        <button
-          mat-button
-          aria-label="Edit"
-          matTooltip="Edit"
-          [routerLink]="['/device_actions', deviceAction.id]"
-          class="update-button">
-          <mat-icon>edit</mat-icon>
-        </button>
-        <!-- TODO: Make default actions unremovable -->
-        <button
-          mat-button
-          aria-label="Delete"
-          matTooltip="Delete"
-          class="delete-button"
-          (click)="deleteDeviceAction(deviceAction)">
-          <mat-icon>delete</mat-icon>
-        </button>
-        <!-- dropdown -->
-        <button
-          id="menuButton"
-          aria-label="More actions"
-          matTooltip="More actions"
-          mat-icon-button
-          [matMenuTriggerFor]="menu">
-          <mat-icon>more_vert</mat-icon>
-        </button>
-        <mat-menu #menu="matMenu">
-          <button id="copyButton" mat-menu-item
-            [routerLink]="['/device_actions/new', deviceAction.id]">
-            Copy
-          </button>
-        </mat-menu>
-      </div>
-    </h2>
-    <mat-card-content>
-      {{deviceAction.description}}
-    </mat-card-content>
-  </mat-card>
 
-  <div class="empty" *ngIf="!deviceActions.length">
-      No devices action found.
+  <div class="header-section">
+    <span class="description" fxFlex>
+      Device actions are scripts that are run on each device before a test run is executed.
+    </span>
+    <button
+      routerLink='/device_actions/new'
+      mat-flat-button
+      aria-label="Add new device action"
+      color="accent">
+      + New device action
+    </button>
   </div>
 
-  <button
-    routerLink='/device_actions/new'
-    mat-flat-button
-    aria-label="Add new device action"
-    color="accent">
-    + New device action
-  </button>
+  <ng-container *ngFor="let actionList of actionNamespaceMap | keyvalue">
+    <ng-container *ngIf="actionList.value.length">
+      <h2>
+        {{getNamespaceTitle(actionList.key)}}
+      </h2>
+      <!-- TODO: Add update/remove buttons -->
+
+      <mat-card *ngFor="let deviceAction of actionList.value" class="hover-mat-card action-card">
+        <h3>
+          <span>{{deviceAction.name}}</span>
+          <div class="button-group">
+            <button
+              *ngIf="!isNamespaceSectionEditable(actionList.key)"
+              mat-icon-button
+              aria-label="View"
+              matTooltip="View"
+              [routerLink]="['/device_actions/view', deviceAction.id]"
+              class="view-button">
+              <mat-icon>info</mat-icon>
+            </button>
+            <button
+              *ngIf="isNamespaceSectionEditable(actionList.key)"
+              mat-icon-button
+              aria-label="Edit"
+              matTooltip="Edit"
+              [routerLink]="['/device_actions', deviceAction.id]"
+              class="update-button">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <!-- TODO: Make default actions unremovable -->
+            <button
+              *ngIf="isNamespaceSectionEditable(actionList.key)"
+              mat-icon-button
+              aria-label="Delete"
+              matTooltip="Delete"
+              class="delete-button"
+              (click)="deleteDeviceAction(deviceAction)">
+              <mat-icon>delete</mat-icon>
+            </button>
+            <!-- dropdown -->
+            <button
+              mat-icon-button
+              aria-label="More actions"
+              matTooltip="More actions"
+              [matMenuTriggerFor]="menu">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item
+                [routerLink]="['/device_actions/new', deviceAction.id]">
+                Copy
+              </button>
+            </mat-menu>
+          </div>
+        </h3>
+        <mat-card-content>
+          {{deviceAction.description}}
+        </mat-card-content>
+      </mat-card>
+    </ng-container>
+  </ng-container>
+
+  <div class="empty" *ngIf="!(actionNamespaceMap | values).length">
+      No device actions found.
+  </div>
 </div>

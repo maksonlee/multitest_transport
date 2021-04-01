@@ -24,7 +24,7 @@ import {of as observableOf} from 'rxjs';
 import {MttClient} from '../services/mtt_client';
 import {getEl} from '../testing/jasmine_util';
 import {getTextContent} from '../testing/jasmine_util';
-import {newMockTest} from '../testing/test_util';
+import {newMockTest} from '../testing/mtt_mocks';
 
 import {TestEditPage} from './test_edit_page';
 import {TestModule} from './test_module';

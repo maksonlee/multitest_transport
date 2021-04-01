@@ -68,10 +68,12 @@ describe('Paginator', () => {
   });
 
   it('can emit previous page event', () => {
+    paginator.pageIndex = 2;
     spyOn(paginator.previous, 'emit');
     prevButtonEl.triggerEventHandler('click', null);
     fixture.detectChanges();
     expect(paginator.previous.emit).toHaveBeenCalled();
+    expect(paginator.pageIndex).toEqual(1);
   });
 
   it('can enable next page button', () => {
@@ -89,6 +91,7 @@ describe('Paginator', () => {
     nextButtonEl.triggerEventHandler('click', null);
     fixture.detectChanges();
     expect(paginator.next.emit).toHaveBeenCalled();
+    expect(paginator.pageIndex).toEqual(2);
   });
 
   it('can hide size options', () => {
@@ -98,9 +101,11 @@ describe('Paginator', () => {
   });
 
   it('can emit size change event', () => {
+    paginator.pageIndex = 2;
     spyOn(paginator.sizeChange, 'emit');
     sizeSelectEl.triggerEventHandler('selectionChange', {value: 50});
     expect(paginator.pageSize).toEqual(50);
     expect(paginator.sizeChange.emit).toHaveBeenCalledWith(50);
+    expect(paginator.pageIndex).toEqual(1);
   });
 });
