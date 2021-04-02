@@ -34,20 +34,22 @@ class TestResultApiTest(api_test_util.TestCase):
     super(TestResultApiTest, self).setUp(test_result_api.TestResultApi)
     sql_models.db.uri = 'sqlite:///:memory:'
     sql_models.db.CreateTables()
-    # Create two modules with two test cases
+    # Create two modules with three test cases
     with sql_models.db.Session() as session:
       session.add_all([
           sql_models.TestModuleResult(
-              id='module_1', attempt_id='attempt_1', name='module_2',
+              id='module_1', attempt_id='attempt_1', name='module_1',
               passed_tests=0, failed_tests=0, total_tests=0),
           sql_models.TestModuleResult(
-              id='module_2', attempt_id='attempt_1', name='module_1',
+              id='module_2', attempt_id='attempt_1', name='module_2',
               passed_tests=1, failed_tests=1, total_tests=2,
               test_cases=[
                   sql_models.TestCaseResult(
-                      name='test_case_1', status=xts_result.TestStatus.PASS),
+                      name='test_1', status=xts_result.TestStatus.PASS),
                   sql_models.TestCaseResult(
-                      name='test_case_2', status=xts_result.TestStatus.PASS),
+                      name='test_2', status=xts_result.TestStatus.FAIL),
+                  sql_models.TestCaseResult(
+                      name='test_3', status=xts_result.TestStatus.IGNORED),
               ]),
       ])
 
@@ -129,6 +131,24 @@ class TestResultApiTest(api_test_util.TestCase):
                             expect_errors=True)
     self.assertEqual('400 Bad Request', response.status)
 
+  def testListTestModuleResults_nameFilter(self):
+    """Tests that module results can be filtered by name."""
+    path = 'modules?attempt_id=attempt_1&name=uLe_1'
+    response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
+    result_list = protojson.decode_message(
+        messages.TestModuleResultList, response.body)
+    self.assertLen(result_list.results, 1)
+    self.assertEqual('module_1', result_list.results[0].id)
+
+  def testListTestModuleResults_failureFilter(self):
+    """Tests that module results can be filtered by failures."""
+    path = 'modules?attempt_id=attempt_1&failures_only=true'
+    response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
+    result_list = protojson.decode_message(
+        messages.TestModuleResultList, response.body)
+    self.assertLen(result_list.results, 1)
+    self.assertEqual('module_2', result_list.results[0].id)
+
   def testListTestCaseResults(self):
     """Tests that test case results can be fetched."""
     path = 'modules/module_2/test_cases'
@@ -136,32 +156,34 @@ class TestResultApiTest(api_test_util.TestCase):
     self.assertEqual('200 OK', response.status)
     result_list = protojson.decode_message(
         messages.TestCaseResultList, response.body)
-    # Both test cases returned, ordered by ID, with no next page
-    self.assertLen(result_list.results, 2)
+    # All test cases returned, ordered by ID, with no next page
+    self.assertLen(result_list.results, 3)
     test_case_names = [r.name for r in result_list.results]
-    self.assertEqual(['test_case_1', 'test_case_2'], test_case_names)
+    self.assertEqual(['test_1', 'test_2', 'test_3'], test_case_names)
     self.assertIsNone(result_list.next_page_token)
 
   def testListTestCaseResults_pagination(self):
     """Tests that test case results can be fetched with pagination."""
-    path = 'modules/module_2/test_cases?max_results=1'
+    path = 'modules/module_2/test_cases?max_results=2'
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
     self.assertEqual('200 OK', response.status)
     first_page = protojson.decode_message(
         messages.TestCaseResultList, response.body)
-    # First page has one result and a page token
-    self.assertLen(first_page.results, 1)
-    self.assertEqual('test_case_1', first_page.results[0].name)
-    self.assertEqual('1', first_page.next_page_token)
+    # First page has two results and a page token
+    self.assertLen(first_page.results, 2)
+    test_case_names = [r.name for r in first_page.results]
+    self.assertEqual(['test_1', 'test_2'], test_case_names)
+    self.assertIsNotNone(first_page.next_page_token)
 
-    path = 'modules/module_2/test_cases?max_results=1&page_token=1'
+    path = ('modules/module_2/test_cases?max_results=2&page_token=%s' %
+            first_page.next_page_token)
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
     self.assertEqual('200 OK', response.status)
     second_page = protojson.decode_message(
         messages.TestCaseResultList, response.body)
     # Second page has one result and no page token
     self.assertLen(second_page.results, 1)
-    self.assertEqual('test_case_2', second_page.results[0].name)
+    self.assertEqual('test_3', second_page.results[0].name)
     self.assertIsNone(second_page.next_page_token)
 
   def testListTestCaseResults_moduleNotFound(self):
@@ -170,6 +192,25 @@ class TestResultApiTest(api_test_util.TestCase):
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path,
                             expect_errors=True)
     self.assertEqual('404 Not Found', response.status)
+
+  def testListTestCaseResults_nameFilter(self):
+    """Tests that test case results can be filtered by name."""
+    path = 'modules/module_2/test_cases?name=sT_2'
+    response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
+    result_list = protojson.decode_message(
+        messages.TestCaseResultList, response.body)
+    self.assertLen(result_list.results, 1)
+    self.assertEqual('test_2', result_list.results[0].name)
+
+  def testListTestCaseResults_statusFilter(self):
+    """Tests that test case results can be filtered by status."""
+    path = 'modules/module_2/test_cases?status=PASS&status=IGNORED'
+    response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
+    result_list = protojson.decode_message(
+        messages.TestCaseResultList, response.body)
+    self.assertLen(result_list.results, 2)
+    test_case_names = [r.name for r in result_list.results]
+    self.assertEqual(['test_1', 'test_3'], test_case_names)
 
 
 if __name__ == '__main__':

@@ -25,6 +25,7 @@ from multitest_transport.models import ndb_models
 from multitest_transport.models import sql_models
 from multitest_transport.util import sql_util
 from multitest_transport.util import tfc_client
+from multitest_transport.util import xts_result
 
 
 @base.MTT_API.api_class(resource_name='test_result', path='test_results')
@@ -38,7 +39,9 @@ class TestResultApi(remote.Service):
           test_run_id=messages.StringField(2),
           max_results=messages.IntegerField(
               3, default=base.DEFAULT_MAX_RESULTS),
-          page_token=messages.StringField(4)),
+          page_token=messages.StringField(4),
+          failures_only=messages.BooleanField(5),
+          name=messages.StringField(6)),
       mtt_messages.TestModuleResultList,
       path='modules', http_method='GET', name='list_modules')
   def ListTestModuleResults(self, request):
@@ -49,6 +52,8 @@ class TestResultApi(remote.Service):
       test_run_id: Test run ID (used if attempt_id not provided)
       max_results: Maximum number of modules to return
       page_token: Token for pagination
+      failures_only: True to only return modules with failures
+      name: Partial name filter (case-insensitive)
     """
     if request.attempt_id:
       # Use attempt_id directly if provided
@@ -85,6 +90,12 @@ class TestResultApi(remote.Service):
             sql_util.AND(
                 sql_models.TestModuleResult.failed_tests == max_failed_tests,
                 sql_models.TestModuleResult.id > min_id)))
+      # Apply filters
+      if request.failures_only:
+        query = query.filter(sql_models.TestModuleResult.failed_tests > 0)
+      if request.name:
+        query = query.filter(
+            sql_models.TestModuleResult.name.contains(request.name))
       # Fetch at most N + 1 results
       if request.max_results and request.max_results > 0:
         query = query.limit(request.max_results + 1)
@@ -108,7 +119,9 @@ class TestResultApi(remote.Service):
           module_id=messages.StringField(1, required=True),
           max_results=messages.IntegerField(
               2, default=base.DEFAULT_MAX_RESULTS),
-          page_token=messages.StringField(3)),
+          page_token=messages.StringField(3),
+          status=messages.EnumField(xts_result.TestStatus, 4, repeated=True),
+          name=messages.StringField(5)),
       mtt_messages.TestCaseResultList,
       path='modules/{module_id}/test_cases',
       http_method='GET', name='list_test_cases')
@@ -119,6 +132,8 @@ class TestResultApi(remote.Service):
       module_id: Test module ID
       max_results: Maximum number of test results to return
       page_token: Token for pagination
+      status: Set of statuses to include
+      name: Partial name filter (case-insensitive)
     """
     with sql_models.db.Session() as session:
       # Find parent module
@@ -133,6 +148,13 @@ class TestResultApi(remote.Service):
       if request.page_token:
         query = query.filter(
             sql_models.TestCaseResult.id > int(request.page_token))
+      # Apply filters
+      if request.status:
+        query = query.filter(
+            sql_models.TestCaseResult.status.in_(request.status))
+      if request.name:
+        query = query.filter(
+            sql_models.TestCaseResult.name.contains(request.name))
       # Fetch at most N + 1 results
       if request.max_results and request.max_results > 0:
         query = query.limit(request.max_results + 1)
