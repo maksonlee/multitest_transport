@@ -48,6 +48,7 @@ class SqlModelsTest(parameterized.TestCase):
           id=module_id,
           attempt_id='attempt',
           name='module',
+          duration_ms=123,
           test_cases=[
               sql_models.TestCaseResult(
                   name='test_case',
@@ -81,6 +82,7 @@ class SqlModelsTest(parameterized.TestCase):
     sql_models.InsertTestResults('attempt', [
         xts_result.Module(
             name='module_1',
+            duration_ms=123,
             test_cases=[
                 xts_result.TestCase(
                     name='test_1', status=xts_result.TestStatus.PASS),
@@ -90,6 +92,7 @@ class SqlModelsTest(parameterized.TestCase):
         ),
         xts_result.Module(
             name='module_2',
+            duration_ms=456,
             test_cases=[
                 xts_result.TestCase(
                     name='fail', status=xts_result.TestStatus.FAIL),

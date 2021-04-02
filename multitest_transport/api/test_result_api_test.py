@@ -39,10 +39,10 @@ class TestResultApiTest(api_test_util.TestCase):
       session.add_all([
           sql_models.TestModuleResult(
               id='module_1', attempt_id='attempt_1', name='module_1',
-              passed_tests=0, failed_tests=0, total_tests=0),
+              duration_ms=123, passed_tests=0, failed_tests=0, total_tests=0),
           sql_models.TestModuleResult(
               id='module_2', attempt_id='attempt_1', name='module_2',
-              passed_tests=1, failed_tests=1, total_tests=2,
+              duration_ms=456, passed_tests=1, failed_tests=1, total_tests=3,
               test_cases=[
                   sql_models.TestCaseResult(
                       name='test_1', status=xts_result.TestStatus.PASS),

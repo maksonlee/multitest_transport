@@ -80,6 +80,7 @@ class Module(object):
   """Module results."""
   TAG = 'Module'
   name = attr.ib()
+  duration_ms = attr.ib()
   test_cases = attr.ib(factory=list)
   error_message = attr.ib(default=None)
 
@@ -100,7 +101,11 @@ class Module(object):
       elif e.tag == 'Reason':
         error_message = e.attrib['message']
 
-    return Module(name=name, error_message=error_message, test_cases=test_cases)
+    return Module(
+        name=name,
+        duration_ms=int(element.attrib['runtime']),
+        test_cases=test_cases,
+        error_message=error_message)
 
 
 class TestResults(object):

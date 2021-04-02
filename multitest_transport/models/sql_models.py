@@ -38,6 +38,7 @@ class TestModuleResult(db.Model):
   id = sa.Column(sa.String(36), primary_key=True)
   attempt_id = sa.Column(sa.String(36), nullable=False, index=True)
   name = sa.Column(sa.String(255), nullable=False)
+  duration_ms = sa.Column(sa.Integer, nullable=False)
   test_cases = sa.orm.relationship(
       'TestCaseResult', backref='module', lazy=True)
   passed_tests = sa.Column(sa.Integer, nullable=False)
@@ -82,6 +83,7 @@ def InsertTestResults(attempt_id, test_results, batch_size=RESULTS_BATCH_SIZE):
           id=str(uuid.uuid4()),
           attempt_id=attempt_id,
           name=module.name,
+          duration_ms=module.duration_ms,
           passed_tests=0,
           failed_tests=0,
           total_tests=0,
