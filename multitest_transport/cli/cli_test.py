@@ -1037,7 +1037,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'USER=user',
             '-e', 'TZ=Etc/UTC',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
-            '-e', 'ENABLE_IPV6_BRIDGE_NETWORK=1',
+            '-e', 'IPV6_BRIDGE_NETWORK=2001:db8::/56',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',

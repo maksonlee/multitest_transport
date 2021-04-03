@@ -468,19 +468,19 @@ def _StartMttNode(args, host):
 
   if network == _DOCKER_BRIDGE_NETWORK:
     network_info = docker_helper.GetBridgeNetworkInfo()
-    if network_info.get('EnableIPv6', False):
-      docker_helper.AddEnv('ENABLE_IPV6_BRIDGE_NETWORK', '1')
+    if network_info.IsIPv6Enabled():
+      ipv6_subnet, _ = network_info.GetIPv6Subnet()
+      if not ipv6_subnet:
+        raise ActionableError('Cannot get IPv6 subnet of bridge network. '
+                              'Please check fixed-cidr-v6 in '
+                              '/etc/docker/daemon.json and restart docker '
+                              'daemon.')
+      docker_helper.AddEnv('IPV6_BRIDGE_NETWORK', ipv6_subnet)
 
     if args.use_host_adb:
       docker_helper.AddEnv('MTT_USE_HOST_ADB', '1')
-      # If IPv6 is enabled, the network info contains both IPv4 and IPv6
-      # subnets. This tool finds the IPv4 gateway and shows the command to
-      # forward host adb connection.
-      network_configs = network_info['IPAM']['Config']
-      try:
-        host_ip = next(config['Gateway'] for config in network_configs
-                       if re.match(r'[\d.]+$', config.get('Gateway', '')))
-      except StopIteration:
+      _, host_ip = network_info.GetIPv4Subnet()
+      if not host_ip:
         raise ActionableError('Cannot get IPv4 gateway of bridge network. '
                               'Please check /etc/docker/daemon.json and '
                               'restart docker daemon.')

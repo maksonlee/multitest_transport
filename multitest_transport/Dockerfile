@@ -132,7 +132,7 @@ RUN pip install grpcio
 
 # Install cuttlefish-common
 # debuild -d skips checking the dependency of debhelper-compat 12.
-ARG CUTTLEFISH_COMMON_COMMIT=f75508e918057ebc46bbed072e03df8adc704b69
+ARG CUTTLEFISH_COMMON_COMMIT=09546cf4a618563071beb42508fc7b4a5336ad29
 RUN git clone https://github.com/google/android-cuttlefish --no-checkout --single-branch /tmp/cuttlefish-common/src && \
     cd /tmp/cuttlefish-common/src && \
     git checkout ${CUTTLEFISH_COMMON_COMMIT} && \
@@ -193,8 +193,10 @@ RUN rm -rf /mtt/prebuilts/tradefed
 ENV PATH /tradefed:${PATH}
 
 # Setup scripts
-RUN chmod 755 /mtt/scripts/init.sh
-RUN chmod 755 /mtt/scripts/file_cleaner.sh
+RUN chmod 755 \
+        /mtt/scripts/init.sh \
+        /mtt/scripts/file_cleaner.sh \
+        /mtt/scripts/gen_subnets.py
 
 VOLUME /data
 

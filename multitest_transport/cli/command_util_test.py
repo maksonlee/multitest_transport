@@ -689,18 +689,9 @@ class DockerHelperTest(absltest.TestCase):
     self._docker_context.Run.assert_called_once_with(
         ['network', 'inspect', 'bridge', '--format={{json .}}'],
         raise_on_failure=False)
-    self.assertEqual(
-        {
-            'EnableIPv6': True,
-            'IPAM': {
-                'Config': [{
-                    'Subnet': '2001:db8::/56'
-                }, {
-                    'Subnet': '192.168.9.0/24',
-                    'Gateway': '192.168.9.1'
-                }]
-            }
-        }, res)
+    self.assertTrue(res.IsIPv6Enabled())
+    self.assertEqual(('2001:db8::/56', None), res.GetIPv6Subnet())
+    self.assertEqual(('192.168.9.0/24', '192.168.9.1'), res.GetIPv4Subnet())
 
 
 class DockerContextTest(absltest.TestCase):

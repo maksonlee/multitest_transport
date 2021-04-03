@@ -23,13 +23,6 @@ filegroup(
     ]),
 )
 
-filegroup(
-    name = "scripts",
-    srcs = glob([
-        "scripts/**",
-    ]),
-)
-
 config_setting(
     name = "dev_mode",
     define_values = {
@@ -51,9 +44,9 @@ py_appengine_binary(
         "//conditions:default": ["Dockerfile"],
     }) + [
         ":prebuilts",
-        ":scripts",
         ":serve.sh",
         "//multitest_transport/file_server:file_server_lib",
+        "//multitest_transport/scripts:scripts",
     ],
     python_version = "PY3",
     deps = [

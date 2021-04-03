@@ -84,7 +84,7 @@ then
     FILE_SERVICE_ONLY="true"
   fi
 
-  if [[ "${ENABLE_IPV6_BRIDGE_NETWORK}" == "1" ]]
+  if [[ -n "${IPV6_BRIDGE_NETWORK}" ]]
   then
     # This includes all IPv4 addresses if sysctl net.ipv6.bindv6only = 0.
     BIND_ADDRESS="::"
@@ -143,7 +143,19 @@ then
   # Start rsyslog which is a dependency of crosvm.
   rsyslogd -iNONE
   # Start cuttlefish service.
-  /etc/init.d/cuttlefish-common start
+  if [[ -n "${IPV6_BRIDGE_NETWORK}" ]]
+  then
+    IPV6_SUBNETS="$(/mtt/scripts/gen_subnets.py "${IPV6_BRIDGE_NETWORK}" 64 2 $(hostname -I))"
+    read WIFI_IPV6_PREFIX ETHERNET_IPV6_PREFIX <<< "${IPV6_SUBNETS}"
+    echo "WIFI_IPV6_PREFIX=${WIFI_IPV6_PREFIX}"
+    echo "ETHERNET_IPV6_PREFIX=${ETHERNET_IPV6_PREFIX}"
+  fi
+  # Reference: https://github.com/google/android-cuttlefish/blob/main/debian/cuttlefish-common.default
+  wifi_ipv6_prefix="${WIFI_IPV6_PREFIX}" \
+    wifi_ipv6_prefix_length=64 \
+    ethernet_ipv6_prefix="${ETHERNET_IPV6_PREFIX}" \
+    ethernet_ipv6_prefix_length=64 \
+    /etc/init.d/cuttlefish-common start
 fi
 
 # Start TF

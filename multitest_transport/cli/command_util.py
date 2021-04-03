@@ -15,6 +15,7 @@
 """A utility for running local/remote commands."""
 import collections
 import getpass
+import ipaddress
 import json
 import logging
 import os
@@ -536,6 +537,47 @@ class DockerContext(object):
     return self._context.Run(args + command, **kwargs)
 
 
+class BridgeNetworkInfo(object):
+  """Wrapper of the json object returned by "docker network inspect"."""
+
+  def __init__(self, json_obj):
+    self._json_obj = json_obj
+
+  def IsIPv6Enabled(self):
+    """Return whether IPv6 is enabled."""
+    return self._json_obj.get('EnableIPv6', False)
+
+  def _GetSubnet(self, ip_version):
+    """Find the subnet config that matches the IP version.
+
+    If IPv6 is enabled, the network info contains both IPv4 and IPv6 subnets.
+    The IPv6 gateway can be empty when no container is running.
+
+    Args:
+      ip_version: 4 or 6, the version of the IP subnet.
+
+    Returns:
+      The subnet and the gateway as a pair of strings. Either of them can be
+      None if it is not found in this object.
+    """
+    for config in self._json_obj['IPAM']['Config']:
+      subnet = config.get('Subnet')
+      try:
+        if subnet and ipaddress.ip_network(subnet).version == ip_version:
+          return subnet, config.get('Gateway')
+      except ValueError:
+        logger.warning('Cannot parse "%s" in bridge network info.', subnet)
+    return None, None
+
+  def GetIPv4Subnet(self):
+    """Return IPv4 subnet and gateway as a pair of strings."""
+    return self._GetSubnet(4)
+
+  def GetIPv6Subnet(self):
+    """Return IPv6 subnet and gateway as a pair of strings."""
+    return self._GetSubnet(6)
+
+
 class DockerHelper(object):
   """Helper to operate docker."""
 
@@ -997,7 +1039,7 @@ class DockerHelper(object):
     """Get info on Docker bridge networks.
 
     Returns:
-      a dict which contains the network info returned by "docker inspect".
+      a BridgeNetworkInfo object.
 
     Raises:
       DockerError: if a Docker command fails.
@@ -1011,4 +1053,4 @@ class DockerHelper(object):
     res = self._docker_context.Run(args, raise_on_failure=False)
     if res.return_code:
       raise DockerError('Command "%s" failed: %s' % (args, res))
-    return json.loads(res.stdout.strip())
+    return BridgeNetworkInfo(json.loads(res.stdout.strip()))
