@@ -30,13 +30,13 @@
   user to remove slash within file name)
 """
 import datetime
+import io
 import json
 import logging
 import os
 
 import apiclient
 import httplib2
-import six
 
 from multitest_transport.plugins import base
 from multitest_transport.plugins import constant
@@ -365,7 +365,7 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     if (build_item is None) or (not build_item.is_file):
       raise errors.FileNotFoundError(_FILE_NOT_FOUND_ERROR % path)
 
-    buffer_ = six.StringIO()
+    buffer_ = io.BytesIO()
     downloader = self._CreateMediaDownloader(path, buffer_,
                                              constant.DEFAULT_CHUNK_SIZE,
                                              offset)

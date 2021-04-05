@@ -295,7 +295,7 @@ class GCSBuildProviderTest(absltest.TestCase):
         mock.ANY,
         constant.DEFAULT_CHUNK_SIZE,
         0)
-    expected = [file_util.FileChunk(data='', offset=100, total_size=100)]
+    expected = [file_util.FileChunk(data=b'', offset=100, total_size=100)]
     self.assertEqual(expected, result)
 
 

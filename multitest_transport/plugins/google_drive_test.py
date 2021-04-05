@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Unit tests for build."""
+"""Unit tests for google_drive."""
 
 import json
 
@@ -352,7 +352,7 @@ class GoogleDriveTest(absltest.TestCase):
     result = list(provider.DownloadFile(path))
     mock_create_media_downloader.assert_called_with(
         path, mock.ANY, constant.DEFAULT_CHUNK_SIZE, 0)
-    expected = [file_util.FileChunk(data='', offset=100, total_size=100)]
+    expected = [file_util.FileChunk(data=b'', offset=100, total_size=100)]
     self.assertEqual(expected, result)
 
   @mock.patch.object(google_drive.GoogleDriveBuildProvider, 'GetBuildItem')
@@ -381,8 +381,8 @@ class GoogleDriveTest(absltest.TestCase):
     result = list(provider.DownloadFile(path))
     mock_create_media_downloader.assert_called_with(
         path, mock.ANY, constant.DEFAULT_CHUNK_SIZE, 0)
-    expected = [file_util.FileChunk(data='', offset=50, total_size=100),
-                file_util.FileChunk(data='', offset=100, total_size=100)]
+    expected = [file_util.FileChunk(data=b'', offset=50, total_size=100),
+                file_util.FileChunk(data=b'', offset=100, total_size=100)]
     self.assertEqual(expected, result)
 
 

@@ -14,10 +14,10 @@
 
 """A MTT plugin for the Android Build system."""
 import datetime
+import io
 
 import apiclient
 import httplib2
-import six
 
 from multitest_transport.plugins import base
 from multitest_transport.plugins import constant
@@ -336,7 +336,7 @@ class AndroidBuildProvider(base.BuildProvider):
         attemptId='latest',
         resourceId=name)
 
-    buffer_ = six.StringIO()
+    buffer_ = io.BytesIO()
     downloader = apiclient.http.MediaIoBaseDownload(
         buffer_, dl_req, chunksize=constant.DEFAULT_CHUNK_SIZE)
     downloader._progress = offset      done = False

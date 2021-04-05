@@ -17,7 +17,6 @@ pytype_strict_library(
         "//multitest_transport/util:oauth2_util_lib",
         third_party("apiclient"),
         third_party("httplib2"),
-        third_party("six"),
     ],
 )
 
@@ -78,7 +77,6 @@ pytype_strict_library(
         "//multitest_transport/util",
         third_party("apiclient"),
         third_party("httplib2"),
-        third_party("six"),
     ],
 )
 
@@ -112,7 +110,6 @@ pytype_strict_library(
         "//multitest_transport/util:oauth2_util_lib",
         third_party("apiclient"),
         third_party("httplib2"),
-        third_party("six"),
     ],
 )
 

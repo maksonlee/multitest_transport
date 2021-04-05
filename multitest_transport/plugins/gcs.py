@@ -14,10 +14,11 @@
 
 """MTT plugins for Google Cloud Storage."""
 import datetime
+import io
 import logging
+
 import apiclient
 import httplib2
-import six
 
 from multitest_transport.models import event_log
 from multitest_transport.plugins import base
@@ -266,7 +267,7 @@ class GCSBuildProvider(base.BuildProvider):
       raise errors.FileNotFoundError('Build item %s does not exist' % path)
 
     bucket, object_name = _ParsePath(path)
-    buffer_ = six.StringIO()
+    buffer_ = io.BytesIO()
     downloader = self._CreateMediaDownloader(
         bucket, object_name, buffer_, constant.DEFAULT_CHUNK_SIZE, offset)
     done = False
