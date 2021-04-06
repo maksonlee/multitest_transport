@@ -12,23 +12,20 @@ from multitest_transport.cli import common
 logger = logging.getLogger(__name__)
 
 
-def _tokenize_ssh_args(ssh_args):
-  """Tokenize ssh args.
+def _tokenize_ssh_arg(ssh_arg):
+  """Tokenize ssh arg.
 
-  For example, ['-o op1=v1', '-o op2=v2'] should be tokenized to
+  For example, '-o op1=v1 -o op2=v2' should be tokenized to
   ['-o', 'op1=v1', '-o', 'op2=v2'].
 
   Args:
-    ssh_args: a list of ssh args, one ssh arg may contain multiple parts.
+    ssh_arg: a list of ssh args, one ssh arg may contain multiple parts.
   Returns:
     tokenized ssh args.
   """
-  if not ssh_args:
+  if not ssh_arg:
     return []
-  tokenized_ssh_args = []
-  for ssh_arg in ssh_args:
-    tokenized_ssh_args.extend(shlex.split(ssh_arg))
-  return tokenized_ssh_args
+  return shlex.split(ssh_arg)
 
 
 def _build_remote_ssh_str(command_str, sudo=False):
@@ -49,7 +46,7 @@ class SshConfig(object):
   # Password for user.
   password = attr.ib(type=str, default=None)
   # ssh args.
-  ssh_args = attr.ib(type=List[str], converter=_tokenize_ssh_args, default=())
+  ssh_args = attr.ib(type=List[str], converter=_tokenize_ssh_arg, default=())
   # ssh key.
   ssh_key = attr.ib(type=str, default=None)
   # Use native ssh or fabric ssh.

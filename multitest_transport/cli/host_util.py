@@ -494,26 +494,29 @@ def Execute(args):
   if args.use_native_ssh:
     logger.debug('Using native ssh instead of fabric.')
   if args.ssh_arg:
-    logger.debug('Use ssh arg: %s', ' '.join(args.ssh_arg))
+    logger.debug('Use ssh arg: %s', args.ssh_arg)
   host_configs.sort(key=lambda host_config: host_config.hostname)
   hosts = []
   for host_config in host_configs:
+    ssh_args = args.ssh_arg or host_config.ssh_arg
+    # only native ssh support ssh_args
+    use_native_ssh = bool(args.use_native_ssh or ssh_args)
     ssh_config = ssh_util.SshConfig(
         hostname=host_config.hostname,
         user=host_config.host_login_name,
         password=login_password,
-        ssh_args=args.ssh_arg,
+        ssh_args=ssh_args,
         ssh_key=args.ssh_key,
-        use_native_ssh=args.use_native_ssh)
+        use_native_ssh=use_native_ssh)
     sudo_ssh_config = None
     if args.sudo_user or sudo_password:
       sudo_ssh_config = ssh_util.SshConfig(
           hostname=host_config.hostname,
           user=args.sudo_user or host_config.host_login_name,
           password=sudo_password or login_password,
-          ssh_args=args.ssh_arg,
+          ssh_args=ssh_args,
           ssh_key=args.ssh_key,
-          use_native_ssh=args.use_native_ssh)
+          use_native_ssh=use_native_ssh)
     hosts.append(
         Host(host_config,
              ssh_config=ssh_config,

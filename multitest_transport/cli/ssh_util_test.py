@@ -34,8 +34,8 @@ class SshUtilTest(absltest.TestCase):
     """Test run with ssh args."""
     c = ssh_util.Context(ssh_util.SshConfig(
         user='auser', hostname='ahost',
-        ssh_args=['-o', 'StrictHostKeyChecking=no',
-                  '-o', 'UserKnownHostsFile=/dev/null']))
+        ssh_args=('-o StrictHostKeyChecking=no '
+                  '-o UserKnownHostsFile=/dev/null')))
     res = c.run('/tmp/mtt start /tmp/lab.yaml')
     self.mock_subprocess_pkg.Popen.assert_called_once_with(
         ['ssh',
@@ -51,8 +51,8 @@ class SshUtilTest(absltest.TestCase):
     c = ssh_util.Context(
         ssh_util.SshConfig(
             user='auser', hostname='ahost',
-            ssh_args=['-o StrictHostKeyChecking=no '
-                      '-o UserKnownHostsFile=/dev/null']))
+            ssh_args=('-o StrictHostKeyChecking=no '
+                      '-o UserKnownHostsFile=/dev/null')))
     res = c.run('/tmp/mtt start /tmp/lab.yaml')
     self.mock_subprocess_pkg.Popen.assert_called_once_with(
         ['ssh',
@@ -77,8 +77,8 @@ class SshUtilTest(absltest.TestCase):
     """Test run with ssh args."""
     c = ssh_util.Context(ssh_util.SshConfig(
         user='auser', hostname='ahost',
-        ssh_args=['-o', 'StrictHostKeyChecking=no',
-                  '-o', 'UserKnownHostsFile=/dev/null']))
+        ssh_args=('-o StrictHostKeyChecking=no '
+                  '-o UserKnownHostsFile=/dev/null')))
     res = c.sudo('/tmp/mtt start /tmp/lab.yaml')
     self.mock_subprocess_pkg.Popen.assert_called_once_with(
         ['ssh',
@@ -101,8 +101,8 @@ class SshUtilTest(absltest.TestCase):
     """Test put with ssh args."""
     c = ssh_util.Context(ssh_util.SshConfig(
         user='auser', hostname='ahost',
-        ssh_args=['-o', 'StrictHostKeyChecking=no',
-                  '-o', 'UserKnownHostsFile=/dev/null']))
+        ssh_args=('-o StrictHostKeyChecking=no '
+                  '-o UserKnownHostsFile=/dev/null')))
     c.put('/path/to/local/file', '/path/to/remote/file')
     self.mock_subprocess_pkg.Popen.assert_called_once_with(
         ['rsync', '-e',
@@ -120,18 +120,13 @@ class SshUtilTest(absltest.TestCase):
         'sudo /bin/sh -c \'echo test\'',
         ssh_util._build_remote_ssh_str('echo test', sudo=True))
 
-  def testTokenizeSshArgs(self):
-    """Test _tokenize_ssh_args."""
+  def testTokenizeSshArg(self):
+    """Test _tokenize_ssh_arg."""
     self.assertEqual(
         ['-o', 'StrictHostKeyChecking=no',
          '-o', 'UserKnownHostsFile=/dev/null'],
-        ssh_util._tokenize_ssh_args(
-            ['-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null']))
-    self.assertEqual(
-        ['-o', 'StrictHostKeyChecking=no',
-         '-o', 'UserKnownHostsFile=/dev/null'],
-        ssh_util._tokenize_ssh_args(
-            ['-o StrictHostKeyChecking=no', '-o UserKnownHostsFile=/dev/null']))
+        ssh_util._tokenize_ssh_arg(
+            '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'))
 
 
 if __name__ == '__main__':

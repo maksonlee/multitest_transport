@@ -190,8 +190,7 @@ def CreateSSHArgParser():
       action='store_true', dest='use_native_ssh',
       help='Use native ssh instead of fabric.')
   parser.add_argument(
-      '--ssh_arg', action='append',
-      help='ssh args passed to native ssh and rsync.')
+      '--ssh_arg', help='ssh arg passed to native ssh and rsync.')
   return parser
 
 

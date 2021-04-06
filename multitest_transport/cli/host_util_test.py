@@ -139,7 +139,7 @@ class HostUtilTest(parameterized.TestCase):
     args_dict = self.default_args.copy()
     args_dict.update(
         use_native_ssh=True,
-        ssh_arg=['-o op1=v1 -o op2=v2'])
+        ssh_arg='-o op1=v1 -o op2=v2')
     args = mock.MagicMock(**args_dict)
 
     host_util.Execute(args)
@@ -149,17 +149,41 @@ class HostUtilTest(parameterized.TestCase):
         mock.call('host1', 'user1',
                   ssh_config=ssh_util.SshConfig(
                       user='user1', hostname='host1',
-                      ssh_args=['-o op1=v1 -o op2=v2'],
+                      ssh_args='-o op1=v1 -o op2=v2',
                       use_native_ssh=True),
                   sudo_ssh_config=None),
         mock.call('host2', 'user1',
                   ssh_config=ssh_util.SshConfig(
                       user='user1', hostname='host2',
-                      ssh_args=['-o op1=v1 -o op2=v2'],
+                      ssh_args='-o op1=v1 -o op2=v2',
                       use_native_ssh=True),
                   sudo_ssh_config=None)])
     self.assertEqual(
         [('host1', args), ('host2', args)], list(self.mock_func_calls.items()))
+
+  @mock.patch.object(host_util, '_BuildLabConfigPool')
+  def testExecute_nativeSsh_sshArgInConfig(self, mock_build_lab_config_pool):
+    """Test execute."""
+    mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
+    host_config = host_util.lab_config.CreateHostConfig(
+        cluster_name='cluster1', hostname='host1',
+        host_login_name='user1',
+        ssh_arg='-o op1=v1 -o op2=v2')
+    self.mock_lab_config_pool.GetHostConfigs.side_effect = [[host_config]]
+    args = mock.MagicMock(**self.default_args)
+
+    host_util.Execute(args)
+
+    self.mock_lab_config_pool.GetHostConfigs.assert_called_once_with()
+    self.mock_create_context.assert_has_calls([
+        mock.call('host1', 'user1',
+                  ssh_config=ssh_util.SshConfig(
+                      user='user1', hostname='host1',
+                      ssh_args='-o op1=v1 -o op2=v2',
+                      use_native_ssh=True),
+                  sudo_ssh_config=None)])
+    self.assertEqual(
+        [('host1', args)], list(self.mock_func_calls.items()))
 
   def testSequentialExecute_exitOnError(self):
     """Test _SequentialExecute multiple hosts sequentially and failed."""
