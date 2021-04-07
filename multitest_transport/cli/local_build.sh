@@ -49,7 +49,12 @@ FROM ubuntu:18.04
 # update the python3-distutils as well (may need to drop some old version
 # support).
 
-RUN apt update; apt install -y python3.6 python3.7 python3.8 python3-distutils python3-pip unzip wget zip
+RUN export DEBIAN_FRONTEND=noninteractive; apt update; apt install -y unzip wget zip software-properties-common;
+# Add deadsnakes for different versions of python and distutils
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN export DEBIAN_FRONTEND=noninteractive; apt update; apt install -y \
+  python3.6 python3.7 python3.8 python3.9 \
+  python3-distutils python3-pip python3.9-distutils
 COPY ./requirements.txt /tmp
 RUN pip3 install --upgrade setuptools pip
 RUN pip3 install pex==2.0.3
@@ -66,14 +71,14 @@ docker run --rm --mount type=bind,source="$CLI_DIR",target=/workspace docker_pex
     --proto_path /workspace/src/tradefed_cluster/configs/ \
     /workspace/src/tradefed_cluster/configs/lab_config.proto && \
   cd /workspace && \
-  pex --python="python3.8" --python="python3.7" --python="python3.6" \
+  pex --python="python3.9" --python="python3.8" --python="python3.7" --python="python3.6" \
     --python-shebang="/usr/bin/env python3" \
     -D src -r requirements.txt \
     -m multitest_transport.cli.cli \
     -o mtt && \
   cd src/ && zip -r /workspace/mtt.zip * && cd .. &&
   cp mtt src/mtt_binary && \
-  pex --python="python3.8" --python="python3.7" --python="python3.6" \
+  pex --python="python3.9" --python="python3.8" --python="python3.7" --python="python3.6" \
     --python-sheban="/usr/bin/env python3" \
     -D src -r requirements.txt \
     -m multitest_transport.cli.lab_cli \
