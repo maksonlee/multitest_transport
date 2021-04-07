@@ -2,13 +2,13 @@
 <Result>
   <Summary pass="12" failed="34" modules_done="56" modules_total="78" />
 
-  <Module name="SimpleModule" abi="abi" runtime="123">
+  <Module name="SimpleModule" abi="abi" runtime="123" done="true">
     <TestCase name="Passing">
       <Test result="pass" name="test" />
     </TestCase>
   </Module>
 
-  <Module name="ComplexModule" abi="abi" runtime="456">
+  <Module name="ComplexModule" abi="abi" runtime="456" done="true">
     <TestCase name="Failing">
       <Test result="fail" name="test">
         <Failure message="Failure message">
@@ -26,7 +26,7 @@
     </TestCase>
   </Module>
 
-  <Module name="IncompleteModule" abi="abi" runtime="789">
+  <Module name="IncompleteModule" abi="abi" runtime="789" done="false">
     <Reason message="Incomplete module message"/>
   </Module>
 </Result>

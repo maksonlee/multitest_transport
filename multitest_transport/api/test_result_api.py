@@ -40,8 +40,8 @@ class TestResultApi(remote.Service):
           max_results=messages.IntegerField(
               3, default=base.DEFAULT_MAX_RESULTS),
           page_token=messages.StringField(4),
-          failures_only=messages.BooleanField(5),
-          name=messages.StringField(6)),
+          name=messages.StringField(5),
+          complete=messages.BooleanField(6)),
       mtt_messages.TestModuleResultList,
       path='modules', http_method='GET', name='list_modules')
   def ListTestModuleResults(self, request):
@@ -52,8 +52,8 @@ class TestResultApi(remote.Service):
       test_run_id: Test run ID (used if attempt_id not provided)
       max_results: Maximum number of modules to return
       page_token: Token for pagination
-      failures_only: True to only return modules with failures
       name: Partial name filter (case-insensitive)
+      complete: Completeness filter (false to only return incomplete modules)
     """
     if request.attempt_id:
       # Use attempt_id directly if provided
@@ -91,8 +91,8 @@ class TestResultApi(remote.Service):
                 sql_models.TestModuleResult.failed_tests == max_failed_tests,
                 sql_models.TestModuleResult.id > min_id)))
       # Apply filters
-      if request.failures_only:
-        query = query.filter(sql_models.TestModuleResult.failed_tests > 0)
+      if request.complete is not None:
+        query = query.filter_by(complete=request.complete)
       if request.name:
         query = query.filter(
             sql_models.TestModuleResult.name.contains(request.name))

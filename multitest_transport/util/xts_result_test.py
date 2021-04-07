@@ -39,6 +39,7 @@ class XtsResultTest(absltest.TestCase):
           modules[0],
           xts_result.Module(
               name='abi SimpleModule',
+              complete=True,
               duration_ms=123,
               test_cases=[
                   xts_result.TestCase(
@@ -51,6 +52,7 @@ class XtsResultTest(absltest.TestCase):
           modules[1],
           xts_result.Module(
               name='abi ComplexModule',
+              complete=True,
               duration_ms=456,
               test_cases=[
                   xts_result.TestCase(
@@ -73,6 +75,7 @@ class XtsResultTest(absltest.TestCase):
           modules[2],
           xts_result.Module(
               name='abi IncompleteModule',
+              complete=False,
               duration_ms=789,
               error_message='Incomplete module message',
           ))

@@ -38,11 +38,13 @@ class TestResultApiTest(api_test_util.TestCase):
     with sql_models.db.Session() as session:
       session.add_all([
           sql_models.TestModuleResult(
-              id='module_1', attempt_id='attempt_1', name='module_1',
-              duration_ms=123, passed_tests=0, failed_tests=0, total_tests=0),
+              id='module_1', attempt_id='attempt_1',
+              name='module_1', complete=True, duration_ms=123,
+              passed_tests=0, failed_tests=0, total_tests=0),
           sql_models.TestModuleResult(
-              id='module_2', attempt_id='attempt_1', name='module_2',
-              duration_ms=456, passed_tests=1, failed_tests=1, total_tests=3,
+              id='module_2', attempt_id='attempt_1',
+              name='module_2', complete=False, duration_ms=456,
+              passed_tests=1, failed_tests=1, total_tests=3,
               test_cases=[
                   sql_models.TestCaseResult(
                       name='test_1', status=xts_result.TestStatus.PASS),
@@ -140,9 +142,9 @@ class TestResultApiTest(api_test_util.TestCase):
     self.assertLen(result_list.results, 1)
     self.assertEqual('module_1', result_list.results[0].id)
 
-  def testListTestModuleResults_failureFilter(self):
-    """Tests that module results can be filtered by failures."""
-    path = 'modules?attempt_id=attempt_1&failures_only=true'
+  def testListTestModuleResults_completeFilter(self):
+    """Tests that module results can be filtered by completeness."""
+    path = 'modules?attempt_id=attempt_1&complete=false'
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
     result_list = protojson.decode_message(
         messages.TestModuleResultList, response.body)

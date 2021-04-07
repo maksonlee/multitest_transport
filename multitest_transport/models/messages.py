@@ -600,11 +600,12 @@ class TestModuleResult(messages.Message):
   id = messages.StringField(1, required=True)
   attempt_id = messages.StringField(2, required=True)
   name = messages.StringField(3, required=True)
-  duration_ms = messages.IntegerField(4, required=True)
-  passed_tests = messages.IntegerField(5, required=True)
-  failed_tests = messages.IntegerField(6, required=True)
-  total_tests = messages.IntegerField(7, required=True)
-  error_message = messages.StringField(8)
+  complete = messages.BooleanField(4, required=True)
+  duration_ms = messages.IntegerField(5, required=True)
+  passed_tests = messages.IntegerField(6, required=True)
+  failed_tests = messages.IntegerField(7, required=True)
+  total_tests = messages.IntegerField(8, required=True)
+  error_message = messages.StringField(9)
 
 
 @Converter(sql_models.TestModuleResult, TestModuleResult)
@@ -613,6 +614,7 @@ def _TestModuleResultConverter(obj):
       id=obj.id,
       attempt_id=obj.attempt_id,
       name=obj.name,
+      complete=obj.complete,
       duration_ms=obj.duration_ms,
       passed_tests=obj.passed_tests,
       failed_tests=obj.failed_tests,

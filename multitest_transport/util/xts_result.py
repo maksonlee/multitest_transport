@@ -80,6 +80,7 @@ class Module(object):
   """Module results."""
   TAG = 'Module'
   name = attr.ib()
+  complete = attr.ib()
   duration_ms = attr.ib()
   test_cases = attr.ib(factory=list)
   error_message = attr.ib(default=None)
@@ -103,6 +104,7 @@ class Module(object):
 
     return Module(
         name=name,
+        complete=element.attrib['done'] == 'true',
         duration_ms=int(element.attrib['runtime']),
         test_cases=test_cases,
         error_message=error_message)
