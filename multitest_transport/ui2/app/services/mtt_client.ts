@@ -483,6 +483,7 @@ export class TestRunActionClient {
 export class TestResultClient {
   /** Backend path which serves test run action data. */
   static readonly PATH = `${MTT_API_URL}/test_result`;
+  static readonly PAGE_SIZE = 20;
 
   // TODO: Remove once API is implemented
 
@@ -516,7 +517,9 @@ export class TestResultClient {
   }
 
   /** Lists all modules. */
-  listModules(testRunId: string, pageToken?: string):
+  listModules(
+      testRunId: string, pageToken?: string,
+      pageSize = TestResultClient.PAGE_SIZE):
       Observable<model.TestModuleResultList> {
     // TODO: Replace with actual API call later
     // TODO: Add pagination and filtering
@@ -528,10 +531,32 @@ export class TestResultClient {
     const module3 = this.createMockModuleResult(
         'module_3_with_really_really_really_really_really_long_name',
     );
-    return observableOf({results: [module1, module2, module3]});
+    const fillerModule = this.createMockModuleResult();
+
+    if (!pageToken) {
+      const results = [module1, module2, module3];
+      for (let i = 0; i < pageSize - 3; i++) {
+        results.push(fillerModule);
+      }
+      return observableOf({results, next_page_token: 'a'});
+    }
+
+    // Stop after 5 additional pages have been loaded
+    if (pageToken.length === 5) {
+      return observableOf({results: [fillerModule]});
+    }
+
+    // Otherwise, return list of filler test cases and increase token length
+    const results = [];
+    for (let i = 0; i < pageSize; i++) {
+      results.push(fillerModule);
+    }
+    return observableOf({results, next_page_token: pageToken + 'a'});
   }
 
-  listTestCases(testRunId: string, moduleId: string, pageToken?: string):
+  listTestCases(
+      testRunId: string, moduleId: string, pageToken?: string,
+      pageSize = TestResultClient.PAGE_SIZE):
       Observable<model.TestCaseResultList> {
     // TODO: Replace with actual API call later
     // TODO: Add filtering
@@ -557,7 +582,7 @@ export class TestResultClient {
     // Return first page of test cases
     if (!pageToken) {
       const results = [testCase1, testCase2, testCase3, testCase4, testCase5];
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < pageSize - 5; i++) {
         results.push(fillerTestCase);
       }
       return observableOf({results, next_page_token: 'a'});
@@ -570,7 +595,7 @@ export class TestResultClient {
 
     // Otherwise, return list of filler test cases and increase token length
     const results = [];
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < pageSize; i++) {
       results.push(fillerTestCase);
     }
     return observableOf({results, next_page_token: pageToken + 'a'});

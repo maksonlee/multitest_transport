@@ -113,6 +113,17 @@
   }
 }
 
+// Module Result status
+:host-context(.module-result) {
+  .status-button-completed {
+    background: $success-background;
+  }
+
+  .status-button-incomplete {
+    background: $danger-background;
+  }
+}
+
 // Recovery state
 .status-button-assigned {
   background: $progress-background;

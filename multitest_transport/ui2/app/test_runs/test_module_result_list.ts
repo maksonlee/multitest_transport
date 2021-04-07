@@ -29,6 +29,7 @@ interface ModuleResultNode {
   expanded: boolean;
   isLoading: boolean;
   moduleResult: mttModels.TestModuleResult;
+  moduleStatus: string;
   testCaseResults: mttModels.TestCaseResult[];
   nextPageToken?: string;
 }
@@ -59,18 +60,30 @@ export class TestModuleResultList implements OnInit {
     this.loadModules();
   }
 
-  loadModules() {
-    this.isModulesLoading = true;
-    this.mttClient.testResults.listModules(this.testRunId).subscribe((res) => {
-      for (const module of (res.results || [])) {
-        this.moduleResultNodes.push(this.createModuleResultNode(module));
-      }
-      this.isModulesLoading = false;
-    });
-  }
+  loadModules(loadNextPage = false) {
+    if (loadNextPage && !this.modulePageToken) {
+      // Ignore if there are no more items to load
+      return;
+    }
 
-  loadMoreModules() {
-    // TODO: Lazy load or paginate
+    this.isModulesLoading = true;
+    this.mttClient.testResults.listModules(this.testRunId, this.modulePageToken)
+        .pipe(finalize(() => {
+          this.isModulesLoading = false;
+        }))
+        .subscribe(
+            res => {
+              for (const module of (res.results || [])) {
+                this.moduleResultNodes.push(
+                    this.createModuleResultNode(module));
+                this.modulePageToken = res.next_page_token;
+              }
+            },
+            error => {
+              this.notifier.showError(
+                  `Failed to load module results`, buildApiErrorMessage(error));
+            },
+        );
   }
 
   expandModule(moduleIndex: number) {
@@ -141,6 +154,10 @@ export class TestModuleResultList implements OnInit {
         );
   }
 
+  getModuleStatus(moduleResult: mttModels.TestModuleResult): string {
+    return moduleResult.error_message ? 'Incomplete' : 'Completed';
+  }
+
   getStatusString(testCaseResult: mttModels.TestCaseResult): string {
     if (testCaseResult.status === mttModels.TestStatus.ASSUMPTION_FAILURE ||
         testCaseResult.status === mttModels.TestStatus.IGNORED) {
@@ -154,6 +171,7 @@ export class TestModuleResultList implements OnInit {
       expanded: false,
       isLoading: false,
       moduleResult: module,
+      moduleStatus: this.getModuleStatus(module),
       testCaseResults: [],
     } as ModuleResultNode;
   }

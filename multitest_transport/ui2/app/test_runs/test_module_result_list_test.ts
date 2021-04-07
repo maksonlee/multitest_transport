@@ -36,7 +36,6 @@ describe('TestModuleResultList', () => {
 
   let module1: TestModuleResult;
   let module2: TestModuleResult;
-  let module3: TestModuleResult;
   let modules: TestModuleResult[] = [];
   let testCase1: TestCaseResult;
   let testCase2: TestCaseResult;
@@ -47,8 +46,7 @@ describe('TestModuleResultList', () => {
   beforeEach(() => {
     module1 = newMockTestModuleResult('module.1', 'Module 1', 123, 456, 789);
     module2 = newMockTestModuleResult('m_2', 'Second Module', 0, 0, 0);
-    module3 = newMockTestModuleResult('3', 'Module_3');
-    modules = [module1, module2, module3];
+    modules = [module1, module2];
 
     testCase1 = newMockTestCaseResult(
         'module.1', 'test_case.1', TestStatus.PASS, '', '');
@@ -63,7 +61,8 @@ describe('TestModuleResultList', () => {
     testCases = [testCase1, testCase2, testCase3];
 
     client = jasmine.createSpyObj(['listModules', 'listTestCases']);
-    client.listModules.and.returnValue(observableOf({results: modules}));
+    client.listModules.and.returnValue(
+        observableOf({results: modules, next_page_token: 'modules:page'}));
     client.listTestCases.and.returnValue(
         observableOf({results: testCases, next_page_token: 'page:token'}));
 
@@ -86,12 +85,32 @@ describe('TestModuleResultList', () => {
     const textContent = getTextContent(el);
     expect(textContent).toContain('Module 1');
     expect(textContent).toContain('Second Module');
-    expect(textContent).toContain('Module_3');
 
     expect(textContent).toContain('123/789');    // Module 1 passed/total
     expect(textContent).toContain('error 456');  // Module 1 failed
     expect(textContent).toContain('0/0');
     expect(textContent).not.toContain('null');
+
+    expect(textContent).toContain('Load more modules');
+  });
+
+  it('can load more module results', () => {
+    // Set next page of module results
+    const module3 = newMockTestModuleResult('3', 'Module_3');
+    client.listModules.and.returnValue(observableOf({results: [module3]}));
+
+    getEl(el, '.load-modules-button').click();
+    testResultModuleListFixture.detectChanges();
+
+    const textContent = getTextContent(el);
+
+    // First page should still be there
+    expect(textContent).toContain('Module 1');
+    expect(textContent).toContain('Second Module');
+
+    expect(textContent).toContain('Module_3');
+
+    expect(textContent).not.toContain('Load more modules');
   });
 
   it('displays the test case results', () => {
@@ -109,10 +128,10 @@ describe('TestModuleResultList', () => {
         .toContain(
             'some other failure message that is really really really long');
 
-    expect(textContent).toContain('Load more');
+    expect(textContent).toContain('Load more test cases');
   });
 
-  it('can load more test care results', () => {
+  it('can load more test case results', () => {
     getEl(el, '.expand-button').click();
     testResultModuleListFixture.detectChanges();
 
@@ -136,6 +155,6 @@ describe('TestModuleResultList', () => {
     expect(textContent).toContain('test.case.Four');
     expect(textContent).toContain('test_case_5');
 
-    expect(textContent).not.toContain('Load more');
+    expect(textContent).not.toContain('Load more test cases');
   });
 });

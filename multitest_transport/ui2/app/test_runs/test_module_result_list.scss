@@ -40,6 +40,7 @@ th.mat-header-cell:first-of-type {
 .failure-message {
   font-family: monospace;
   min-width: 200px;
+  padding-top: 10px;
 }
 
 .inline {
@@ -47,13 +48,17 @@ th.mat-header-cell:first-of-type {
   vertical-align: middle;
 }
 
-.load-test-cases-button {
+.load-modules-button, .load-test-cases-button {
   border: 1px solid $primary-less;
   color: $accent;
   font-size: 12px;
   height: 24px;
   line-height: 12px;
   margin: 6px 0;
+}
+
+.load-modules-row {
+  padding-left: 16px;
 }
 
 .mat-header-row {
@@ -70,6 +75,10 @@ th.mat-header-cell:first-of-type {
 
 .module-section {
   display: block;
+}
+
+.module-status {
+  padding-top: 4px;
 }
 
 .overflow {
@@ -101,5 +110,5 @@ th.mat-header-cell:first-of-type {
 }
 
 .testcase-text-padding {
-  padding: 5px 0;
+  padding: 8px 0;
 }

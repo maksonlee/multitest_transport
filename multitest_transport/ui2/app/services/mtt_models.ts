@@ -858,7 +858,7 @@ export declare interface TestModuleResult {
   passed_tests: number;
   failed_tests: number;
   total_tests: number;
-  error_message?: string;
+  error_message?: string;  // Incomplete modules will have an error message
 }
 
 /** Paginated list of TestModuleResult. */
