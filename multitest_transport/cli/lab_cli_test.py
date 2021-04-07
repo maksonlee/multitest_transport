@@ -39,12 +39,12 @@ class LabCliTest(parameterized.TestCase):
 
   def testCreateParser(self):
     args = self.arg_parser.parse_args(['version'])
-    self.assertEqual(lab_cli.cli_util.PrintVersion, args.func)
+    self.assertEqual('version', args.action)
 
   def testCreateParser_withLoggingArgs(self):
     args = self.arg_parser.parse_args([
         '-v', '--log_file', 'file.log', 'version'])
-    self.assertEqual(lab_cli.cli_util.PrintVersion, args.func)
+    self.assertEqual('version', args.action)
     self.assertTrue(args.verbose)
     self.assertEqual('file.log', args.log_file)
 

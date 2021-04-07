@@ -272,42 +272,36 @@ def CreateParser():
   parser = argparse.ArgumentParser(
       parents=[cli_util.CreateLoggingArgParser(),
                cli_util.CreateCliUpdateArgParser()])
-  subparsers = parser.add_subparsers(title='Actions')
+  subparsers = parser.add_subparsers(title='Actions', dest='action')
   # Commands for users
   subparser = subparsers.add_parser(
       'version', help='Print the version of MTT CLI.')
-  subparser.set_defaults(func=cli_util.PrintVersion)
 
   subparser = subparsers.add_parser(
       'start', help='Start a MTT instance on a remote host.',
       parents=[_CreateLabCommandArgParser(), _CreateServiceAccountArgParser()])
   subparser.set_defaults(host_func=Start)
-  subparser.set_defaults(func=host_util.Execute)
 
   subparser = subparsers.add_parser(
       'restart', help='Restart a MTT instance on a remote host.',
       parents=[_CreateLabCommandArgParser(), _CreateServiceAccountArgParser()])
   subparser.set_defaults(host_func=Restart)
-  subparser.set_defaults(func=host_util.Execute)
 
   subparser = subparsers.add_parser(
       'update', help='Update a MTT instance on a remote host.',
       parents=[_CreateLabCommandArgParser(), _CreateServiceAccountArgParser()])
   subparser.set_defaults(host_func=Update)
-  subparser.set_defaults(func=host_util.Execute)
 
   subparser = subparsers.add_parser(
       'stop', help='Stop a MTT instance on a remote host.',
       parents=[_CreateLabCommandArgParser()])
   subparser.set_defaults(host_func=Stop)
-  subparser.set_defaults(func=host_util.Execute)
 
   subparser = subparsers.add_parser(
       'run_cmd', help='Run command line on a remote host.',
       parents=[_CreateLabCommandArgParser()])
   subparser.add_argument('--cmd', type=str, help='Command line to run.')
   subparser.set_defaults(host_func=RunCmd)
-  subparser.set_defaults(func=host_util.Execute)
   return parser
 
 
@@ -328,10 +322,13 @@ def Main():
         os.execv(new_path, [new_path] + sys.argv[1:])
     except Exception as e:        logger.warning('Failed to check/update tool: %s', e)
   try:
-    if hasattr(args, 'func'):
-      args.func(args)
-    else:
+    if not args.action:
       parser.print_usage()
+      return
+    if args.action == 'version':
+      cli_util.PrintVersion(args)
+      return
+    host_util.Execute(args)
   except host_util.ExecutionError:
     # The information should already be printed.
     sys.exit(-1)
