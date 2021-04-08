@@ -594,6 +594,7 @@ class DockerHelper(object):
     self._capabilities = []
     self._device_nodes = []
     self._files = []
+    self._sysctls = []
     self._extra_args = []
 
   def Build(self, path, build_args=None):
@@ -718,6 +719,15 @@ class DockerHelper(object):
     """
     self._device_nodes.append(path)
 
+  def AddSysctl(self, variable, value):
+    """Set namespaced kernel parameters.
+
+    Args:
+      variable: the name of the variable.
+      value: the value of the variable.
+    """
+    self._sysctls.append((variable, value))
+
   def AddExtraArgs(self, args):
     """Add extra args to docker container.
 
@@ -779,6 +789,8 @@ class DockerHelper(object):
       args.extend(['--cap-add', cap])
     for path in self._device_nodes:
       args.extend(['--device', path])
+    for sysctl in self._sysctls:
+      args.extend(['--sysctl', '%s=%s' % sysctl])
     args.extend(self._extra_args)
     args.append(self._image_name)
     self._docker_context.Run(args)

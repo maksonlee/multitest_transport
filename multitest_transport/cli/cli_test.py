@@ -1009,11 +1009,11 @@ class CliTest(parameterized.TestCase):
               raise_on_failure=False),
       ])
 
-  def testStart_EnableIPv6(self):
-    """Test start with IPv6 bridge network."""
+  def testStart_WithLocalVirtualDeviceIPv6(self):
+    """Test start with virtual device and IPv6 enabled."""
     self.enable_ipv6 = True
-    args = self.arg_parser.parse_args(['start'])
-
+    args = self.arg_parser.parse_args(
+        ['start', '--max_local_virtual_devices', '1'])
     cli.Start(args, self._CreateHost())
 
     self.mock_context.Run.assert_has_calls([
@@ -1038,6 +1038,7 @@ class CliTest(parameterized.TestCase):
             '-e', 'TZ=Etc/UTC',
             '-e', 'MTT_SERVER_LOG_LEVEL=info',
             '-e', 'IPV6_BRIDGE_NETWORK=2001:db8::/56',
+            '-e', 'MAX_LOCAL_VIRTUAL_DEVICES=1',
             '--mount', 'type=volume,src=mtt-data,dst=/data',
             '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
             '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
@@ -1046,6 +1047,13 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'net_admin',
+            '--device', '/dev/kvm',
+            '--device', '/dev/vhost-vsock',
+            '--device', '/dev/net/tun',
+            '--device', '/dev/vhost-net',
+            '--sysctl', 'net.ipv6.conf.all.disable_ipv6=0',
+            '--sysctl', 'net.ipv6.conf.all.forwarding=1',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(

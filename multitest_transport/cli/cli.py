@@ -466,9 +466,11 @@ def _StartMttNode(args, host):
 
   docker_helper.AddEnv('MTT_SERVER_LOG_LEVEL', args.server_log_level)
 
+  enable_ipv6_bridge_network = False
   if network == _DOCKER_BRIDGE_NETWORK:
     network_info = docker_helper.GetBridgeNetworkInfo()
     if network_info.IsIPv6Enabled():
+      enable_ipv6_bridge_network = True
       ipv6_subnet, _ = network_info.GetIPv6Subnet()
       if not ipv6_subnet:
         raise ActionableError('Cannot get IPv6 subnet of bridge network. '
@@ -509,6 +511,10 @@ def _StartMttNode(args, host):
       docker_helper.AddDeviceNode(device_node)
     # Allow crosvm to control the tun device.
     docker_helper.AddCapability('net_admin')
+    # Enable IPv6 for the virtual network interfaces.
+    if enable_ipv6_bridge_network:
+      docker_helper.AddSysctl('net.ipv6.conf.all.disable_ipv6', '0')
+      docker_helper.AddSysctl('net.ipv6.conf.all.forwarding', '1')
 
   if args.extra_ca_cert:
     docker_helper.AddFile(

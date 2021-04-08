@@ -468,6 +468,8 @@ class DockerHelperTest(absltest.TestCase):
     self._docker_helper.AddCapability('cap2')
     self._docker_helper.AddDeviceNode('/dev1')
     self._docker_helper.AddDeviceNode('/dev2')
+    self._docker_helper.AddSysctl('sysctl1', '1')
+    self._docker_helper.AddSysctl('sysctl2', '2')
     self._docker_helper.AddExtraArgs([
         '--device-cgroup-rule', 'c 166:* rwm',
         '-v', '/dev:/dev'])
@@ -489,6 +491,8 @@ class DockerHelperTest(absltest.TestCase):
              '-p', '8001:8001', '-p', '8002:8002',
              '--cap-add', 'cap1', '--cap-add', 'cap2',
              '--device', '/dev1', '--device', '/dev2',
+             '--sysctl', 'sysctl1=1',
+             '--sysctl', 'sysctl2=2',
              '--device-cgroup-rule', 'c 166:* rwm',
              '-v', '/dev:/dev',
              self._image]),
