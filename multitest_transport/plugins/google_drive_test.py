@@ -21,7 +21,6 @@ import apiclient.http
 import mock
 
 from multitest_transport.plugins import base
-from multitest_transport.plugins import constant
 from multitest_transport.plugins import google_drive
 from multitest_transport.util import errors
 from multitest_transport.util import file_util
@@ -328,61 +327,39 @@ class GoogleDriveTest(absltest.TestCase):
     self.assertEqual(
         e.exception.message, google_drive._FILE_NOT_FOUND_ERROR % path)
 
+  @mock.patch.object(google_drive.GoogleDriveBuildProvider, '_GetFileId')
   @mock.patch.object(google_drive.GoogleDriveBuildProvider, 'GetBuildItem')
   @mock.patch.object(
-      google_drive.GoogleDriveBuildProvider, '_CreateMediaDownloader')
-  def testDownloadFile(self, mock_create_media_downloader, mock_get_build_item):
-    """Test DownloadFile."""
+      apiclient.http.MediaIoBaseDownload, 'next_chunk', autospec=True)
+  def testDownloadFile(self, mock_next_chunk, mock_build_item, mock_file_id):
+    """Test downloading a file with multiple chunks."""
     provider = google_drive.GoogleDriveBuildProvider()
+    provider._client = mock.MagicMock()
     path = 'fake/path/kitten.png'
-    fake_build_item = base.BuildItem(
+    mock_build_item.return_value = base.BuildItem(
         name='fake/path/kitten.png',
         path='fake/path/kitten.png',
         is_file=True,
         size=0,
         timestamp=None)
-    mock_get_build_item.return_value = fake_build_item
+    mock_file_id.return_value = 'file_id'
 
-    # create mock media downloader which will report 100% done
-    mock_downloader = mock.MagicMock()
-    mock_create_media_downloader.return_value = mock_downloader
-    mock_status = apiclient.http.MediaDownloadProgress(100, 100)
-    mock_downloader.next_chunk.return_value = mock_status, True
-
-    result = list(provider.DownloadFile(path))
-    mock_create_media_downloader.assert_called_with(
-        path, mock.ANY, constant.DEFAULT_CHUNK_SIZE, 0)
-    expected = [file_util.FileChunk(data=b'', offset=100, total_size=100)]
-    self.assertEqual(expected, result)
-
-  @mock.patch.object(google_drive.GoogleDriveBuildProvider, 'GetBuildItem')
-  @mock.patch.object(
-      google_drive.GoogleDriveBuildProvider, '_CreateMediaDownloader')
-  def testDownloadFile_withMultipleChunks(
-      self, mock_create_media_downloader, mock_get_build_item):
-    """Test DownloadFile with multiple chunks."""
-    provider = google_drive.GoogleDriveBuildProvider()
-    path = 'fake/path/kitten.png'
-    fake_build_item = base.BuildItem(
-        name='fake/path/kitten.png',
-        path='fake/path/kitten.png',
-        is_file=True,
-        size=constant.DEFAULT_CHUNK_SIZE + 1,
-        timestamp=None)
-    mock_get_build_item.return_value = fake_build_item
-
-    # create mock media downloader which will report 50% and 100% done
-    mock_downloader = mock.MagicMock()
-    mock_create_media_downloader.return_value = mock_downloader
-    mock_downloader.next_chunk.side_effect = [
-        (apiclient.http.MediaDownloadProgress(50, 100), False),
-        (apiclient.http.MediaDownloadProgress(100, 100), True)]
+    # Mock downloader that processes two chunks of data
+    mock_progress = iter([
+        (b'hello', mock.MagicMock(resumable_progress=5, total_size=10), False),
+        (b'world', mock.MagicMock(resumable_progress=10, total_size=10), True),
+    ])
+    def _next_chunk(self, **_):
+      value, status, done = next(mock_progress)
+      self._fd.write(value)
+      return status, done
+    mock_next_chunk.side_effect = _next_chunk
 
     result = list(provider.DownloadFile(path))
-    mock_create_media_downloader.assert_called_with(
-        path, mock.ANY, constant.DEFAULT_CHUNK_SIZE, 0)
-    expected = [file_util.FileChunk(data=b'', offset=50, total_size=100),
-                file_util.FileChunk(data=b'', offset=100, total_size=100)]
+    mock_file_id.assert_called_with('fake/path/kitten.png')
+    provider._client.files().get_media.assert_called_with(fileId='file_id')
+    expected = [file_util.FileChunk(data=b'hello', offset=5, total_size=10),
+                file_util.FileChunk(data=b'world', offset=10, total_size=10)]
     self.assertEqual(expected, result)
 
 

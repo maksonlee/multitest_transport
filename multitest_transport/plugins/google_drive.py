@@ -376,4 +376,5 @@ class GoogleDriveBuildProvider(base.BuildProvider):
           data=buffer_.getvalue(),
           offset=status.resumable_progress,
           total_size=status.total_size)
-      buffer_.truncate(0)
+      buffer_.seek(0)
+      buffer_.truncate()

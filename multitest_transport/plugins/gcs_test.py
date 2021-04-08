@@ -269,33 +269,36 @@ class GCSBuildProviderTest(absltest.TestCase):
         e.exception.message, 'Build item bucket/fake/path/ does not exist')
 
   @mock.patch.object(gcs.GCSBuildProvider, 'GetBuildItem')
-  @mock.patch.object(gcs.GCSBuildProvider, '_CreateMediaDownloader')
-  def testDownloadFile(self, mock_create_media_downloader, mock_get_build_item):
-    """Test DownloadFile."""
+  @mock.patch.object(
+      apiclient.http.MediaIoBaseDownload, 'next_chunk', autospec=True)
+  def testDownloadFile(self, mock_next_chunk, mock_get_build_item):
+    """Test downloading a file with multiple chunks."""
     provider = gcs.GCSBuildProvider()
+    provider._client = mock.MagicMock()
     path = 'bucket/fake/path/kitten.png'
-    fake_build_item = base.BuildItem(
+    mock_get_build_item.return_value = base.BuildItem(
         name='kitten.png',
         path='bucket/fake/path/kitten.png',
         is_file=True,
         size=0,
         timestamp=None)
-    mock_get_build_item.return_value = fake_build_item
 
-    # create mock media downloader which will report 100% done
-    mock_downloader = mock.MagicMock()
-    mock_create_media_downloader.return_value = mock_downloader
-    mock_status = apiclient.http.MediaDownloadProgress(100, 100)
-    mock_downloader.next_chunk.return_value = mock_status, True
+    # Mock downloader that processes two chunks of data
+    mock_progress = iter([
+        (b'hello', mock.MagicMock(resumable_progress=5, total_size=10), False),
+        (b'world', mock.MagicMock(resumable_progress=10, total_size=10), True),
+    ])
+    def _next_chunk(self, **_):
+      value, status, done = next(mock_progress)
+      self._fd.write(value)
+      return status, done
+    mock_next_chunk.side_effect = _next_chunk
 
     result = list(provider.DownloadFile(path))
-    mock_create_media_downloader.assert_called_with(
-        'bucket',
-        'fake/path/kitten.png',
-        mock.ANY,
-        constant.DEFAULT_CHUNK_SIZE,
-        0)
-    expected = [file_util.FileChunk(data=b'', offset=100, total_size=100)]
+    provider._client.objects().get_media.assert_called_with(
+        bucket='bucket', object='fake/path/kitten.png')
+    expected = [file_util.FileChunk(data=b'hello', offset=5, total_size=10),
+                file_util.FileChunk(data=b'world', offset=10, total_size=10)]
     self.assertEqual(expected, result)
 
 

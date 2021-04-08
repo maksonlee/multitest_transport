@@ -20,6 +20,7 @@ import apiclient
 import mock
 
 from multitest_transport.plugins import android
+from multitest_transport.util import file_util
 
 
 class AndroidBuildProviderTest(absltest.TestCase):
@@ -209,6 +210,33 @@ class AndroidBuildProviderTest(absltest.TestCase):
     self.client.build().list().execute.return_value = {'builds': []}
     with self.assertRaises(ValueError):
       self.provider._GetLatestBuild('branch', 'target')
+
+  @mock.patch.object(
+      apiclient.http.MediaIoBaseDownload, 'next_chunk', autospec=True)
+  def testDownloadFile(self, mock_next_chunk):
+    """Test downloading a file with multiple chunks."""
+    path = 'branch/target/123/path/to/file'
+
+    # Mock downloader that processes two chunks of data
+    mock_progress = iter([
+        (b'hello', mock.MagicMock(resumable_progress=5, total_size=10), False),
+        (b'world', mock.MagicMock(resumable_progress=10, total_size=10), True),
+    ])
+    def _next_chunk(self, **_):
+      value, status, done = next(mock_progress)
+      self._fd.write(value)
+      return status, done
+    mock_next_chunk.side_effect = _next_chunk
+
+    result = list(self.provider.DownloadFile(path))
+    self.client.buildartifact().get_media.assert_called_with(
+        buildId='123',
+        target='target',
+        attemptId='latest',
+        resourceId='path/to/file')
+    expected = [file_util.FileChunk(data=b'hello', offset=5, total_size=10),
+                file_util.FileChunk(data=b'world', offset=10, total_size=10)]
+    self.assertEqual(expected, result)
 
 
 if __name__ == '__main__':
