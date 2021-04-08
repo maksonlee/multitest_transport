@@ -21,27 +21,35 @@ from multitest_transport.util import env
 from multitest_transport.util import sql_util
 from multitest_transport.util import xts_result
 
+# Database connection recycle time
+_CONNECTION_RECYCLE_SECONDS = 3600
 # Default number of test result rows to insert at a time
 RESULTS_BATCH_SIZE = 100000
 
 # Database manager singleton
-db = sql_util.Database(uri=env.SQL_DATABASE_URI)
+db = sql_util.Database(
+    uri=env.SQL_DATABASE_URI,
+    pool_pre_ping=True,
+    pool_recycle=_CONNECTION_RECYCLE_SECONDS)
 
 
 class TestModuleResult(db.Model):
   """Test module containing multiple test case results."""
   __tablename__ = 'test_module_result'
-  __table_args__ = (
-      {'mysql_row_format': 'compressed'},
-  )
+  __table_args__ = ({'mysql_row_format': 'compressed'})
 
   id = sa.Column(sa.String(36), primary_key=True)
+  test_run_id = sa.Column(sa.String(36), nullable=False, index=True)
   attempt_id = sa.Column(sa.String(36), nullable=False, index=True)
   name = sa.Column(sa.String(255), nullable=False)
   duration_ms = sa.Column(sa.Integer, nullable=False)
   complete = sa.Column(sa.Boolean, nullable=False)
   test_cases = sa.orm.relationship(
-      'TestCaseResult', backref='module', lazy=True)
+      'TestCaseResult',
+      backref='module',
+      lazy=True,
+      cascade='all, delete-orphan',
+      passive_deletes=True)
   passed_tests = sa.Column(sa.Integer, nullable=False)
   failed_tests = sa.Column(sa.Integer, nullable=False)
   total_tests = sa.Column(sa.Integer, nullable=False)
@@ -51,20 +59,23 @@ class TestModuleResult(db.Model):
 class TestCaseResult(db.Model):
   """Test case with result and debugging information."""
   __tablename__ = 'test_case_result'
-  __table_args__ = (
-      {'mysql_row_format': 'compressed'},
-  )
+  __table_args__ = ({'mysql_row_format': 'compressed'})
 
   id = sa.Column(sa.Integer, primary_key=True)
   module_id = sa.Column(
-      sa.String(36), sa.ForeignKey('test_module_result.id'), nullable=False)
+      sa.String(36),
+      sa.ForeignKey('test_module_result.id', ondelete='CASCADE'),
+      nullable=False)
   name = sa.Column(sa.String(255), nullable=False)
   status = sa.Column(sql_util.IntEnum(xts_result.TestStatus), nullable=False)
   error_message = sa.Column(sa.Text)
   stack_trace = sa.Column(sa.Text)
 
 
-def InsertTestResults(attempt_id, test_results, batch_size=RESULTS_BATCH_SIZE):
+def InsertTestResults(test_run_id,
+                      attempt_id,
+                      test_results,
+                      batch_size=RESULTS_BATCH_SIZE):
   """Efficiently inserts large test results into the database.
 
   Extracts raw test case data and executes batch inserts with pre-populated IDs.
@@ -72,7 +83,8 @@ def InsertTestResults(attempt_id, test_results, batch_size=RESULTS_BATCH_SIZE):
   auto-generate IDs.
 
   Args:
-    attempt_id: attempt ID to inject in modules
+    test_run_id: test run ID to associate modules with
+    attempt_id: attempt ID to associate modules with
     test_results: xts_result.TestResults
     batch_size: number of test cases to insert at a time
   """
@@ -82,6 +94,7 @@ def InsertTestResults(attempt_id, test_results, batch_size=RESULTS_BATCH_SIZE):
     for module in test_results:
       module_entity = TestModuleResult(
           id=str(uuid.uuid4()),
+          test_run_id=test_run_id,
           attempt_id=attempt_id,
           name=module.name,
           complete=module.complete,
@@ -94,13 +107,14 @@ def InsertTestResults(attempt_id, test_results, batch_size=RESULTS_BATCH_SIZE):
 
       # Iterate over test cases, convert to dicts, and set module ID
       for test_case in module.test_cases:
-        test_case_data.append(dict(
-            module_id=module_entity.id,
-            name=test_case.name,
-            status=test_case.status,
-            error_message=test_case.error_message,
-            stack_trace=test_case.stack_trace,
-        ))
+        test_case_data.append(
+            dict(
+                module_id=module_entity.id,
+                name=test_case.name,
+                status=test_case.status,
+                error_message=test_case.error_message,
+                stack_trace=test_case.stack_trace,
+            ))
         # Track test case statistics
         module_entity.total_tests += 1
         if test_case.status == xts_result.TestStatus.PASS:

@@ -28,6 +28,13 @@ class SqlModelsTest(parameterized.TestCase):
   def setUp(self):
     super(SqlModelsTest, self).setUp()
     sql_models.db.uri = 'sqlite:///:memory:'
+    # Enable SQLite foreign key support
+    def _SetSqlitePragma(dbapi_connection, _):
+      cursor = dbapi_connection.cursor()
+      cursor.execute('PRAGMA foreign_keys=ON')
+      cursor.close()
+    sa.event.listen(sql_models.db.engine, 'connect', _SetSqlitePragma)
+    # Create tables
     sql_models.db.CreateTables()
     # Track executed statements
     self.statements = []
@@ -46,7 +53,8 @@ class SqlModelsTest(parameterized.TestCase):
       module_id = str(uuid.uuid4())
       session.add(sql_models.TestModuleResult(
           id=module_id,
-          attempt_id='attempt',
+          test_run_id='test_run_id',
+          attempt_id='attempt_id',
           name='module',
           complete=True,
           duration_ms=123,
@@ -80,7 +88,7 @@ class SqlModelsTest(parameterized.TestCase):
   @parameterized.parameters((100, 2), (3, 4), (2, 6))
   def testInsertTestResults(self, batch_size, num_statements):
     """Tests that *TS test results can be inserted efficiently."""
-    sql_models.InsertTestResults('attempt', [
+    sql_models.InsertTestResults('test_run_id', 'attempt_id', [
         xts_result.Module(
             name='module_1',
             complete=True,

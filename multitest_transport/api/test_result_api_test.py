@@ -38,11 +38,11 @@ class TestResultApiTest(api_test_util.TestCase):
     with sql_models.db.Session() as session:
       session.add_all([
           sql_models.TestModuleResult(
-              id='module_1', attempt_id='attempt_1',
+              id='module_1', test_run_id='test_run_id', attempt_id='attempt_id',
               name='module_1', complete=True, duration_ms=123,
               passed_tests=0, failed_tests=0, total_tests=0),
           sql_models.TestModuleResult(
-              id='module_2', attempt_id='attempt_1',
+              id='module_2', test_run_id='test_run_id', attempt_id='attempt_id',
               name='module_2', complete=False, duration_ms=456,
               passed_tests=1, failed_tests=1, total_tests=3,
               test_cases=[
@@ -61,7 +61,7 @@ class TestResultApiTest(api_test_util.TestCase):
 
   def testListTestModuleResults(self):
     """Tests that module results can be fetched."""
-    path = 'modules?attempt_id=attempt_1'
+    path = 'modules?attempt_id=attempt_id'
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
     self.assertEqual('200 OK', response.status)
     result_list = protojson.decode_message(
@@ -74,7 +74,7 @@ class TestResultApiTest(api_test_util.TestCase):
 
   def testListTestModuleResults_pagination(self):
     """Tests that module results can be fetched with pagination."""
-    path = 'modules?attempt_id=attempt_1&max_results=1'
+    path = 'modules?attempt_id=attempt_id&max_results=1'
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
     self.assertEqual('200 OK', response.status)
     first_page = protojson.decode_message(
@@ -84,7 +84,7 @@ class TestResultApiTest(api_test_util.TestCase):
     self.assertEqual('module_2', first_page.results[0].id)
     self.assertEqual('1:module_2', first_page.next_page_token)
 
-    path = 'modules?attempt_id=attempt_1&max_results=1&page_token=1:module_2'
+    path = 'modules?attempt_id=attempt_id&max_results=1&page_token=1:module_2'
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
     self.assertEqual('200 OK', response.status)
     second_page = protojson.decode_message(
@@ -102,7 +102,7 @@ class TestResultApiTest(api_test_util.TestCase):
     first_attempt = mock.MagicMock(
         attempt_id='INVALID', state=CommandState.COMPLETED)
     second_attempt = mock.MagicMock(
-        attempt_id='attempt_1', state=CommandState.COMPLETED)
+        attempt_id='attempt_id', state=CommandState.COMPLETED)
     third_attempt = mock.MagicMock(
         attempt_id='INVALID', state=CommandState.RUNNING)
     request = mock.MagicMock(
@@ -135,7 +135,7 @@ class TestResultApiTest(api_test_util.TestCase):
 
   def testListTestModuleResults_nameFilter(self):
     """Tests that module results can be filtered by name."""
-    path = 'modules?attempt_id=attempt_1&name=uLe_1'
+    path = 'modules?attempt_id=attempt_id&name=uLe_1'
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
     result_list = protojson.decode_message(
         messages.TestModuleResultList, response.body)
@@ -144,7 +144,7 @@ class TestResultApiTest(api_test_util.TestCase):
 
   def testListTestModuleResults_completeFilter(self):
     """Tests that module results can be filtered by completeness."""
-    path = 'modules?attempt_id=attempt_1&complete=false'
+    path = 'modules?attempt_id=attempt_id&complete=false'
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
     result_list = protojson.decode_message(
         messages.TestModuleResultList, response.body)
