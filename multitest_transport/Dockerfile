@@ -30,6 +30,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         iputils-ping \
         libc++-dev \
         lsof \
+        ndppd \
         python \
         python3 \
         mariadb-server \

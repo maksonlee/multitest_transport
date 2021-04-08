@@ -15,6 +15,23 @@
 
 set -e
 
+function start_ndppd {
+  # This function generates a configuration file and starts ndppd. The arguments
+  # are the networks to which the neighbor solocitations are forwarded.
+  # For example, "2001:db8::/64".
+  DEFAULT_INTERFACE="$(ip -6 route show default | awk '/default/ {print $5}')"
+  CONFIG_PATH=/tmp/ndppd.conf
+  echo "proxy ${DEFAULT_INTERFACE} {" > "${CONFIG_PATH}"
+  for SUBNET in "$@"
+  do
+    echo "  rule ${SUBNET} {" >> "${CONFIG_PATH}"
+    echo "    auto" >> "${CONFIG_PATH}"
+    echo "  }" >> "${CONFIG_PATH}"
+  done
+  echo "}" >> "${CONFIG_PATH}"
+  ndppd -d -c "${CONFIG_PATH}"
+}
+
 function set_java_proxy {
   HOST=$(echo ${2} | sed "s,^\(https\?://\)\?\([^:/]\+\)\(:\([0-9]\+\)\)\?\+.*$,\2,g")
   PORT=$(echo ${2} | sed "s,^\(https\?://\)\?\([^:/]\+\)\(:\([0-9]\+\)\)\?\+.*$,\4,g")
@@ -149,13 +166,16 @@ then
     read WIFI_IPV6_PREFIX ETHERNET_IPV6_PREFIX <<< "${IPV6_SUBNETS}"
     echo "WIFI_IPV6_PREFIX=${WIFI_IPV6_PREFIX}"
     echo "ETHERNET_IPV6_PREFIX=${ETHERNET_IPV6_PREFIX}"
-  fi
-  # Reference: https://github.com/google/android-cuttlefish/blob/main/debian/cuttlefish-common.default
-  wifi_ipv6_prefix="${WIFI_IPV6_PREFIX}" \
-    wifi_ipv6_prefix_length=64 \
-    ethernet_ipv6_prefix="${ETHERNET_IPV6_PREFIX}" \
-    ethernet_ipv6_prefix_length=64 \
+    # Reference: https://github.com/google/android-cuttlefish/blob/main/debian/cuttlefish-common.default
+    wifi_ipv6_prefix="${WIFI_IPV6_PREFIX}" \
+      wifi_ipv6_prefix_length=64 \
+      ethernet_ipv6_prefix="${ETHERNET_IPV6_PREFIX}" \
+      ethernet_ipv6_prefix_length=64 \
+      /etc/init.d/cuttlefish-common start
+    start_ndppd "${WIFI_IPV6_PREFIX}/64" "${ETHERNET_IPV6_PREFIX}/64"
+  else
     /etc/init.d/cuttlefish-common start
+  fi
 fi
 
 # Start TF
