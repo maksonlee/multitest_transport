@@ -26,6 +26,7 @@ from tradefed_cluster.util import ndb_shim as ndb
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
 from multitest_transport.test_scheduler import tfc_event_handler
+from multitest_transport.test_scheduler import test_result_handler
 from multitest_transport.util import analytics
 from multitest_transport.util import file_util
 from multitest_transport.util import tfc_client
@@ -65,6 +66,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     return api_messages.CommandAttemptEventMessage(
         type=common.ObjectEventType.COMMAND_ATTEMPT_STATE_CHANGED,
         attempt=api_messages.CommandAttemptMessage(
+            attempt_id='attempt_id',
             request_id=self.mock_test_run.request_id,
             device_serials=serials or [],
             state=state or common.CommandState.UNKNOWN),
@@ -166,31 +168,25 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     mock_get_device.assert_not_called()
 
   @mock.patch.object(task_scheduler, 'AddCallableTask')
-  @mock.patch.object(file_util, 'GetXtsTestResultSummary')
-  @mock.patch.object(file_util, 'OpenFile')
-  def testProcessCommandAttemptEvent_summary(self, mock_open, mock_get_summary,
-                                             mock_add_task):
-    # COMPLETED attempt, will attempt to update test result counts
+  @mock.patch.object(file_util, 'GetResultUrl')
+  def testProcessCommandAttemptEvent_final(self, mock_get_result_url,
+                                           mock_add_task):
+    # COMPLETED attempt, will attempt to store test results
     mock_event = self.CreateMockCommandAttemptEvent(
         datetime.timedelta(hours=1), state=common.CommandState.COMPLETED)
-    mock_open.return_value = mock.MagicMock()
-    mock_get_summary.return_value = file_util.XtsTestResultSummary(
-        passed=12, failed=34, modules_done=56, modules_total=78)
+    mock_get_result_url.return_value = 'test_results_url'
 
     tfc_event_handler.ProcessCommandAttemptEvent(mock_event)
-    self.mock_test_run = self.mock_test_run.key.get()
 
-    # test run information updated
-    self.assertEqual(mock_event.event_time, self.mock_test_run.update_time)
-    self.assertEqual(12 + 34, self.mock_test_run.total_test_count)
-    self.assertEqual(34, self.mock_test_run.failed_test_count)
-    self.assertEqual(78 - 56, self.mock_test_run.failed_test_run_count)
-
-    # after attempt hook executed
-    mock_add_task.assert_called_with(
-        test_run_hook.ExecuteHooks, self.mock_test_run.key.id(),
-        ndb_models.TestRunPhase.AFTER_ATTEMPT, attempt_id=mock.ANY,
-        _transactional=True)
+    # test results stored and after attempt hooks executed
+    mock_add_task.assert_has_calls([
+        mock.call(test_result_handler.StoreTestResults,
+                  self.mock_test_run.key.id(), 'attempt_id', 'test_results_url',
+                  _transactional=True),
+        mock.call(test_run_hook.ExecuteHooks, self.mock_test_run.key.id(),
+                  ndb_models.TestRunPhase.AFTER_ATTEMPT,
+                  attempt_id='attempt_id', _transactional=True),
+    ])
 
   @mock.patch.object(task_scheduler, 'AddCallableTask')
   @mock.patch.object(tfc_client, 'GetTestContext')

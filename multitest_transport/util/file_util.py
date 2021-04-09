@@ -21,7 +21,6 @@ import logging
 import os
 import re
 import stat
-import xml.etree.cElementTree as ElementTree
 import zipfile
 
 import apiclient
@@ -41,10 +40,6 @@ FileChunk = collections.namedtuple('FileChunk',
 TestSuiteInfo = collections.namedtuple(
     'TestSuiteInfo',
     ['build_number', 'target_architecture', 'name', 'fullname', 'version'])
-
-XtsTestResultSummary = collections.namedtuple(
-    'XtsTestResultSummary',
-    ['passed', 'failed', 'modules_total', 'modules_done'])
 
 
 @attr.s(frozen=True)
@@ -481,6 +476,14 @@ def GetOutputFilenames(test_run, attempt):
     return [line.strip() for line in stream.readlines()]
 
 
+def GetResultUrl(test_run, attempt):
+  """Get URL for a command attempt's result file."""
+  result_file = test_run.test.result_file
+  if not result_file:
+    return None
+  return GetOutputFileUrl(test_run, attempt, result_file)
+
+
 def GetWorkerAccessibleUrl(url):
   """Get URL for worker based on operation mode.
 
@@ -613,30 +616,6 @@ def GetTestSuiteInfo(file_obj):
                              fullname=suite_info.get('fullname'),
                              version=suite_info.get('version'))
   except Exception:      logging.exception('Failed to get test suite info')
-  return None
-
-
-def GetXtsTestResultSummary(file_obj):
-  """Get the test result summary.
-
-  Args:
-    file_obj: XTS test_result.xml file-like object.
-  Returns:
-    test result summary dict.
-  See Also:
-    https://source.android.com/compatibility/cts/interpret
-    https://android.googlesource.com/platform/test/suite_harness/+/1b95692/common/util/src/com/android/compatibility/common/util/ResultHandler.java
-  """
-  try:
-    for _, elem in ElementTree.iterparse(file_obj):
-      if elem.tag == 'Summary':
-        return XtsTestResultSummary(
-            passed=int(elem.attrib['pass']),
-            failed=int(elem.attrib['failed']),
-            modules_done=int(elem.attrib['modules_done']),
-            modules_total=int(elem.attrib['modules_total']))
-      elem.clear()
-  except Exception:      logging.exception('Failed to get test result summary')
   return None
 
 

@@ -85,7 +85,7 @@ class SqlModelsTest(parameterized.TestCase):
       self.assertEqual(test_cases[0].module, module)
       self.assertEqual(test_cases[0].name, 'test_case')
 
-  @parameterized.parameters((100, 2), (3, 4), (2, 6))
+  @parameterized.parameters((100, 2), (2, 4))
   def testInsertTestResults(self, batch_size, num_statements):
     """Tests that *TS test results can be inserted efficiently."""
     sql_models.InsertTestResults('test_run_id', 'attempt_id', [
@@ -119,13 +119,13 @@ class SqlModelsTest(parameterized.TestCase):
     with sql_models.db.Session() as session:
       # At most 3 statements per batch (1-2 for modules and 1 for test cases)
       self.assertLen(self.statements, num_statements)
-      # All entities inserted
+      # All modules (and non-PASS test cases) inserted
       self.assertEqual(session.query(sql_models.TestModuleResult).count(), 2)
-      self.assertEqual(session.query(sql_models.TestCaseResult).count(), 5)
+      self.assertEqual(session.query(sql_models.TestCaseResult).count(), 3)
       # Modules are associated with test cases and track pass/fail counts
       modules = session.query(sql_models.TestModuleResult).order_by(
           sql_models.TestModuleResult.name).all()
-      self.assertLen(modules[0].test_cases, 2)
+      self.assertEmpty(modules[0].test_cases)
       self.assertEqual(modules[0].passed_tests, 2)
       self.assertEqual(modules[0].failed_tests, 0)
       self.assertLen(modules[1].test_cases, 3)

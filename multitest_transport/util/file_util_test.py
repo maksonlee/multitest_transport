@@ -536,14 +536,6 @@ class FileUtilTest(parameterized.TestCase):
         os.path.join(TEST_DATA_DIR, 'test_package-invalid.zip'), 'rb') as f:
       self.assertIsNone(file_util.GetTestSuiteInfo(f))
 
-  def testGetXtsTestResultSummary(self):
-    with open(os.path.join(TEST_DATA_DIR, 'test_result.xml')) as f:
-      summary = file_util.GetXtsTestResultSummary(f)
-      self.assertEqual(12, summary.passed)
-      self.assertEqual(34, summary.failed)
-      self.assertEqual(56, summary.modules_done)
-      self.assertEqual(78, summary.modules_total)
-
   def testFileHandleMediaUpload(self):
     """Tests that media upload can process a file handle."""
     test_handle = MockFileHandle('hello\nworld')

@@ -23,6 +23,8 @@ from multitest_transport.util import xts_result
 
 # Database connection recycle time
 _CONNECTION_RECYCLE_SECONDS = 3600
+# MySQL option to enable compressed tables
+_COMPRESSED_ROW_FORMAT = {'mysql_row_format': 'compressed'}
 # Default number of test result rows to insert at a time
 RESULTS_BATCH_SIZE = 100000
 
@@ -36,7 +38,7 @@ db = sql_util.Database(
 class TestModuleResult(db.Model):
   """Test module containing multiple test case results."""
   __tablename__ = 'test_module_result'
-  __table_args__ = ({'mysql_row_format': 'compressed'})
+  __table_args__ = (_COMPRESSED_ROW_FORMAT,)
 
   id = sa.Column(sa.String(36), primary_key=True)
   test_run_id = sa.Column(sa.String(36), nullable=False, index=True)
@@ -59,7 +61,7 @@ class TestModuleResult(db.Model):
 class TestCaseResult(db.Model):
   """Test case with result and debugging information."""
   __tablename__ = 'test_case_result'
-  __table_args__ = ({'mysql_row_format': 'compressed'})
+  __table_args__ = (_COMPRESSED_ROW_FORMAT,)
 
   id = sa.Column(sa.Integer, primary_key=True)
   module_id = sa.Column(
@@ -107,6 +109,14 @@ def InsertTestResults(test_run_id,
 
       # Iterate over test cases, convert to dicts, and set module ID
       for test_case in module.test_cases:
+        # Track test case statistics
+        module_entity.total_tests += 1
+        if test_case.status == xts_result.TestStatus.PASS:
+          module_entity.passed_tests += 1
+          continue  # Skip storing passed test cases to preserve disk space
+        elif test_case.status == xts_result.TestStatus.FAIL:
+          module_entity.failed_tests += 1
+        # Append raw data
         test_case_data.append(
             dict(
                 module_id=module_entity.id,
@@ -115,12 +125,6 @@ def InsertTestResults(test_run_id,
                 error_message=test_case.error_message,
                 stack_trace=test_case.stack_trace,
             ))
-        # Track test case statistics
-        module_entity.total_tests += 1
-        if test_case.status == xts_result.TestStatus.PASS:
-          module_entity.passed_tests += 1
-        elif test_case.status == xts_result.TestStatus.FAIL:
-          module_entity.failed_tests += 1
         # Bulk insert raw test case data in batches to reduce memory usage
         if len(test_case_data) >= batch_size:
           session.commit()  # Persist modules (ensure foreign keys are valid)

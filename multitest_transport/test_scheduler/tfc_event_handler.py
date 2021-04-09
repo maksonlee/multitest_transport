@@ -27,6 +27,7 @@ from tradefed_cluster.util import ndb_shim as ndb
 from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
+from multitest_transport.test_scheduler import test_result_handler
 from multitest_transport.test_scheduler import test_scheduler
 from multitest_transport.util import analytics
 from multitest_transport.util import file_util
@@ -168,21 +169,23 @@ def _ProcessCommandAttemptEvent(test_run_id, message):
   attempt = message.attempt
   test_run.update_time = message.event_time
   test_run.test_devices = _GetTestDeviceInfos(attempt.device_serials)
-  summary = _GetXtsTestResultSummary(test_run, attempt)
-  if summary:
-    # Successfully parsed test results file, update test counts
-    test_run.total_test_count = summary.passed + summary.failed
-    test_run.failed_test_count = summary.failed
-    test_run.failed_test_run_count = (
-        summary.modules_total - summary.modules_done)
   test_run.put()
 
-  # Invoke after attempt hooks
-  if common.IsFinalCommandState(attempt.state) and not test_run.is_finalized:
-    task_scheduler.AddCallableTask(test_run_hook.ExecuteHooks, test_run_id,
-                                   ndb_models.TestRunPhase.AFTER_ATTEMPT,
-                                   attempt_id=attempt.attempt_id,
-                                   _transactional=True)
+  # Store attempt test results and invoke after attempt hooks
+  if common.IsFinalCommandState(attempt.state):
+    result_url = file_util.GetResultUrl(test_run, attempt)
+    if result_url:
+      task_scheduler.AddCallableTask(test_result_handler.StoreTestResults,
+                                     test_run_id, attempt.attempt_id,
+                                     result_url, _transactional=True)
+    else:
+      logging.warning('No result file for test run %s, skip processing',
+                      test_run_id)
+    if not test_run.is_finalized:
+      task_scheduler.AddCallableTask(test_run_hook.ExecuteHooks, test_run_id,
+                                     ndb_models.TestRunPhase.AFTER_ATTEMPT,
+                                     attempt_id=attempt.attempt_id,
+                                     _transactional=True)
 
 
 def _GetTestContext(request_id):
@@ -367,20 +370,6 @@ def _GetTestDeviceInfos(device_serials):
     else:
       logging.error('Device %s not found', serial)
   return device_infos
-
-
-def _GetXtsTestResultSummary(test_run, attempt):
-  """Retrieve the test result summary for a test run and attempt."""
-  if not common.IsFinalCommandState(attempt.state):
-    return None
-
-  result_file = test_run.test.result_file
-  if not result_file:
-    return None
-
-  url = file_util.GetOutputFileUrl(test_run, attempt, result_file)
-  stream = file_util.OpenFile(url)
-  return file_util.GetXtsTestResultSummary(stream)
 
 
 # Event message classes and handlers
