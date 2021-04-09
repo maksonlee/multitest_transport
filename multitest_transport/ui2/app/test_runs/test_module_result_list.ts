@@ -29,7 +29,6 @@ interface ModuleResultNode {
   expanded: boolean;
   isLoading: boolean;
   moduleResult: mttModels.TestModuleResult;
-  moduleStatus: string;
   testCaseResults: mttModels.TestCaseResult[];
   nextPageToken?: string;
 }
@@ -154,10 +153,6 @@ export class TestModuleResultList implements OnInit {
         );
   }
 
-  getModuleStatus(moduleResult: mttModels.TestModuleResult): string {
-    return moduleResult.error_message ? 'Incomplete' : 'Completed';
-  }
-
   getStatusString(testCaseResult: mttModels.TestCaseResult): string {
     if (testCaseResult.status === mttModels.TestStatus.ASSUMPTION_FAILURE ||
         testCaseResult.status === mttModels.TestStatus.IGNORED) {
@@ -171,7 +166,6 @@ export class TestModuleResultList implements OnInit {
       expanded: false,
       isLoading: false,
       moduleResult: module,
-      moduleStatus: this.getModuleStatus(module),
       testCaseResults: [],
     } as ModuleResultNode;
   }

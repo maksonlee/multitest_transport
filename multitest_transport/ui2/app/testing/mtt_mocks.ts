@@ -440,6 +440,7 @@ export function newMockTestModuleResult(
     id,
     attempt_id: 'attempt_id',
     name,
+    complete: !!errorMessage,
     passed_tests: passedTests,
     failed_tests: failedTests,
     total_tests: totalTests,

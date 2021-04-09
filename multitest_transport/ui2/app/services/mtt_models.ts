@@ -855,6 +855,7 @@ export declare interface TestModuleResult {
   id: string;
   attempt_id: string;
   name: string;
+  complete: boolean;
   passed_tests: number;
   failed_tests: number;
   total_tests: number;

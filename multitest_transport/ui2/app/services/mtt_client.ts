@@ -494,6 +494,7 @@ export class TestResultClient {
       id: 'module_id',
       attempt_id: 'attempt_id',
       name,
+      complete: !!errorMessage,
       passed_tests: passed,
       failed_tests: failed,
       total_tests: total,

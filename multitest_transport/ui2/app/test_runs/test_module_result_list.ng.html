@@ -57,7 +57,9 @@
     </div>
 
     <div fxFlex="120px" class="module-status">
-      <status-button class="module-result" [state]="moduleNode.moduleStatus"></status-button>
+      <status-button class="module-result"
+                     [state]="moduleNode.moduleResult.complete ? 'Completed' : 'Incomplete'">
+      </status-button>
     </div>
 
     <div fxFlex class="failure-message overflow"
