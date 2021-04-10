@@ -32,11 +32,9 @@ config_setting(
 
 py_appengine_binary(
     name = "main",
-    srcs = [
-        "__init__.py",
-    ],
     configs = [
         "config.yaml",
+        "sitecustomize.py",
         "//multitest_transport/gae_configs",
     ],
     data = select({

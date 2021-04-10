@@ -16,7 +16,7 @@
 set -e
 
 # Kill all subprocesses when this script stops.
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+trap "echo cleaning up... && pkill -P $$" SIGINT SIGTERM EXIT
 
 readonly SCRIPT_PATH="$(realpath "$0")"
 readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
@@ -57,7 +57,8 @@ done
 
 # Change working directory
 cd "${WORKING_DIR}"
-MTT_PYTHON_PATH="${PYTHONPATH}:$(pwd)/google3/third_party/py"
+MTT_PYTHON_PATH="$(pwd):${PYTHONPATH}"
+MTT_PYTHON="python3.8"
 
 # Set dependent variables
 MTT_PORT="${MTT_MASTER_PORT}"
@@ -75,8 +76,9 @@ fi
 
 function start_rabbitmq_puller {
   # Start RabbitMQ puller
+  echo "Starting RabbitMQ puller..."
   PYTHONPATH="${MTT_PYTHON_PATH}" \
-  python3 -m multitest_transport.app_helper.rabbitmq_puller \
+  "${MTT_PYTHON}" -m multitest_transport.app_helper.rabbitmq_puller \
       --rabbitmq_node_port "${RABBITMQ_NODE_PORT:-5672}" \
       --target "default=http://localhost:${MTT_PORT}/_ah/queue/{queue}" \
       --target "core=http://localhost:${MTT_CORE_PORT}/_ah/queue/{queue}" \
@@ -87,6 +89,7 @@ function start_rabbitmq_puller {
 
 function start_browsepy {
   # Start browsepy file server
+  echo "Starting browsepy..."
   browsepy \
       --directory="$STORAGE_PATH" \
       "$MTT_HOST" \
@@ -96,12 +99,14 @@ function start_browsepy {
 
 function start_local_file_server {
   # Start local file server
+  echo "Starting local file server..."
   NUM_FILE_SERVER_WORKERS=$(($(nproc) + 1))
   # Uses gthread workers since the default sync workers would time out when sending large files:
   # https://docs.gunicorn.org/en/stable/design.html?highlight=gthread#asyncio-workers
   NUM_THREADS=10
-  # TODO: change to use gunicorn in the package.
-  gunicorn "file_server.file_server:flask_app" \
+  PYTHONPATH="${MTT_PYTHON_PATH}" \
+  "${MTT_PYTHON}" -m gunicorn.app.wsgiapp \
+      multitest_transport.file_server.file_server:flask_app \
       --chdir "${SCRIPT_DIR}" \
       --config "${SCRIPT_DIR}/file_server/gunicorn_config.py" \
       --env "STORAGE_PATH=${STORAGE_PATH}" \
@@ -115,6 +120,8 @@ function start_local_file_server {
 
 function start_datastore_emulator {
   # Start datastore emulator
+  echo "Starting datastore emulator..."
+  export CLOUDSDK_PYTHON="${MTT_PYTHON}"
   GCLOUD_SDK_ROOT=$(gcloud info --format="value(installation.sdk_root)")
   DATASTORE_EMULATOR="${GCLOUD_SDK_ROOT}/platform/cloud-datastore-emulator/cloud_datastore_emulator"
   "${DATASTORE_EMULATOR}" start \
@@ -132,6 +139,7 @@ function start_mysql_database {
   # Skip starting DB if URI already set
   if [[ -n "${SQL_DATABASE_URI}" ]]; then return; fi
 
+  echo "Starting MySQL database..."
   local db_name="ats_db"
   local datadir="${STORAGE_PATH}/${db_name}"
   local socket="${datadir}/mysqld.sock"
@@ -152,6 +160,8 @@ function start_mysql_database {
 
 function start_main_server {
   # Start Android Test Station
+  echo "Starting main server..."
+  PYTHONFAULTHANDLER=1 \
   PYTHONPATH="${MTT_PYTHON_PATH}" \
   FTP_PROXY="$FTP_PROXY" \
   HTTP_PROXY="$HTTP_PROXY" \
@@ -170,7 +180,7 @@ function start_main_server {
   MTT_STORAGE_PATH="$STORAGE_PATH" \
   MTT_SQL_DATABASE_URI="${SQL_DATABASE_URI}" \
   MTT_USER="$MTT_USER" \
-  python3 -m multitest_transport.app_helper.launcher \
+  "${MTT_PYTHON}" -m multitest_transport.app_helper.launcher \
       --application_id="mtt" \
       --host="${MTT_HOST}" \
       --port="${MTT_MASTER_PORT}" \
@@ -184,11 +194,11 @@ function start_main_server {
 
 if [ $FILE_SERVICE_ONLY == "false" ]
 then
-  start_rabbitmq_puller
   start_browsepy
   start_local_file_server
   start_datastore_emulator
   start_mysql_database
+  start_rabbitmq_puller
   start_main_server
 else
   start_browsepy

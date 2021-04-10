@@ -11,14 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""sitecustomize for google3 imports."""
 
-"""A hack module to fix import order."""
 import sys
 
-# Move google3/third_party/py to the end of sys.path to ensure default modules
-# to be preferred over packaged ones. Without this, modules like enum causes
-# compatibility issues.
-sys.path.sort(key=lambda p: p.endswith('google3/third_party/py'))
+import google3
 
-# Ensure google3 imports to work correctly.
-import google3  
+# Search installed packages first (necessary to use host-side grpc package).
+sys.path.sort(key=lambda p: p.endswith('google3/third_party/py'))
