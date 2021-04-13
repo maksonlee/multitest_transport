@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Tests for lab_cli."""
+import atexit
 import os
 import shutil
 import tempfile
@@ -319,35 +320,21 @@ class LabCliTest(parameterized.TestCase):
     self.assertEqual('Setting up service account key', host.execution_state)
 
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
-  @mock.patch.object(lab_cli.google_auth_util, 'GetGCloudCredential')
   @mock.patch.object(lab_cli.google_auth_util, 'GetSecret')
-  def testSetupServiceAccountKey_secretManager(
-      self, mock_get_secret, mock_get_cred, mock_make_tmpfile):
+  @mock.patch.object(atexit, 'register')
+  def testGetServiceAccountKeyFromSecretManager(
+      self, mock_register, mock_get_secret, mock_make_tmpfile):
     mock_tmpfile = mock.MagicMock()
     mock_tmpfile.name = '/local/sa_key.json'
     mock_make_tmpfile.return_value = mock_tmpfile
-    args = mock.MagicMock(service_account_json_key_path=None)
-    host = mock.MagicMock(
-        context=mock.MagicMock(user='testuser'),
-        config=lab_config.CreateHostConfig(
-            service_account_json_key_path=None,
-            secret_project_id='secret_project',
-            service_account_key_secret_id='sa_key'))
-    mock_cred = mock.MagicMock()
-    mock_get_cred.return_value = mock_cred
     mock_get_secret.return_value = b'secret'
 
-    lab_cli._SetupServiceAccountKey(args, host)
+    lab_cli._GetServiceAccountKeyFromSecretManager('secret_project', 'sa_key')
 
-    host.context.CopyFile.assert_called_once_with(
-        '/local/sa_key.json', '/tmp/testuser/keyfile/key.json')
     mock_tmpfile.write.assert_called_once_with(b'secret')
     mock_tmpfile.flush.assert_called_once_with()
-    mock_tmpfile.close.assert_called_once_with()
-    self.assertEqual('Setting up service account key', host.execution_state)
-    self.assertTrue(mock_get_cred.called)
-    mock_get_secret.assert_called_once_with(
-        'secret_project', 'sa_key', mock_cred)
+    mock_get_secret.assert_called_once_with('secret_project', 'sa_key')
+    mock_register.assert_called_once_with(mock_tmpfile.close)
 
 
 if __name__ == '__main__':

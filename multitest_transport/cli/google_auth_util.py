@@ -15,6 +15,7 @@
 """Google credential helpers."""
 import logging
 
+import google.auth
 import google.auth.transport.requests
 from google.cloud import secretmanager
 import google.oauth2.credentials
@@ -84,8 +85,17 @@ def GetGCloudCredential(command_context, scopes=None):
   return credential
 
 
+def GetDefaultCredential(scopes=None):
+  """Get default credential on current host."""
+  credential, _ = google.auth.default(scopes=scopes)
+  if not credential:
+    raise AuthError(
+        'No default user credentials. Run "gcloud auth login".')
+  return credential
+
+
 def GetSecret(
-    project_id, secret_id, credentials, version_id=LATEST_SECRET_VERSION):
+    project_id, secret_id, credentials=None, version_id=LATEST_SECRET_VERSION):
   """Get secret from Google Cloud Secret Manager.
 
   Args:
@@ -97,6 +107,7 @@ def GetSecret(
     a bytearray represent the secret.
   """
   logger.debug('Get secret %s(%s) from %s.', secret_id, version_id, project_id)
+  credentials = credentials or GetDefaultCredential()
   client = secretmanager.SecretManagerServiceClient(credentials=credentials)
   name = client.secret_version_path(project_id, secret_id, version_id)
   response = client.access_secret_version(name)

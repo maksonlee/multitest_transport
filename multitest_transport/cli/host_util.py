@@ -200,7 +200,7 @@ def CreateHost(args):
 def _GetHostConfig(lab_config_path, key_path=None):
   """Get host config for local hosts."""
   # For dockerized tf, there should always be a lab config.
-  lab_config_pool = _BuildLabConfigPool(lab_config_path, key_path)
+  lab_config_pool = BuildLabConfigPool(lab_config_path, key_path)
   for hostname in [socket.gethostname(), socket.getfqdn()]:
     host_config = lab_config_pool.GetHostConfig(hostname)
     if host_config:
@@ -415,7 +415,7 @@ def _WrapFuncForSetHost(host_func):
   return _Wrapper
 
 
-def _BuildLabConfigPool(lab_config_path, key_path=None):
+def BuildLabConfigPool(lab_config_path, key_path=None):
   """Build lab config pool based on configured config path."""
   if not lab_config_path:
     logger.debug('No lab config path set.')
@@ -473,11 +473,12 @@ def _GetHostConfigs(lab_config_pool, hosts_or_clusters):
   return list(host_configs.values())
 
 
-def Execute(args):
+def Execute(args, lab_config_pool=None):
   """Execute a command on hosts."""
-  lab_config_pool = _BuildLabConfigPool(
+  lab_config_pool = lab_config_pool or BuildLabConfigPool(
       args.lab_config_path,
       key_path=getattr(args, 'service_account_json_key_path', None))
+
   host_configs = _GetHostConfigs(lab_config_pool, args.hosts_or_clusters)
   if not host_configs:
     logger.warning('No host configured in %s for %s.',

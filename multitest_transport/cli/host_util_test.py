@@ -74,7 +74,7 @@ class HostUtilTest(parameterized.TestCase):
     if host.name in self.mock_func_exceptions:
       raise self.mock_func_exceptions[host.name]
 
-  @mock.patch.object(host_util, '_BuildLabConfigPool')
+  @mock.patch.object(host_util, 'BuildLabConfigPool')
   def testExecute(self, mock_build_lab_config_pool):
     """Test execute."""
     mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
@@ -94,7 +94,7 @@ class HostUtilTest(parameterized.TestCase):
         [('host1', args), ('host2', args)], list(self.mock_func_calls.items()))
 
   @mock.patch.object(getpass, 'getpass')
-  @mock.patch.object(host_util, '_BuildLabConfigPool')
+  @mock.patch.object(host_util, 'BuildLabConfigPool')
   def testExecute_askPass(self, mock_build_lab_config_pool, mock_getpass):
     """Test execute on multiple hosts with password."""
     mock_getpass.side_effect = ['login_pswd', 'sudo_pswd']
@@ -130,7 +130,7 @@ class HostUtilTest(parameterized.TestCase):
     self.assertEqual(
         [('host1', args), ('host2', args)], list(self.mock_func_calls.items()))
 
-  @mock.patch.object(host_util, '_BuildLabConfigPool')
+  @mock.patch.object(host_util, 'BuildLabConfigPool')
   def testExecute_nativeSsh(self, mock_build_lab_config_pool):
     """Test execute."""
     mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
@@ -161,7 +161,7 @@ class HostUtilTest(parameterized.TestCase):
     self.assertEqual(
         [('host1', args), ('host2', args)], list(self.mock_func_calls.items()))
 
-  @mock.patch.object(host_util, '_BuildLabConfigPool')
+  @mock.patch.object(host_util, 'BuildLabConfigPool')
   def testExecute_nativeSsh_sshArgInConfig(self, mock_build_lab_config_pool):
     """Test execute."""
     mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
@@ -258,7 +258,7 @@ class HostUtilTest(parameterized.TestCase):
     self.assertEqual(host_util.HostExecutionState.ERROR,
                      hosts[1].execution_state)
 
-  @mock.patch.object(host_util, '_BuildLabConfigPool')
+  @mock.patch.object(host_util, 'BuildLabConfigPool')
   @mock.patch.object(socket, 'gethostname')
   def testCreateHost(
       self, mock_gethostname, mock_build_lab_config_pool):
@@ -273,7 +273,7 @@ class HostUtilTest(parameterized.TestCase):
     self.assertEqual(expected_host_config, host.config)
     self.assertIsNotNone(host.context)
 
-  @mock.patch.object(host_util, '_BuildLabConfigPool')
+  @mock.patch.object(host_util, 'BuildLabConfigPool')
   @mock.patch.object(socket, 'gethostname')
   def testCreateHost_WithOverrideValue(
       self, mock_gethostname, mock_build_lab_config_pool):
@@ -298,7 +298,7 @@ class HostUtilTest(parameterized.TestCase):
     self.assertEqual(host_util._DEFAULT_MTT_IMAGE, host.config.docker_image)
     self.assertIsNotNone(host.context)
 
-  @mock.patch.object(host_util, '_BuildLabConfigPool')
+  @mock.patch.object(host_util, 'BuildLabConfigPool')
   @mock.patch.object(socket, 'gethostname')
   def testGetHostConfig(
       self, mock_gethostname, mock_build_lab_config_pool):
@@ -310,7 +310,7 @@ class HostUtilTest(parameterized.TestCase):
     self.assertEqual(self.host_config1, host_config)
     self.mock_lab_config_pool.GetHostConfig.assert_called_once_with('host1')
 
-  @mock.patch.object(host_util, '_BuildLabConfigPool')
+  @mock.patch.object(host_util, 'BuildLabConfigPool')
   @mock.patch.object(socket, 'getfqdn')
   @mock.patch.object(socket, 'gethostname')
   def testGetHostConfig_noHostConfig(
@@ -365,14 +365,14 @@ class HostUtilTest(parameterized.TestCase):
       self, mock_create_lab_config_pool, mock_local_file_enumerator):
     mock_create_lab_config_pool.return_value = self.mock_lab_config_pool
 
-    host_util._BuildLabConfigPool(lab_config_path='lab_config.yaml')
+    host_util.BuildLabConfigPool(lab_config_path='lab_config.yaml')
 
     mock_local_file_enumerator.assert_called_once_with(
         'lab_config.yaml', mock.ANY)
     self.mock_lab_config_pool.LoadConfigs.assert_called_once_with()
 
   def testBuildLabConfigPool_noLabConfig(self):
-    lab_config_pool = host_util._BuildLabConfigPool(lab_config_path=None)
+    lab_config_pool = host_util.BuildLabConfigPool(lab_config_path=None)
     self.assertEmpty(lab_config_pool.GetHostConfigs())
 
   @mock.patch.object(host_util.google_auth_util, 'GetGCloudCredential')
@@ -384,7 +384,7 @@ class HostUtilTest(parameterized.TestCase):
       mock_create_gcs_client, mock_get_cred):
     mock_create_lab_config_pool.return_value = self.mock_lab_config_pool
 
-    host_util._BuildLabConfigPool(lab_config_path='gs://bucket/lab_config.yaml')
+    host_util.BuildLabConfigPool(lab_config_path='gs://bucket/lab_config.yaml')
 
     mock_gcs_file_enumerator.assert_called_once_with(
         mock.ANY, 'gs://bucket/lab_config.yaml', mock.ANY)

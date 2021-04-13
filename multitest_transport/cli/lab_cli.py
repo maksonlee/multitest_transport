@@ -14,6 +14,7 @@
 
 """A lab management CLI for MTT."""
 import argparse
+import atexit
 import logging
 import os
 import shlex
@@ -23,7 +24,6 @@ import tempfile
 import zipfile
 
 from multitest_transport.cli import cli_util
-from multitest_transport.cli import command_util
 from multitest_transport.cli import google_auth_util
 from multitest_transport.cli import host_util
 
@@ -112,38 +112,15 @@ def _SetupServiceAccountKey(args, host):
     host: a Host.
   """
   remote_key_file = _REMOTE_KEY_FILE_FORMAT % host.context.user
-  if (not args.service_account_json_key_path and
-      not host.config.service_account_json_key_path and
-      not (host.config.secret_project_id and
-           host.config.service_account_key_secret_id)):
+  service_account_json_key_path = (
+      args.service_account_json_key_path or
+      host.config.service_account_json_key_path)
+  if not service_account_json_key_path:
     logger.debug('No service account set up.')
     return
   logger.info('Setting up service account key on %s.', host.name)
   host.execution_state = 'Setting up service account key'
-  if (host.config.secret_project_id and
-      host.config.service_account_key_secret_id):
-    # Get service account key from secret manager.
-    cred = google_auth_util.GetGCloudCredential(command_util.CommandContext())
-    if not cred:
-      raise google_auth_util.AuthError(
-          'No user credentials. Run "gcloud auth login".')
-    sevice_account_json_key = google_auth_util.GetSecret(
-        host.config.secret_project_id,
-        host.config.service_account_key_secret_id,
-        cred)
-    service_account_key_file = tempfile.NamedTemporaryFile(suffix='.json')
-    try:
-      service_account_key_file.write(sevice_account_json_key)
-      service_account_key_file.flush()
-      host.context.CopyFile(service_account_key_file.name, remote_key_file)
-      host.config = host.config.SetServiceAccountJsonKeyPath(remote_key_file)
-    finally:
-      service_account_key_file.close()
-    return
   # Using service account key file in args or config.
-  service_account_json_key_path = (
-      args.service_account_json_key_path or
-      host.config.service_account_json_key_path)
   host.context.CopyFile(
       service_account_json_key_path, remote_key_file)
   host.config = host.config.SetServiceAccountJsonKeyPath(remote_key_file)
@@ -305,6 +282,18 @@ def CreateParser():
   return parser
 
 
+def _GetServiceAccountKeyFromSecretManager(secret_project_id, sercret_id):
+  """Get service account key based on lab config path."""
+  service_account_key = google_auth_util.GetSecret(
+      secret_project_id, sercret_id)
+  tmp_service_account_key_file = tempfile.NamedTemporaryFile(suffix='.json')
+  tmp_service_account_key_file.write(service_account_key)
+  tmp_service_account_key_file.flush()
+  # Key file will be deleted at exit.
+  atexit.register(tmp_service_account_key_file.close)
+  return tmp_service_account_key_file.name
+
+
 def Main():
   """The entry point function for lab CLI."""
   parser = CreateParser()
@@ -321,17 +310,31 @@ def Main():
         logger.debug('CLI is updated.')
         os.execv(new_path, [new_path] + sys.argv[1:])
     except Exception as e:        logger.warning('Failed to check/update tool: %s', e)
-  try:
-    if not args.action:
-      parser.print_usage()
-      return
-    if args.action == 'version':
-      cli_util.PrintVersion(args)
-      return
-    host_util.Execute(args)
-  except host_util.ExecutionError:
-    # The information should already be printed.
-    sys.exit(-1)
+  if not args.action:
+    parser.print_usage()
+    return
+  if args.action == 'version':
+    cli_util.PrintVersion(args)
+    return
+
+  lab_config_pool = host_util.BuildLabConfigPool(args.lab_config_path)
+  lab_config = lab_config_pool.GetLabConfig()
+  service_account_key_path = None
+  # Use service account in secret first, since this is the most secure way.
+  if lab_config.secret_project_id and lab_config.service_account_key_secret_id:
+    service_account_key_path = _GetServiceAccountKeyFromSecretManager(
+        lab_config.secret_project_id,
+        lab_config.service_account_key_secret_id)
+  service_account_key_path = (
+      service_account_key_path or
+      lab_config.service_account_json_key_path or
+      args.service_account_json_key_path)
+  if service_account_key_path:
+    logger = cli_util.CreateLogger(args, service_account_key_path)
+  else:
+    logger.warning('There is no service account key secret or path set.')
+  args.service_account_json_key_path = service_account_key_path
+  host_util.Execute(args, lab_config_pool)
 
 
 if __name__ == '__main__':

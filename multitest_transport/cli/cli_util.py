@@ -93,7 +93,7 @@ def CreateLoggingArgParser():
   return parser
 
 
-def CreateLogger(args):
+def CreateLogger(args, service_account_key_path=None):
   """Create logger.
 
   All sub package should use logger.getLogger(__name__) to get module logger,
@@ -101,6 +101,7 @@ def CreateLogger(args):
 
   Args:
     args: parsed args for logging.
+    service_account_key_path: service account key path to use.
   Returns:
     a logging.Logger
   """
@@ -134,11 +135,13 @@ def CreateLogger(args):
     handler.setFormatter(log_formatter)
     new_logger.addHandler(handler)
 
-  if args.cli_stackdriver_logging_key_path:
+  service_account_key_path = (service_account_key_path or
+                              args.cli_stackdriver_logging_key_path)
+  if service_account_key_path:
     cloud_logging_client = gcloud_logging.client.Client(
         project=_STACKDRIVER_CLOUD_PROJECT,
         credentials=google_auth_util.CreateCredentialFromServiceAccount(
-            args.cli_stackdriver_logging_key_path,
+            service_account_key_path,
             scopes=[_GCLOUD_LOGGING_WRITE_SCOPE]))
     handler = cloud_logging_client.get_default_handler()
     cloud_log_format = socket.getfqdn() + '|' + _STACKDRIVER_LOG_FORMAT
