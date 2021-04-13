@@ -161,6 +161,16 @@ export class TestModuleResultList implements OnInit {
     return testCaseResult.status;
   }
 
+  showStackTrace(testCaseResult: mttModels.TestCaseResult) {
+    // TODO: Switch to sidenav view later
+    this.notifier.showError(
+        testCaseResult.name, {
+          message: testCaseResult.error_message,
+          stacktrace: testCaseResult.stack_trace,
+        },
+        'Error message');
+  }
+
   createModuleResultNode(module: mttModels.TestModuleResult): ModuleResultNode {
     return {
       expanded: false,

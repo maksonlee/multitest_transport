@@ -21,6 +21,7 @@ import {of as observableOf} from 'rxjs';
 
 import {MttClient, TestResultClient} from '../services/mtt_client';
 import {TestCaseResult, TestModuleResult, TestStatus} from '../services/mtt_models';
+import {Notifier} from '../services/notifier';
 import {getEl, getTextContent} from '../testing/jasmine_util';
 import {newMockTestCaseResult, newMockTestModuleResult} from '../testing/mtt_mocks';
 
@@ -32,6 +33,7 @@ describe('TestModuleResultList', () => {
   let testResultModuleList: TestModuleResultList;
   let testResultModuleListFixture: ComponentFixture<TestModuleResultList>;
   let client: jasmine.SpyObj<TestResultClient>;
+  let notifier: jasmine.SpyObj<Notifier>;
   let el: DebugElement;
 
   let module1: TestModuleResult;
@@ -44,6 +46,8 @@ describe('TestModuleResultList', () => {
   const testRunId = 'test-run-id';
 
   beforeEach(() => {
+    notifier = jasmine.createSpyObj(['showError']);
+
     module1 = newMockTestModuleResult('module.1', 'Module 1', 123, 456, 789);
     module2 = newMockTestModuleResult('m_2', 'Second Module', 0, 0, 0);
     modules = [module1, module2];
@@ -71,6 +75,7 @@ describe('TestModuleResultList', () => {
       aotSummaries: TestRunsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: {testResults: client}},
+        {provide: Notifier, useValue: notifier},
       ],
     });
     testResultModuleListFixture = TestBed.createComponent(TestModuleResultList);
@@ -156,5 +161,19 @@ describe('TestModuleResultList', () => {
     expect(textContent).toContain('test_case_5');
 
     expect(textContent).not.toContain('Load more test cases');
+  });
+
+  it('opens the stack trace dialog', () => {
+    getEl(el, '.expand-button').click();
+    testResultModuleListFixture.detectChanges();
+    getEl(el, '.stack-trace-button').click();
+    testResultModuleListFixture.detectChanges();
+    expect(notifier.showError)
+        .toHaveBeenCalledWith(
+            'test_case2', {
+              message: 'some failure message',
+              stacktrace: 'some stack trace',
+            },
+            'Error message');
   });
 });

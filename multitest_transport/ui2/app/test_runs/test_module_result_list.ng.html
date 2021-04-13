@@ -29,14 +29,15 @@
     <th class="mat-header-cell" fxFlex="120px">Passed/Total</th>
     <th class="mat-header-cell" fxFlex="120px">Module Status</th>
     <th class="mat-header-cell failure-message-column" fxFlex>Failure Message</th>
+    <th class="mat-header-cell" fxFlex="40px"><!-- Stack trace button column --></th>
   </thead>
 </table>
 
 <div *ngFor="let moduleNode of moduleResultNodes; index as i" class="module-section">
   <div class="module-row row-divider">
     <div fxFlex="450px" class="inline overflow">
-      <button mat-icon-button aria-label="Toggle">
-        <mat-icon class="mat-icon-rtl-mirror expand-button" (click)="expandModule(i)">
+      <button mat-icon-button aria-label="Toggle" (click)="expandModule(i)" class="expand-button">
+        <mat-icon class="mat-icon-rtl-mirror">
           {{moduleNode.expanded ? 'expand_more' : 'chevron_right'}}
         </mat-icon>
       </button>
@@ -66,6 +67,8 @@
          [title]="moduleNode.moduleResult.error_message">
       {{moduleNode.moduleResult.error_message}}
     </div>
+
+    <div fxFlex="40px"><!-- Filler for stack trace button column --></div>
   </div>
 
   <!-- Display test cases when expanded -->
@@ -90,6 +93,13 @@
       <div fxFlex class="failure-message overflow"
            [title]="testCase.error_message">
         {{testCase.error_message}}
+      </div>
+
+      <div fxFlex="40px">
+        <button mat-icon-button *ngIf="testCase.stack_trace" (click)="showStackTrace(testCase)"
+                aria-label="Stack trace" class="stack-trace-button">
+          <mat-icon class="stack-trace-icon">info</mat-icon>
+        </button>
       </div>
     </div> <!-- end ngFor testcaseresults -->
 

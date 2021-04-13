@@ -101,6 +101,15 @@ th.mat-header-cell:first-of-type {
   padding: 4px 0;
 }
 
+.stack-trace-button {
+  height: 30px;
+  width: 30px;
+}
+
+.stack-trace-icon {
+  line-height: 18px;
+}
+
 .testcase-name {
   color: $accent;
 }
