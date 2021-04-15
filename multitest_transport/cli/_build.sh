@@ -49,10 +49,10 @@ FROM ubuntu:18.04
 # update the python3-distutils as well (may need to drop some old version
 # support).
 
-RUN export DEBIAN_FRONTEND=noninteractive; apt update; apt install -y unzip wget zip software-properties-common;
+RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq unzip wget zip software-properties-common;
 # Add deadsnakes for different versions of python and distutils
 RUN add-apt-repository ppa:deadsnakes/ppa
-RUN export DEBIAN_FRONTEND=noninteractive; apt update; apt install -y \
+RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
   python3.6 python3.7 python3.8 python3.9 \
   python3-distutils python3-pip python3.9-distutils
 COPY ./requirements.txt /tmp
@@ -67,7 +67,7 @@ RUN mkdir -p /protoc && \
 EOF
 
 docker pull gcr.io/android-mtt/pex:latest
-docker build -t docker_pex . --cache-from gcr.io/android-mtt/pex:latest
+docker build -t docker_pex . --cache-from gcr.io/android-mtt/pex:latest > /dev/null
 
 docker run --rm --mount type=bind,source="$CLI_DIR",target=/workspace docker_pex sh -c \
   '/protoc/bin/protoc --python_out=/workspace/src/tradefed_cluster/configs/ \
