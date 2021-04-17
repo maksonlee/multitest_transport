@@ -38,12 +38,13 @@ class CredentialsProperty(ndb.BlobProperty):
       raise TypeError('Value %s is not a Credentials instance.' % value)
 
   def _to_base_type(self, value):
-    # Using protocol 2 to ensure compatiblity with Python 2.
+    # Using protocol 2 to ensure compatibility with Python 2.
     return pickle.dumps(value, protocol=2)
 
   def _from_base_type(self, value):
     try:
-      credentials = pickle.loads(value)
+      # Use bytes encoding for backwards compatibility with Python 2
+      credentials = pickle.loads(value, encoding='bytes')
       # Patch missing fields from older credentials objects (b/176850961)
       if not hasattr(credentials, '_quota_project_id'):
         setattr(credentials, '_quota_project_id', None)
