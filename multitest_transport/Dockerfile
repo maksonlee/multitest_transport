@@ -95,7 +95,7 @@ RUN wget -q --retry-connrefused -O build-tools.zip https://dl.google.com/android
     && unzip -jq build-tools.zip -d /sdk_tools android-10/aapt \
     && unzip -jq build-tools.zip -d /sdk_tools/lib64 android-10/lib64/* \
     && rm build-tools.zip
-RUN wget -q --retry-connrefused -O platform-tools.zip https://dl.google.com/android/repository/platform-tools_r29.0.6-linux.zip \
+RUN wget -q --retry-connrefused -O platform-tools.zip https://dl.google.com/android/repository/platform-tools-latest-linux.zip \
     && unzip -jq platform-tools.zip -d /sdk_tools \
         platform-tools/adb \
         platform-tools/fastboot \
