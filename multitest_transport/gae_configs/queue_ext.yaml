@@ -29,6 +29,7 @@ queue:
 - name: test-kicker-queue
   rate: 20/s
   target: default
+  max_concurrent_requests: 5
 
 - name: test-plan-kicker-queue
   rate: 20/s

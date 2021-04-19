@@ -50,6 +50,9 @@ MIN_BACKOFF_SECONDS = 1
 MAX_RETRY_COUNT = 8
 DELAY_QUEUE_TTL_SECONDS = 5
 RECONNECT_DELAY_SECONDS = 5
+DEFAULT_MESSAGE_PULLERS_PER_QUEUE = 1
+MAX_MESSAGE_PULLERS_PER_QUEUE = 5
+INVOKE_TIMEOUT_SECONDS = 1 * 60 * 60  # Keep this consitent with GAE.
 
 
 class MessagePuller(threading.Thread):
@@ -140,8 +143,11 @@ class MessagePuller(threading.Thread):
       self._logger.debug(
           'Invoke %s: headers=%s, payload=(%d bytes)',
           url, headers, len(payload))
-      req = urllib.request.Request(url=url, headers=headers, data=payload)
-      res = urllib.request.urlopen(req)
+      req = urllib.request.Request(
+          url=url,
+          headers=headers,
+          data=payload)
+      res = urllib.request.urlopen(req, timeout=INVOKE_TIMEOUT_SECONDS)
       self._logger.debug('Response: %s', res.read())
     except urllib.error.URLError as e:
       properties.headers['x-retry-count'] = retry_count + 1
@@ -237,14 +243,20 @@ def main(argv):
     for queue_info in queues:
       target_name = queue_info.get('target', 'default')
       url = target_to_url_map[target_name]
-      worker = MessagePuller(conn_params, queue_info['name'], url)
-      worker.start()
-      workers.append(worker)
+      worker_count = min(
+          queue_info.get(
+              'max_concurrent_requests', DEFAULT_MESSAGE_PULLERS_PER_QUEUE),
+          MAX_MESSAGE_PULLERS_PER_QUEUE)
+      for _ in range(worker_count):
+        worker = MessagePuller(conn_params, queue_info['name'], url)
+        workers.append(worker)
+        worker.start()
     for worker in workers:
       worker.join()
 
 
 if __name__ == '__main__':
+  logging.getLogger().setLevel(logging.DEBUG)
   # Set pika logging level to WARNING
   logging.getLogger('pika').setLevel(logging.WARNING)
   app.run(main)

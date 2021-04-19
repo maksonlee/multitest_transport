@@ -18,6 +18,7 @@ import io
 import json
 import os
 import shutil
+import socket
 import tempfile
 
 from absl.testing import absltest
@@ -284,6 +285,45 @@ class HttpFileHandleTest(absltest.TestCase):
     handle = file_util.HttpFileHandle(self.MOCK_URL)
     stream = handle.Open().detach()  # Detach to test underlying stream
     self.assertIsNone(stream.ReadBytes())
+
+  @mock.patch.object(urllib.request, 'urlopen')
+  def testReadBytes_socketTimeout(self, mock_urlopen):
+    """Tests that range errors are handled when reading content."""
+    mock_response = mock.MagicMock()
+    mock_response.read.return_value = b'foo'
+    mock_urlopen.side_effect = [
+        socket.timeout(),
+        mock_response
+    ]
+    handle = file_util.HttpFileHandle(self.MOCK_URL)
+    stream = handle.Open().detach()  # Detach to test underlying stream
+
+    # Fetches partial file content
+    data = stream.ReadBytes(offset=123, length=456)
+
+    self.assertEqual(b'foo', data)
+    partial_request = mock_urlopen.call_args_list[0][0][0]
+    self.assertEqual(self.MOCK_URL, partial_request.get_full_url())
+    self.assertEqual('bytes=123-578', partial_request.get_header('Range'))
+    partial_request = mock_urlopen.call_args_list[1][0][0]
+    self.assertEqual(self.MOCK_URL, partial_request.get_full_url())
+    self.assertEqual('bytes=123-578', partial_request.get_header('Range'))
+
+  @mock.patch.object(urllib.request, 'urlopen')
+  def testReadBytes_repeatedSocketTimeouts(self, mock_urlopen):
+    """Tests that range errors are handled when reading content."""
+    mock_urlopen.side_effect = socket.timeout()
+    handle = file_util.HttpFileHandle(self.MOCK_URL)
+    stream = handle.Open().detach()  # Detach to test underlying stream
+
+    # Fetches partial file content
+    with self.assertRaises(socket.timeout):
+      stream.ReadBytes(offset=123, length=456)
+
+    for call_args in mock_urlopen.call_args_list:
+      partial_request = call_args[0][0]
+      self.assertEqual(self.MOCK_URL, partial_request.get_full_url())
+      self.assertEqual('bytes=123-578', partial_request.get_header('Range'))
 
 
 class RemoteFileHandleTest(absltest.TestCase):

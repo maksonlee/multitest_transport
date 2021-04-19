@@ -78,7 +78,9 @@ class MessagePullerTest(absltest.TestCase):
             'X-AppEngine-TaskRetryCount': 0
         },
         data='payload'.encode('ascii'))
-    mock_urlopen.assert_called_with(mock_request_ctor.return_value)
+    mock_urlopen.assert_called_with(
+        mock_request_ctor.return_value,
+        timeout=rabbitmq_puller.INVOKE_TIMEOUT_SECONDS)
     mock_ack.assert_called_with(self.mock_conn, self.mock_channel,
                                 method.delivery_tag)
 
@@ -107,7 +109,9 @@ class MessagePullerTest(absltest.TestCase):
             'X-AppEngine-TaskRetryCount': 0
         },
         data='payload'.encode('ascii'))
-    mock_urlopen.assert_called_with(mock_request_ctor.return_value)
+    mock_urlopen.assert_called_with(
+        mock_request_ctor.return_value,
+        timeout=rabbitmq_puller.INVOKE_TIMEOUT_SECONDS)
     mock_ack.assert_called_with(self.mock_conn, self.mock_channel,
                                 method.delivery_tag)
 
@@ -173,7 +177,9 @@ class MessagePullerTest(absltest.TestCase):
             'X-AppEngine-TaskRetryCount': 0
         },
         data='payload'.encode('ascii'))
-    mock_urlopen.assert_called_with(mock_request_ctor.return_value)
+    mock_urlopen.assert_called_with(
+        mock_request_ctor.return_value,
+        timeout=rabbitmq_puller.INVOKE_TIMEOUT_SECONDS)
     mock_delay_message.assert_called_with(self.mock_conn, self.mock_channel,
                                           properties, body,
                                           rabbitmq_puller.MIN_BACKOFF_SECONDS)

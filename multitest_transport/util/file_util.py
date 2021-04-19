@@ -20,6 +20,7 @@ import json
 import logging
 import os
 import re
+import socket
 import stat
 import zipfile
 
@@ -33,6 +34,8 @@ from multitest_transport.util import env
 DOWNLOAD_BUFFER_SIZE = 16 * 1024 * 1024
 UPLOAD_BUFFER_SIZE = 512 * 1024
 LOCAL_HOSTNAME = ['localhost', '0.0.0.0', '127.0.0.1', '::', '::1']
+HTTP_TIMEOUT_SECONDS = 30
+MAX_HTTP_READ_ATTEMPTS = 3
 
 FileChunk = collections.namedtuple('FileChunk',
                                    ['data', 'offset', 'total_size'])
@@ -303,15 +306,25 @@ class HttpReadStream(BaseReadStream):
       headers = {'Range': 'bytes=%s-' % offset}
     else:
       headers = {'Range': 'bytes=%s-%s' % (offset, offset + length - 1)}
-    try:
-      request = urllib.request.Request(self.url, headers=headers)
-      return urllib.request.urlopen(request).read()
-    except urllib.error.HTTPError as e:
-      if e.code == 404 or e.code == 416:
-        # Ignore file not found or unsatisfied range errors, which occur if
-        # requesting content from after EOF
-        return None
-      raise
+    attempt = 1
+    while attempt <= MAX_HTTP_READ_ATTEMPTS:
+      try:
+        request = urllib.request.Request(self.url, headers=headers)
+        return urllib.request.urlopen(
+            request, timeout=HTTP_TIMEOUT_SECONDS).read()
+      except urllib.error.HTTPError as e:
+        if e.code == 404 or e.code == 416:
+          # Ignore file not found or unsatisfied range errors, which occur if
+          # requesting content from after EOF
+          return None
+        raise
+      except socket.timeout as e:
+        if MAX_HTTP_READ_ATTEMPTS <= attempt:
+          raise
+        logging.info(
+            'Read failed due to socket timeout; retrying... (attempt %d of %d)',
+            attempt, MAX_HTTP_READ_ATTEMPTS)
+      attempt += 1
 
 
 class HttpWriteStream(BaseWriteStream):
@@ -329,7 +342,7 @@ class HttpWriteStream(BaseWriteStream):
                                 (offset, end_byte, total_size)}
     request = urllib.request.Request(url=self.url, data=data, headers=headers)
     request.get_method = lambda: 'PUT'
-    urllib.request.urlopen(request).read()
+    urllib.request.urlopen(request, timeout=HTTP_TIMEOUT_SECONDS).read()
 
 
 class HttpFileHandle(FileHandle):
@@ -344,7 +357,7 @@ class HttpFileHandle(FileHandle):
     try:
       request = urllib.request.Request(self.info_url)
       request.get_method = lambda: 'HEAD'
-      response = urllib.request.urlopen(request)
+      response = urllib.request.urlopen(request, timeout=HTTP_TIMEOUT_SECONDS)
     except urllib.error.HTTPError as e:
       if e.code == 404:
         return None
