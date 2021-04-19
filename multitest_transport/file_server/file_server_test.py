@@ -13,14 +13,15 @@
 # limitations under the License.
 
 """Android Test Station local file server tests."""
+import io
 import json
 import os
 import shutil
 import tempfile
 
 from absl.testing import absltest
-
 from multitest_transport.file_server import file_server
+import werkzeug
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
@@ -72,28 +73,100 @@ class FileServerTest(absltest.TestCase):
       data = json.loads(response.data)
       self.assertEqual('File \'foo\' not found', data['message'])
 
-  def testUploadFile_putMethod(self):
-    """Tests that new files can be uploaded by put method."""
+  def testUploadFile_postMethod(self):
+    """Tests that new files can be uploaded by post method."""
+    with self.app.test_client() as client:
+      file = werkzeug.datastructures.FileStorage(
+          stream=io.BytesIO(b'test'),
+          filename='/file/upload.txt',
+          content_type='text/plain',
+      )
+      response = client.post(
+          '/file/upload.txt',
+          data=dict(file=file,),
+          follow_redirects=True,
+          content_type='multipart/form-data',
+      )
+      self.assertEqual(201, response.status_code)
+      self.assertEqual('test', open(self.app.root_path + '/upload.txt').read())
+
+  def testUploadFile_multipleFiles(self):
+    """Tests that uploading fails if request has multiple files."""
+    with self.app.test_client() as client:
+      file = werkzeug.datastructures.FileStorage(
+          stream=io.BytesIO(b'test'),
+          filename='/file/upload.txt',
+          content_type='text/plain',
+      )
+      response = client.post(
+          '/file/upload.txt',
+          data=dict(file1=file, file2=file),
+          follow_redirects=True,
+          content_type='multipart/form-data',
+      )
+      self.assertEqual(400, response.status_code)
+
+  def testUploadFile_emptyRequest(self):
+    """Tests that uploading files fails when request doesn't have a file."""
+    with self.app.test_client() as client:
+      response = client.post(
+          '/file/test.txt',
+          follow_redirects=True,
+          content_type='multipart/form-data',
+      )
+      self.assertEqual(400, response.status_code)
+
+  def testUploadFile_overwriteFile(self):
+    """Tests that uploaded files can overwrite existing files."""
+    with self.app.test_client() as client:
+      file = werkzeug.datastructures.FileStorage(
+          stream=io.BytesIO(b'test'),
+          filename='/file/test.txt',
+          content_type='text/plain',
+      )
+      response = client.post(
+          '/file/test.txt',
+          data=dict(file=file,),
+          follow_redirects=True,
+          content_type='multipart/form-data',
+      )
+      self.assertEqual(201, response.status_code)
+      self.assertEqual('test', open(self.app.root_path + '/test.txt').read())
+
+  def testUploadFile_longFilename(self):
+    """Tests that a file can be uploaded to a long destination (b/172595968)."""
+    with self.app.test_client() as client:
+      filename = os.path.join('a' * 100, 'b' * 100, 'c' * 100, 'upload.txt')
+      file = werkzeug.datastructures.FileStorage(
+          stream=io.BytesIO(b'test'),
+          filename='/file/' + filename,
+          content_type='text/plain',
+      )
+      response = client.post(
+          '/file/' + filename,
+          data=dict(file=file,),
+          follow_redirects=True,
+          content_type='multipart/form-data',
+      )
+      response = client.put('/file/' + filename, data='test')
+      self.assertEqual(201, response.status_code)
+      self.assertEqual('test', open(self.app.root_path + '/' + filename).read())
+
+  def testUploadFileByChunks_putMethod(self):
+    """Tests that new files can be uploaded by chunks by put method."""
     with self.app.test_client() as client:
       response = client.put('/file/upload.txt', data='test')
       self.assertEqual(201, response.status_code)
       self.assertEqual('test', open(self.app.root_path + '/upload.txt').read())
 
-  def testUploadFile_postMethod(self):
-    """Tests that new files can be uploaded by post method."""
-    with self.app.test_client() as client:
-      response = client.post('/file/upload.txt', data='test')
-      self.assertEqual(201, response.status_code)
-      self.assertEqual('test', open(self.app.root_path + '/upload.txt').read())
-
-  def testUploadFile_overwriteFile(self):
-    """Tests that uploaded files can overwrite existing files."""
+  def testUploadFileByChunks_overwriteFile(self):
+    """Tests that uploaded files by chunks can overwrite existing files."""
     with self.app.test_client() as client:
       response = client.put('/file/test.txt', data='test')
       self.assertEqual(201, response.status_code)
       self.assertEqual('test', open(self.app.root_path + '/test.txt').read())
 
-  def testUploadFile_resumeUpload(self):
+  def testUploadFileByChunks_resumeUpload(self):
     """Tests that files can be uploaded progressively."""
     with self.app.test_client() as client:
       # Upload half of a file's content
@@ -115,7 +188,7 @@ class FileServerTest(absltest.TestCase):
       self.assertEqual('hello world',
                        open(self.app.root_path + '/upload.txt').read())
 
-  def testUploadFile_restartUpload(self):
+  def testUploadFileByChunks_restartUpload(self):
     """Tests that a resumable upload can be restarted."""
     with self.app.test_client() as client:
       # Upload half of a file's content
@@ -136,7 +209,7 @@ class FileServerTest(absltest.TestCase):
       # File created with the new content
       self.assertEqual('test', open(self.app.root_path + '/upload.txt').read())
 
-  def testUploadFile_invalidOffset(self):
+  def testUploadFileByChunks_invalidOffset(self):
     """Tests that the starting offset is verified during a resumable upload."""
     with self.app.test_client() as client:
       # Upload half of a file's content
@@ -156,7 +229,7 @@ class FileServerTest(absltest.TestCase):
       data = json.loads(response.data)
       self.assertEqual('Invalid offset 4 (expected 6)', data['message'])
 
-  def testUploadFile_longFilename(self):
+  def testUploadFileByChunks_longFilename(self):
     """Tests that a file can be uploaded to a long destination (b/172595968)."""
     with self.app.test_client() as client:
       filename = os.path.join('a' * 100, 'b' * 100, 'c' * 100, 'upload.txt')

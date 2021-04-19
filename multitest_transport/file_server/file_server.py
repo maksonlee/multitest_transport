@@ -79,9 +79,31 @@ def _WriteStreamToFile(file, chunk_size=DEFAULT_CHUNK_SIZE):
     file.write(chunk)
 
 
-@flask_app.route('/file/<path:path>', methods=['PUT', 'POST'])
+@flask_app.route('/file/<path:path>', methods=['POST'])
 def UploadFile(path: str) -> flask.Response:
   """Upload a file to a path."""
+  resolved_path = flask.safe_join(flask.current_app.root_path, path)
+  if not flask.request.files:
+    flask.abort(http.HTTPStatus.BAD_REQUEST,
+                'Request doesn\'t have any files: %s' % flask.request.files)
+  if len(flask.request.files) > 1:
+    flask.abort(
+        http.HTTPStatus.BAD_REQUEST,
+        'Request can only upload one file each time: %s' % flask.request.files)
+  for file_name in flask.request.files:
+    os.makedirs(os.path.dirname(resolved_path), exist_ok=True)
+    f = flask.request.files[file_name]
+    # overwrite the existing file.
+    if os.path.exists(resolved_path):
+      os.remove(resolved_path)
+    f.save(resolved_path)
+    flask_app.logger.info('File %s is saved to %s', f.filename, resolved_path)
+  return flask.Response(status=http.HTTPStatus.CREATED)
+
+
+@flask_app.route('/file/<path:path>', methods=['PUT'])
+def UploadFileByChunks(path: str) -> flask.Response:
+  """Upload a file by chunks to a path."""
   resolved_path = flask.safe_join(flask.current_app.root_path, path)
   # Find or create a temporary upload file
   tmp_name = hashlib.sha512(resolved_path.encode()).hexdigest()

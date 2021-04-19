@@ -32,6 +32,7 @@ py_strict_test(
     deps = [
         ":file_server_lib",
         third_party("absl/testing:absltest"),
+        third_party("werkzeug"),
     ],
 )
 
