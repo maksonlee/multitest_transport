@@ -16,110 +16,123 @@
 
 <!-- TODO: Add filter -->
 
-<div class="empty" *ngIf="!moduleResultNodes.length">
-  No modules found.
-</div>
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isModulesLoading"></mat-spinner>
 
-<!-- Header row -->
-<table class="mat-table">
-  <!-- TODO: Header should be sticky -->
-  <thead class="mat-header-row">
-    <th class="mat-header-cell" fxFlex="450px">Module</th>
-    <th class="mat-header-cell" fxFlex="120px">Result</th>
-    <th class="mat-header-cell" fxFlex="120px">Passed/Total</th>
-    <th class="mat-header-cell" fxFlex="120px">Module Status</th>
-    <th class="mat-header-cell failure-message-column" fxFlex>Failure Message</th>
-    <th class="mat-header-cell" fxFlex="40px"><!-- Stack trace button column --></th>
-  </thead>
-</table>
+<div [class.loading-mask]="isModulesLoading">
 
-<div *ngFor="let moduleNode of moduleResultNodes; index as i" class="module-section">
-  <div class="module-row row-divider">
-    <div fxFlex="450px" class="inline overflow">
-      <button mat-icon-button aria-label="Toggle" (click)="expandModule(i)" class="expand-button">
-        <mat-icon class="mat-icon-rtl-mirror">
-          {{moduleNode.expanded ? 'expand_more' : 'chevron_right'}}
-        </mat-icon>
-      </button>
-      Module: <span class="module-name" [title]="moduleNode.moduleResult.name">
-        {{moduleNode.moduleResult.name}}
-      </span>
+  <ng-template ngIf="!showOldView; else oldView">
+
+    <!-- Header row -->
+    <table class="mat-table">
+      <!-- TODO: Header should be sticky -->
+      <thead class="mat-header-row">
+        <th class="mat-header-cell" fxFlex="450px">Module</th>
+        <th class="mat-header-cell" fxFlex="120px">Result</th>
+        <th class="mat-header-cell" fxFlex="120px">Passed/Total</th>
+        <th class="mat-header-cell" fxFlex="120px">Module Status</th>
+        <th class="mat-header-cell failure-message-column" fxFlex>Failure Message</th>
+        <th class="mat-header-cell" fxFlex="40px"><!-- Stack trace button column --></th>
+      </thead>
+    </table>
+
+    <div class="empty" *ngIf="!moduleResultNodes.length">
+      No modules found.
     </div>
 
-    <div fxFlex="120px" class="result-text-padding">
-      <div *ngIf="moduleNode.moduleResult.failed_tests">
-        <mat-icon color='error' class='inline result-error-icon'>error</mat-icon>
-        {{moduleNode.moduleResult.failed_tests}}
-      </div>
-    </div>
-
-    <div fxFlex="120px" class="count-text-padding">
-      {{moduleNode.moduleResult.passed_tests}}/{{moduleNode.moduleResult.total_tests}}
-    </div>
-
-    <div fxFlex="120px" class="module-status">
-      <status-button class="module-result"
-                     [state]="moduleNode.moduleResult.complete ? 'Completed' : 'Incomplete'">
-      </status-button>
-    </div>
-
-    <div fxFlex class="failure-message overflow"
-         [title]="moduleNode.moduleResult.error_message">
-      {{moduleNode.moduleResult.error_message}}
-    </div>
-
-    <div fxFlex="40px"><!-- Filler for stack trace button column --></div>
-  </div>
-
-  <!-- Display test cases when expanded -->
-  <div *ngIf="moduleNode.expanded">
-    <div *ngFor="let testCase of moduleNode.testCaseResults" class="row-divider">
-      <div fxFlex="450px" class="testcase-text-padding">
-        <div class='testcase-row-indent overflow'>
-          Test: <span class='testcase-name' [title]="testCase.name">
-          {{testCase.name}}
+    <div *ngFor="let moduleNode of moduleResultNodes; index as i" class="module-section">
+      <div class="module-row row-divider">
+        <div fxFlex="450px" class="inline overflow">
+          <button mat-icon-button aria-label="Toggle" (click)="expandModule(i)" class="expand-button">
+            <mat-icon class="mat-icon-rtl-mirror">
+              {{moduleNode.expanded ? 'expand_more' : 'chevron_right'}}
+            </mat-icon>
+          </button>
+          Module: <span class="module-name" [title]="moduleNode.moduleResult.name">
+            {{moduleNode.moduleResult.name}}
           </span>
         </div>
+
+        <div fxFlex="120px" class="result-text-padding">
+          <div *ngIf="moduleNode.moduleResult.failed_tests">
+            <mat-icon color='error' class='inline result-error-icon'>error</mat-icon>
+            {{moduleNode.moduleResult.failed_tests}}
+          </div>
+        </div>
+
+        <div fxFlex="120px" class="count-text-padding">
+          {{moduleNode.moduleResult.passed_tests}}/{{moduleNode.moduleResult.total_tests}}
+        </div>
+
+        <div fxFlex="120px" class="module-status">
+          <status-button class="module-result"
+                         [state]="moduleNode.moduleResult.complete ? 'Completed' : 'Incomplete'">
+          </status-button>
+        </div>
+
+        <div fxFlex class="failure-message overflow"
+             [title]="moduleNode.moduleResult.error_message">
+          {{moduleNode.moduleResult.error_message}}
+        </div>
+
+        <div fxFlex="40px"><!-- Filler for stack trace button column --></div>
       </div>
 
-      <div fxFlex="120px" class="module-status">
-        <status-button [state]="getStatusString(testCase)"></status-button>
-      </div>
+      <!-- Display test cases when expanded -->
+      <div *ngIf="moduleNode.expanded">
+        <div *ngFor="let testCase of moduleNode.testCaseResults" class="row-divider">
+          <div fxFlex="450px" class="testcase-text-padding">
+            <div class='testcase-row-indent overflow'>
+              Test: <span class='testcase-name' [title]="testCase.name">
+              {{testCase.name}}
+              </span>
+            </div>
+          </div>
 
-      <div fxFlex="120px"><!-- Filler for counts column --></div>
+          <div fxFlex="120px" class="module-status">
+            <status-button [state]="getStatusString(testCase)"></status-button>
+          </div>
 
-      <div fxFlex="120px"><!-- Filler for module status column --></div>
+          <div fxFlex="120px"><!-- Filler for counts column --></div>
 
-      <div fxFlex class="failure-message overflow"
-           [title]="testCase.error_message">
-        {{testCase.error_message}}
-      </div>
+          <div fxFlex="120px"><!-- Filler for module status column --></div>
 
-      <div fxFlex="40px">
-        <button mat-icon-button *ngIf="testCase.stack_trace" (click)="showStackTrace(testCase)"
-                aria-label="Stack trace" class="stack-trace-button">
-          <mat-icon class="stack-trace-icon">info</mat-icon>
-        </button>
-      </div>
-    </div> <!-- end ngFor testcaseresults -->
+          <div fxFlex class="failure-message overflow"
+               [title]="testCase.error_message">
+            {{testCase.error_message}}
+          </div>
 
-    <!-- Load more test cases button -->
-    <div *ngIf="moduleNode.nextPageToken" class="testcase-row testcase-row-indent">
-      <button mat-button class="load-test-cases-button"
-              (click)="loadMoreTestCases(i)" [disabled]='moduleNode.isLoading'>
-      {{moduleNode.isLoading ? 'Loading more test cases...' : 'Load more test cases'}}
+          <div fxFlex="40px">
+            <button mat-icon-button *ngIf="testCase.stack_trace" (click)="showStackTrace(testCase)"
+                    aria-label="Stack trace" class="stack-trace-button">
+              <mat-icon class="stack-trace-icon">info</mat-icon>
+            </button>
+          </div>
+        </div> <!-- end ngFor testcaseresults -->
+
+        <!-- Load more test cases button -->
+        <div *ngIf="moduleNode.nextPageToken" class="testcase-row testcase-row-indent">
+          <button mat-button class="load-test-cases-button"
+                  (click)="loadMoreTestCases(i)" [disabled]='moduleNode.isLoading'>
+          {{moduleNode.isLoading ? 'Loading more test cases...' : 'Load more test cases'}}
+          </button>
+        </div>
+
+      </div> <!-- end ngIf moduleNode.expanded -->
+
+    </div> <!-- end ngFor moduleResultNodes -->
+
+    <!-- Load more modules button -->
+    <div *ngIf="modulePageToken" class="load-modules-row">
+      <!-- TODO: Add Viewing x of x section -->
+      <button mat-button class="load-modules-button" (click)="loadModules(true)"
+              [disabled]='isModulesLoading'>
+        {{isModulesLoading ? 'Loading more modules...' : 'Load more modules'}}
       </button>
     </div>
+  </ng-template>
 
-  </div> <!-- end ngIf moduleNode.expanded -->
+  <ng-template #oldView>
+    <test-run-results [invocationStatus]="invocationStatus"></test-run-results>
+  </ng-template>
 
-</div> <!-- end ngFor moduleResultNodes -->
-
-<!-- Load more modules button -->
-<div *ngIf="modulePageToken" class="load-modules-row">
-  <!-- TODO: Add Viewing x of x section -->
-  <button mat-button class="load-modules-button" (click)="loadModules(true)"
-          [disabled]='isModulesLoading'>
-    {{isModulesLoading ? 'Loading more modules...' : 'Load more modules'}}
-  </button>
 </div>

@@ -20,6 +20,7 @@ import {finalize} from 'rxjs/operators';
 import {MttClient} from '../services/mtt_client';
 import * as mttModels from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
+import {InvocationStatus} from '../services/tfc_models';
 import {assertRequiredInput, buildApiErrorMessage} from '../shared/util';
 
 /**
@@ -43,11 +44,13 @@ interface ModuleResultNode {
 })
 export class TestModuleResultList implements OnInit {
   @Input() testRunId!: string;
+  @Input() invocationStatus?: InvocationStatus;  // Used if no sql data
 
   moduleResultNodes: ModuleResultNode[] = [];
   modulePageToken?: string;
 
   isModulesLoading = false;
+  showOldView = false;
 
   constructor(
       private readonly notifier: Notifier,
@@ -79,8 +82,10 @@ export class TestModuleResultList implements OnInit {
               }
             },
             error => {
-              this.notifier.showError(
-                  `Failed to load module results`, buildApiErrorMessage(error));
+              // TODO: Show old view if no data available
+              this.showOldView = true;
+              console.log(
+                  'No parsed results available. Showing invocation status results instead.');
             },
         );
   }
@@ -101,8 +106,8 @@ export class TestModuleResultList implements OnInit {
     }
 
     this.moduleResultNodes[moduleIndex].isLoading = true;
-    const moduleName = this.moduleResultNodes[moduleIndex].moduleResult.name;
-    this.mttClient.testResults.listTestCases(this.testRunId, moduleName)
+    const moduleId = this.moduleResultNodes[moduleIndex].moduleResult.id;
+    this.mttClient.testResults.listTestCases(moduleId)
         .pipe(finalize(() => {
           this.moduleResultNodes[moduleIndex].isLoading = false;
         }))
@@ -115,7 +120,8 @@ export class TestModuleResultList implements OnInit {
             },
             error => {
               this.notifier.showError(
-                  `Failed to load test cases for module '${moduleName}'`,
+                  `Failed to load test cases for module '${
+                      this.moduleResultNodes[moduleIndex].moduleResult.name}'`,
                   buildApiErrorMessage(error));
             },
         );
@@ -130,9 +136,7 @@ export class TestModuleResultList implements OnInit {
     this.moduleResultNodes[moduleIndex].isLoading = true;
     const moduleNode = this.moduleResultNodes[moduleIndex];
     this.mttClient.testResults
-        .listTestCases(
-            this.testRunId, moduleNode.moduleResult.name,
-            moduleNode.nextPageToken)
+        .listTestCases(moduleNode.moduleResult.id, moduleNode.nextPageToken)
         .pipe(finalize(() => {
           this.moduleResultNodes[moduleIndex].isLoading = false;
         }))

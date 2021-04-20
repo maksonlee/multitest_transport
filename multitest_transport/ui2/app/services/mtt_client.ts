@@ -16,7 +16,7 @@
 
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {EMPTY, from, Observable, of as observableOf} from 'rxjs';
+import {EMPTY, from, Observable} from 'rxjs';
 import {map, switchMap} from 'rxjs/operators';
 
 import {AnalyticsParams} from './analytics_service';
@@ -39,7 +39,7 @@ export class MttClient {
       private readonly http: HttpClient, private readonly auth: AuthService) {
     // TODO: Reorganize MttClient methods
     this.testRunActions = new TestRunActionClient(http, auth);
-    this.testResults = new TestResultClient();
+    this.testResults = new TestResultClient(http);
   }
 
   /**
@@ -482,8 +482,10 @@ export class TestRunActionClient {
 /** Provides access to the test results API. */
 export class TestResultClient {
   /** Backend path which serves test run action data. */
-  static readonly PATH = `${MTT_API_URL}/test_result`;
+  static readonly PATH = `${MTT_API_URL}/test_results`;
   static readonly PAGE_SIZE = 20;
+
+  constructor(private readonly http: HttpClient) {}
 
   // TODO: Remove once API is implemented
 
@@ -522,83 +524,31 @@ export class TestResultClient {
       testRunId: string, pageToken?: string,
       pageSize = TestResultClient.PAGE_SIZE):
       Observable<model.TestModuleResultList> {
-    // TODO: Replace with actual API call later
-    // TODO: Add pagination and filtering
-    const module1 = this.createMockModuleResult(
-        'module1', 12345, 67890, 98765, 'lorem ipsum');
-    const module2 = this.createMockModuleResult(
-        'module.2', 0, 0, 0,
-        'some super super super super super super super super super super super super super super long text');
-    const module3 = this.createMockModuleResult(
-        'module_3_with_really_really_really_really_really_long_name',
-    );
-    const fillerModule = this.createMockModuleResult();
+    let params = new HttpParams();
+    params = params.set('test_run_id', testRunId);
+    params = params.set('max_results', pageSize);
+    params = params.set('page_token', pageToken || '');
 
-    if (!pageToken) {
-      const results = [module1, module2, module3];
-      for (let i = 0; i < pageSize - 3; i++) {
-        results.push(fillerModule);
-      }
-      return observableOf({results, next_page_token: 'a'});
-    }
+    // TODO: Add complete modules filtering
+    params = params.set('complete', true);
 
-    // Stop after 5 additional pages have been loaded
-    if (pageToken.length === 5) {
-      return observableOf({results: [fillerModule]});
-    }
-
-    // Otherwise, return list of filler test cases and increase token length
-    const results = [];
-    for (let i = 0; i < pageSize; i++) {
-      results.push(fillerModule);
-    }
-    return observableOf({results, next_page_token: pageToken + 'a'});
+    return this.http.get<model.TestModuleResultList>(
+        `${TestResultClient.PATH}/modules`, {params});
   }
 
   listTestCases(
-      testRunId: string, moduleId: string, pageToken?: string,
+      moduleId: string, pageToken?: string,
       pageSize = TestResultClient.PAGE_SIZE):
       Observable<model.TestCaseResultList> {
-    // TODO: Replace with actual API call later
-    // TODO: Add filtering
-    const testCase1 = this.createMockTestCaseResult(
-        moduleId, 'test_case.1', model.TestStatus.PASS, '', '');
-    const testCase2 = this.createMockTestCaseResult(
-        moduleId, 'test_case2', model.TestStatus.FAIL, 'some failure message',
-        'some stack trace');
-    const testCase3 = this.createMockTestCaseResult(
-        moduleId, 'really_really_long.test.case.name_with_lots_of_text',
-        model.TestStatus.ASSUMPTION_FAILURE,
-        'some other failure message that is really really really long',
-        'some really really really really really really really really really really really really long stack trace');
-    const testCase4 = this.createMockTestCaseResult(
-        moduleId, 'test.case.Four', model.TestStatus.UNKNOWN, '', '');
-    const testCase5 = this.createMockTestCaseResult(
-        moduleId, 'another_really_really_long.test.case.name_with_lots_of_text',
-        model.TestStatus.IGNORED,
-        'some other failure message that is really really really long',
-        'some really really really really really really really really really really really really long stack trace');
-    const fillerTestCase = this.createMockTestCaseResult();
+    let params = new HttpParams();
+    params = params.set('max_results', pageSize);
+    params = params.set('page_token', pageToken || '');
 
-    // Return first page of test cases
-    if (!pageToken) {
-      const results = [testCase1, testCase2, testCase3, testCase4, testCase5];
-      for (let i = 0; i < pageSize - 5; i++) {
-        results.push(fillerTestCase);
-      }
-      return observableOf({results, next_page_token: 'a'});
-    }
+    // TODO: Add name and status filtering
 
-    // Stop after 5 additional pages have been loaded
-    if (pageToken.length === 5) {
-      return observableOf({results: [fillerTestCase]});
-    }
-
-    // Otherwise, return list of filler test cases and increase token length
-    const results = [];
-    for (let i = 0; i < pageSize; i++) {
-      results.push(fillerTestCase);
-    }
-    return observableOf({results, next_page_token: pageToken + 'a'});
+    return this.http.get<model.TestCaseResultList>(
+        `${TestResultClient.PATH}/modules/${
+            encodeURIComponent(moduleId)}/test_cases`,
+        {params});
   }
 }
