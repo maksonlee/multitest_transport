@@ -18,7 +18,7 @@ import {HttpClient} from '@angular/common/http';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {Router} from '@angular/router';
+import {RouterTestingModule} from '@angular/router/testing';
 
 import {APP_DATA} from '../services';
 import {FeedbackService} from '../services/feedback_service';
@@ -42,13 +42,13 @@ describe('UnassignedOfflineHostList', () => {
       imports: [
         HostsModule,
         NoopAnimationsModule,
+        RouterTestingModule,
       ],
       aotSummaries: HostsModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: newMockAppData()},
         {provide: FeedbackService, useValue: feedbackService},
         {provide: HttpClient},
-        {provide: Router},
       ],
     });
 

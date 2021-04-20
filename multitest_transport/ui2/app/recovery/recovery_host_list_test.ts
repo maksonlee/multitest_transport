@@ -18,7 +18,8 @@ import {DebugElement, SimpleChange} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute, Router} from '@angular/router';
+import {ActivatedRoute} from '@angular/router';
+import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
 import {ALL_OPTIONS_VALUE} from '../hosts/offline_host_filter';
@@ -66,6 +67,7 @@ describe('RecoveryHostList', () => {
       imports: [
         RecoveryModule,
         NoopAnimationsModule,
+        RouterTestingModule,
       ],
       aotSummaries: RecoveryModuleNgSummary,
       providers: [
@@ -73,7 +75,6 @@ describe('RecoveryHostList', () => {
         {provide: APP_DATA, useValue: newMockAppData()},
         {provide: FeedbackService},
         {provide: TfcClient, useValue: tfcClient},
-        {provide: Router},
         {provide: UserService, useValue: userServiceSpy},
       ],
     });
