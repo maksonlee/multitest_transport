@@ -16,7 +16,7 @@
 
 import {Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
 import {defer, EMPTY, iif, of, ReplaySubject, Subscription, timer} from 'rxjs';
-import {catchError, filter, repeat, switchMapTo, take, takeUntil, tap} from 'rxjs/operators';
+import {catchError, filter, repeat, switchMapTo, take, takeUntil} from 'rxjs/operators';
 
 import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
@@ -54,6 +54,8 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
   selectedAttempt?: CommandAttempt;
   readonly LOG_TYPES = LOG_TYPES;
   selectedType = Object.values(LOG_TYPES)[0];
+  /** True if current logs have been fetched at least once. */
+  initialized = false;
   offset?: number;
   output: string[] = [];
 
@@ -153,20 +155,18 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
 
   /** Starts periodically fetching the console. */
   private startPolling() {
-    let initialized = false;
+    this.initialized = false;
     const update = timer(POLL_INTERVAL).pipe(filter(() => this.shouldPoll()));
 
     this.polling =
         // Always fetch at least once, but only auto-update if active.
-        iif(() => !initialized, of(true), update)
-            .pipe(tap(() => {
-              initialized = true;
-            }))
+        iif(() => !this.initialized, of(true), update)
             .pipe(take(1))
             .pipe(switchMapTo(defer(() => {
               const attempt = this.selectedAttempt;
               const path = this.getLogPath();
               if (!this.testRun.id || this.disabled || !attempt || !path) {
+                this.initialized = true;
                 return EMPTY;
               }
 
@@ -176,6 +176,7 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
             .pipe(catchError(() => {
               // Failed to fetch content.
               this.clearConsole();
+              this.initialized = true;
               return EMPTY;
             }))
             // Repeat indefinitely until unsubscribed or destroyed.
@@ -201,6 +202,7 @@ export class TestRunConsole implements OnInit, OnChanges, OnDestroy {
               }
 
               this.offset = Number(output.offset) + Number(output.length) - 1;
+              this.initialized = true;
             });
   }
 

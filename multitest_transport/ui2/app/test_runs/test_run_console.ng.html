@@ -44,5 +44,8 @@
 
 <div class="output" #outputContainer>
   <pre *ngFor="let line of output">{{line}}</pre>
-  <pre class="empty" *ngIf="!output.length">No logs found.</pre>
+  <pre class="empty" *ngIf="!output.length">
+    <ng-container *ngIf="initialized; else loading">No logs found.</ng-container>
+    <ng-template #loading>Loading...</ng-template>
+  </pre>
 </div>
