@@ -62,7 +62,7 @@ describe('PredefinedMessagesEditor', () => {
       ],
       aotSummaries: NotesModuleNgSummary,
       providers: [
-        {provide: MAT_DIALOG_DATA, useValue: dialogParams},
+        {provide: MAT_DIALOG_DATA, useValue: {...dialogParams}},
         {provide: MatDialogRef, useValue: dialogRefSpy},
         {provide: TfcClient, useValue: tfcClient},
       ],

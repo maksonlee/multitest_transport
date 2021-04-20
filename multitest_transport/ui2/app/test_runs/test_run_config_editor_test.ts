@@ -31,7 +31,7 @@ import {DeviceInfo} from '../services/tfc_models';
 import {newMockDeviceInfo} from '../testing/mtt_lab_mocks';
 import {newMockDeviceAction, newMockTest, newMockTestRunConfig} from '../testing/mtt_mocks';
 
-import {TestRunConfigEditor, TestRunConfigEditorData} from './test_run_config_editor';
+import {TestRunConfigEditor} from './test_run_config_editor';
 import {TestRunsModule} from './test_runs_module';
 import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
@@ -47,12 +47,6 @@ describe('TestRunConfigEditor', () => {
   let device2: DeviceInfo;
 
   const test = newMockTest('test_id_1', 'test_name_1');
-  const testRunConfig =
-      newMockTestRunConfig(test.id, 'command', 'retry_command', '');
-  const testRunConfigEditorData: TestRunConfigEditorData = {
-    editMode: false,
-    testRunConfig,
-  };
   const dialogRefSpy =
       jasmine.createSpyObj('MatDialogRef', ['close', 'backdropClick']);
 
@@ -75,7 +69,14 @@ describe('TestRunConfigEditor', () => {
       providers: [
         {provide: APP_DATA, useValue: {}},
         {provide: MatDialogRef, useValue: dialogRefSpy},
-        {provide: MAT_DIALOG_DATA, useValue: testRunConfigEditorData},
+        {
+          provide: MAT_DIALOG_DATA,
+          useFactory: () => ({
+            editMode: false,
+            testRunConfig:
+                newMockTestRunConfig(test.id, 'command', 'retry_command', '')
+          })
+        },
         {provide: MttClient, useValue: mttClient},
         {provide: DeviceInfoService, useValue: deviceInfoService},
         {provide: MttObjectMapService, useValue: mttObjectMapService},
