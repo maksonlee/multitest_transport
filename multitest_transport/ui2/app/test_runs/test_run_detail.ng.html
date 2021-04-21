@@ -140,7 +140,8 @@
                           [request]="request" [testRun]="testRun"></test-run-console>
       </mat-tab>
       <mat-tab label="Test Results">
-        <test-run-results [invocationStatus]="invocationStatus"></test-run-results>
+        <test-module-result-list [testRunId]="testRunId" [invocationStatus]="invocationStatus">
+        </test-module-result-list>
       </mat-tab>
       <mat-tab label="Test Resources">
         <test-resource-list [testRun]="testRun"></test-resource-list>

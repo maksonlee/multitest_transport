@@ -23,7 +23,7 @@ import {of as observableOf} from 'rxjs';
 
 import {AnalyticsService} from '../services/analytics_service';
 import {FileService} from '../services/file_service';
-import {MttClient} from '../services/mtt_client';
+import {MttClient, TestResultClient} from '../services/mtt_client';
 import {Test, TestPackageInfo, TestRun, TestRunState} from '../services/mtt_models';
 import {TfcClient} from '../services/tfc_client';
 import {CommandAttempt, DeviceInfo, InvocationStatus, Request} from '../services/tfc_models';
@@ -41,6 +41,7 @@ describe('TestRunDetail', () => {
   let testRunDetailFixture: ComponentFixture<TestRunDetail>;
   let fs: jasmine.SpyObj<FileService>;
   let mttClient: jasmine.SpyObj<MttClient>;
+  let testResultClient: jasmine.SpyObj<TestResultClient>;
   let tfcClient: jasmine.SpyObj<TfcClient>;
   let el: DebugElement;
   let liveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
@@ -71,9 +72,18 @@ describe('TestRunDetail', () => {
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
     fs = jasmine.createSpyObj(['getTestRunFileUrl', 'getFileBrowseUrl']);
     fs.getFileBrowseUrl.and.returnValue('browse_url');
-    mttClient = jasmine.createSpyObj(['getTestRun', 'getReruns']);
+
+    testResultClient =
+        jasmine.createSpyObj('testResultClient', ['listModules']);
+    testResultClient.listModules.and.returnValue(observableOf({}));
+
+    mttClient = {
+      ...jasmine.createSpyObj('mttClient', ['getTestRun', 'getReruns']),
+      testResults: testResultClient,
+    };
     mttClient.getTestRun.and.returnValue(observableOf(testRun));
     mttClient.getReruns.and.returnValue(observableOf({test_runs: [retryRun]}));
+
     tfcClient =
         jasmine.createSpyObj('tfcClient', ['getDeviceInfos', 'getRequest']);
     tfcClient.getDeviceInfos.and.returnValue(observableOf(testDevices));
