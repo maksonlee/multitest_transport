@@ -13,20 +13,20 @@
 # limitations under the License.
 
 """A util file that stores common function that involve file operation."""
-import collections
 import datetime
 import io
 import json
 import logging
+import mimetypes
 import os
 import re
 import socket
 import stat
+from typing import BinaryIO, Iterator, List, Optional
 import zipfile
 
 import apiclient
 import attr
-import six
 from six.moves import urllib
 
 from multitest_transport.util import env
@@ -37,36 +37,47 @@ LOCAL_HOSTNAME = ['localhost', '0.0.0.0', '127.0.0.1', '::', '::1']
 HTTP_TIMEOUT_SECONDS = 30
 MAX_HTTP_READ_ATTEMPTS = 3
 
-FileChunk = collections.namedtuple('FileChunk',
-                                   ['data', 'offset', 'total_size'])
 
-TestSuiteInfo = collections.namedtuple(
-    'TestSuiteInfo',
-    ['build_number', 'target_architecture', 'name', 'fullname', 'version'])
+@attr.s(auto_attribs=True, frozen=True)
+class FileChunk(object):
+  """File chunk during download."""
+  data: bytes
+  offset: int
+  total_size: int
 
 
-@attr.s(frozen=True)
+@attr.s(auto_attribs=True, frozen=True)
+class TestSuiteInfo(object):
+  """Test suite information."""
+  build_number: str
+  target_architecture: str
+  name: str
+  fullname: str
+  version: str
+
+
+@attr.s(auto_attribs=True, frozen=True)
 class FileInfo(object):
   """File information."""
-  url = attr.ib()  # file URL
-  is_file = attr.ib(default=True)  # True for files, False for directories
-  total_size = attr.ib(default=None)  # file total size
-  content_type = attr.ib(default=None)  # file content type
-  timestamp = attr.ib(default=None)  # last modification datetime
+  url: str  # file URL
+  is_file: bool = True  # True for files, False for directories
+  total_size: Optional[int] = None  # file total size
+  content_type: Optional[str] = None  # file content type
+  timestamp: Optional[datetime.datetime] = None  # last modification datetime
 
 
-@attr.s(frozen=True)
+@attr.s(auto_attribs=True, frozen=True)
 class FileSegment(object):
   """Partial file content."""
-  offset = attr.ib()  # starting offset
-  lines = attr.ib()  # lines of content
+  offset: int  # starting offset
+  lines: List[bytes]  # lines of content
 
   @property
   def length(self):
     return sum([len(line) for line in self.lines])
 
 
-def _JoinPath(*parts):
+def _JoinPath(*parts: str) -> str:
   """Join multiple URL parts together with a '/' separator.
 
   Unlike os.path.join and urllib.urlparse.urljoin, does not treat parts with
@@ -80,19 +91,22 @@ def _JoinPath(*parts):
   return '/'.join(re.sub('(^/|/$)', '', part or '') for part in parts)
 
 
-def _HttpTimeToDatetime(http_time):
+def _HttpTimeToDatetime(
+    http_time: Optional[str]) -> Optional[datetime.datetime]:
   """Converts a HTTP time string (RFC 2616) to a datetime object."""
   if http_time:
     return datetime.datetime.strptime(http_time, '%a, %d %b %Y %H:%M:%S GMT')
 
 
-def _SecondsToDatetime(epoch_seconds):
+def _SecondsToDatetime(
+    epoch_seconds: Optional[float]) -> Optional[datetime.datetime]:
   """Converts a POSIX timestamp (epoch seconds) to a datetime object."""
   if epoch_seconds:
     return datetime.datetime.utcfromtimestamp(epoch_seconds)
 
 
-def _MillisToDatetime(epoch_millis):
+def _MillisToDatetime(
+    epoch_millis: Optional[float]) -> Optional[datetime.datetime]:
   """Converts epoch milliseconds to a datetime object."""
   if epoch_millis:
     return _SecondsToDatetime(epoch_millis / 1000.)
@@ -101,13 +115,15 @@ def _MillisToDatetime(epoch_millis):
 class BaseReadStream(io.RawIOBase):
   """Abstract seekable read-only file-like object."""
 
-  def __init__(self, handle):
+  def __init__(self, handle: 'FileHandle'):
     super(BaseReadStream, self).__init__()
     self.handle = handle
     self.cursor = 0
     self.size = -1
 
-  def ReadBytes(self, offset=0, length=None):
+  def ReadBytes(self,
+                offset: int = 0,
+                length: Optional[int] = None) -> Optional[bytes]:
     """Read bytes.
 
     Args:
@@ -125,7 +141,10 @@ class BaseReadStream(io.RawIOBase):
       self.cursor += offset
     elif whence == os.SEEK_END:
       if self.size < 0:
-        self.size = self.handle.Info().total_size
+        file_info = self.handle.Info()
+        if not file_info:
+          raise ValueError('File %s not found' % self.handle.url)
+        self.size = file_info.total_size
       self.cursor = self.size + offset
     else:
       raise ValueError('Unsupported whence %s' % whence)
@@ -165,7 +184,10 @@ class BaseWriteStream(io.RawIOBase):
     self.handle = handle
     self.cursor = 0
 
-  def WriteBytes(self, offset=0, data=None, finish=True):
+  def WriteBytes(self,
+                 offset: int = 0,
+                 data: Optional[bytes] = None,
+                 finish: bool = True):
     """Writes bytes.
 
     Args:
@@ -202,7 +224,7 @@ class FileHandle(object):
     self.url = url
 
   @classmethod
-  def Get(cls, url):
+  def Get(cls, url: str) -> 'FileHandle':
     """Factory method which creates the appropriate file handle.
 
     Args:
@@ -216,7 +238,7 @@ class FileHandle(object):
       return RemoteFileHandle(url)  # Remote file server URL
     return HttpFileHandle(url)  # Any other URL defaults to HTTP handling
 
-  def Info(self):
+  def Info(self) -> Optional[FileInfo]:
     """Get file information.
 
     Returns:
@@ -224,7 +246,7 @@ class FileHandle(object):
     """
     raise NotImplementedError
 
-  def Open(self, mode='r'):
+  def Open(self, mode: str = 'r') -> BinaryIO:
     """Returns a file-like object for reading or writing.
 
     Args:
@@ -234,7 +256,7 @@ class FileHandle(object):
     """
     raise NotImplementedError
 
-  def ListFiles(self):
+  def ListFiles(self) -> Optional[List[FileInfo]]:
     """Returns a list of nested files if this handle represents a directory.
 
     Returns:
@@ -250,7 +272,7 @@ class FileHandle(object):
 class LocalFileHandle(FileHandle):
   """Reads file metadata and content from the file system."""
 
-  def __init__(self, url):
+  def __init__(self, url: str):
     super(LocalFileHandle, self).__init__(url)
     if not url.startswith('file:///'):
       raise ValueError('Invalid local file URL %s' % url)
@@ -258,29 +280,32 @@ class LocalFileHandle(FileHandle):
     if not self.path.startswith(env.STORAGE_PATH):
       self.path = _JoinPath('/', env.STORAGE_PATH, self.path)
 
-  def _GetFileInfo(self, path):
+  def _GetFileInfo(self, path: str) -> FileInfo:
     stat_info = os.stat(path)
+    content_type, _ = mimetypes.guess_type(path)
     return FileInfo(
         url='file://' + path,
         is_file=not stat.S_ISDIR(stat_info.st_mode),
         total_size=stat_info.st_size,
-        timestamp=_MillisToDatetime(stat_info.st_mtime * 1000))
+        content_type=content_type,
+        timestamp=_SecondsToDatetime(stat_info.st_mtime))
 
-  def Info(self):
+  def Info(self) -> Optional[FileInfo]:
     if not os.path.exists(self.path):
       return None
     return self._GetFileInfo(self.path)
 
-  def Open(self, mode='r'):
+  def Open(self, mode: str = 'r') -> BinaryIO:
+    if mode == 'r':
+      return open(self.path, mode='rb')
     if mode == 'w':
       dir_path = os.path.dirname(self.path)
       if not os.path.exists(dir_path):
         os.makedirs(dir_path)
-    # FileHandle only supports binary mode.
-    mode += 'b'
-    return open(self.path, mode=mode)
+      return open(self.path, mode='wb')
+    raise ValueError('Unsupported mode %s' % mode)
 
-  def ListFiles(self):
+  def ListFiles(self) -> Optional[List[FileInfo]]:
     if not os.path.isdir(self.path):
       return None
     files = []
@@ -297,11 +322,13 @@ class LocalFileHandle(FileHandle):
 class HttpReadStream(BaseReadStream):
   """Read-only file-like object accessible using HTTP requests."""
 
-  def __init__(self, handle, url):
+  def __init__(self, handle: FileHandle, url: str):
     super(HttpReadStream, self).__init__(handle)
     self.url = url
 
-  def ReadBytes(self, offset=0, length=None):
+  def ReadBytes(self,
+                offset: int = 0,
+                length: Optional[int] = None) -> Optional[bytes]:
     if length is None or length < 0:
       headers = {'Range': 'bytes=%s-' % offset}
     else:
@@ -334,7 +361,10 @@ class HttpWriteStream(BaseWriteStream):
     super(HttpWriteStream, self).__init__(handle)
     self.url = url
 
-  def WriteBytes(self, offset=0, data=None, finish=True):
+  def WriteBytes(self,
+                 offset: int = 0,
+                 data: Optional[bytes] = None,
+                 finish: bool = True):
     end_byte = offset + len(data) - 1 if data else offset
     # Upload is complete when end_byte + 1 == total_size
     total_size = end_byte + 1 if finish else '*'
@@ -348,12 +378,15 @@ class HttpWriteStream(BaseWriteStream):
 class HttpFileHandle(FileHandle):
   """Reads file metadata and content via HTTP requests."""
 
-  def __init__(self, url, info_url=None, read_url=None):
+  def __init__(self,
+               url: str,
+               info_url: Optional[str] = None,
+               read_url: Optional[str] = None):
     super(HttpFileHandle, self).__init__(url)
     self.info_url = info_url or url
     self.read_url = read_url or url
 
-  def Info(self):
+  def Info(self) -> Optional[FileInfo]:
     try:
       request = urllib.request.Request(self.info_url)
       request.get_method = lambda: 'HEAD'
@@ -370,7 +403,7 @@ class HttpFileHandle(FileHandle):
         content_type=response.info().get('content-type'),
         timestamp=_HttpTimeToDatetime(response.info().get('last-modified')))
 
-  def Open(self, mode='r'):
+  def Open(self, mode: str = 'r') -> BinaryIO:
     if mode == 'r':
       return io.BufferedReader(HttpReadStream(self, self.read_url))
     raise ValueError('Unsupported mode %s' % mode)
@@ -379,7 +412,7 @@ class HttpFileHandle(FileHandle):
 class RemoteFileHandle(HttpFileHandle):
   """Reads file metadata and content from a remote file server."""
 
-  def __init__(self, url):
+  def __init__(self, url: str):
     # Hostname is optional for backwards compatibility (uses local file server)
     match = re.search('^file://([^/]+)?(/.*)', url)
     if not match:
@@ -399,14 +432,14 @@ class RemoteFileHandle(HttpFileHandle):
     self.dir_url = _JoinPath(fs_url, 'dir', self.path)
     super(RemoteFileHandle, self).__init__(url, info_url=self.file_url)
 
-  def Open(self, mode='r'):
+  def Open(self, mode: str = 'r') -> BinaryIO:
     if mode == 'r':
       return io.BufferedReader(HttpReadStream(self, self.file_url))
     if mode == 'w':
       return io.BufferedWriter(HttpWriteStream(self, self.file_url))
     raise ValueError('Unsupported mode %s' % mode)
 
-  def ListFiles(self):
+  def ListFiles(self) -> Optional[List[FileInfo]]:
     try:
       response = urllib.request.urlopen(self.dir_url)
     except urllib.error.HTTPError as e:
@@ -430,7 +463,7 @@ class RemoteFileHandle(HttpFileHandle):
     urllib.request.urlopen(request)
 
 
-def GetAppStorageUrl(parts, hostname=None):
+def GetAppStorageUrl(parts: List[str], hostname: Optional[str] = None) -> str:
   """Get the application storage URL for a file.
 
   Args:
@@ -446,7 +479,7 @@ def GetAppStorageUrl(parts, hostname=None):
   return _JoinPath(*(['file:///', env.STORAGE_PATH] + parts))
 
 
-def GetWorkFileUrl(attempt, file_path=''):
+def GetWorkFileUrl(attempt, file_path: str = '') -> str:
   """Get URL for a command attempt's work directory.
 
   Args:
@@ -461,7 +494,7 @@ def GetWorkFileUrl(attempt, file_path=''):
   return GetAppStorageUrl(['tmp', attempt.attempt_id, file_path])
 
 
-def GetOutputFileUrl(test_run, attempt, file_path=''):
+def GetOutputFileUrl(test_run, attempt, file_path: str = '') -> str:
   """Get URL for a command attempt's output file.
 
   Args:
@@ -475,7 +508,7 @@ def GetOutputFileUrl(test_run, attempt, file_path=''):
       [test_run.output_path, attempt.command_id, attempt.attempt_id, file_path])
 
 
-def GetOutputFilenames(test_run, attempt):
+def GetOutputFilenames(test_run, attempt) -> List[str]:
   """Get a list of output filenames for a completed attempt.
 
   Args:
@@ -486,10 +519,10 @@ def GetOutputFilenames(test_run, attempt):
   """
   summary_url = GetOutputFileUrl(test_run, attempt, 'FILES')
   with OpenFile(summary_url) as stream:
-    return [line.strip() for line in stream.readlines()]
+    return [line.strip().decode() for line in stream.readlines()]
 
 
-def GetResultUrl(test_run, attempt):
+def GetResultUrl(test_run, attempt) -> Optional[str]:
   """Get URL for a command attempt's result file."""
   result_file = test_run.test.result_file
   if not result_file:
@@ -497,7 +530,7 @@ def GetResultUrl(test_run, attempt):
   return GetOutputFileUrl(test_run, attempt, result_file)
 
 
-def GetWorkerAccessibleUrl(url):
+def GetWorkerAccessibleUrl(url: str) -> str:
   """Get URL for worker based on operation mode.
 
   Args:
@@ -518,7 +551,7 @@ def GetWorkerAccessibleUrl(url):
   return u.geturl()
 
 
-def OpenFile(url, mode='r'):
+def OpenFile(url: str, mode: str = 'r') -> BinaryIO:
   """Convenience method to get a file handle and open it for reading or writing.
 
   Args:
@@ -530,7 +563,9 @@ def OpenFile(url, mode='r'):
   return FileHandle.Get(url).Open(mode=mode)
 
 
-def ReadFile(file_url, offset=0, length=-1):
+def ReadFile(file_url: str,
+             offset: int = 0,
+             length: int = -1) -> Optional[FileSegment]:
   """Read file segment.
 
   Args:
@@ -546,7 +581,7 @@ def ReadFile(file_url, offset=0, length=-1):
     return FileSegment(offset, data.splitlines(True)) if data else None
 
 
-def TailFile(file_url, length):
+def TailFile(file_url: str, length: int) -> Optional[FileSegment]:
   """Read file segment from end of file.
 
   Args:
@@ -568,7 +603,7 @@ def TailFile(file_url, length):
     return FileSegment(offset, data.splitlines(True)) if data else None
 
 
-def DownloadFile(file_url, offset=0):
+def DownloadFile(file_url: str, offset: int = 0) -> Iterator[FileChunk]:
   """Download a file.
 
   Args:
@@ -598,7 +633,7 @@ def DownloadFile(file_url, offset=0):
       yield FileChunk(data=data, offset=offset, total_size=total_size)
 
 
-def GetTestSuiteInfo(file_obj):
+def GetTestSuiteInfo(file_obj: BinaryIO) -> Optional[TestSuiteInfo]:
   """Get the test package information.
 
   Args:
@@ -618,7 +653,7 @@ def GetTestSuiteInfo(file_obj):
         # Parse test suite information.
         suite_info = {}
         for line in jar.open(jar_info):
-          line = six.ensure_text(line)
+          line = line.decode()
           if not line or line.startswith('#') or '=' not in line:
             continue
           key, value = line.split('=', 1)
@@ -635,11 +670,15 @@ def GetTestSuiteInfo(file_obj):
 class FileHandleMediaUpload(apiclient.http.MediaIoBaseUpload):
   """MediaUpload which uploads a file handle without streaming."""
 
-  def __init__(self, handle, chunksize=UPLOAD_BUFFER_SIZE, resumable=False):
+  def __init__(self,
+               handle: FileHandle,
+               chunksize: int = UPLOAD_BUFFER_SIZE,
+               resumable: bool = False):
     info = handle.Info()
+    mimetype = info.content_type if info else None
     super(FileHandleMediaUpload, self).__init__(
         fd=handle.Open(),
-        mimetype=info.content_type if info else None,
+        mimetype=mimetype or 'application/octet-stream',
         chunksize=chunksize,
         resumable=resumable)
 

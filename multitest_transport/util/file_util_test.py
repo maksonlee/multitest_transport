@@ -471,7 +471,7 @@ class FileUtilTest(parameterized.TestCase):
     """Tests that an attempt's output filenames can retrieved."""
     test_run = mock.MagicMock()
     attempt = mock.MagicMock()
-    with open((os.path.join(TEST_DATA_DIR, 'FILES'))) as f:
+    with open(os.path.join(TEST_DATA_DIR, 'FILES'), 'rb') as f:
       mock_handle_factory.return_value.Open.return_value = f
       # List of filenames read from 'FILES' summary file
       filenames = file_util.GetOutputFilenames(test_run, attempt)
