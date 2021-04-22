@@ -23,7 +23,6 @@ from multitest_transport.api import base
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
 from multitest_transport.models import sql_models
-from multitest_transport.util import sql_util
 from multitest_transport.util import tfc_client
 from multitest_transport.util import xts_result
 
@@ -36,12 +35,7 @@ class TestResultApi(remote.Service):
       endpoints.ResourceContainer(
           message_types.VoidMessage,
           attempt_id=messages.StringField(1),
-          test_run_id=messages.StringField(2),
-          max_results=messages.IntegerField(
-              3, default=base.DEFAULT_MAX_RESULTS),
-          page_token=messages.StringField(4),
-          name=messages.StringField(5),
-          complete=messages.BooleanField(6)),
+          test_run_id=messages.StringField(2)),
       mtt_messages.TestModuleResultList,
       path='modules', http_method='GET', name='list_modules')
   def ListTestModuleResults(self, request):
@@ -50,68 +44,62 @@ class TestResultApi(remote.Service):
     Parameters:
       attempt_id: Test run attempt ID
       test_run_id: Test run ID (used if attempt_id not provided)
-      max_results: Maximum number of modules to return
-      page_token: Token for pagination
-      name: Partial name filter (case-insensitive)
-      complete: Completeness filter (false to only return incomplete modules)
     """
     if request.attempt_id:
       # Use attempt_id directly if provided
-      attempt_id = request.attempt_id
-    elif request.test_run_id:
-      # Determine attempt_id from test_run_id (latest finished attempt)
-      test_run_id = request.test_run_id
-      test_run = ndb_models.TestRun.get_by_id(test_run_id)
-      if not test_run:
-        raise endpoints.NotFoundException('Test run %s not found' % test_run_id)
-      if not test_run.request_id:
-        return mtt_messages.TestModuleResultList(
-            attempt_info='Test run %s not started' % test_run_id)
-      latest_attempt = tfc_client.GetLatestFinishedAttempt(test_run.request_id)
-      if not latest_attempt:
-        return mtt_messages.TestModuleResultList(
-            attempt_info='Test run %s has no completed attempts' % test_run_id)
-      attempt_id = latest_attempt.attempt_id
-    else:
+      return self._GetTestModuleResults(request.attempt_id)
+
+    if not request.test_run_id:
       # Invalid request (test_run_id and attempt_id not provided)
       raise endpoints.BadRequestException('Test run ID or attempt ID required')
 
+    # Determine attempt_id from test_run_id (latest finished attempt)
+    test_run_id = request.test_run_id
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    if not test_run:
+      raise endpoints.NotFoundException('Test run %s not found' % test_run_id)
+
+    if not test_run.request_id:
+      return mtt_messages.TestModuleResultList(
+          extra_info='Test run %s not started' % test_run_id)
+
+    latest_attempt = tfc_client.GetLatestFinishedAttempt(test_run.request_id)
+    if not latest_attempt:
+      return mtt_messages.TestModuleResultList(
+          extra_info='Test run %s has no completed attempts' % test_run_id)
+
+    result_list = self._GetTestModuleResults(latest_attempt.attempt_id)
+    if not result_list.results:
+      # No results found for latest attempt, try fetching legacy results instead
+      return self._GetLegacyTestModuleResults(test_run.request_id)
+    return result_list
+
+  def _GetTestModuleResults(
+      self, attempt_id: str) -> mtt_messages.TestModuleResultList:
+    """Fetch test module results from the DB."""
     with sql_models.db.Session() as session:
-      # Initialize query (ordered by failed test counts)
       query = session.query(sql_models.TestModuleResult)
       query = query.order_by(sql_models.TestModuleResult.failed_tests.desc(),
                              sql_models.TestModuleResult.id)
       query = query.filter_by(attempt_id=attempt_id)
-      # Apply page token (<last failed test count>:<last id>)
-      if request.page_token:
-        max_failed_tests, min_id = request.page_token.split(':', 1)
-        query = query.filter(sql_util.OR(
-            sql_models.TestModuleResult.failed_tests < max_failed_tests,
-            sql_util.AND(
-                sql_models.TestModuleResult.failed_tests == max_failed_tests,
-                sql_models.TestModuleResult.id > min_id)))
-      # Apply filters
-      if request.complete is not None:
-        query = query.filter_by(complete=request.complete)
-      if request.name:
-        query = query.filter(
-            sql_models.TestModuleResult.name.contains(request.name))
-      # Fetch at most N + 1 results
-      if request.max_results and request.max_results > 0:
-        query = query.limit(request.max_results + 1)
       modules = query.all()
-
-    # Generate next page token and response
-    next_page_token = None
-    if request.max_results and 0 < request.max_results < len(modules):
-      modules = modules[:-1]
-      last_module = modules[-1]
-      next_page_token = '%d:%s' % (last_module.failed_tests, last_module.id)
     results = mtt_messages.ConvertList(modules, mtt_messages.TestModuleResult)
     return mtt_messages.TestModuleResultList(
+        results=results, extra_info='Test results from attempt %s' % attempt_id)
+
+  def _GetLegacyTestModuleResults(
+      self, request_id: int) -> mtt_messages.TestModuleResultList:
+    """Fetch legacy test module results from TFC."""
+    invocation_status = tfc_client.GetRequestInvocationStatus(request_id)
+    test_group_statuses = sorted(
+        invocation_status.test_group_statuses or [],
+        key=lambda s: s.failed_test_count,
+        reverse=True)
+    results = mtt_messages.ConvertList(test_group_statuses,
+                                       mtt_messages.TestModuleResult)
+    return mtt_messages.TestModuleResultList(
         results=results,
-        next_page_token=next_page_token,
-        attempt_info='Test results from attempt %s' % attempt_id)
+        extra_info='Legacy test results from request %s' % request_id)
 
   @base.ApiMethod(
       endpoints.ResourceContainer(

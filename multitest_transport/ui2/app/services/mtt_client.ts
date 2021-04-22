@@ -520,18 +520,8 @@ export class TestResultClient {
   }
 
   /** Lists all modules. */
-  listModules(
-      testRunId: string, pageToken?: string,
-      pageSize = TestResultClient.PAGE_SIZE):
-      Observable<model.TestModuleResultList> {
-    let params = new HttpParams();
-    params = params.set('test_run_id', testRunId);
-    params = params.set('max_results', pageSize);
-    params = params.set('page_token', pageToken || '');
-
-    // TODO: Add complete modules filtering
-    params = params.set('complete', true);
-
+  listModules(testRunId: string): Observable<model.TestModuleResultList> {
+    const params = new HttpParams().set('test_run_id', testRunId);
     return this.http.get<model.TestModuleResultList>(
         `${TestResultClient.PATH}/modules`, {params});
   }

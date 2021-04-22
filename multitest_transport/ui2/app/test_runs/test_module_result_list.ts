@@ -20,13 +20,13 @@ import {finalize} from 'rxjs/operators';
 import {MttClient} from '../services/mtt_client';
 import * as mttModels from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
-import {InvocationStatus} from '../services/tfc_models';
 import {assertRequiredInput, buildApiErrorMessage} from '../shared/util';
 
 /**
  * Information for displaying the module results and its corresponding testcases
  */
 interface ModuleResultNode {
+  expandable: boolean;
   expanded: boolean;
   isLoading: boolean;
   moduleResult: mttModels.TestModuleResult;
@@ -44,11 +44,8 @@ interface ModuleResultNode {
 })
 export class TestModuleResultList implements OnInit {
   @Input() testRunId!: string;
-  @Input() invocationStatus?: InvocationStatus;  // Used if no sql data
 
   moduleResultNodes: ModuleResultNode[] = [];
-  modulePageToken?: string;
-
   isModulesLoading = false;
   showOldView = false;
 
@@ -62,14 +59,9 @@ export class TestModuleResultList implements OnInit {
     this.loadModules();
   }
 
-  loadModules(loadNextPage = false) {
-    if (loadNextPage && !this.modulePageToken) {
-      // Ignore if there are no more items to load
-      return;
-    }
-
+  loadModules() {
     this.isModulesLoading = true;
-    this.mttClient.testResults.listModules(this.testRunId, this.modulePageToken)
+    this.mttClient.testResults.listModules(this.testRunId)
         .pipe(finalize(() => {
           this.isModulesLoading = false;
         }))
@@ -78,16 +70,12 @@ export class TestModuleResultList implements OnInit {
               for (const module of (res.results || [])) {
                 this.moduleResultNodes.push(
                     this.createModuleResultNode(module));
-                this.modulePageToken = res.next_page_token;
               }
             },
             error => {
-              // TODO: Show old view if no data available
-              this.showOldView = true;
-              console.log(
-                  'No parsed results available. Showing invocation status results instead.');
-            },
-        );
+              this.notifier.showError(
+                  `Failed to load test results.`, buildApiErrorMessage(error));
+            });
   }
 
   expandModule(moduleIndex: number) {
@@ -106,7 +94,7 @@ export class TestModuleResultList implements OnInit {
     }
 
     this.moduleResultNodes[moduleIndex].isLoading = true;
-    const moduleId = this.moduleResultNodes[moduleIndex].moduleResult.id;
+    const moduleId = this.moduleResultNodes[moduleIndex].moduleResult.id!;
     this.mttClient.testResults.listTestCases(moduleId)
         .pipe(finalize(() => {
           this.moduleResultNodes[moduleIndex].isLoading = false;
@@ -136,7 +124,7 @@ export class TestModuleResultList implements OnInit {
     this.moduleResultNodes[moduleIndex].isLoading = true;
     const moduleNode = this.moduleResultNodes[moduleIndex];
     this.mttClient.testResults
-        .listTestCases(moduleNode.moduleResult.id, moduleNode.nextPageToken)
+        .listTestCases(moduleNode.moduleResult.id!, moduleNode.nextPageToken)
         .pipe(finalize(() => {
           this.moduleResultNodes[moduleIndex].isLoading = false;
         }))
@@ -177,6 +165,8 @@ export class TestModuleResultList implements OnInit {
 
   createModuleResultNode(module: mttModels.TestModuleResult): ModuleResultNode {
     return {
+      expandable: module.id && module.total_tests &&
+          module.total_tests !== module.passed_tests,
       expanded: false,
       isLoading: false,
       moduleResult: module,

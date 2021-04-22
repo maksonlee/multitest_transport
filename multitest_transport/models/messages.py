@@ -597,22 +597,20 @@ class DeviceActionList(messages.Message):
 
 class TestModuleResult(messages.Message):
   """Test module result."""
-  id = messages.StringField(1, required=True)
-  attempt_id = messages.StringField(2, required=True)
-  name = messages.StringField(3, required=True)
-  complete = messages.BooleanField(4, required=True)
-  duration_ms = messages.IntegerField(5, required=True)
-  passed_tests = messages.IntegerField(6, required=True)
-  failed_tests = messages.IntegerField(7, required=True)
-  total_tests = messages.IntegerField(8, required=True)
-  error_message = messages.StringField(9)
+  id = messages.StringField(1)  # Legacy test results will not have an ID
+  name = messages.StringField(2, required=True)
+  complete = messages.BooleanField(3, required=True)
+  duration_ms = messages.IntegerField(4, required=True)
+  passed_tests = messages.IntegerField(5, required=True)
+  failed_tests = messages.IntegerField(6, required=True)
+  total_tests = messages.IntegerField(7, required=True)
+  error_message = messages.StringField(8)
 
 
 @Converter(sql_models.TestModuleResult, TestModuleResult)
 def _TestModuleResultConverter(obj):
   return TestModuleResult(
       id=obj.id,
-      attempt_id=obj.attempt_id,
       name=obj.name,
       complete=obj.complete,
       duration_ms=obj.duration_ms,
@@ -623,11 +621,23 @@ def _TestModuleResultConverter(obj):
   )
 
 
+@Converter(api_messages.TestGroupStatus, TestModuleResult)
+def _LegacyTestModuleResultConverter(obj):
+  return TestModuleResult(
+      name=obj.name,
+      complete=obj.is_complete,
+      duration_ms=obj.elapsed_time,
+      passed_tests=obj.passed_test_count,
+      failed_tests=obj.failed_test_count,
+      total_tests=obj.total_test_count,
+      error_message=obj.failure_message,
+  )
+
+
 class TestModuleResultList(messages.Message):
-  """List of test module results with pagination."""
+  """List of test module results."""
   results = messages.MessageField(TestModuleResult, 1, repeated=True)
-  next_page_token = messages.StringField(2)
-  attempt_info = messages.StringField(3)
+  extra_info = messages.StringField(2)
 
 
 class TestCaseResult(messages.Message):

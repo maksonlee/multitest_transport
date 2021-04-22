@@ -20,10 +20,6 @@ import sqlalchemy as sa
 from sqlalchemy.ext import declarative
 import sqlalchemy_utils as sa_utils
 
-# Re-export for convenience
-OR = sa.or_
-AND = sa.and_
-
 
 class IntEnum(sa.TypeDecorator):
   """Stores enums as integers, supports enum.IntEnum and messages.Enum."""

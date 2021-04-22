@@ -95,27 +95,6 @@ describe('TestModuleResultList', () => {
     expect(textContent).toContain('error 456');  // Module 1 failed
     expect(textContent).toContain('0/0');
     expect(textContent).not.toContain('null');
-
-    expect(textContent).toContain('Load more modules');
-  });
-
-  it('can load more module results', () => {
-    // Set next page of module results
-    const module3 = newMockTestModuleResult('3', 'Module_3');
-    client.listModules.and.returnValue(observableOf({results: [module3]}));
-
-    getEl(el, '.load-modules-button').click();
-    testResultModuleListFixture.detectChanges();
-
-    const textContent = getTextContent(el);
-
-    // First page should still be there
-    expect(textContent).toContain('Module 1');
-    expect(textContent).toContain('Second Module');
-
-    expect(textContent).toContain('Module_3');
-
-    expect(textContent).not.toContain('Load more modules');
   });
 
   it('displays the test case results', () => {

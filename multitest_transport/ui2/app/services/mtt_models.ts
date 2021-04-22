@@ -852,20 +852,18 @@ export declare interface TestRunActionRef {
  * Reference to /models/message.py:TestModuleResult
  */
 export declare interface TestModuleResult {
-  id: string;
-  attempt_id: string;
+  id?: string;  // Legacy test results will not have an ID
   name: string;
   complete: boolean;
   passed_tests: number;
   failed_tests: number;
   total_tests: number;
-  error_message?: string;  // Incomplete modules will have an error message
+  error_message?: string;
 }
 
-/** Paginated list of TestModuleResult. */
+/** List of TestModuleResult. */
 export declare interface TestModuleResultList {
   results?: TestModuleResult[];
-  next_page_token?: string;
 }
 
 /** Test outcome. */

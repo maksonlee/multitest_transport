@@ -42,7 +42,8 @@
     <div *ngFor="let moduleNode of moduleResultNodes; index as i" class="module-section">
       <div class="module-row row-divider">
         <div fxFlex="450px" class="inline overflow">
-          <button mat-icon-button aria-label="Toggle" (click)="expandModule(i)" class="expand-button">
+          <button mat-icon-button aria-label="Toggle" (click)="expandModule(i)" class="expand-button"
+                  *ngIf="moduleNode.expandable">
             <mat-icon class="mat-icon-rtl-mirror">
               {{moduleNode.expanded ? 'expand_more' : 'chevron_right'}}
             </mat-icon>
@@ -120,19 +121,6 @@
       </div> <!-- end ngIf moduleNode.expanded -->
 
     </div> <!-- end ngFor moduleResultNodes -->
-
-    <!-- Load more modules button -->
-    <div *ngIf="modulePageToken" class="load-modules-row">
-      <!-- TODO: Add Viewing x of x section -->
-      <button mat-button class="load-modules-button" (click)="loadModules(true)"
-              [disabled]='isModulesLoading'>
-        {{isModulesLoading ? 'Loading more modules...' : 'Load more modules'}}
-      </button>
-    </div>
-  </ng-template>
-
-  <ng-template #oldView>
-    <test-run-results [invocationStatus]="invocationStatus"></test-run-results>
   </ng-template>
 
 </div>

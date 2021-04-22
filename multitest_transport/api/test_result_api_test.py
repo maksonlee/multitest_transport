@@ -11,12 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Tests for test_result_api."""
 from absl.testing import absltest
 import mock
 from protorpc import protojson
 
+from tradefed_cluster import api_messages
 from tradefed_cluster.api_messages import CommandState
 
 from multitest_transport.api import api_test_util
@@ -66,36 +66,19 @@ class TestResultApiTest(api_test_util.TestCase):
     self.assertEqual('200 OK', response.status)
     result_list = protojson.decode_message(
         messages.TestModuleResultList, response.body)
-    # Both modules returned, ordered by failure counts, with no next page
-    self.assertLen(result_list.results, 2)
-    module_ids = [r.id for r in result_list.results]
-    self.assertEqual(['module_2', 'module_1'], module_ids)
-    self.assertIsNone(result_list.next_page_token)
-
-  def testListTestModuleResults_pagination(self):
-    """Tests that module results can be fetched with pagination."""
-    path = 'modules?attempt_id=attempt_id&max_results=1'
-    response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
-    self.assertEqual('200 OK', response.status)
-    first_page = protojson.decode_message(
-        messages.TestModuleResultList, response.body)
-    # First page has one result and a page token
-    self.assertLen(first_page.results, 1)
-    self.assertEqual('module_2', first_page.results[0].id)
-    self.assertEqual('1:module_2', first_page.next_page_token)
-
-    path = 'modules?attempt_id=attempt_id&max_results=1&page_token=1:module_2'
-    response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
-    self.assertEqual('200 OK', response.status)
-    second_page = protojson.decode_message(
-        messages.TestModuleResultList, response.body)
-    # Second page has one result and no page token
-    self.assertLen(second_page.results, 1)
-    self.assertEqual('module_1', second_page.results[0].id)
-    self.assertIsNone(second_page.next_page_token)
+    # Both modules returned, ordered by failure counts
+    expected_results = [
+        messages.TestModuleResult(
+            id='module_2', name='module_2', complete=False, duration_ms=456,
+            passed_tests=1, failed_tests=1, total_tests=3),
+        messages.TestModuleResult(
+            id='module_1', name='module_1', complete=True, duration_ms=123,
+            passed_tests=0, failed_tests=0, total_tests=0),
+    ]
+    self.assertEqual(result_list.results, expected_results)
 
   @mock.patch.object(tfc_client, 'GetRequest')
-  def testListTestModuleResults_testRunId(self, mock_get_request):
+  def testListTestModuleResults_testRunId(self, mock_request):
     """Tests that module results can be fetched using a test run ID."""
     # Create test run with three attempts (latest is still RUNNING)
     ndb_models.TestRun(id='test_run_id', request_id='request_id').put()
@@ -105,9 +88,8 @@ class TestResultApiTest(api_test_util.TestCase):
         attempt_id='attempt_id', state=CommandState.COMPLETED)
     third_attempt = mock.MagicMock(
         attempt_id='INVALID', state=CommandState.RUNNING)
-    request = mock.MagicMock(
+    mock_request.return_value = mock.MagicMock(
         command_attempts=[first_attempt, second_attempt, third_attempt])
-    mock_get_request.return_value = request
 
     # Results are fetched for the latest completed attempt
     path = 'modules?test_run_id=test_run_id'
@@ -118,7 +100,6 @@ class TestResultApiTest(api_test_util.TestCase):
     self.assertLen(result_list.results, 2)
     module_ids = [r.id for r in result_list.results]
     self.assertEqual(['module_2', 'module_1'], module_ids)
-    self.assertIsNone(result_list.next_page_token)
 
   def testListTestModuleResults_testRunNotFound(self):
     """Tests that an error is returned if the test run is not found."""
@@ -133,23 +114,41 @@ class TestResultApiTest(api_test_util.TestCase):
                             expect_errors=True)
     self.assertEqual('400 Bad Request', response.status)
 
-  def testListTestModuleResults_nameFilter(self):
-    """Tests that module results can be filtered by name."""
-    path = 'modules?attempt_id=attempt_id&name=uLe_1'
-    response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
-    result_list = protojson.decode_message(
-        messages.TestModuleResultList, response.body)
-    self.assertLen(result_list.results, 1)
-    self.assertEqual('module_1', result_list.results[0].id)
+  @mock.patch.object(tfc_client, 'GetRequestInvocationStatus')
+  @mock.patch.object(tfc_client, 'GetRequest')
+  def testListTestModuleResults_legacy(self, mock_request,
+                                       mock_invocation_status):
+    """Tests that legacy module results are fetched if not found in DB."""
+    # Create test run with a COMPLETED legacy attempts
+    ndb_models.TestRun(id='test_run_id', request_id='request_id').put()
+    attempt = mock.MagicMock(attempt_id='LEGACY', state=CommandState.COMPLETED)
+    mock_request.return_value = mock.MagicMock(command_attempts=[attempt])
+    # Return two test group statuses (2nd has more failures)
+    mock_invocation_status.return_value = api_messages.InvocationStatus(
+        test_group_statuses=[
+            api_messages.TestGroupStatus(
+                name='legacy_module_1', is_complete=True, elapsed_time=123,
+                total_test_count=2, passed_test_count=2, failed_test_count=0),
+            api_messages.TestGroupStatus(
+                name='legacy_module_2', is_complete=False, elapsed_time=456,
+                total_test_count=2, passed_test_count=0, failed_test_count=2),
+        ])
 
-  def testListTestModuleResults_completeFilter(self):
-    """Tests that module results can be filtered by completeness."""
-    path = 'modules?attempt_id=attempt_id&complete=false'
+    # Legacy results are returned, ordered by failure count
+    path = 'modules?test_run_id=test_run_id'
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
-    result_list = protojson.decode_message(
-        messages.TestModuleResultList, response.body)
-    self.assertLen(result_list.results, 1)
-    self.assertEqual('module_2', result_list.results[0].id)
+    self.assertEqual('200 OK', response.status)
+    result_list = protojson.decode_message(messages.TestModuleResultList,
+                                           response.body)
+    expected_results = [
+        messages.TestModuleResult(
+            id=None, name='legacy_module_2', complete=False, duration_ms=456,
+            passed_tests=0, failed_tests=2, total_tests=2),
+        messages.TestModuleResult(
+            id=None, name='legacy_module_1', complete=True, duration_ms=123,
+            passed_tests=2, failed_tests=0, total_tests=2),
+    ]
+    self.assertEqual(result_list.results, expected_results)
 
   def testListTestCaseResults(self):
     """Tests that test case results can be fetched."""

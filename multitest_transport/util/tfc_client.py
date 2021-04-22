@@ -15,6 +15,7 @@
 """A TFC client module."""
 import json
 import threading
+from typing import Optional
 
 import apiclient
 import httplib2
@@ -59,7 +60,9 @@ def BackfillRequestSyncs():
   _GetAPIClient().coordinator().backfillRequestSyncs().execute()
 
 
-def NewRequest(new_request_msg):
+def NewRequest(
+    new_request_msg: api_messages.NewRequestMessage
+) -> api_messages.RequestMessage:
   """Creates a new request.
 
   Args:
@@ -72,7 +75,7 @@ def NewRequest(new_request_msg):
   return protojson.decode_message(api_messages.RequestMessage, json.dumps(res))  # pytype: disable=module-attr
 
 
-def GetRequest(request_id):
+def GetRequest(request_id: int) -> api_messages.RequestMessage:
   """Gets a TFC request.
 
   Args:
@@ -84,7 +87,7 @@ def GetRequest(request_id):
   return protojson.decode_message(api_messages.RequestMessage, json.dumps(res))  # pytype: disable=module-attr
 
 
-def CancelRequest(request_id):
+def CancelRequest(request_id: int):
   """Cancels a request.
 
   Args:
@@ -93,7 +96,8 @@ def CancelRequest(request_id):
   _GetAPIClient().requests().cancel(request_id=request_id).execute()
 
 
-def GetTestContext(request_id, command_id):
+def GetTestContext(request_id: int,
+                   command_id: str) -> api_messages.TestContext:
   """Gets a test context.
 
   Args:
@@ -108,7 +112,8 @@ def GetTestContext(request_id, command_id):
   return protojson.decode_message(api_messages.TestContext, json.dumps(res))  # pytype: disable=module-attr
 
 
-def GetAttempt(request_id, attempt_id):
+def GetAttempt(request_id: int,
+               attempt_id: str) -> Optional[api_messages.CommandAttemptMessage]:
   """Find a TFC command attempt.
 
   Args:
@@ -122,7 +127,8 @@ def GetAttempt(request_id, attempt_id):
   return next((a for a in attempts if a.attempt_id == attempt_id), None)
 
 
-def GetLatestFinishedAttempt(request_id):
+def GetLatestFinishedAttempt(
+    request_id: int) -> Optional[api_messages.CommandAttemptMessage]:
   """Find the latest TFC command attempt in a final state.
 
   Args:
@@ -135,7 +141,7 @@ def GetLatestFinishedAttempt(request_id):
   return next((a for a in attempts if IsFinalCommandState(a.state)), None)
 
 
-def GetDeviceInfo(serial_num):
+def GetDeviceInfo(serial_num: str) -> Optional[api_messages.DeviceInfo]:
   """Gets device info.
 
   Args:
@@ -150,3 +156,12 @@ def GetDeviceInfo(serial_num):
     if e.resp.status == 404:
       return None
     raise
+
+
+def GetRequestInvocationStatus(
+    request_id: int) -> api_messages.InvocationStatus:
+  """Fetches the invocation status for a request."""
+  res = _GetAPIClient().requests().invocationStatus().get(
+      request_id=request_id).execute()
+  return protojson.decode_message(  # pytype: disable=module-attr
+      api_messages.InvocationStatus, json.dumps(res))
