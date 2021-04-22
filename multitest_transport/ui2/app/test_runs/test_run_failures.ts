@@ -45,6 +45,7 @@ export class TestRunFailures implements OnInit, OnChanges {
   @Input() state!: TestRunState;
   @Input() numFailedTests = 0;
   @Input() numTotalTests = 0;
+  @Input() numFailedModules = 0;
   readonly DisplayMode = DisplayMode;
   displayMode = DisplayMode.PENDING;
 
@@ -55,6 +56,7 @@ export class TestRunFailures implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     this.numFailedTests = Number(this.numFailedTests || 0);
     this.numTotalTests = Number(this.numTotalTests || 0);
+    this.numFailedModules = Number(this.numFailedModules || 0);
     this.updateDisplayMode();
   }
 

@@ -23,4 +23,7 @@
     </ng-container>
     {{numFailedTests}} / {{numTotalTests}}
   </p>
+  <p *ngIf="numFailedModules" class="results results-failed">
+    <mat-icon>warning</mat-icon> {{numFailedModules}} modules failed
+  </p>
 </div>
