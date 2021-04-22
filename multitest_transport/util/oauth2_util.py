@@ -43,8 +43,8 @@ class CredentialsProperty(ndb.BlobProperty):
 
   def _from_base_type(self, value):
     try:
-      # Use bytes encoding for backwards compatibility with Python 2
-      credentials = pickle.loads(value, encoding='bytes')
+      # Use UTF-8 encoding for backwards compatibility with Python 2
+      credentials = pickle.loads(value, encoding='utf-8')
       # Patch missing fields from older credentials objects (b/176850961)
       if not hasattr(credentials, '_quota_project_id'):
         setattr(credentials, '_quota_project_id', None)
