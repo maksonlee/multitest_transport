@@ -190,9 +190,9 @@ class TestResourceDownloader(object):
     try:
       logging.info('Starting download of %s', self.url)
       with file_util.FileHandle.Get(self.cache_url).Open(mode='w') as dest:
-        for data, offset, total_size in self.download_fn(self.source_url):
-          dest.write(data)
-          progress = float(offset) / float(total_size)
+        for chunk in self.download_fn(self.source_url):
+          dest.write(chunk.data)
+          progress = float(chunk.offset) / float(chunk.total_size)
           self._UpdateTracker(progress)
       logging.info('Downloading %s completed', self.url)
       # Mark download as completed

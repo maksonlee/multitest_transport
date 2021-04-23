@@ -41,7 +41,7 @@ class FileServerIntegrationTest(integration_util.DockerContainerTest):
         test_id='android.cts.9_0.arm',
         test_resource_objs=[{
             'name': 'android-cts.zip',
-            'url': 'file:///data/local_file_store/android-cts.zip',
+            'url': 'file://localhost/data/local_file_store/android-cts.zip',
         }])['id']
     # Lease task, allowing additional time for resource download
     self.container.WaitForState(self.test_run_id, 'QUEUED', timeout=60)

@@ -135,18 +135,16 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
         'Executing e2e_log_action on device %s' % local_device_serial, host_log)
 
   def testRunCtsModule(self):
-    """Tests executing a CTS module (use test package, handle results)."""
-    self.container.Exec('wget', '--retry-connrefused', '-O', '/data/cts.zip',
-                        CTS_DOWNLOAD_URL % FLAGS.architecture)
+    """Tests executing a CTS module (download test suite, handle results)."""
     test_run_id = self.container.ScheduleTestRun(
         FLAGS.serial_number,
         test_id='android.cts.10_0.arm',
         extra_args='-m Gesture',  # arbitrary small module
         test_resource_objs=[{
             'name': 'android-cts.zip',
-            'url': 'file:///data/cts.zip',
+            'url': CTS_DOWNLOAD_URL % FLAGS.architecture,
         }])['id']
-    self.container.WaitForState(test_run_id, 'COMPLETED', timeout=6 * 60)
+    self.container.WaitForState(test_run_id, 'COMPLETED', timeout=10 * 60)
     # Verify that the tests were executed
     test_run = self.container.GetTestRun(test_run_id)
     self.assertGreater(int(test_run['total_test_count']), 0)

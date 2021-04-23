@@ -94,13 +94,16 @@ class DownloadUtilTest(testbed_dependent_test.TestbedDependentTest):
     # Return right handle based on URL
     mock_handle_factory.side_effect = {url: src_handle, dst_url: dst_handle}.get
     # File downloaded in two chunks
-    mock_download_file.return_value = [('hello', 5, 10), ('world', 5, 10)]
+    mock_download_file.return_value = [
+        file_util.FileChunk(data=b'hello', offset=5, total_size=10),
+        file_util.FileChunk(data=b'world', offset=10, total_size=10),
+    ]
 
     cache_url = download_util.DownloadResource(url)
     self.assertEqual(dst_url, cache_url)
     # File downloaded, written to destination, and tracker updated
     mock_download_file.assert_called_with(url)
-    dst_file.write.assert_has_calls([mock.call('hello'), mock.call('world')])
+    dst_file.write.assert_has_calls([mock.call(b'hello'), mock.call(b'world')])
     tracker = ndb_models.TestResourceTracker.get_by_id(url)
     self.assertEqual(1.0, tracker.download_progress)
     self.assertTrue(tracker.completed)
@@ -123,15 +126,17 @@ class DownloadUtilTest(testbed_dependent_test.TestbedDependentTest):
     dst_handle.Open.return_value.__enter__.return_value = dst_file
     mock_handle_factory.side_effect = {dst_url: dst_handle}.get
     # File downloaded in two chunks
-    mock_build_channel.DownloadFile.return_value = [('hello', 5, 10),
-                                                    ('world', 5, 10)]
+    mock_build_channel.DownloadFile.return_value = [
+        file_util.FileChunk(data=b'hello', offset=5, total_size=10),
+        file_util.FileChunk(data=b'world', offset=10, total_size=10),
+    ]
 
     cache_url = download_util.DownloadResource(url)
     self.assertEqual(dst_url, cache_url)
     # File downloaded from channel, written to destination, and tracker updated
     mock_find_build_channel.assert_called_with(url)
     mock_build_channel.DownloadFile.assert_called_with(src_path)
-    dst_file.write.assert_has_calls([mock.call('hello'), mock.call('world')])
+    dst_file.write.assert_has_calls([mock.call(b'hello'), mock.call(b'world')])
     tracker = ndb_models.TestResourceTracker.get_by_id(url)
     self.assertEqual(1.0, tracker.download_progress)
     self.assertTrue(tracker.completed)
