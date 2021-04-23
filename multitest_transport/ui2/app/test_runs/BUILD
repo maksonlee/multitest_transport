@@ -79,6 +79,7 @@ ng_module(
     name = "tests",
     testonly = True,
     srcs = [
+        "attempt_status_test.ts",
         "new_test_run_page_test.ts",
         "test_job_tree_test.ts",
         "test_module_result_list_test.ts",
