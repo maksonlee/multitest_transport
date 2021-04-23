@@ -1106,15 +1106,17 @@ class CliTest(parameterized.TestCase):
     setup_mttd.assert_not_called()
     setup_permanent_bin.assert_not_called()
 
+  @mock.patch.object(cli, '_HasSudoAccess')
   @mock.patch.object(cli, '_IsDaemonActive')
   @mock.patch.object(cli, '_SetupSystemdScript')
   @mock.patch.object(cli, '_SetupMTTRuntimeIntoLibPath')
   def testStartMttDaemon_NotYetActive(
-      self, setup_permanent_bin, setup_mttd, is_active):
+      self, setup_permanent_bin, setup_mttd, is_active, has_sudo):
     args = mock.create_autospec(cli.argparse.Namespace)
     host = self._CreateHost(
         cluster_name='acluster', hostname='ahost', enable_autoupdate=True)
     is_active.return_value = False
+    has_sudo.return_value = True
 
     cli._StartMttDaemon(args, host)
     setup_mttd.assert_called_with(args, host)
@@ -1124,11 +1126,25 @@ class CliTest(parameterized.TestCase):
         mock.call(['systemctl', 'start', 'mttd.service']),
     ])
 
+  @mock.patch.object(cli, '_HasSudoAccess')
+  @mock.patch.object(cli, '_IsDaemonActive')
+  def testStartMttDaemon_NoSudo(self, is_active, has_sudo):
+    args = mock.create_autospec(cli.argparse.Namespace)
+    host = self._CreateHost(
+        cluster_name='acluster', hostname='ahost', enable_autoupdate=True)
+    is_active.return_value = False
+    has_sudo.return_value = False
+
+    with self.assertRaises(cli.ActionableError):
+      cli._StartMttDaemon(args, host)
+
+  @mock.patch.object(cli, '_IsDaemonActive')
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
   @mock.patch('__main__.cli.os.geteuid')
-  def testStop(self, euid, is_running):
+  def testStop(self, euid, is_running, daemon_active):
     euid.return_value = 123
     is_running.return_value = True
+    daemon_active.return_value = False
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop'])
     cli.Stop(args, self._CreateHost())
@@ -1144,9 +1160,11 @@ class CliTest(parameterized.TestCase):
     ])
     is_running.assert_called_once_with('mtt')
 
+  @mock.patch.object(cli, '_IsDaemonActive')
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
-  def testStop_notRunning(self, is_running):
+  def testStop_notRunning(self, is_running, daemon_active):
     is_running.return_value = False
+    daemon_active.return_value = False
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop'])
     cli.Stop(args, self._CreateHost())
@@ -1158,12 +1176,15 @@ class CliTest(parameterized.TestCase):
     ])
     is_running.assert_called_once_with('mtt')
 
+  @mock.patch.object(cli, '_IsDaemonActive')
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
   @mock.patch('__main__.cli.os.geteuid')
-  def testStop_gracefulShutdownWithWaitFlag(self, euid, is_running):
+  def testStop_gracefulShutdownWithWaitFlag(
+      self, euid, is_running, daemon_active):
     """Test Stop with wait flag set."""
     euid.return_value = 123
     is_running.return_value = True
+    daemon_active.return_value = False
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop', '--wait'])
     cli.Stop(args, self._CreateHost())
@@ -1179,12 +1200,15 @@ class CliTest(parameterized.TestCase):
     ])
     is_running.assert_called_once_with('mtt')
 
+  @mock.patch.object(cli, '_IsDaemonActive')
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
   @mock.patch('__main__.cli.os.geteuid')
-  def testStop_gracefulShutdownWithConfig(self, euid, is_running):
+  def testStop_gracefulShutdownWithConfig(
+      self, euid, is_running, daemon_active):
     """Test Stop with graceful shutdown set in host config."""
     euid.return_value = 123
     is_running.return_value = True
+    daemon_active.return_value = False
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop'])
     cli.Stop(args, self._CreateHost(graceful_shutdown=True))
@@ -1200,12 +1224,14 @@ class CliTest(parameterized.TestCase):
     ])
     is_running.assert_called_once_with('mtt')
 
+  @mock.patch.object(cli, '_IsDaemonActive')
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
   @mock.patch('__main__.cli.os.geteuid')
-  def testStop_noMasterUrl(self, euid, is_running):
+  def testStop_noMasterUrl(self, euid, is_running, daemon_active):
     """Test Stop with kill mtt with control_server_url in host config."""
     euid.return_value = 123
     is_running.return_value = True
+    daemon_active.return_value = False
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop'])
     cli.Stop(args, self._CreateHost(control_server_url=None))
@@ -1221,10 +1247,12 @@ class CliTest(parameterized.TestCase):
     ])
     is_running.assert_called_once_with('mtt')
 
+  @mock.patch.object(cli, '_HasSudoAccess')
   @mock.patch.object(cli, '_StopMttNode')
   @mock.patch.object(cli, '_IsDaemonActive')
-  def testStop_DaemonIsClosedIfActive(self, is_active, stop_mtt):
+  def testStop_DaemonIsClosedIfActive(self, is_active, stop_mtt, has_sudo):
     is_active.return_value = True
+    has_sudo.return_value = True
     args = self.arg_parser.parse_args(['stop'])
     host = self._CreateHost(hostname='ahost')
 
@@ -1235,6 +1263,18 @@ class CliTest(parameterized.TestCase):
         mock.call(['systemctl', 'stop', 'mttd.service']),
         mock.call(['systemctl', 'disable', 'mttd.service']),
     ])
+
+  @mock.patch.object(cli, '_HasSudoAccess')
+  @mock.patch.object(cli, '_IsDaemonActive')
+  def testStop_DaemonFailedIfActiveAndNoSudo(
+      self, is_active, has_sudo):
+    is_active.return_value = True
+    has_sudo.return_value = False
+    args = self.arg_parser.parse_args(['stop'])
+    host = self._CreateHost(hostname='ahost')
+
+    with self.assertRaises(cli.ActionableError):
+      cli.Stop(args, host)
 
   @mock.patch('__main__.cli.os.geteuid')
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
@@ -1301,28 +1341,35 @@ class CliTest(parameterized.TestCase):
     (self.mock_control_server_client.PatchTestHarnessImageToHostMetadata
      .assert_called_with(host.config.hostname, host.config.docker_image))
 
+  @mock.patch.object(cli, '_StopMttDaemon')
   @mock.patch.object(cli, '_StartMttNode')
   @mock.patch.object(cli, '_StopMttNode')
   @mock.patch.object(cli, '_PullUpdate')
-  def testUpdate(self, pull_update, stop_mtt, start_mtt):
+  def testUpdate(self, pull_update, stop_mtt, start_mtt, stop_mttd):
     """Test Update."""
     pull_update.return_value = True
     args = self.arg_parser.parse_args(['update'])
     host = self._CreateHost()
+
     cli.Update(args, host)
+
+    stop_mttd.assert_called()
     stop_mtt.assert_called_once_with(args, host)
     start_mtt.assert_called_once_with(args, host)
 
+  @mock.patch.object(cli, '_StopMttDaemon')
   @mock.patch.object(cli, '_StartMttNode')
   @mock.patch.object(cli, '_StopMttNode')
   @mock.patch.object(cli, '_PullUpdate')
-  def testUpdate_notUpdate(self, pull_update, stop_mtt, start_mtt):
+  def testUpdate_notUpdate(self, pull_update, stop_mtt, start_mtt, stop_mttd):
     """Test Update but skip."""
     pull_update.return_value = False
     args = self.arg_parser.parse_args(['update'])
     host = self._CreateHost()
+
     cli.Update(args, host)
 
+    stop_mttd.assert_called()
     self.assertFalse(stop_mtt.called)
     self.assertFalse(start_mtt.called)
 

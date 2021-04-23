@@ -555,11 +555,18 @@ def _StartMttDaemon(args, host):
 
   Raises:
     RuntimeError: when failing to run command on host.
+    ActionableError: when root privileges are not granted.
   """
   logger.info('Starting MTT daemon on %s.', host.name)
   if _IsDaemonActive(host):
     logger.warning('MTT daemon is already running on %s.', host.name)
     return
+  if not _HasSudoAccess():
+    raise ActionableError(
+        'The root privileges are required to start MTT daemon. '
+        'Please consider run MTT CLI with sudo access. '
+        'If you are running MTT Lab CLI, please consider adding flags '
+        ' --sudo_user or/and --ask_sudo_password.')
   _SetupMTTRuntimeIntoLibPath(args, host)
   _SetupSystemdScript(args, host)
   # Enable mttd.service, to make sure it can "start" on system reboot.
@@ -687,10 +694,19 @@ def _StopMttDaemon(host):
 
   Args:
     host: an instance of host_util.Host.
+
+  Raises:
+    ActionableError: when root privileges are not granted.
   """
   if not _IsDaemonActive(host):
     logger.debug('MTT daemon is not active on %s. Skip daemon stop.', host.name)
     return
+  if not _HasSudoAccess():
+    raise ActionableError(
+        'The root privileges are required to stop MTT daemon. '
+        'Please consider run MTT CLI with sudo access. '
+        'If you are running MTT Lab CLI, please consider adding flags '
+        ' --sudo_user or/and --ask_sudo_password.')
   logger.info('Stopping MTT daemon on %s.', host.name)
   # Stop mttd.service immediately.
   host.context.Run(['systemctl', 'stop', 'mttd.service'])
