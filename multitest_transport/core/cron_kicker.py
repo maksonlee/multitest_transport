@@ -21,7 +21,6 @@ import datetime
 import json
 import logging
 import os
-import pickle
 
 import flask
 import pytz
@@ -38,6 +37,7 @@ from tradefed_cluster.services import task_scheduler
 CRON_YAML_PATH = 'cron.yaml'
 CRON_KICKER_QUEUE = 'cron-kicker-queue'
 CRON_JOB_DEADLINE_SECONDS = 300
+ISO_8601_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 APP = flask.Flask(__name__)
 
@@ -52,12 +52,27 @@ class CronJob(object):
     self.next_run_time = next_run_time
 
   def __repr__(self):
-    return json.dumps(self.__dict__)
+    return self.ToJson()
 
   def __eq__(self, other):
     if isinstance(self, other.__class__):
       return self.__dict__ == other.__dict__
     return False
+
+  def ToJson(self):
+    d = self.__dict__.copy()
+    for key, value in d.items():
+      if isinstance(value, datetime.datetime):
+        d[key] = value.strftime(ISO_8601_FORMAT)
+    return json.dumps(d)
+
+  @classmethod
+  def FromJson(cls, s):
+    d = json.loads(s)
+    if d['next_run_time']:
+      d['next_run_time'] = datetime.datetime.strptime(
+          d['next_run_time'], ISO_8601_FORMAT)
+    return cls(**d)
 
 
 def _GetCurrentTime():
@@ -127,10 +142,9 @@ def ScheduleNextKick(cron_job, next_run_time=None):
     schedule = groctimespecification.GrocTimeSpecification(cron_job.schedule)
     next_run_time = schedule.GetMatches(now, 1)[0]
   cron_job.next_run_time = next_run_time
-  # TODO: consider switching to json since picke is insecure.
   task_scheduler.AddTask(
       queue_name=CRON_KICKER_QUEUE,
-      payload=pickle.dumps(cron_job, protocol=2),
+      payload=cron_job.ToJson(),
       eta=pytz.UTC.localize(cron_job.next_run_time))
 
 
@@ -140,7 +154,7 @@ def ScheduleNextKick(cron_job, next_run_time=None):
 def TaskHandler(fake=None):
   """A web request handler to handle tasks from the cron kicker queue."""
   del fake
-  cron_job = pickle.loads(flask.request.get_data())
+  cron_job = CronJob.FromJson(flask.request.get_data())
   Kick(cron_job)
   ScheduleNextKick(cron_job)
   return common.HTTP_OK

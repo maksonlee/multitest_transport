@@ -16,7 +16,6 @@
 
 import datetime
 import os
-import pickle
 
 from absl.testing import absltest
 import mock
@@ -64,7 +63,7 @@ class CronKickerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertLen(tasks, 1)
     task = tasks[0]
     self.assertEqual(pytz.UTC.localize(next_run_time), task.eta)
-    new_cron_job = pickle.loads(task.payload)
+    new_cron_job = cron_kicker.CronJob.FromJson(task.payload)
     self.assertEqual(cron_job.url, new_cron_job.url)
     self.assertEqual(cron_job.schedule, new_cron_job.schedule)
     self.assertEqual(cron_job.target, new_cron_job.target)
@@ -85,7 +84,7 @@ class TaskHandlerTest(absltest.TestCase):
         next_run_time=None)
 
     self.app.post(
-        '/_ah/queue/%s' % cron_kicker.CRON_KICKER_QUEUE, pickle.dumps(cron_job))
+        '/_ah/queue/%s' % cron_kicker.CRON_KICKER_QUEUE, cron_job.ToJson())
 
     mock_kick.assert_called_with(cron_job)
     mock_schedule_next_kick.assert_called_with(cron_job)
