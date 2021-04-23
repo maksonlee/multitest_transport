@@ -44,6 +44,8 @@ interface ModuleResultNode {
 })
 export class TestModuleResultList implements OnInit {
   @Input() testRunId!: string;
+  @Input() totalFailures?: number;
+  @Input() totalTests?: number;
 
   moduleResultNodes: ModuleResultNode[] = [];
   isModulesLoading = false;
@@ -143,6 +145,13 @@ export class TestModuleResultList implements OnInit {
                   buildApiErrorMessage(error));
             },
         );
+  }
+
+  getTotalCountsString(): string {
+    if (typeof this.totalFailures === 'undefined') {
+      return '';
+    }
+    return `(${this.totalFailures}/${this.totalTests})`;
   }
 
   getStatusString(testCaseResult: mttModels.TestCaseResult): string {

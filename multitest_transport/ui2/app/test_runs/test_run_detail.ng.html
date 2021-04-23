@@ -141,7 +141,9 @@
                           [request]="request" [testRun]="testRun"></test-run-console>
       </mat-tab>
       <mat-tab label="Test Results">
-        <test-module-result-list [testRunId]="testRunId">
+        <test-module-result-list [testRunId]="testRunId"
+                                 [totalFailures]="testRun.failed_test_count"
+                                 [totalTests]="testRun.total_test_count">
         </test-module-result-list>
       </mat-tab>
       <mat-tab label="Test Resources">

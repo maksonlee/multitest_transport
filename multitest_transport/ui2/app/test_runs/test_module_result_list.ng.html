@@ -26,10 +26,8 @@
     <table class="mat-table">
       <!-- TODO: Header should be sticky -->
       <thead class="mat-header-row">
-        <th class="mat-header-cell" fxFlex="450px">Module</th>
-        <th class="mat-header-cell" fxFlex="120px">Result</th>
-        <th class="mat-header-cell" fxFlex="120px">Passed/Total</th>
-        <th class="mat-header-cell" fxFlex="120px">Module Status</th>
+        <th class="mat-header-cell" fxFlex="450px">Modules ({{moduleResultNodes.length}})</th>
+        <th class="mat-header-cell" fxFlex="220px">Failed/Total {{getTotalCountsString()}}</th>
         <th class="mat-header-cell failure-message-column" fxFlex>Failure Message</th>
         <th class="mat-header-cell" fxFlex="40px"><!-- Stack trace button column --></th>
       </thead>
@@ -42,32 +40,29 @@
     <div *ngFor="let moduleNode of moduleResultNodes; index as i" class="module-section">
       <div class="module-row row-divider">
         <div fxFlex="450px" class="inline overflow">
-          <button mat-icon-button aria-label="Toggle" (click)="expandModule(i)" class="expand-button"
-                  *ngIf="moduleNode.expandable">
+          <button mat-icon-button aria-label="Toggle" (click)="expandModule(i)"
+                  class="expand-button" [disabled]="!moduleNode.expandable">
             <mat-icon class="mat-icon-rtl-mirror">
               {{moduleNode.expanded ? 'expand_more' : 'chevron_right'}}
             </mat-icon>
           </button>
-          Module: <span class="module-name" [title]="moduleNode.moduleResult.name">
+          <span class="module-name" [title]="moduleNode.moduleResult.name">
             {{moduleNode.moduleResult.name}}
           </span>
         </div>
 
-        <div fxFlex="120px" class="result-text-padding">
-          <div *ngIf="moduleNode.moduleResult.failed_tests">
-            <mat-icon color='error' class='inline result-error-icon'>error</mat-icon>
-            {{moduleNode.moduleResult.failed_tests}}
-          </div>
-        </div>
-
-        <div fxFlex="120px" class="count-text-padding">
-          {{moduleNode.moduleResult.passed_tests}}/{{moduleNode.moduleResult.total_tests}}
-        </div>
-
-        <div fxFlex="120px" class="module-status">
-          <status-button class="module-result"
-                         [state]="moduleNode.moduleResult.complete ? 'Completed' : 'Incomplete'">
-          </status-button>
+        <div fxFlex="220px" class="result-text-padding">
+          <ng-container>
+            <mat-icon class='result-icon result-incomplete' title="Incomplete"
+                      *ngIf="!moduleNode.moduleResult.complete">warning</mat-icon>
+            <mat-icon class='result-icon result-success'
+                      *ngIf="moduleNode.moduleResult.complete &&
+                             moduleNode.moduleResult.failed_tests==='0'">check_circle</mat-icon>
+            <mat-icon class='result-icon result-failed'
+                      *ngIf="moduleNode.moduleResult.complete &&
+                             moduleNode.moduleResult.failed_tests!=='0'">error</mat-icon>
+            {{moduleNode.moduleResult.failed_tests}}/{{moduleNode.moduleResult.total_tests}}
+          </ng-container>
         </div>
 
         <div fxFlex class="failure-message overflow"
@@ -83,19 +78,15 @@
         <div *ngFor="let testCase of moduleNode.testCaseResults" class="row-divider">
           <div fxFlex="450px" class="testcase-text-padding">
             <div class='testcase-row-indent overflow'>
-              Test: <span class='testcase-name' [title]="testCase.name">
+              <span class='testcase-name' [title]="testCase.name">
               {{testCase.name}}
               </span>
             </div>
           </div>
 
-          <div fxFlex="120px" class="module-status">
+          <div fxFlex="220px" class="module-status">
             <status-button [state]="getStatusString(testCase)"></status-button>
           </div>
-
-          <div fxFlex="120px"><!-- Filler for counts column --></div>
-
-          <div fxFlex="120px"><!-- Filler for module status column --></div>
 
           <div fxFlex class="failure-message overflow"
                [title]="testCase.error_message">

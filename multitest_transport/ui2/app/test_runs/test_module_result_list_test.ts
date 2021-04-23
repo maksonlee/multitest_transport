@@ -91,8 +91,7 @@ describe('TestModuleResultList', () => {
     expect(textContent).toContain('Module 1');
     expect(textContent).toContain('Second Module');
 
-    expect(textContent).toContain('123/789');    // Module 1 passed/total
-    expect(textContent).toContain('error 456');  // Module 1 failed
+    expect(textContent).toContain('warning 456/789');  // Module 1 failed/total
     expect(textContent).toContain('0/0');
     expect(textContent).not.toContain('null');
   });

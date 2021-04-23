@@ -487,38 +487,6 @@ export class TestResultClient {
 
   constructor(private readonly http: HttpClient) {}
 
-  // TODO: Remove once API is implemented
-
-  createMockModuleResult(
-      name = 'module_name', passed = 0, failed = 0, total = 0,
-      errorMessage?: string): model.TestModuleResult {
-    return {
-      id: 'module_id',
-      attempt_id: 'attempt_id',
-      name,
-      complete: !!errorMessage,
-      passed_tests: passed,
-      failed_tests: failed,
-      total_tests: total,
-      error_message: errorMessage,
-    } as model.TestModuleResult;
-  }
-
-  // TODO: Remove once API is implemented
-  createMockTestCaseResult(
-      moduleId = 'module_id', name = 'testName', status = model.TestStatus.PASS,
-      errorMessage = 'failure message',
-      stackTrace = 'some stack trace'): model.TestCaseResult {
-    return {
-      id: 'test_id',
-      module_id: moduleId,
-      name,
-      status,
-      error_message: errorMessage,
-      stack_trace: stackTrace,
-    } as model.TestCaseResult;
-  }
-
   /** Lists all modules. */
   listModules(testRunId: string): Observable<model.TestModuleResultList> {
     const params = new HttpParams().set('test_run_id', testRunId);

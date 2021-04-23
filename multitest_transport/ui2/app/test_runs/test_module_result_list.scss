@@ -87,9 +87,23 @@ th.mat-header-cell:first-of-type {
   white-space: nowrap;
 }
 
-.result-error-icon {
+.result-icon {
+  display: inline-block;
   height: 28px;
+  vertical-align: middle;
   width: 28px;
+
+  &.result-failed {
+    color: $danger;
+  }
+
+  &.result-incomplete {
+    color: $warning;
+  }
+
+  &.result-success {
+    color: $success;
+  }
 }
 
 .result-text-padding {
