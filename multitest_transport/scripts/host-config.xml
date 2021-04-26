@@ -25,12 +25,13 @@
   <object type="cluster_client" class="com.android.tradefed.cluster.ClusterClient">
   </object>
   <object type="cluster_options" class="com.android.tradefed.cluster.ClusterOptions">
+    <option name="check-command-state" value="true" />
+    <option name="check-flashing-permits-on-lease" value="false" />
     <option name="cluster" value="default"/>
     <option name="device-monitor-interval" value="60000"/>
     <option name="run-target-format" value="*" />
     <option name="service-url" value="${MTT_CONTROL_SERVER_URL}/_ah/api/tradefed_cluster/v1/" />
     <option name="upload-invocation-status" value="true" />
-    <option name="check-command-state" value="true" />
   </object>
   <option name="host_options:use-sso-client" value="false" />
 
