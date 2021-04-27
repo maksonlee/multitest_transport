@@ -53,7 +53,7 @@ cluster_configs:
   host_configs:
   - {hostname: atz-003}
   host_login_name: android-test
-  master_url: https://androidengprod-pa.googleapis.com
+  control_server_url: https://androidengprod-pa.googleapis.com
   owners: [android-test]
   tf_global_config_path: configs/cluster/dockerized-tf/host-config.xml
 service_account_json_key_path: /var/lib/mtt/keyfile/key.json
@@ -101,7 +101,7 @@ cluster_configs:
   owners:
   - android-test
   tf_global_config_path: configs/cluster/dockerized-tf/host-config.xml
-  master_url: https://androidengprod-pa.googleapis.com
+  control_server_url: https://androidengprod-pa.googleapis.com
   docker_image: gcr.io/dockerized-tradefed/tradefed:golden
   host_configs:
   - hostname: atz-003

@@ -34,14 +34,14 @@ WORKING_DIR="."
 LIVE_RELOAD="false"
 LOG_LEVEL="info"
 MTT_HOST="0.0.0.0"
-MTT_MASTER_PORT=8000
+MTT_CONTROL_SERVER_PORT=8000
 STORAGE_PATH="/tmp/mtt"
 FILE_SERVICE_ONLY="false"
 SQL_DATABASE_URI="mysql+pymysql://root@/ats_db"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --bind_address) MTT_HOST="$2";;
-    --port) MTT_MASTER_PORT="$2";;
+    --port) MTT_CONTROL_SERVER_PORT="$2";;
     --storage_path) STORAGE_PATH="$2";;
     --working_dir) WORKING_DIR="$2";;
     --live_reload) LIVE_RELOAD="$2";;
@@ -61,12 +61,12 @@ MTT_PYTHON_PATH="$(pwd):${PYTHONPATH}"
 MTT_PYTHON="python3.8"
 
 # Set dependent variables
-MTT_PORT="${MTT_MASTER_PORT}"
-MTT_CORE_PORT="$((${MTT_MASTER_PORT}+1))"
-MTT_TFC_PORT="$((${MTT_MASTER_PORT}+2))"
-FILE_BROWSER_PORT="$((${MTT_MASTER_PORT}+5))"
-FILE_SERVER_PORT="$((${MTT_MASTER_PORT}+6))"
-DATASTORE_EMULATOR_PORT="$((${MTT_MASTER_PORT}+7))"
+MTT_PORT="${MTT_CONTROL_SERVER_PORT}"
+MTT_CORE_PORT="$((${MTT_CONTROL_SERVER_PORT}+1))"
+MTT_TFC_PORT="$((${MTT_CONTROL_SERVER_PORT}+2))"
+FILE_BROWSER_PORT="$((${MTT_CONTROL_SERVER_PORT}+5))"
+FILE_SERVER_PORT="$((${MTT_CONTROL_SERVER_PORT}+6))"
+DATASTORE_EMULATOR_PORT="$((${MTT_CONTROL_SERVER_PORT}+7))"
 
 # Create storage directory if it doesn't exist
 if [[ ! -d "$STORAGE_PATH" ]]; then
@@ -183,7 +183,7 @@ function start_main_server {
   "${MTT_PYTHON}" -m multitest_transport.app_helper.launcher \
       --application_id="mtt" \
       --host="${MTT_HOST}" \
-      --port="${MTT_MASTER_PORT}" \
+      --port="${MTT_CONTROL_SERVER_PORT}" \
       --datastore_emulator_host="localhost:$DATASTORE_EMULATOR_PORT" \
       --log_level="${LOG_LEVEL}" \
       --live_reload="${LIVE_RELOAD}" \

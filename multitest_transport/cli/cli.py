@@ -380,8 +380,6 @@ def _StartMttNode(args, host):
       for host_port, docker_port in _GetMttServerPublicPorts(args.port):
         docker_helper.AddPort(host_port, docker_port)
     else:
-      # TODO: Remove the env variables after a couple of releases.
-      docker_helper.AddEnv('MTT_MASTER_PORT', args.port)
       docker_helper.AddEnv('MTT_CONTROL_SERVER_PORT', args.port)
   if host.config.lab_name:
     docker_helper.AddEnv('LAB_NAME', host.config.lab_name)

@@ -753,7 +753,7 @@ class CliTest(parameterized.TestCase):
             raise_on_failure=False),
     ])
 
-  def testStart_imageNameAndMasterUrlInHost(self):
+  def testStart_imageNameAndControlServerUrlInHost(self):
     """Test start with image name and primary url in host."""
     args = self.arg_parser.parse_args(['start'])
     cli.Start(
@@ -1227,7 +1227,7 @@ class CliTest(parameterized.TestCase):
   @mock.patch.object(cli, '_IsDaemonActive')
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
   @mock.patch('__main__.cli.os.geteuid')
-  def testStop_noMasterUrl(self, euid, is_running, daemon_active):
+  def testStop_noControlServerUrl(self, euid, is_running, daemon_active):
     """Test Stop with kill mtt with control_server_url in host config."""
     euid.return_value = 123
     is_running.return_value = True

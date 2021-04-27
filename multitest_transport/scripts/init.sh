@@ -87,8 +87,8 @@ then
   service rabbitmq-server start || (cat /var/log/rabbitmq/startup_*; false)
 
   MTT_CONTROL_SERVER_PORT="${MTT_CONTROL_SERVER_PORT:-8000}"
-  MTT_MASTER_LOG_DIR="${MTT_LOG_DIR}/server"
-  mkdir -p "${MTT_MASTER_LOG_DIR}"
+  MTT_CONTROL_SERVER_LOG_DIR="${MTT_LOG_DIR}/server"
+  mkdir -p "${MTT_CONTROL_SERVER_LOG_DIR}"
 
   if [[ -z "${MTT_CONTROL_SERVER_URL}" ]]
   then
@@ -116,7 +116,7 @@ then
       --log_level "${MTT_SERVER_LOG_LEVEL}" \
       --file_service_only "${FILE_SERVICE_ONLY}" \
       --sql_database_uri "" \
-      2>&1 | multilog s10485760 n10 "${MTT_MASTER_LOG_DIR}" &
+      2>&1 | multilog s10485760 n10 "${MTT_CONTROL_SERVER_LOG_DIR}" &
 fi
 
 # Construct TF global config
