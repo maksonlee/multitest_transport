@@ -278,6 +278,12 @@ export class TfcClient {
         .pipe(map(result => mttLabModels.convertToLabInfosResponse(result)));
   }
 
+  getClusterInfo(clusterId: string): Observable<mttLabModels.ClusterInfo> {
+    return this.http
+        .get<tfcModels.ClusterInfo>(`${this.tfcApiUrl}/clusters/${clusterId}`)
+        .pipe(map(result => mttLabModels.convertToClusterInfo(result)));
+  }
+
   getOfflineHostInfos(
       lab: string, timestamp?: Date, timestampOperator?: string):
       Observable<mttLabModels.LabHostInfosResponse> {

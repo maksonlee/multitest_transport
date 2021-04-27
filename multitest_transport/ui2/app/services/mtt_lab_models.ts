@@ -209,12 +209,24 @@ export declare interface LabInfo {
   readonly owners: string[];
   /** Host update state summary in the lab. */
   readonly hostUpdateStateSummary: HostUpdateStateSummary|null;
+  /** Host counts by test harness versions in the lab. */
+  readonly hostCountByHarnessVersion: KeyValuePair[];
 }
 
 /** Response for lab list api call. */
 export declare interface LabInfosResponse {
   /** A list of LabInfo. */
   labInfos: LabInfo[];
+}
+
+/** Info of a single physical cluster. */
+export declare interface ClusterInfo {
+  /** A Unique cluster ID */
+  readonly clusterId: string;
+  /** Host update state summary in the lab. */
+  readonly hostUpdateStateSummary: HostUpdateStateSummary|null;
+  /** Host counts by test harness versions in the lab. */
+  readonly hostCountByHarnessVersion: KeyValuePair[];
 }
 
 /** Info for create or update a device note or a host note. */
@@ -555,6 +567,25 @@ export function convertToLabInfo(source: tfcModels.LabInfo): LabInfo {
     hostUpdateStateSummary: source.host_update_state_summary ?
         convertToHostUpdateStateSummary(source.host_update_state_summary) :
         null,
+    hostCountByHarnessVersion: source.host_count_by_harness_version ?
+        source.host_count_by_harness_version :
+        [],
+  };
+}
+
+/**
+ * Converts the LabInfo object which returned from backend into LabInfo.
+ */
+export function convertToClusterInfo(source: tfcModels.ClusterInfo):
+    ClusterInfo {
+  return {
+    clusterId: source.cluster_id,
+    hostUpdateStateSummary: source.host_update_state_summary ?
+        convertToHostUpdateStateSummary(source.host_update_state_summary) :
+        null,
+    hostCountByHarnessVersion: source.host_count_by_harness_version ?
+        source.host_count_by_harness_version :
+        [],
   };
 }
 

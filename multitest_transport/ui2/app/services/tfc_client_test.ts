@@ -927,6 +927,34 @@ describe('TfcClient', () => {
     });
   });
 
+  describe('getClusterInfo', () => {
+    const updateStateSummary =
+        newMockHostUpdateStateSummary('5', '1', '1', '2', '0', '0', '1', '0');
+    const versionCounts = [{key: 'v1', value: '22'}, {key: 'v2', value: '1'}];
+    const rawClusterInfo = mocks.newMockRawClusterInfo(
+        'clsuter1', updateStateSummary, versionCounts);
+
+    beforeEach(() => {
+      httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
+      tfcClient = new TfcClient(appData, httpClientSpy);
+      httpClientSpy.get.and.returnValue(observableOf(rawClusterInfo));
+    });
+
+    it('calls API and parses response correctly', () => {
+      const observable = tfcClient.getClusterInfo('clsuter1');
+      const clusterInfo = mocks.newMockClusterInfo(
+          'clsuter1',
+          mttLabModels.convertToHostUpdateStateSummary(updateStateSummary),
+          versionCounts);
+      expect(httpClientSpy.get)
+          .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/clusters/clsuter1`);
+      expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
+      observable.subscribe((response) => {
+        expect(response).toEqual(clusterInfo);
+      });
+    });
+  });
+
   describe('getMyRecoveryHostInfos', () => {
     const rawHostInfos = mocks.newMockHostInfosResponse();
     const hostInfos = mocks.newMockLabHostInfosResponse();

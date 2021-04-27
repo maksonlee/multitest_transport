@@ -443,12 +443,24 @@ export declare interface LabInfo {
   readonly owners: string[];
   /** Host update state summary for the lab. */
   readonly host_update_state_summary?: HostUpdateStateSummary|null;
+  /** Host counts by test harness versions in the lab. */
+  readonly host_count_by_harness_version?: KeyValuePair[];
 }
 
 /** Response for lab list api call. */
 export declare interface LabInfosResponse {
   /** A list of RawLabInfo. */
   lab_infos?: LabInfo[];
+}
+
+/** Info of a single physical cluster. */
+export declare interface ClusterInfo {
+  /** A Unique cluster ID */
+  readonly cluster_id: string;
+  /** Host update state summary in the lab. */
+  readonly host_update_state_summary?: HostUpdateStateSummary|null;
+  /** Host counts by test harness versions in the lab. */
+  readonly host_count_by_harness_version?: KeyValuePair[];
 }
 
 /** Info of a single note. */

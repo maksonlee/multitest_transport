@@ -943,16 +943,31 @@ export function newMockFilterHintList(
   };
 }
 
-/** Creates a new lab info. */
+/** Creates a new raw lab info. */
 export function newMockRawLabInfo(
     labName: string,
     owners: string[],
     hostUpdateStateSummary?: tfcModels.HostUpdateStateSummary,
+    hostCountByHarnessVersion?: mttLabModels.KeyValuePair[],
     ): tfcModels.LabInfo {
   return {
     lab_name: labName,
     owners,
     host_update_state_summary: hostUpdateStateSummary,
+    host_count_by_harness_version: hostCountByHarnessVersion,
+  };
+}
+
+/** Creates a new raw cluster info. */
+export function newMockRawClusterInfo(
+    clusterId: string,
+    hostUpdateStateSummary?: tfcModels.HostUpdateStateSummary,
+    hostCountByHarnessVersion?: mttLabModels.KeyValuePair[],
+    ): tfcModels.ClusterInfo {
+  return {
+    cluster_id: clusterId,
+    host_update_state_summary: hostUpdateStateSummary,
+    host_count_by_harness_version: hostCountByHarnessVersion,
   };
 }
 
@@ -1005,11 +1020,26 @@ export function newMockLabInfo(
     labName: string,
     owners: string[] = [],
     hostUpdateStateSummary: mttLabModels.HostUpdateStateSummary|null = null,
+    hostCountByHarnessVersion: mttLabModels.KeyValuePair[]|null = null,
     ): mttLabModels.LabInfo {
   return {
     labName,
     owners,
     hostUpdateStateSummary,
+    hostCountByHarnessVersion: hostCountByHarnessVersion || [],
+  };
+}
+
+/** Creates a new mock ClusterInfo. */
+export function newMockClusterInfo(
+    clusterId: string,
+    hostUpdateStateSummary: mttLabModels.HostUpdateStateSummary|null = null,
+    hostCountByHarnessVersion: mttLabModels.KeyValuePair[]|null = null,
+    ): mttLabModels.ClusterInfo {
+  return {
+    clusterId,
+    hostUpdateStateSummary,
+    hostCountByHarnessVersion: hostCountByHarnessVersion || [],
   };
 }
 
