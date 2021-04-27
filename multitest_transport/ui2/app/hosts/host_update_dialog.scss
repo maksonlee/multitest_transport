@@ -15,13 +15,23 @@
  */
 @import 'third_party/py/multitest_transport/ui2/styles';
 
-.host-update-state-summary-chart {
-  flex: 1 1 45%;
+.host-update-state-summary-table-panel {
+  flex: 1 1 20%;
+  flex-direction: column;
+}
+
+.host-count-by-version-table-panel {
+  flex: 1 1 20%;
+  flex-direction: column;
+}
+
+.host-update-panel-spacer {
+  flex: 1 1 auto;
 }
 
 .host-update-control-panel {
   display: flex;
-  flex: 1 1 55%;
+  flex: 1 1 50%;
   flex-direction: column;
 
   .update-mode-selection-group {
@@ -39,10 +49,6 @@
 
   .test-harness-image-selection {
     width: 60%;
-  }
-
-  .host-update-control-panel-spacer {
-    flex: 1 1 auto;
   }
 
   .set-image-button {

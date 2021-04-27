@@ -26,7 +26,7 @@ import {APP_DATA} from '../services';
 import {convertToHostUpdateStateSummary} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
 import {TfcClient} from '../services/tfc_client';
-import {HostConfig, TestHarnessImage} from '../services/tfc_models';
+import {HostConfig, HostUpdateState, TestHarnessImage} from '../services/tfc_models';
 import {ActivatedRouteStub} from '../testing/activated_route_stub';
 import {newMockAppData, newMockHostConfig, newMockHostConfigList, newMockHostUpdateStateSummary, newMockTestHarnessImage, newMockTestHarnessImageList} from '../testing/mtt_lab_mocks';
 
@@ -107,11 +107,16 @@ describe('HostUpdateDialog', () => {
   });
 
   it('gets lab info correctly', () => {
+    const hostCountByHarnessVersion = [
+      {key: 'v1', value: '2'},
+      {key: 'v2', value: '2'},
+    ];
     tfcClient.getLabInfo.and.returnValue(observableOf({
       labName: 'lab1',
       owners: ['user1'],
       hostUpdateStateSummary:
           convertToHostUpdateStateSummary(newMockHostUpdateStateSummary()),
+      hostCountByHarnessVersion,
     }));
     hostUpdateDialogFixture.detectChanges();
     hostUpdateDialogFixture.whenStable().then(() => {
@@ -119,6 +124,8 @@ describe('HostUpdateDialog', () => {
       expect(hostUpdateDialog.labInfo?.labName).toEqual('lab1');
       expect(hostUpdateDialog.labInfo?.owners).toEqual(['user1']);
       expect(hostUpdateDialog.labInfo?.hostUpdateStateSummary).toBeTruthy();
+      expect(hostUpdateDialog.labInfo?.hostCountByHarnessVersion)
+          .toEqual(hostCountByHarnessVersion);
     });
   });
 
@@ -129,15 +136,6 @@ describe('HostUpdateDialog', () => {
     expect(hostUpdateDialog.getHostUpdatingCount(hostUpdateStateSummary))
         .toBe(14);
     expect(hostUpdateDialog.getHostUpdatingCount(null)).toBe(0);
-  });
-
-  it('calculate NoActiveUpdate count correctly', () => {
-    const hostUpdateStateSummary =
-        convertToHostUpdateStateSummary(newMockHostUpdateStateSummary(
-            '30', '5', '2', '10', '2', '1', '1', '0'));
-    expect(hostUpdateDialog.getHostNoActiveUpdateCount(hostUpdateStateSummary))
-        .toBe(9);
-    expect(hostUpdateDialog.getHostNoActiveUpdateCount(null)).toBe(0);
   });
 
   it('gets host configs correctly', () => {
@@ -199,6 +197,36 @@ describe('HostUpdateDialog', () => {
         new MatRadioChange({} as MatRadioButton, UpdateMode.HOST_GROUP));
     expect(hostUpdateDialog.selectedHostGroup).toEqual('cluster-2');
     expect(hostUpdateDialog.selectedHosts).toEqual([]);
+  });
+
+  it('loads update state and version counts tables correctly', () => {
+    hostUpdateDialog.labInfo = {
+      labName: 'lab1',
+      owners: ['user1'],
+      hostUpdateStateSummary:
+          convertToHostUpdateStateSummary(newMockHostUpdateStateSummary(
+              '30', '5', '2', '10', '10', '1', '1', '1', '0')),
+      hostCountByHarnessVersion: [
+        {key: 'v1', value: '2'},
+        {key: 'v2', value: '2'},
+      ],
+    };
+    hostUpdateDialog.loadUpdateStateAndVersionCountTables();
+    expect(hostUpdateDialog.hostUpdateStateSummaryTableDataSource.data)
+        .toEqual([
+          {state: HostUpdateState.PENDING, count: 5},
+          {state: HostUpdateState.SYNCING, count: 2},
+          {state: HostUpdateState.SHUTTING_DOWN, count: 10},
+          {state: HostUpdateState.RESTARTING, count: 10},
+          {state: HostUpdateState.SUCCEEDED, count: 1},
+          {state: HostUpdateState.TIMED_OUT, count: 1},
+          {state: HostUpdateState.ERRORED, count: 1},
+          {state: HostUpdateState.UNKNOWN, count: 0},
+        ]);
+    expect(hostUpdateDialog.hostCountByVersionTableDataSource.data).toEqual([
+      {version: 'v1', count: 2},
+      {version: 'v2', count: 2},
+    ]);
   });
 
   describe('getBatchUpdateHostMetadataRequest', () => {

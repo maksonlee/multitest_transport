@@ -13,16 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {Component, ElementRef, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MatPaginator} from '@angular/material/paginator';
 import {MatRadioChange} from '@angular/material/radio';
+import {MatSort} from '@angular/material/sort';
+import {MatTableDataSource} from '@angular/material/table';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
 
 import {ALL_OPTIONS_VALUE, HostUpdateStateSummary, LabInfo} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
 import {TfcClient} from '../services/tfc_client';
-import {BatchUpdateHostMetadataRequest, DEFAULT_ALL_COUNT, HostConfig, TestHarnessImage} from '../services/tfc_models';
+import {BatchUpdateHostMetadataRequest, DEFAULT_ALL_COUNT, HostConfig, HostUpdateState, TestHarnessImage} from '../services/tfc_models';
+import {assertRequiredInput} from '../shared/util';
 
 /** Default count of test harness images to be selected from each time. */
 const DEFAULT_TEST_HARNESS_IMAGE_COUNT = 30;
@@ -45,6 +49,22 @@ export enum UpdateMode {
   HOSTS = 'HOSTS',
 }
 
+/** Table element for HostUpdateStateSummary. */
+interface HostUpdateStateSummaryElement {
+  /** Name of update state. */
+  state: string;
+  /** Number of hosts in the update state. */
+  count: number;
+}
+
+/** Table element for HostCountByHarnessVersion. */
+interface HostCountByHarnessVersionElement {
+  /** The test harness version. */
+  version: string;
+  /** Number of hosts in the version. */
+  count: number;
+}
+
 /** Component that manages host updates in a lab. */
 @Component({
   selector: 'host-update-dialog',
@@ -65,11 +85,18 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
   imageTagPrefix = '';
   testHarnessImages: TestHarnessImage[] = [];
   disableSetImageButton = false;
+  readonly hostUpdateStateSummaryTableColumnNames = ['state', 'count'];
+  hostUpdateStateSummaryTableDataSource =
+      new MatTableDataSource<HostUpdateStateSummaryElement>();
+  readonly hostCountByVersionTableColumnNames = ['version', 'count'];
+  hostCountByVersionTableDataSource =
+      new MatTableDataSource<HostCountByHarnessVersionElement>();
   readonly UpdateMode = UpdateMode;
 
   private readonly destroy = new ReplaySubject<void>(1);
 
-  @ViewChild('update_summary_chart') updateSummaryChartElement!: ElementRef;
+  @ViewChild(MatPaginator) matPaginator!: MatPaginator;
+  @ViewChild(MatSort) matSort!: MatSort;
 
   constructor(
       public dialogRef: MatDialogRef<HostUpdateDialog>,
@@ -81,6 +108,13 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
       this.dialogRef.close(false);
     }
     this.selectedLab = data.selectedLab;
+  }
+
+  ngAfterViewInit() {
+    assertRequiredInput(this.matSort, 'matSort', 'hostUpdateDialog');
+    assertRequiredInput(this.matPaginator, 'matPaginator', 'hostUpdateDialog');
+    this.hostCountByVersionTableDataSource.sort = this.matSort;
+    this.hostCountByVersionTableDataSource.paginator = this.matPaginator;
   }
 
   ngOnInit() {
@@ -100,7 +134,7 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
         .subscribe(
             (result) => {
               this.labInfo = result;
-              this.drawHostUpdateStateSummaryChart();
+              this.loadUpdateStateAndVersionCountTables();
             },
             () => {
               this.notifier.showError('Failed to load lab info.');
@@ -142,65 +176,10 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
             });
   }
 
-  drawHostUpdateStateSummaryChart() {
-    if (typeof google === 'undefined') {
-      return;  // google === undefined in unit test env.
-    }
-    google.charts.safeLoad({'packages': ['corechart']});
-    google.charts.setOnLoadCallback(() => {
-      this.drawChartCallback(this.labInfo);
-    });
-  }
-
-  drawChartCallback(labInfo: LabInfo|null) {
-    if (!labInfo?.hostUpdateStateSummary) {
-      return;
-    }
-    const summary = labInfo.hostUpdateStateSummary;
-    const data = google.visualization.arrayToDataTable([
-      ['Update State', 'Hosts'],
-      ['Pending', summary.pending],
-      ['Syncing', summary.syncing],
-      ['Shutting Down', summary.shuttingDown],
-      ['Restarting', summary.restarting],
-      ['Succeeded', summary.succeeded],
-      ['Timed Out', summary.timedOut],
-      ['Errored', summary.errored],
-      ['Unknown', summary.unknown],
-      ['No Active Updates', this.getHostNoActiveUpdateCount(summary)],
-    ]);
-    const chart = new google.visualization.PieChart(
-        this.updateSummaryChartElement.nativeElement);
-    const options = {
-      title: 'Hosts Update Summary',
-      pieHole: 0.5,
-      colors: [
-        '#fcefc0',  // Light Yellow
-        '#f7e5a1',  // Yellow
-        '#f7e5a1',  // Yellow
-        '#f7e5a1',  // Yellow
-        '#9cf79f',  // Green
-        '#ff754f',  // Red
-        '#ff754f',  // Red
-        '#ff754f',  // Red
-        '#ffffff',  // White
-      ],
-      pieSliceText: 'none',
-    };
-    chart.draw(data, options);
-  }
-
   getHostUpdatingCount(summary: HostUpdateStateSummary|null): number {
     return summary ?
         summary.syncing + summary.shuttingDown + summary.restarting :
         0;
-  }
-
-  getHostNoActiveUpdateCount(summary: HostUpdateStateSummary|null): number {
-    return summary ? summary.total - summary.pending - summary.syncing -
-            summary.shuttingDown - summary.restarting - summary.succeeded -
-            summary.timedOut - summary.errored - summary.unknown :
-                     0;
   }
 
   loadHostConfigsInSelectedHostGroup() {
@@ -210,6 +189,31 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
         this.hostConfigsInLab;
     this.hostNames =
         this.candidateHostConfigs.map((config) => config.hostname);
+  }
+
+  loadUpdateStateAndVersionCountTables() {
+    if (!this.labInfo) {
+      return;
+    }
+    const summary = this.labInfo.hostUpdateStateSummary;
+    const versionCount = this.labInfo.hostCountByHarnessVersion;
+    if (summary) {
+      this.hostUpdateStateSummaryTableDataSource.data = [
+        {state: HostUpdateState.PENDING, count: summary.pending},
+        {state: HostUpdateState.SYNCING, count: summary.syncing},
+        {state: HostUpdateState.SHUTTING_DOWN, count: summary.shuttingDown},
+        {state: HostUpdateState.RESTARTING, count: summary.restarting},
+        {state: HostUpdateState.SUCCEEDED, count: summary.succeeded},
+        {state: HostUpdateState.TIMED_OUT, count: summary.timedOut},
+        {state: HostUpdateState.ERRORED, count: summary.errored},
+        {state: HostUpdateState.UNKNOWN, count: summary.unknown},
+      ];
+    }
+    if (versionCount) {
+      this.hostCountByVersionTableDataSource.data = versionCount.map(x => {
+        return {version: x.key, count: Number(x.value)};
+      });
+    }
   }
 
   setSelectedHosts(hostNames: string[]) {
