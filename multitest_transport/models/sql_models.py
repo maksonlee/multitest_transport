@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """SQL-based model classes (for the test results DB)."""
+from typing import Iterable, Optional
 import uuid
 
 import sqlalchemy as sa
@@ -25,6 +26,8 @@ from multitest_transport.util import xts_result
 _CONNECTION_RECYCLE_SECONDS = 3600
 # MySQL option to enable compressed tables
 _COMPRESSED_ROW_FORMAT = {'mysql_row_format': 'compressed'}
+# Maximum length of a text column
+_TEXT_MAX_LENGTH = 65535
 # Default number of test result rows to insert at a time
 RESULTS_BATCH_SIZE = 100000
 
@@ -74,10 +77,17 @@ class TestCaseResult(db.Model):
   stack_trace = sa.Column(sa.Text)
 
 
-def InsertTestResults(test_run_id,
-                      attempt_id,
-                      test_results,
-                      batch_size=RESULTS_BATCH_SIZE):
+def _Truncate(value: Optional[str], max_length: int) -> Optional[str]:
+  """Truncate a string if it exceeds the maximum length."""
+  if value and len(value) > max_length:
+    return value[:max_length - 3] + '...'
+  return value
+
+
+def InsertTestResults(test_run_id: str,
+                      attempt_id: str,
+                      test_results: Iterable[xts_result.Module],
+                      batch_size: int = RESULTS_BATCH_SIZE):
   """Efficiently inserts large test results into the database.
 
   Extracts raw test case data and executes batch inserts with pre-populated IDs.
@@ -104,7 +114,7 @@ def InsertTestResults(test_run_id,
           passed_tests=0,
           failed_tests=0,
           total_tests=0,
-          error_message=module.error_message)
+          error_message=_Truncate(module.error_message, _TEXT_MAX_LENGTH))
       session.add(module_entity)
 
       # Iterate over test cases, convert to dicts, and set module ID
@@ -122,8 +132,9 @@ def InsertTestResults(test_run_id,
                 module_id=module_entity.id,
                 name=test_case.name,
                 status=test_case.status,
-                error_message=test_case.error_message,
-                stack_trace=test_case.stack_trace,
+                error_message=_Truncate(test_case.error_message,
+                                        _TEXT_MAX_LENGTH),
+                stack_trace=_Truncate(test_case.stack_trace, _TEXT_MAX_LENGTH),
             ))
         # Bulk insert raw test case data in batches to reduce memory usage
         if len(test_case_data) >= batch_size:

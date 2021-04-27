@@ -25,16 +25,16 @@ TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 class XtsResultTest(absltest.TestCase):
 
   def testSummary(self):
-    with open(os.path.join(TEST_DATA_DIR, 'test_result.xml')) as xml_stream:
-      test_results = xts_result.TestResults(xml_stream)
+    with open(os.path.join(TEST_DATA_DIR, 'test_result.xml'), 'rb') as stream:
+      test_results = xts_result.TestResults(stream)
       self.assertEqual(
           test_results.summary,
           xts_result.Summary(
               passed=12, failed=34, modules_done=56, modules_total=78))
 
   def testModules(self):
-    with open(os.path.join(TEST_DATA_DIR, 'test_result.xml')) as xml_stream:
-      modules = list(xts_result.TestResults(xml_stream))
+    with open(os.path.join(TEST_DATA_DIR, 'test_result.xml'), 'rb') as stream:
+      modules = list(xts_result.TestResults(stream))
       self.assertEqual(
           modules[0],
           xts_result.Module(
@@ -77,6 +77,7 @@ class XtsResultTest(absltest.TestCase):
               name='abi IncompleteModule',
               complete=False,
               duration_ms=789,
+              test_cases=[],
               error_message='Incomplete module message',
           ))
 

@@ -13,22 +13,24 @@
 # limitations under the License.
 
 """Utilities for parsing *TS results."""
+from typing import BinaryIO, Iterator, List, Optional
+
 import attr
 from defusedxml.cElementTree import iterparse as defused_iterparse
 from protorpc import messages
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(auto_attribs=True, frozen=True, slots=True)
 class Summary(object):
   """Results summary."""
   TAG = 'Summary'
-  passed = attr.ib()
-  failed = attr.ib()
-  modules_done = attr.ib()
-  modules_total = attr.ib()
+  passed: int
+  failed: int
+  modules_done: int
+  modules_total: int
 
   @classmethod
-  def FromElement(cls, element):
+  def FromElement(cls, element) -> 'Summary':
     """Parses a summary from an XML element."""
     return Summary(
         passed=int(element.attrib['pass']),
@@ -46,17 +48,17 @@ class TestStatus(messages.Enum):
   ASSUMPTION_FAILURE = 4
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(auto_attribs=True, frozen=True, slots=True)
 class TestCase(object):
   """Test case results."""
   TAG = 'TestCase'
-  name = attr.ib()
-  status = attr.ib()
-  error_message = attr.ib(default=None)
-  stack_trace = attr.ib(default=None)
+  name: str
+  status: TestStatus
+  error_message: Optional[str] = None
+  stack_trace: Optional[str] = None
 
   @classmethod
-  def FromElement(cls, element):
+  def FromElement(cls, element) -> List['TestCase']:
     """Parses a list of test cases from an XML element."""
     class_name = element.attrib['name']
     test_cases = []
@@ -75,18 +77,18 @@ class TestCase(object):
     return test_cases
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(auto_attribs=True, frozen=True, slots=True)
 class Module(object):
   """Module results."""
   TAG = 'Module'
-  name = attr.ib()
-  complete = attr.ib()
-  duration_ms = attr.ib()
-  test_cases = attr.ib(factory=list)
-  error_message = attr.ib(default=None)
+  name: str
+  complete: bool
+  duration_ms: int
+  test_cases: List[TestCase]
+  error_message: Optional[str] = None
 
   @classmethod
-  def FromElement(cls, element):
+  def FromElement(cls, element) -> 'Module':
     """Parses a module from an XML element."""
     name = element.attrib['name']
     abi = element.attrib.get('abi')
@@ -113,16 +115,16 @@ class Module(object):
 class TestResults(object):
   """Iteratively parses a *TS test result XML file and returns the contents."""
 
-  def __init__(self, xml_stream):
+  def __init__(self, xml_stream: BinaryIO):
     """Initializes the XML iterator and parses the metadata."""
     self._iter = iter(defused_iterparse(xml_stream, events=('start', 'end')))
     self.summary = self._ParsePreamble()
 
-  def __iter__(self):
+  def __iter__(self) -> Iterator[Module]:
     """Iterates over module results."""
     return self._ParseModules()
 
-  def _ParsePreamble(self):
+  def _ParsePreamble(self) -> Optional[Summary]:
     """Parses elements prior to the first module."""
     summary = None
     # Parse elements until a 'Module' element is found
@@ -135,7 +137,7 @@ class TestResults(object):
         break
     return summary
 
-  def _ParseModules(self):
+  def _ParseModules(self) -> Iterator[Module]:
     """Iteratively parses module elements and their test results."""
     for event, element in self._iter:
       if event == 'end' and element.tag == Module.TAG:

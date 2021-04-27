@@ -85,6 +85,12 @@ class SqlModelsTest(parameterized.TestCase):
       self.assertEqual(test_cases[0].module, module)
       self.assertEqual(test_cases[0].name, 'test_case')
 
+  def testTruncate(self):
+    """Tests that strings can be truncated."""
+    self.assertIsNone(sql_models._Truncate(None, 10))
+    self.assertEqual('hello world', sql_models._Truncate('hello world', 11))
+    self.assertEqual('hello w...', sql_models._Truncate('hello world', 10))
+
   @parameterized.parameters((100, 2), (2, 4))
   def testInsertTestResults(self, batch_size, num_statements):
     """Tests that *TS test results can be inserted efficiently."""
