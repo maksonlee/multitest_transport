@@ -34,7 +34,7 @@ class TestResultApiTest(api_test_util.TestCase):
     super(TestResultApiTest, self).setUp(test_result_api.TestResultApi)
     sql_models.db.uri = 'sqlite:///:memory:'
     sql_models.db.CreateTables()
-    # Create two modules with three test cases
+    # Create three modules (2nd is incomplete, 3rd has failures)
     with sql_models.db.Session() as session:
       session.add_all([
           sql_models.TestModuleResult(
@@ -44,6 +44,10 @@ class TestResultApiTest(api_test_util.TestCase):
           sql_models.TestModuleResult(
               id='module_2', test_run_id='test_run_id', attempt_id='attempt_id',
               name='module_2', complete=False, duration_ms=456,
+              passed_tests=0, failed_tests=0, total_tests=0),
+          sql_models.TestModuleResult(
+              id='module_3', test_run_id='test_run_id', attempt_id='attempt_id',
+              name='module_3', complete=True, duration_ms=789,
               passed_tests=1, failed_tests=1, total_tests=3,
               test_cases=[
                   sql_models.TestCaseResult(
@@ -66,10 +70,13 @@ class TestResultApiTest(api_test_util.TestCase):
     self.assertEqual('200 OK', response.status)
     result_list = protojson.decode_message(
         messages.TestModuleResultList, response.body)
-    # Both modules returned, ordered by failure counts
+    # All modules returned, ordered by incomplete first, then by failures
     expected_results = [
         messages.TestModuleResult(
             id='module_2', name='module_2', complete=False, duration_ms=456,
+            passed_tests=0, failed_tests=0, total_tests=0),
+        messages.TestModuleResult(
+            id='module_3', name='module_3', complete=True, duration_ms=789,
             passed_tests=1, failed_tests=1, total_tests=3),
         messages.TestModuleResult(
             id='module_1', name='module_1', complete=True, duration_ms=123,
@@ -97,9 +104,9 @@ class TestResultApiTest(api_test_util.TestCase):
     self.assertEqual('200 OK', response.status)
     result_list = protojson.decode_message(
         messages.TestModuleResultList, response.body)
-    self.assertLen(result_list.results, 2)
+    self.assertLen(result_list.results, 3)
     module_ids = [r.id for r in result_list.results]
-    self.assertEqual(['module_2', 'module_1'], module_ids)
+    self.assertEqual(['module_2', 'module_3', 'module_1'], module_ids)
 
   def testListTestModuleResults_testRunNotFound(self):
     """Tests that an error is returned if the test run is not found."""
@@ -123,18 +130,21 @@ class TestResultApiTest(api_test_util.TestCase):
     ndb_models.TestRun(id='test_run_id', request_id='request_id').put()
     attempt = mock.MagicMock(attempt_id='LEGACY', state=CommandState.COMPLETED)
     mock_request.return_value = mock.MagicMock(command_attempts=[attempt])
-    # Return two test group statuses (2nd has more failures)
+    # Return three test group statuses (2nd is incomplete, 3rd has failures)
     mock_invocation_status.return_value = api_messages.InvocationStatus(
         test_group_statuses=[
             api_messages.TestGroupStatus(
                 name='legacy_module_1', is_complete=True, elapsed_time=123,
-                total_test_count=2, passed_test_count=2, failed_test_count=0),
+                total_test_count=0, passed_test_count=0, failed_test_count=0),
             api_messages.TestGroupStatus(
                 name='legacy_module_2', is_complete=False, elapsed_time=456,
-                total_test_count=2, passed_test_count=0, failed_test_count=2),
+                total_test_count=0, passed_test_count=0, failed_test_count=0),
+            api_messages.TestGroupStatus(
+                name='legacy_module_3', is_complete=True, elapsed_time=789,
+                total_test_count=3, passed_test_count=1, failed_test_count=1),
         ])
 
-    # Legacy results are returned, ordered by failure count
+    # Legacy results are returned, ordered by incomplete first, then by failures
     path = 'modules?test_run_id=test_run_id'
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
     self.assertEqual('200 OK', response.status)
@@ -143,16 +153,19 @@ class TestResultApiTest(api_test_util.TestCase):
     expected_results = [
         messages.TestModuleResult(
             id=None, name='legacy_module_2', complete=False, duration_ms=456,
-            passed_tests=0, failed_tests=2, total_tests=2),
+            passed_tests=0, failed_tests=0, total_tests=0),
+        messages.TestModuleResult(
+            id=None, name='legacy_module_3', complete=True, duration_ms=789,
+            passed_tests=1, failed_tests=1, total_tests=3),
         messages.TestModuleResult(
             id=None, name='legacy_module_1', complete=True, duration_ms=123,
-            passed_tests=2, failed_tests=0, total_tests=2),
+            passed_tests=0, failed_tests=0, total_tests=0),
     ]
     self.assertEqual(result_list.results, expected_results)
 
   def testListTestCaseResults(self):
     """Tests that test case results can be fetched."""
-    path = 'modules/module_2/test_cases'
+    path = 'modules/module_3/test_cases'
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
     self.assertEqual('200 OK', response.status)
     result_list = protojson.decode_message(
@@ -165,7 +178,7 @@ class TestResultApiTest(api_test_util.TestCase):
 
   def testListTestCaseResults_pagination(self):
     """Tests that test case results can be fetched with pagination."""
-    path = 'modules/module_2/test_cases?max_results=2'
+    path = 'modules/module_3/test_cases?max_results=2'
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
     self.assertEqual('200 OK', response.status)
     first_page = protojson.decode_message(
@@ -176,7 +189,7 @@ class TestResultApiTest(api_test_util.TestCase):
     self.assertEqual(['test_1', 'test_2'], test_case_names)
     self.assertIsNotNone(first_page.next_page_token)
 
-    path = ('modules/module_2/test_cases?max_results=2&page_token=%s' %
+    path = ('modules/module_3/test_cases?max_results=2&page_token=%s' %
             first_page.next_page_token)
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
     self.assertEqual('200 OK', response.status)
@@ -196,7 +209,7 @@ class TestResultApiTest(api_test_util.TestCase):
 
   def testListTestCaseResults_nameFilter(self):
     """Tests that test case results can be filtered by name."""
-    path = 'modules/module_2/test_cases?name=sT_2'
+    path = 'modules/module_3/test_cases?name=sT_2'
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
     result_list = protojson.decode_message(
         messages.TestCaseResultList, response.body)
@@ -205,7 +218,7 @@ class TestResultApiTest(api_test_util.TestCase):
 
   def testListTestCaseResults_statusFilter(self):
     """Tests that test case results can be filtered by status."""
-    path = 'modules/module_2/test_cases?status=PASS&status=IGNORED'
+    path = 'modules/module_3/test_cases?status=PASS&status=IGNORED'
     response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
     result_list = protojson.decode_message(
         messages.TestCaseResultList, response.body)

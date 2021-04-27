@@ -39,7 +39,10 @@ class TestResultApi(remote.Service):
       mtt_messages.TestModuleResultList,
       path='modules', http_method='GET', name='list_modules')
   def ListTestModuleResults(self, request):
-    """Fetches a page of test module results, in descending failure count order.
+    """Fetches a page of test module results.
+
+    Incomplete modules are returned first, and results are then sorted by
+    descending failure count.
 
     Parameters:
       attempt_id: Test run attempt ID
@@ -79,7 +82,8 @@ class TestResultApi(remote.Service):
     """Fetch test module results from the DB."""
     with sql_models.db.Session() as session:
       query = session.query(sql_models.TestModuleResult)
-      query = query.order_by(sql_models.TestModuleResult.failed_tests.desc(),
+      query = query.order_by(sql_models.TestModuleResult.complete,
+                             sql_models.TestModuleResult.failed_tests.desc(),
                              sql_models.TestModuleResult.id)
       query = query.filter_by(attempt_id=attempt_id)
       modules = query.all()
@@ -93,8 +97,7 @@ class TestResultApi(remote.Service):
     invocation_status = tfc_client.GetRequestInvocationStatus(request_id)
     test_group_statuses = sorted(
         invocation_status.test_group_statuses or [],
-        key=lambda s: s.failed_test_count,
-        reverse=True)
+        key=lambda s: (s.is_complete, -s.failed_test_count))
     results = mtt_messages.ConvertList(test_group_statuses,
                                        mtt_messages.TestModuleResult)
     return mtt_messages.TestModuleResultList(
