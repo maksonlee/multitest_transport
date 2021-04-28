@@ -14,15 +14,22 @@
  limitations under the License.
 -->
 <h1 mat-dialog-title>
-  Hosts Update in Lab: {{selectedLab}}
+  Hosts Update in
+  Lab: {{selectedLab}}
+  {{selectedHostGroup ? 'Host Group: ' + selectedHostGroup : ''}}
 </h1>
-<h2 *ngIf="labInfo?.hostUpdateStateSummary">
+<h2 *ngIf="!selectedHostGroup && labInfo?.hostUpdateStateSummary">
   Updating:
-  {{
-    getHostUpdatingCount(labInfo.hostUpdateStateSummary)
-  }} of
+  {{ updatingHostCountInSelectedLab }} of
   {{labInfo.hostUpdateStateSummary.total}}
   (refreshed {{labInfo.hostUpdateStateSummary.update_timestamp | utc | fromNow}})
+</h2>
+<h2 *ngIf="selectedHostGroup && clusterInfo?.hostUpdateStateSummary">
+  Updating:
+  {{updatingHostCountInSelectedHostGroup}}
+  of
+  {{clusterInfo.hostUpdateStateSummary.total}}
+  (refreshed {{clusterInfo.hostUpdateStateSummary.update_timestamp | utc | fromNow}})
 </h2>
 
 <div class="host-update-panel">

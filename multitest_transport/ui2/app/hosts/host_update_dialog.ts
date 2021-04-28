@@ -22,7 +22,7 @@ import {MatTableDataSource} from '@angular/material/table';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
 
-import {ALL_OPTIONS_VALUE, HostUpdateStateSummary, LabInfo} from '../services/mtt_lab_models';
+import {ALL_OPTIONS_VALUE, ClusterInfo, HostUpdateStateSummary, LabInfo} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
 import {TfcClient} from '../services/tfc_client';
 import {BatchUpdateHostMetadataRequest, DEFAULT_ALL_COUNT, HostConfig, HostUpdateState, TestHarnessImage} from '../services/tfc_models';
@@ -73,13 +73,14 @@ interface HostCountByHarnessVersionElement {
 })
 export class HostUpdateDialog implements OnInit, OnDestroy {
   selectedLab: string;
-  selectedHostGroup = '';
+  selectedHostGroupValue = '';
   selectedHosts: string[] = [];
   hostConfigsInLab: HostConfig[] = [];
   candidateHostConfigs: HostConfig[] = [];
   hostGroupNames: string[] = [];
   hostNames: string[] = [];
-  labInfo: LabInfo|null = null;
+  labInfoValue: LabInfo|null = null;
+  clusterInfoValue: ClusterInfo|null = null;
   selectedMode: UpdateMode = UpdateMode.LAB;
   selectedImage: TestHarnessImage|null = null;
   imageTagPrefix = '';
@@ -92,11 +93,46 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
   hostCountByVersionTableDataSource =
       new MatTableDataSource<HostCountByHarnessVersionElement>();
   readonly UpdateMode = UpdateMode;
+  updatingHostCountInSelectedLab = 0;
+  updatingHostCountInSelectedHostGroup = 0;
 
   private readonly destroy = new ReplaySubject<void>(1);
 
   @ViewChild(MatPaginator) matPaginator!: MatPaginator;
   @ViewChild(MatSort) matSort!: MatSort;
+
+  get selectedHostGroup() {
+    return this.selectedHostGroupValue;
+  }
+
+  set selectedHostGroup(value: string) {
+    this.selectedHostGroupValue = value;
+    if (!this.selectedHostGroup) {
+      this.initLabInfo();
+      return;
+    }
+    this.initClusterInfo();
+  }
+
+  get labInfo() {
+    return this.labInfoValue;
+  }
+
+  set labInfo(value: LabInfo|null) {
+    this.labInfoValue = value;
+    this.updatingHostCountInSelectedLab =
+        this.getHostUpdatingCount(value?.hostUpdateStateSummary);
+  }
+
+  get clusterInfo() {
+    return this.clusterInfoValue;
+  }
+
+  set clusterInfo(value: ClusterInfo|null) {
+    this.clusterInfoValue = value;
+    this.updatingHostCountInSelectedHostGroup =
+        this.getHostUpdatingCount(value?.hostUpdateStateSummary);
+  }
 
   constructor(
       public dialogRef: MatDialogRef<HostUpdateDialog>,
@@ -159,6 +195,19 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
             });
   }
 
+  initClusterInfo() {
+    return this.tfcClient.getClusterInfo(this.selectedHostGroup)
+        .pipe(takeUntil(this.destroy))
+        .subscribe(
+            (result) => {
+              this.clusterInfo = result;
+              this.loadUpdateStateAndVersionCountTables();
+            },
+            () => {
+              this.notifier.showError('Failed to load host group info.');
+            });
+  }
+
   getTestHarnessImagesByTagPrefix() {
     return this.tfcClient
         .getTestHarnessImages(
@@ -176,7 +225,7 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
             });
   }
 
-  getHostUpdatingCount(summary: HostUpdateStateSummary|null): number {
+  getHostUpdatingCount(summary?: HostUpdateStateSummary|null): number {
     return summary ?
         summary.syncing + summary.shuttingDown + summary.restarting :
         0;
@@ -192,11 +241,21 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
   }
 
   loadUpdateStateAndVersionCountTables() {
-    if (!this.labInfo) {
-      return;
+    let summary;
+    let versionCount;
+    if (this.selectedHostGroup) {
+      if (!this.clusterInfo) {
+        return;
+      }
+      summary = this.clusterInfo.hostUpdateStateSummary;
+      versionCount = this.clusterInfo.hostCountByHarnessVersion;
+    } else {
+      if (!this.labInfo) {
+        return;
+      }
+      summary = this.labInfo.hostUpdateStateSummary;
+      versionCount = this.labInfo.hostCountByHarnessVersion;
     }
-    const summary = this.labInfo.hostUpdateStateSummary;
-    const versionCount = this.labInfo.hostCountByHarnessVersion;
     if (summary) {
       this.hostUpdateStateSummaryTableDataSource.data = [
         {state: HostUpdateState.PENDING, count: summary.pending},
