@@ -18,19 +18,28 @@
   Lab: {{selectedLab}}
   {{selectedHostGroup ? 'Host Group: ' + selectedHostGroup : ''}}
 </h1>
-<h2 *ngIf="!selectedHostGroup && labInfo?.hostUpdateStateSummary">
-  Updating:
-  {{ updatingHostCountInSelectedLab }} of
-  {{labInfo.hostUpdateStateSummary.total}}
-  (refreshed {{labInfo.hostUpdateStateSummary.update_timestamp | utc | fromNow}})
-</h2>
-<h2 *ngIf="selectedHostGroup && clusterInfo?.hostUpdateStateSummary">
-  Updating:
-  {{updatingHostCountInSelectedHostGroup}}
-  of
-  {{clusterInfo.hostUpdateStateSummary.total}}
-  (refreshed {{clusterInfo.hostUpdateStateSummary.update_timestamp | utc | fromNow}})
-</h2>
+<div fxLayout="row" fxLayoutAlign="start center">
+  <h2 *ngIf="!selectedHostGroup && labInfo?.hostUpdateStateSummary">
+    Updating:
+    {{ updatingHostCountInSelectedLab }} of
+    {{labInfo.hostUpdateStateSummary.total}}
+    (refreshed {{labInfo.hostUpdateStateSummary.update_timestamp | utc | fromNow}})
+  </h2>
+  <h2 *ngIf="selectedHostGroup && clusterInfo?.hostUpdateStateSummary">
+    Updating:
+    {{updatingHostCountInSelectedHostGroup}}
+    of
+    {{clusterInfo.hostUpdateStateSummary.total}}
+    (refreshed {{clusterInfo.hostUpdateStateSummary.update_timestamp | utc | fromNow}})
+  </h2>
+  <button mat-icon-button
+          matTooltip="Refresh update state and version summaries"
+          aria-label="Refresh update state and version summaries"
+          (click)="loadUpdateStateAndVersionCountTables()"
+  >
+    <mat-icon>refresh</mat-icon>
+  </button>
+</div>
 
 <div class="host-update-panel">
   <div class="host-update-state-summary-panel">
