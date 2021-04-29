@@ -212,6 +212,21 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
         [`test_runs/new`], {queryParams: {'prevTestRunId': this.testRunId}});
   }
 
+  deleteTestRun() {
+    this.notifier
+        .confirm(
+            'Do you really want to delete this test run?', 'Delete Test Run')
+        .subscribe(result => {
+          if (!result) {
+            return;
+          }
+          this.mtt.deleteTestRun(this.testRunId).subscribe(result => {
+            this.notifier.showMessage(`Test run '${this.testRunId}' deleted`);
+            this.back();
+          });
+        });
+  }
+
   isLastAttemptFinal() {
     if (!this.request || !this.request.command_attempts ||
         !this.request.command_attempts.length) {

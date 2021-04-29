@@ -63,6 +63,11 @@
               </button>
             </ng-template>
 
+            <button mat-stroked-button color="accent" (click)="deleteTestRun()"
+                    *ngIf="isFinalTestRunState(testRun.state)">
+              Delete
+            </button>
+
             <a button mat-stroked-button color="accent" *ngIf="outputFilesUrl"
                [href]="outputFilesUrl" (click)="trackClickEvent('view_output_files')">
               {{isLastAttemptFinal() ? 'View Output Files' : 'View Working Directory'}}

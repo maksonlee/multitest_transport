@@ -609,7 +609,7 @@ class TestRun(ndb.Model):
 
   @classmethod
   def _post_delete_hook(cls, key, future):
-    ndb.Key(TestRunSummary, key.id()).delete()
+    ndb.delete_multi(ndb.Query(ancestor=key).iter(keys_only=True))
 
   def ToSummary(self):
     return TestRunSummary(

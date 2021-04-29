@@ -355,6 +355,12 @@ export class MttClient {
         {params});
   }
 
+  deleteTestRun(id: string) {
+    const params = new AnalyticsParams('test_runs', 'delete');
+    return this.http.delete(
+        `${MTT_API_URL}/test_runs/${encodeURIComponent(id)}`, {params});
+  }
+
   getTestRuns(
       maxResults?: number, pageToken?: string, backwards = false,
       filterQueries: string[] = [],

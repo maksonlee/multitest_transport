@@ -27,6 +27,7 @@ from multitest_transport.api import api_test_util
 from multitest_transport.api import test_run_api
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
+from multitest_transport.models import sql_models
 from multitest_transport.test_scheduler import test_kicker
 from multitest_transport.test_scheduler import test_run_manager
 from multitest_transport.util import env
@@ -388,6 +389,51 @@ class TestRunApiTest(api_test_util.TestCase):
         test_run_id=test_run.key.id(),
         state=ndb_models.TestRunState.CANCELED)
     self.assertEqual('204 No Content', res.status)
+
+  @mock.patch.object(file_util.FileHandle, 'Get')
+  @mock.patch.object(sql_models.db, 'Session')
+  def testDelete(self, sql_session, mock_file_handle_get):
+    test_run = self._createMockTestRuns(
+        state=ndb_models.TestRunState.COMPLETED)[0]
+
+    mock_file_handle = mock.MagicMock()
+    mock_file_handle_get.return_value = mock_file_handle
+
+    summaries = ndb_models.TestRunSummary.query(ancestor=test_run.key).fetch()
+    self.assertLen(summaries, 1)
+
+    self.app.delete_json('/_ah/api/mtt/v1/test_runs/%s' % test_run.key.id())
+
+    updated_run = messages.ConvertToKey(ndb_models.TestRun,
+                                        test_run.key.id()).get()
+    self.assertIsNone(updated_run)
+
+    summaries = ndb_models.TestRunSummary.query(ancestor=test_run.key).fetch()
+    self.assertLen(summaries, 0)
+
+    mock_file_handle.DeleteDir.assert_called_once()
+
+  def testDelete_nonFinalRun(self):
+    test_run = self._createMockTestRuns(
+        state=ndb_models.TestRunState.RUNNING)[0]
+
+    res = self.app.delete_json(
+        '/_ah/api/mtt/v1/test_runs/%s' % test_run.key.id(), expect_errors=True)
+
+    self.assertEqual('400 Bad Request', res.status)
+
+    updated_run = messages.ConvertToKey(ndb_models.TestRun,
+                                        test_run.key.id()).get()
+    self.assertIsNotNone(updated_run)
+
+    summaries = ndb_models.TestRunSummary.query(ancestor=test_run.key).fetch()
+    self.assertLen(summaries, 1)
+
+  def testDelete_idNotFound(self):
+    res = self.app.delete_json(
+        '/_ah/api/mtt/v1/test_runs/fake_id', expect_errors=True)
+
+    self.assertEqual('404 Not Found', res.status)
 
   def testTailOutputFile_runNotFound(self):
     # unknown test run ID

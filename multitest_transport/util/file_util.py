@@ -20,6 +20,7 @@ import logging
 import mimetypes
 import os
 import re
+import shutil
 import socket
 import stat
 from typing import BinaryIO, Iterator, List, Optional
@@ -268,6 +269,10 @@ class FileHandle(object):
     """Deletes this file if it exists."""
     raise NotImplementedError
 
+  def DeleteDir(self):
+    """Deletes this directory if it exists and all files contained."""
+    raise NotImplementedError
+
 
 class LocalFileHandle(FileHandle):
   """Reads file metadata and content from the file system."""
@@ -317,6 +322,10 @@ class LocalFileHandle(FileHandle):
   def Delete(self):
     if os.path.isfile(self.path):
       os.remove(self.path)
+
+  def DeleteDir(self):
+    if os.path.isdir(self.path):
+      shutil.rmtree(self.path)
 
 
 class HttpReadStream(BaseReadStream):

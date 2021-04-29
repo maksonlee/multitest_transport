@@ -28,6 +28,7 @@ from tradefed_cluster.common import IsFinalCommandState
 from multitest_transport.api import base
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
+from multitest_transport.models import sql_models
 from multitest_transport.test_scheduler import test_kicker
 from multitest_transport.test_scheduler import test_run_manager
 from multitest_transport.util import env
@@ -217,6 +218,43 @@ class TestRunApi(remote.Service):
     except test_run_manager.TestRunNotFoundError:
       raise endpoints.NotFoundException(
           'No test run found for ID %s' % request.test_run_id)
+    return message_types.VoidMessage()
+
+  @base.ApiMethod(
+      endpoints.ResourceContainer(
+          message_types.VoidMessage,
+          test_run_id=messages.StringField(1, required=True)),
+      message_types.VoidMessage,
+      path='{test_run_id}',
+      http_method='DELETE',
+      name='delete')
+  def Delete(self, request):
+    """Deletes a test run and all related files if it is in a final state."""
+
+    test_run_key = mtt_messages.ConvertToKey(ndb_models.TestRun,
+                                             request.test_run_id)
+    test_run = test_run_key.get()
+
+    if not test_run:
+      raise endpoints.NotFoundException(
+          'Test run %s not found' % request.test_run_id)
+
+    if not test_run.IsFinal():
+      raise endpoints.BadRequestException(
+          'Cannot delete non-final test run %s' % request.test_run_id)
+
+    # Remove output files
+    output_folder_url = file_util.GetAppStorageUrl([test_run.output_path])
+    output_folder = file_util.FileHandle.Get(output_folder_url)
+    output_folder.DeleteDir()
+
+    # Delete test results database
+    with sql_models.db.Session() as session:
+      session.query(sql_models.TestModuleResult).filter_by(
+          test_run_id=request.test_run_id).delete()
+
+    test_run_key.delete()
+
     return message_types.VoidMessage()
 
   @base.ApiMethod(
