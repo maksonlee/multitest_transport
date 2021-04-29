@@ -27,6 +27,7 @@
           aria-label="Check all devices"
         >
         </mat-checkbox>
+        ({{selectedSerials ? selectedSerials.length : 0}}/{{deviceInfos ? deviceInfos.length : 0}})
       </mat-header-cell>
       <mat-cell *matCellDef="let row">
         <mat-checkbox

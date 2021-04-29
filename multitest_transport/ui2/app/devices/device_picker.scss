@@ -28,6 +28,10 @@ table {
   height: calc(100% - 40px);
 }
 
+.mat-checkbox {
+  padding-right: 4px;
+}
+
 .mat-table {
   height: 100%;
   overflow: overlay;
