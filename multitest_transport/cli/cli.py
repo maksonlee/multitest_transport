@@ -762,7 +762,7 @@ def _PullUpdate(args, host):
     return False
   host.control_server_client.SubmitHostUpdateStateChangedEvent(
       host.config.hostname, host_util.HostUpdateState.SYNCING)
-  docker_helper.CleanupDanglingImages()
+  docker_helper.CleanupUnusedImages()
   logger.info(
       '%s != %s, should restart.',
       container_image_remote_digest, image_remote_digest)

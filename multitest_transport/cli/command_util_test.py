@@ -596,10 +596,10 @@ class DockerHelperTest(absltest.TestCase):
                       raise_on_failure=True)
     ])
 
-  def testCleanupDanglingImages(self):
-    self._docker_helper.CleanupDanglingImages()
+  def testCleanupUnusedImages(self):
+    self._docker_helper.CleanupUnusedImages()
     self._docker_context.assert_has_calls(
-        [mock.call.Run(['image', 'prune', '-f', '--filter', 'until=240h'],
+        [mock.call.Run(['image', 'prune', '-a', '-f', '--filter', 'until=240h'],
                        raise_on_failure=False)])
 
   def testIsContainerRunning(self):

@@ -923,15 +923,15 @@ class DockerHelper(object):
         raise_on_failure=True)
     return res.stdout.strip()
 
-  def CleanupDanglingImages(self):
-    """Clean up dangling docker images.
+  def CleanupUnusedImages(self):
+    """Clean up unused docker images.
 
     Returns:
       An instance of common.CommandResult.
     """
-    logging.info('Cleaning up dangling docker images...')
+    logging.info('Cleaning up unused docker images...')
     return self._docker_context.Run(
-        ['image', 'prune', '-f', '--filter', 'until=240h'],
+        ['image', 'prune', '-a', '-f', '--filter', 'until=240h'],
         raise_on_failure=False)
 
   def IsContainerRunning(self, container_name):
