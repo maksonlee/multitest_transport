@@ -22,6 +22,8 @@ import httplib2
 
 from multitest_transport.cli import google_auth_util
 
+import pytz
+
 logger = logging.getLogger(__name__)
 
 _DISCOVERY_URL = '{}/$discovery/rest?version=v1'
@@ -124,7 +126,8 @@ class ControlServerClient(object):
                    'skip submitting host update events.')
       return
 
-    now_sec = int(datetime.datetime.utcnow().timestamp())
+        now_sec = int(datetime.datetime.utcnow()
+                  .replace(tzinfo=pytz.utc).timestamp())
     body = {
         'host_events': [
             {
