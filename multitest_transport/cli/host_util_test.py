@@ -80,7 +80,11 @@ class HostUtilTest(parameterized.TestCase):
     mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
     self.mock_lab_config_pool.GetHostConfigs.side_effect = [[
         self.host_config1, self.host_config2]]
-    args = mock.MagicMock(**self.default_args)
+    args_dict = self.default_args.copy()
+    args_dict.update(
+        service_account_json_key_path='path/to/key',
+    )
+    args = mock.MagicMock(**args_dict)
 
     host_util.Execute(args)
 
@@ -106,6 +110,7 @@ class HostUtilTest(parameterized.TestCase):
         ask_login_password=True,
         ask_sudo_password=True,
         sudo_user='sudo_user',
+        service_account_json_key_path='path/to/key',
     )
     args = mock.MagicMock(**args_dict)
 
@@ -139,7 +144,9 @@ class HostUtilTest(parameterized.TestCase):
     args_dict = self.default_args.copy()
     args_dict.update(
         use_native_ssh=True,
-        ssh_arg='-o op1=v1 -o op2=v2')
+        ssh_arg='-o op1=v1 -o op2=v2',
+        service_account_json_key_path='path/to/key',
+        )
     args = mock.MagicMock(**args_dict)
 
     host_util.Execute(args)
@@ -170,7 +177,11 @@ class HostUtilTest(parameterized.TestCase):
         host_login_name='user1',
         ssh_arg='-o op1=v1 -o op2=v2')
     self.mock_lab_config_pool.GetHostConfigs.side_effect = [[host_config]]
-    args = mock.MagicMock(**self.default_args)
+    args_dict = self.default_args.copy()
+    args_dict.update(
+        service_account_json_key_path='path/to/key',
+        )
+    args = mock.MagicMock(**args_dict)
 
     host_util.Execute(args)
 
@@ -191,9 +202,15 @@ class HostUtilTest(parameterized.TestCase):
         host_util.Host(host_config, context=self.mock_context)
         for host_config in
         [self.host_config1, self.host_config2]]
+    for host in hosts:
+      host._control_server_client = mock.MagicMock()
     self.mock_func_exceptions['host1'] = Exception()
     args_dict = self.default_args.copy()
-    args_dict.update(parallel=False, exit_on_error=True)
+    args_dict.update(
+        parallel=False,
+        exit_on_error=True,
+        service_account_json_key_path='path/to/key',
+        )
     args = mock.MagicMock(**args_dict)
 
     with self.assertRaises(Exception):
@@ -202,6 +219,10 @@ class HostUtilTest(parameterized.TestCase):
           args,
           hosts,
           exit_on_error=True)
+
+    (hosts[0].control_server_client.SubmitHostUpdateStateChangedEvent
+     .assert_called_with(hosts[0].config.hostname,
+                         host_util.HostUpdateState.ERRORED))
 
     self.assertEqual({'host1': args}, self.mock_func_calls)
     self.assertEqual(host_util.HostExecutionState.ERROR,
@@ -215,8 +236,13 @@ class HostUtilTest(parameterized.TestCase):
         host_util.Host(host_config, context=self.mock_context)
         for host_config in
         [self.host_config1, self.host_config2, self.host_config3]]
+    for host in hosts:
+      host._control_server_client = mock.MagicMock()
     args_dict = self.default_args.copy()
-    args_dict.update(parallel=2)
+    args_dict.update(
+        parallel=2,
+        service_account_json_key_path='path/to/key',
+        )
     args = mock.MagicMock(**args_dict)
 
     host_util._ParallelExecute(
@@ -241,9 +267,14 @@ class HostUtilTest(parameterized.TestCase):
         host_util.Host(host_config, context=self.mock_context)
         for host_config in
         [self.host_config1, self.host_config2]]
+    for host in hosts:
+      host._control_server_client = mock.MagicMock()
     self.mock_func_exceptions['host2'] = Exception()
     args_dict = self.default_args.copy()
-    args_dict.update(parallel=True)
+    args_dict.update(
+        parallel=True,
+        service_account_json_key_path='path/to/key',
+        )
     args = mock.MagicMock(**args_dict)
 
     host_util._ParallelExecute(
@@ -257,6 +288,9 @@ class HostUtilTest(parameterized.TestCase):
                      hosts[0].execution_state)
     self.assertEqual(host_util.HostExecutionState.ERROR,
                      hosts[1].execution_state)
+    (hosts[1].control_server_client.SubmitHostUpdateStateChangedEvent
+     .assert_called_with(hosts[1].config.hostname,
+                         host_util.HostUpdateState.ERRORED))
 
   @mock.patch.object(host_util, 'BuildLabConfigPool')
   @mock.patch.object(socket, 'gethostname')

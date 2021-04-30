@@ -90,16 +90,16 @@ class Host(object):
     self._execution_start_time = None
     self._execution_end_time = None
     self._error = None
-    self._control_server_client = control_server_util.ControlServerClient(
-        self.config.control_server_url,
-        self.config.service_account_json_key_path,
-        self.config.engprod_api_key)
+    self._control_server_client = None
 
   def StartExecutionTimer(self):
     self._execution_start_time = _GetCurrentTime()
 
   def StopExecutionTimer(self):
     self._execution_end_time = _GetCurrentTime()
+
+  def InitControlServerClient(self):
+    return self.control_server_client
 
   @property
   def name(self):
@@ -172,6 +172,16 @@ class Host(object):
 
   @property
   def control_server_client(self):
+    """Lazy load the instance of ControlServerClient.
+
+    This allows use modified host config to create the client, after the
+    instance of Host is initiated.
+    """
+    if not self._control_server_client:
+      self._control_server_client = control_server_util.ControlServerClient(
+          self.config.control_server_url,
+          self.config.service_account_json_key_path,
+          self.config.engprod_api_key)
     return self._control_server_client
 
 
@@ -249,6 +259,10 @@ def _ParallelExecute(host_func, args, hosts, execution_state_printer=None):
   max_workers = _GetMaxWorker(args, hosts)
   logger.info('Parallel executing %r on %r hosts with %r parallel threads.',
               host_func.__name__, len(hosts), max_workers)
+  for host in hosts:
+    host.config = host.config.SetServiceAccountJsonKeyPath(
+        args.service_account_json_key_path)
+    host.InitControlServerClient()
   with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
     future_to_host = {executor.submit(host_func, args, host): host
                       for host in hosts}
@@ -264,6 +278,8 @@ def _ParallelExecute(host_func, args, hosts, execution_state_printer=None):
         try:
           f.result()
         except Exception as e:            logger.error('Failed %s on %s: %s.', host_func.__name__, host.name, e)
+          host.control_server_client.SubmitHostUpdateStateChangedEvent(
+              host.config.hostname, HostUpdateState.ERRORED)
         else:
           logger.info('Succeeded %s on %s.', host_func.__name__, host.name)
       # Instead of blocking on the futures.wait, we waiting with sleep,
@@ -373,6 +389,10 @@ def _SequentialExecute(
     exit_on_error: exit on error or continue to execute.
     execution_state_printer: to print execution state.
   """
+  for host in hosts:
+    host.config = host.config.SetServiceAccountJsonKeyPath(
+        args.service_account_json_key_path)
+    host.InitControlServerClient()
   # Run the function on a list of remote hosts sequentially.
   for host in hosts:
     try:
@@ -380,6 +400,8 @@ def _SequentialExecute(
       execution_state_printer.PrintState()
     except Exception as e:        logger.exception('Failed to run "%s" on %s.',
                        host_func.__name__, host.name)
+      host.control_server_client.SubmitHostUpdateStateChangedEvent(
+          host.config.hostname, HostUpdateState.ERRORED)
       if exit_on_error:
         raise
 
