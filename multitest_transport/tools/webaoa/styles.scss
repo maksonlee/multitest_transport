@@ -17,6 +17,8 @@
 @import 'third_party/javascript/angular2_material/src/lib/core/theming/theming';
 @import 'third_party/javascript/angular2_material/src/lib/core/theming/palette';
 @import 'third_party/javascript/angular2_material/src/lib/core/theming/all-theme';
+@import 'third_party/javascript/angular2_material/src/lib/mdc-progress-spinner/progress-spinner-theme';
+@import 'third_party/javascript/angular2_material/src/lib/mdc-progress-bar/progress-bar-theme';
 
 // Core material styles
 @include mat-core();
@@ -26,6 +28,8 @@ $primary: mat-palette($mat-grey);
 $accent: mat-palette($mat-blue);
 $theme: mat-light-theme($primary, $accent);
 @include angular-material-theme($theme);
+@include mat-mdc-progress-spinner-theme($theme);
+@include mat-mdc-progress-bar-theme($theme);
 
 // Button theme
 $button-primary: mat-palette($mat-grey);

@@ -46,6 +46,8 @@ $theme: map_merge(
 );
 
 @include angular-material-theme($theme);
+@include mat-mdc-progress-spinner-theme($theme);
+@include mat-mdc-progress-bar-theme($theme);
 
 $button-primary: mat-palette($mat-grey);
 $button-accent: mat-palette($mat-blue, 700);
@@ -220,7 +222,7 @@ mat-spinner.loading-spinner {
   display: flex;
   height: 100%;
   justify-content: center;
-  position:absolute;
+  position: absolute;
   width: 100%;
   z-index: 101;
 }

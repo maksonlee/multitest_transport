@@ -97,6 +97,8 @@ ng_module(
         third_party_js("angular2:material_icon"),
         third_party_js("angular2:material_input"),
         third_party_js("angular2:material_list"),
+        third_party_js("angular2:material_mdc_progress_bar"),
+        third_party_js("angular2:material_mdc_progress_spinner"),
         third_party_js("angular2:material_menu"),
         third_party_js("angular2:material_paginator"),
         third_party_js("angular2:material_progress_bar"),
