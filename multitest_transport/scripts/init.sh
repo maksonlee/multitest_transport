@@ -182,4 +182,4 @@ fi
 mkdir -p "${MTT_TEST_WORK_DIR}"
 TF_GLOBAL_CONFIG="${TF_CONFIG_FILE}"\
   TRADEFED_OPTS=-Djava.io.tmpdir="${MTT_TEST_WORK_DIR}"\
-  tradefed.sh
+  exec tradefed.sh

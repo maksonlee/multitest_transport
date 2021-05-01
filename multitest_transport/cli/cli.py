@@ -71,8 +71,10 @@ _LOCAL_VIRTUAL_DEVICE_NODES = ('/dev/kvm', '/dev/vhost-vsock', '/dev/net/tun',
 _TF_QUIT = 'TSTP'
 # Tradefed accept TERM signal as 'kill', which will kill all tests.
 _TF_KILL = 'TERM'
-# The total wait time for MTT docker container shutdown
-_CONTAINER_SHUTDOWN_TIMEOUT_SEC = 60 * 60
+# The long wait time for MTT docker container shutdown (graceful shutdown)
+_LONG_CONTAINER_SHUTDOWN_TIMEOUT_SEC = 60 * 60
+# The short wait time for MTT docker container shutdown (force shutdown)
+_SHORT_CONTAINER_SHUTDOWN_TIMEOUT_SEC = 10 * 60
 # The waiting interval to check mtt container liveliness
 _DETECT_INTERVAL_SEC = 30
 # The dict key name of test harness image from host metadata
@@ -604,21 +606,29 @@ def _StopMttNode(args, host):
   # mtt and dockerized tf.
   if docker_helper.IsContainerRunning(args.name):
     logger.info('Stopping running container %s.', args.name)
+    timeout = None
     if host.config.graceful_shutdown or args.wait:
       logger.info('Wait all tests to finish.')
       docker_helper.Kill([args.name], _TF_QUIT)
-    elif host.config.control_server_url:
-      # This send "kill" to TF inside the container.
-      logger.info('Kill all tests.')
+      timeout = _LONG_CONTAINER_SHUTDOWN_TIMEOUT_SEC
+    else:
+      # This send "TERM" to TF inside the container.
+      logger.info('Send TERM signal to TF. This will stop all running tests.')
       docker_helper.Kill([args.name], _TF_KILL)
-    else:
-      # This use "docker stop" to stop the MTT standalone mode.
-      logger.info('Stop container.')
-      docker_helper.Stop([args.name])
+      timeout = _SHORT_CONTAINER_SHUTDOWN_TIMEOUT_SEC
+    if host.config.shutdown_timeout_sec:
+      timeout = host.config.shutdown_timeout_sec
     if _HasSudoAccess():
-      _DetectAndKillDeadContainer(host, docker_helper, args.name)
+      _DetectAndKillDeadContainer(host, docker_helper, args.name, timeout)
     else:
-      docker_helper.Wait([args.name])
+      try:
+        docker_helper.Wait([args.name], timeout=timeout)
+      except command_util.CommandTimeoutError:
+        logger.warning(
+            'Container is still running after %s seconds; killing...',
+            timeout)
+        docker_helper.Stop([args.name])
+        docker_helper.Wait([args.name])
   logger.info('Container %s stopped.', args.name)
   res_inspect = docker_helper.Inspect(args.name)
   if res_inspect.return_code != 0:
@@ -628,19 +638,17 @@ def _StopMttNode(args, host):
   docker_helper.RemoveContainers([args.name], raise_on_failure=False)
 
 
-def _DetectAndKillDeadContainer(host,
-                                docker_helper,
-                                container_name):
+def _DetectAndKillDeadContainer(host, docker_helper, container_name, timeout):
   """Detect a dead MTT container, force kill it when detected or timed out.
 
   Args:
     host: an instance of host_util.Host.
     docker_helper: an instance of command_util.DockerHelper.
     container_name: string, the name of docker container to kill.
+    timeout: seconds to wait before killing a container. Can be
+        overidden by host config.
   """
-  total_wait_sec = _CONTAINER_SHUTDOWN_TIMEOUT_SEC
-  if host.config.shutdown_timeout_sec is not None:
-    total_wait_sec = host.config.shutdown_timeout_sec
+  total_wait_sec = timeout
   logging.debug(
       'Waiting %d sec for docker container shutdown.', total_wait_sec)
   wait_end_sec = time.time() + total_wait_sec

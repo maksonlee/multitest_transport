@@ -419,9 +419,9 @@ class LocalCommandContextTest(absltest.TestCase):
     exists.assert_called_once_with('/local/file')
     self.mock_subprocess_pkg.assert_has_calls([
         mock.call.Popen(['mkdir', '-p', '/remote']),
-        mock.call.Popen().communicate(),
+        mock.call.Popen().communicate(timeout=None),
         mock.call.Popen(['cp', '-rf', '/local/file', '/remote/file']),
-        mock.call.Popen().communicate()])
+        mock.call.Popen().communicate(timeout=None)])
 
 
 class DockerHelperTest(absltest.TestCase):

@@ -80,6 +80,10 @@ class CommandContextClosedError(Exception):
   """Error for running command on a closed context."""
 
 
+class CommandTimeoutError(Exception):
+  """A command failed to complete in a given timeout."""
+
+
 class DockerError(Exception):
   """Docker-related error."""
 
@@ -406,9 +410,11 @@ class CommandContext(object):
       else:
         res = self._wrapped_context.run(command_str, **run_kwargs)
     except invoke.exceptions.CommandTimedOut as err:
-      logger.warning(
-          'The command <%s> fails to execute within given time <%s s>.',
-          command_str, run_kwargs['timeout'])
+      msg = 'command %s with run config %s timed out after %s seconds' % (
+          command, run_config, run_config.timeout)
+      if run_config.raise_on_failure:
+        raise CommandTimeoutError(msg)
+      logger.warning(msg)
       return common.CommandResult(
           return_code=err.result.exited, stdout='', stderr=str(err))
 
@@ -442,9 +448,15 @@ class CommandContext(object):
     if run_config.env:
       kwargs['env'] = dict(os.environ, **run_config.env)
     start_time = time.time()
-    # TODO: apply timeout once subprocess supports in python3.
     proc = subprocess.Popen(command, **kwargs)
-    stdout, stderr = proc.communicate()
+    try:
+      stdout, stderr = proc.communicate(timeout=run_config.timeout)
+    except subprocess.TimeoutExpired as e:
+      if run_config.raise_on_failure:
+        raise CommandTimeoutError(
+            'command %s with run config %s timed out after %s seconds' % (
+                command, run_config, run_config.timeout))
+      return common.CommandResult(return_code=None, stdout=None, stderr=str(e))
     stdout = six.ensure_str(stdout) if stdout else None
     stderr = six.ensure_str(stderr) if stderr else None
     logger.debug(
@@ -815,18 +827,22 @@ class DockerHelper(object):
     return self._docker_context.Run(
         ['exec', container_name, *args], raise_on_failure=False)
 
-  def Stop(self, container_names):
+  def Stop(self, container_names, stop_timeout=None):
     """Stop the given containers.
 
     Args:
       container_names: a list of container_names to stop
+      stop_timeout: seconds to wait for stop before killing it.
     Returns:
       the common.CommandResult
     """
-    return self._docker_context.Run(
-        ['stop'] + container_names, timeout=_DOCKER_STOP_CMD_TIMEOUT_SEC)
+    cmds = ['stop']
+    if stop_timeout is not None:
+      cmds.extend(['-t', stop_timeout])
+    cmds.extend(container_names)
+    return self._docker_context.Run(cmds, timeout=_DOCKER_STOP_CMD_TIMEOUT_SEC)
 
-  def Kill(self, container_names, signal):
+  def Kill(self, container_names, signal=None):
     """Send a signal to container with kill command.
 
     Args:
@@ -835,9 +851,11 @@ class DockerHelper(object):
     Returns:
       the common.CommandResult
     """
-    return self._docker_context.Run(
-        ['kill', '-s', signal] + container_names,
-        timeout=_DOCKER_KILL_CMD_TIMEOUT_SEC)
+    cmds = ['kill']
+    if signal is not None:
+      cmds.extend(['-s', signal])
+    cmds.extend(container_names)
+    return self._docker_context.Run(cmds, timeout=_DOCKER_KILL_CMD_TIMEOUT_SEC)
 
   def Wait(self, container_names, timeout=_DOCKER_WAIT_CMD_TIMEOUT_SEC):
     """Wait the containers to stop.

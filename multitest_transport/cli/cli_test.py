@@ -1147,13 +1147,14 @@ class CliTest(parameterized.TestCase):
     daemon_active.return_value = False
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop'])
-    cli.Stop(args, self._CreateHost())
+    host = self._CreateHost()
+    cli.Stop(args, host)
 
     self.mock_context.Run.assert_has_calls([
         mock.call(['docker', 'kill', '-s', 'TERM', 'mtt'],
                   timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
         mock.call(['docker', 'container', 'wait', 'mtt'],
-                  timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
+                  timeout=cli._SHORT_CONTAINER_SHUTDOWN_TIMEOUT_SEC),
         mock.call(['docker', 'inspect', 'mtt'], raise_on_failure=False),
         mock.call(['docker', 'container', 'rm', 'mtt'],
                   raise_on_failure=False),
@@ -1193,7 +1194,7 @@ class CliTest(parameterized.TestCase):
         mock.call(['docker', 'kill', '-s', 'TSTP', 'mtt'],
                   timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
         mock.call(['docker', 'container', 'wait', 'mtt'],
-                  timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
+                  timeout=cli._LONG_CONTAINER_SHUTDOWN_TIMEOUT_SEC),
         mock.call(['docker', 'inspect', 'mtt'], raise_on_failure=False),
         mock.call(['docker', 'container', 'rm', 'mtt'],
                   raise_on_failure=False),
@@ -1205,9 +1206,9 @@ class CliTest(parameterized.TestCase):
   @mock.patch('__main__.cli.os.geteuid')
   def testStop_gracefulShutdownWithConfig(
       self, euid, is_running, daemon_active):
-    """Test Stop with graceful shutdown set in host config."""
     euid.return_value = 123
     is_running.return_value = True
+    daemon_active.return_value = False
     daemon_active.return_value = False
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop'])
@@ -1217,7 +1218,7 @@ class CliTest(parameterized.TestCase):
         mock.call(['docker', 'kill', '-s', 'TSTP', 'mtt'],
                   timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
         mock.call(['docker', 'container', 'wait', 'mtt'],
-                  timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
+                  timeout=cli._LONG_CONTAINER_SHUTDOWN_TIMEOUT_SEC),
         mock.call(['docker', 'inspect', 'mtt'], raise_on_failure=False),
         mock.call(['docker', 'container', 'rm', 'mtt'],
                   raise_on_failure=False),
@@ -1227,20 +1228,21 @@ class CliTest(parameterized.TestCase):
   @mock.patch.object(cli, '_IsDaemonActive')
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
   @mock.patch('__main__.cli.os.geteuid')
-  def testStop_noControlServerUrl(self, euid, is_running, daemon_active):
+  def testStop_withShutdownTimeoutConfig(self, euid, is_running, daemon_active):
     """Test Stop with kill mtt with control_server_url in host config."""
     euid.return_value = 123
     is_running.return_value = True
     daemon_active.return_value = False
     self.mock_context.host = 'ahost'
     args = self.arg_parser.parse_args(['stop'])
-    cli.Stop(args, self._CreateHost(control_server_url=None))
+    host = self._CreateHost(shutdown_timeout_sec=60)
+    cli.Stop(args, host)
 
     self.mock_context.Run.assert_has_calls([
-        mock.call(['docker', 'stop', 'mtt'],
-                  timeout=command_util._DOCKER_STOP_CMD_TIMEOUT_SEC),
+        mock.call(['docker', 'kill', '-s', 'TERM', 'mtt'],
+                  timeout=command_util._DOCKER_KILL_CMD_TIMEOUT_SEC),
         mock.call(['docker', 'container', 'wait', 'mtt'],
-                  timeout=command_util._DOCKER_WAIT_CMD_TIMEOUT_SEC),
+                  timeout=60),
         mock.call(['docker', 'inspect', 'mtt'], raise_on_failure=False),
         mock.call(['docker', 'container', 'rm', 'mtt'],
                   raise_on_failure=False),
@@ -1559,11 +1561,10 @@ class CliTest(parameterized.TestCase):
     docker_helper.IsContainerDead.side_effect = [False, False, True]
     docker_helper.IsContainerRunning.return_value = True
     mock_time.time.side_effect = [0, 0, 30, 60, 90]
-    host = self._CreateHost(shutdown_timeout_sec=90)
+    host = self._CreateHost()
     container_name = 'container_1'
 
-    cli._DetectAndKillDeadContainer(
-        host, docker_helper, container_name)
+    cli._DetectAndKillDeadContainer(host, docker_helper, container_name, 90)
 
     mock_kill.assert_called_with(host, docker_helper, container_name)
     self.assertLen(mock_time.sleep.call_args_list, 2)
@@ -1575,11 +1576,10 @@ class CliTest(parameterized.TestCase):
     docker_helper.IsContainerDead.return_value = False
     docker_helper.IsContainerRunning.return_value = True
     mock_time.time.side_effect = [0, 0, 30, 60, 90]
-    host = self._CreateHost(shutdown_timeout_sec=90)
+    host = self._CreateHost()
     container_name = 'container_1'
 
-    cli._DetectAndKillDeadContainer(
-        host, docker_helper, container_name)
+    cli._DetectAndKillDeadContainer(host, docker_helper, container_name, 90)
 
     mock_kill.assert_called_with(host, docker_helper, container_name)
     self.assertLen(mock_time.sleep.call_args_list, 3)
@@ -1592,11 +1592,10 @@ class CliTest(parameterized.TestCase):
     docker_helper.IsContainerDead.side_effect = [False, False, True]
     docker_helper.IsContainerRunning.side_effect = [True, True, False]
     mock_time.time.side_effect = [0, 0, 30, 60, 90]
-    host = self._CreateHost(shutdown_timeout_sec=90)
+    host = self._CreateHost()
     container_name = 'container_1'
 
-    cli._DetectAndKillDeadContainer(
-        host, docker_helper, container_name)
+    cli._DetectAndKillDeadContainer(host, docker_helper, container_name, 90)
 
     mock_kill.assert_not_called()
     self.assertLen(mock_time.sleep.call_args_list, 2)

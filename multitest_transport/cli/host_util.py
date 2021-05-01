@@ -194,7 +194,8 @@ def CreateHost(args):
     host_config = lab_config.CreateHostConfig(
         cluster_name='default',
         hostname=socket.getfqdn(),
-        docker_image=_DEFAULT_MTT_IMAGE)
+        docker_image=_DEFAULT_MTT_IMAGE,
+        shutdown_timeout_sec=60)
   else:
     host_config = _GetHostConfig(
         lab_config_path=args.lab_config_path, key_path=key_path)

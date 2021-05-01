@@ -40,7 +40,8 @@ def _RunCmd(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE):
   logging.info('Running "%s"', ' '.join(args))
   proc = subprocess.Popen(args, stderr=stderr, stdout=stdout)
   outs, errs = proc.communicate()
-  logging.debug('stdout: %s\n stderr: %s', outs, errs)
+  logging.info(
+      'stdout: %s\n stderr: %s', outs.decode('utf-8'), errs.decode('utf-8'))
   if proc.returncode != 0:
     raise CommandError(six.ensure_text(errs))
   return outs.decode(), errs.decode()
