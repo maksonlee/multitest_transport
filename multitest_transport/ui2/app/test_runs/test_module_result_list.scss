@@ -33,12 +33,9 @@ th.mat-header-cell:first-of-type {
   padding-top: 10px;
 }
 
-.failure-message-column {
-  min-width: 200px;
-}
-
 .failure-message {
   font-family: monospace;
+  font-size: 14px;
   min-width: 200px;
   padding-top: 10px;
 }
@@ -65,12 +62,9 @@ th.mat-header-cell:first-of-type {
   background-color: $primary-less;
 }
 
-.module-column {
-  min-width: 200px;
-}
-
 .module-name {
   color: $accent;
+  font-size: 14px;
 }
 
 .module-section {
@@ -79,6 +73,10 @@ th.mat-header-cell:first-of-type {
 
 .module-status {
   padding-top: 4px;
+}
+
+.name-column {
+  min-width: 400px;
 }
 
 .overflow {
@@ -106,7 +104,8 @@ th.mat-header-cell:first-of-type {
   }
 }
 
-.result-text-padding {
+.result-text {
+  font-size: 14px;
   padding-top: 8px;
 }
 
@@ -126,6 +125,7 @@ th.mat-header-cell:first-of-type {
 
 .testcase-name {
   color: $accent;
+  font-size: 14px;
 }
 
 .testcase-row-indent {

@@ -26,9 +26,9 @@
     <table class="mat-table">
       <!-- TODO: Header should be sticky -->
       <thead class="mat-header-row">
-        <th class="mat-header-cell" fxFlex="450px">Modules ({{moduleResultNodes.length}})</th>
-        <th class="mat-header-cell" fxFlex="220px">Failed/Total {{getTotalCountsString()}}</th>
-        <th class="mat-header-cell failure-message-column" fxFlex>Failure Message</th>
+        <th class="mat-header-cell name-column" fxFlex>Modules ({{moduleResultNodes.length}})</th>
+        <th class="mat-header-cell" fxFlex="180px">Failed/Total {{getTotalCountsString()}}</th>
+        <th class="mat-header-cell" fxFlex="20">Failure Message</th>
         <th class="mat-header-cell" fxFlex="40px"><!-- Stack trace button column --></th>
       </thead>
     </table>
@@ -39,7 +39,7 @@
 
     <div *ngFor="let moduleNode of moduleResultNodes; index as i" class="module-section">
       <div class="module-row row-divider">
-        <div fxFlex="450px" class="inline overflow">
+        <div fxFlex class="inline name-column">
           <button mat-icon-button aria-label="Toggle" (click)="expandModule(i)"
                   class="expand-button" [disabled]="!moduleNode.expandable">
             <mat-icon class="mat-icon-rtl-mirror">
@@ -51,7 +51,7 @@
           </span>
         </div>
 
-        <div fxFlex="220px" class="result-text-padding">
+        <div fxFlex="180px" class="result-text">
           <ng-container>
             <mat-icon class='result-icon result-incomplete' title="Incomplete"
                       *ngIf="!moduleNode.moduleResult.complete">warning</mat-icon>
@@ -65,7 +65,7 @@
           </ng-container>
         </div>
 
-        <div fxFlex class="failure-message overflow"
+        <div fxFlex="20" class="failure-message overflow"
              [title]="moduleNode.moduleResult.error_message">
           {{moduleNode.moduleResult.error_message}}
         </div>
@@ -76,7 +76,7 @@
       <!-- Display test cases when expanded -->
       <div *ngIf="moduleNode.expanded">
         <div *ngFor="let testCase of moduleNode.testCaseResults" class="row-divider">
-          <div fxFlex="450px" class="testcase-text-padding">
+          <div fxFlex class="name-column testcase-text-padding">
             <div class='testcase-row-indent overflow'>
               <span class='testcase-name' [title]="testCase.name">
               {{testCase.name}}
@@ -84,11 +84,11 @@
             </div>
           </div>
 
-          <div fxFlex="220px" class="module-status">
+          <div fxFlex="180px" class="module-status">
             <status-button [state]="getStatusString(testCase)"></status-button>
           </div>
 
-          <div fxFlex class="failure-message overflow"
+          <div fxFlex="20" class="failure-message overflow"
                [title]="testCase.error_message">
             {{testCase.error_message}}
           </div>
