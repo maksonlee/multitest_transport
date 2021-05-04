@@ -384,23 +384,22 @@ describe('HostUpdateDialog', () => {
       hostUpdateDialog.selectedHostGroup = '';
       hostUpdateDialogFixture.detectChanges();
       hostUpdateDialogFixture.whenStable().then(() => {
-        expect(
-                  hostUpdateDialog.hostUpdateStateSummaryTableDataSource.data)
-                  .toEqual([
-                    {state: HostUpdateState.PENDING, count: 6},
-                    {state: HostUpdateState.SYNCING, count: 3},
-                    {state: HostUpdateState.SHUTTING_DOWN, count: 11},
-                    {state: HostUpdateState.RESTARTING, count: 11},
-                    {state: HostUpdateState.SUCCEEDED, count: 2},
-                    {state: HostUpdateState.TIMED_OUT, count: 2},
-                    {state: HostUpdateState.ERRORED, count: 2},
-                    {state: HostUpdateState.UNKNOWN, count: 1},
-                  ]);
-              expect(hostUpdateDialog.hostCountByVersionTableDataSource.data)
-                  .toEqual([
-                    {version: 'v3', count: 3},
-                    {version: 'v4', count: 2},
-                  ]);
+        expect(hostUpdateDialog.hostUpdateStateSummaryTableDataSource.data)
+            .toEqual([
+              {state: HostUpdateState.PENDING, count: 6},
+              {state: HostUpdateState.SYNCING, count: 3},
+              {state: HostUpdateState.SHUTTING_DOWN, count: 11},
+              {state: HostUpdateState.RESTARTING, count: 11},
+              {state: HostUpdateState.SUCCEEDED, count: 2},
+              {state: HostUpdateState.TIMED_OUT, count: 2},
+              {state: HostUpdateState.ERRORED, count: 2},
+              {state: HostUpdateState.UNKNOWN, count: 1},
+            ]);
+        expect(hostUpdateDialog.hostCountByVersionTableDataSource.data)
+            .toEqual([
+              {version: 'v3', count: 3},
+              {version: 'v4', count: 2},
+            ]);
       });
     });
   });
@@ -500,7 +499,11 @@ describe('HostUpdateDialog', () => {
     it('submits set image confirmation request correctly', () => {
       hostUpdateDialog.hostConfigsInLab = hostConfigs.slice(0, 2);
       const observable = tfcClient.batchUpdateHostMetadata(
-          hostUpdateDialog.getBatchUpdateHostMetadataRequest());
+          // TODO: Remove any after Jasmine upgrade is in. Argument
+          // of type 'BatchUpdateHostMetadataRequest | null' is not assignable
+          // to parameter of type 'BatchUpdateHostMetadataRequest'.
+          hostUpdateDialog.getBatchUpdateHostMetadataRequest() as
+          AnyDuringJasmineApril2021Migration);
 
       hostUpdateDialog.onConfirmSetImage();
 
@@ -519,7 +522,11 @@ describe('HostUpdateDialog', () => {
             statusText: 'Bad Request: some error message',
           })));
       const observable = tfcClient.batchUpdateHostMetadata(
-          hostUpdateDialog.getBatchUpdateHostMetadataRequest());
+          // TODO: Remove any after Jasmine upgrade is in. Argument
+          // of type 'BatchUpdateHostMetadataRequest | null' is not assignable
+          // to parameter of type 'BatchUpdateHostMetadataRequest'.
+          hostUpdateDialog.getBatchUpdateHostMetadataRequest() as
+          AnyDuringJasmineApril2021Migration);
       const expectedErrorMessage = 'Error when setting the image: ' +
           'Http failure response for (unknown url): ' +
           '400 Bad Request: some error message';
