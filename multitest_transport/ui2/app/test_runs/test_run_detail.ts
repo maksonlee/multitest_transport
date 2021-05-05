@@ -220,7 +220,7 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
           if (!result) {
             return;
           }
-          this.mtt.deleteTestRun(this.testRunId).subscribe(result => {
+          this.mtt.deleteTestRuns([this.testRunId]).subscribe(result => {
             this.notifier.showMessage(`Test run '${this.testRunId}' deleted`);
             this.back();
           });

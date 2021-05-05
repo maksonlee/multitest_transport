@@ -392,48 +392,54 @@ class TestRunApiTest(api_test_util.TestCase):
 
   @mock.patch.object(file_util.FileHandle, 'Get')
   @mock.patch.object(sql_models.db, 'Session')
-  def testDelete(self, sql_session, mock_file_handle_get):
-    test_run = self._createMockTestRuns(
-        state=ndb_models.TestRunState.COMPLETED)[0]
-
+  def testDeleteMulti(self, sql_session, mock_file_handle_get):
     mock_file_handle = mock.MagicMock()
     mock_file_handle_get.return_value = mock_file_handle
 
-    summaries = ndb_models.TestRunSummary.query(ancestor=test_run.key).fetch()
-    self.assertLen(summaries, 1)
+    completed_run = self._createMockTestRuns(
+        state=ndb_models.TestRunState.COMPLETED, count=1)[0]
+    canceled_run = self._createMockTestRuns(
+        state=ndb_models.TestRunState.CANCELED, count=1)[0]
+    error_run = self._createMockTestRuns(
+        state=ndb_models.TestRunState.ERROR, count=1)[0]
 
-    self.app.delete_json('/_ah/api/mtt/v1/test_runs/%s' % test_run.key.id())
+    self.app.delete(
+        '/_ah/api/mtt/v1/test_runs',
+        params={'test_run_ids': [completed_run.key.id(),
+                                 canceled_run.key.id(),
+                                 error_run.key.id()]})
 
-    updated_run = messages.ConvertToKey(ndb_models.TestRun,
-                                        test_run.key.id()).get()
-    self.assertIsNone(updated_run)
+    self.assertIsNone(completed_run.key.get())
+    self.assertIsNone(canceled_run.key.get())
+    self.assertIsNone(error_run.key.get())
 
-    summaries = ndb_models.TestRunSummary.query(ancestor=test_run.key).fetch()
-    self.assertLen(summaries, 0)
+  @mock.patch.object(file_util.FileHandle, 'Get')
+  @mock.patch.object(sql_models.db, 'Session')
+  def testDeleteMulti_invalidRuns(self, sql_session, mock_file_handle_get):
+    mock_file_handle = mock.MagicMock()
+    mock_file_handle_get.return_value = mock_file_handle
 
-    mock_file_handle.DeleteDir.assert_called_once()
+    completed_run = self._createMockTestRuns(
+        state=ndb_models.TestRunState.COMPLETED, count=1)[0]
+    canceled_run = self._createMockTestRuns(
+        state=ndb_models.TestRunState.CANCELED, count=1)[0]
+    queued_run = self._createMockTestRuns(
+        state=ndb_models.TestRunState.QUEUED, count=1)[0]
+    running_run = self._createMockTestRuns(
+        state=ndb_models.TestRunState.RUNNING, count=1)[0]
 
-  def testDelete_nonFinalRun(self):
-    test_run = self._createMockTestRuns(
-        state=ndb_models.TestRunState.RUNNING)[0]
+    res = self.app.delete(
+        '/_ah/api/mtt/v1/test_runs',
+        params={'test_run_ids': [canceled_run.key.id(),
+                                 queued_run.key.id(),
+                                 running_run.key.id(),
+                                 'fake_id']}, expect_errors=True)
 
-    res = self.app.delete_json(
-        '/_ah/api/mtt/v1/test_runs/%s' % test_run.key.id(), expect_errors=True)
-
+    self.assertIsNotNone(completed_run.key.get())
+    self.assertIsNone(canceled_run.key.get())
+    self.assertIsNotNone(queued_run.key.get())
+    self.assertIsNotNone(running_run.key.get())
     self.assertEqual('400 Bad Request', res.status)
-
-    updated_run = messages.ConvertToKey(ndb_models.TestRun,
-                                        test_run.key.id()).get()
-    self.assertIsNotNone(updated_run)
-
-    summaries = ndb_models.TestRunSummary.query(ancestor=test_run.key).fetch()
-    self.assertLen(summaries, 1)
-
-  def testDelete_idNotFound(self):
-    res = self.app.delete_json(
-        '/_ah/api/mtt/v1/test_runs/fake_id', expect_errors=True)
-
-    self.assertEqual('404 Not Found', res.status)
 
   def testTailOutputFile_runNotFound(self):
     # unknown test run ID

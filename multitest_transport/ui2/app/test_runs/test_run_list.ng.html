@@ -78,10 +78,43 @@
     </mat-menu>
   </div>
 
+  <div class="action-row">
+    <button mat-stroked-button class="delete-button"
+            (click)="deleteSelectedRows()"
+            [disabled]="this.selection.selected.length === 0"
+            >
+      Delete
+    </button>
+  </div>
+
   <mat-table #table [dataSource]="dataSource" class="selectable"
              (scroll)="checkTableScrolled()"
              [class.scrolled]="isTableScrolled"
              aria-label="Test run list">
+
+    <!-- Checkbox Column -->
+    <ng-container matColumnDef="select">
+      <mat-header-cell *matHeaderCellDef fxFlex="40px">
+        <mat-checkbox
+          (change)="$event ? toggleSelection() : null"
+          [checked]="isAllSelected()"
+          [indeterminate]="selection.selected.length > 0 && !isAllSelected()"
+          aria-label="Select all test runs"
+          class="select-all-checkbox"
+        >
+        </mat-checkbox>
+      </mat-header-cell>
+      <mat-cell *matCellDef="let row" fxFlex="40px">
+        <mat-checkbox
+          (click)="$event.stopPropagation()"
+          (change)="selection.toggle(row)"
+          [checked]="selection.isSelected(row)"
+          [disabled]="!isFinalTestRunState(row.state)"
+        >
+        </mat-checkbox>
+      </mat-cell>
+    </ng-container>
+
     <!-- Test Name -->
     <ng-container matColumnDef="test_name">
       <mat-header-cell *matHeaderCellDef fxFlex class="test-name-column">Test</mat-header-cell>

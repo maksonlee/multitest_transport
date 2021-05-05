@@ -23,6 +23,7 @@ import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
 import {TestPackageInfo, TestRunState, TestRunSummary} from '../services/mtt_models';
+import {Notifier} from '../services/notifier';
 import {DeviceInfo} from '../services/tfc_models';
 import {DEFAULT_PAGE_SIZE} from '../shared/paginator';
 import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
@@ -37,6 +38,7 @@ describe('TestRunList', () => {
   let testRunList: TestRunList;
   let testRunListFixture: ComponentFixture<TestRunList>;
   let mttClient: jasmine.SpyObj<MttClient>;
+  let notifier: jasmine.SpyObj<Notifier>;
   let testDevices: DeviceInfo[];
   let testPackageInfo: TestPackageInfo;
   let testRunCompleted: TestRunSummary;
@@ -66,15 +68,19 @@ describe('TestRunList', () => {
       test_devices: testDevices,
     };
 
-    mttClient = jasmine.createSpyObj('mttClient', ['getTestRuns']);
+    mttClient =
+        jasmine.createSpyObj('mttClient', ['getTestRuns', 'deleteTestRuns']);
     mttClient.getTestRuns.and.returnValue(
         observableOf({test_runs: [testRunCompleted, testRunPending]}));
+
+    notifier = jasmine.createSpyObj(['confirm', 'showError']);
 
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
       aotSummaries: TestRunsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
+        {provide: Notifier, useValue: notifier},
       ],
     });
 
@@ -207,4 +213,26 @@ describe('TestRunList', () => {
          }
        });
      }));
+
+  it('can delete test runs', () => {
+    notifier.confirm.and.returnValue(observableOf(true));  // confirm delete
+
+    testRunList.selection.select(testRunCompleted);
+    testRunListFixture.detectChanges();
+    getEl(el, '.delete-button').click();
+    expect(mttClient.deleteTestRuns).toHaveBeenCalledWith(['completed']);
+  });
+
+  it('cannot delete non-final test runs', () => {
+    notifier.confirm.and.returnValue(observableOf(true));  // confirm delete
+    mttClient.getTestRuns.and.returnValue(
+        observableOf({test_runs: [testRunPending]}));
+    testRunList.load();
+    testRunListFixture.detectChanges();
+
+    testRunList.toggleSelection();
+    testRunListFixture.detectChanges();
+
+    expect(getEl(el, '.delete-button').getAttribute('disabled')).toBeTruthy();
+  });
 });

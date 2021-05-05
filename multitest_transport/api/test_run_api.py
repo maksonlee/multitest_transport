@@ -220,28 +220,19 @@ class TestRunApi(remote.Service):
           'No test run found for ID %s' % request.test_run_id)
     return message_types.VoidMessage()
 
-  @base.ApiMethod(
-      endpoints.ResourceContainer(
-          message_types.VoidMessage,
-          test_run_id=messages.StringField(1, required=True)),
-      message_types.VoidMessage,
-      path='{test_run_id}',
-      http_method='DELETE',
-      name='delete')
-  def Delete(self, request):
+  def _Delete(self, test_run_id):
     """Deletes a test run and all related files if it is in a final state."""
-
     test_run_key = mtt_messages.ConvertToKey(ndb_models.TestRun,
-                                             request.test_run_id)
+                                             test_run_id)
     test_run = test_run_key.get()
 
     if not test_run:
       raise endpoints.NotFoundException(
-          'Test run %s not found' % request.test_run_id)
+          'Test run %s not found' % test_run_id)
 
     if not test_run.IsFinal():
       raise endpoints.BadRequestException(
-          'Cannot delete non-final test run %s' % request.test_run_id)
+          'Cannot delete non-final test run %s' % test_run_id)
 
     # Remove output files
     output_folder_url = file_util.GetAppStorageUrl([test_run.output_path])
@@ -251,10 +242,33 @@ class TestRunApi(remote.Service):
     # Delete test results database
     with sql_models.db.Session() as session:
       session.query(sql_models.TestModuleResult).filter_by(
-          test_run_id=request.test_run_id).delete()
+          test_run_id=test_run_id).delete()
 
     test_run_key.delete()
 
+  @base.ApiMethod(
+      endpoints.ResourceContainer(
+          message_types.VoidMessage,
+          test_run_ids=messages.StringField(1, repeated=True)),
+      message_types.VoidMessage,
+      path='/test_runs',
+      http_method='DELETE',
+      name='delete')
+  def DeleteMulti(self, request):
+    """Deletes multiple test runs.
+
+    If any deletion fails, it will continue with remaining and raise an
+    exception at the end.
+    """
+    failed_ids = []
+    for test_run_id in request.test_run_ids:
+      try:
+        self._Delete(test_run_id)
+      except (endpoints.NotFoundException, endpoints.BadRequestException):
+        failed_ids.append(test_run_id)
+    if failed_ids:
+      raise endpoints.BadRequestException(
+          'Failed to delete test runs: %s' % failed_ids)
     return message_types.VoidMessage()
 
   @base.ApiMethod(

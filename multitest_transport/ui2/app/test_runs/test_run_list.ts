@@ -15,6 +15,7 @@
  */
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
+import {SelectionModel} from '@angular/cdk/collections';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {AfterViewInit, Component, ElementRef, HostListener, OnDestroy, ViewChild} from '@angular/core';
 import {MatChipInputEvent} from '@angular/material/chips';
@@ -24,7 +25,7 @@ import {ReplaySubject} from 'rxjs';
 import {finalize, first, takeUntil} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
-import {TableColumn, TestRunState, TestRunSummary} from '../services/mtt_models';
+import {isFinalTestRunState, TableColumn, TestRunState, TestRunSummary} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {OverflowListType} from '../shared/overflow_list';
 import {DEFAULT_PAGE_SIZE, Paginator} from '../shared/paginator';
@@ -55,7 +56,18 @@ export class TestRunList implements AfterViewInit, OnDestroy {
   ];
 
   columns: TableColumn[] = [
-    {fieldName: 'test_name', displayName: 'Test', removable: false, show: true},
+    {
+      fieldName: 'select',
+      displayName: '',
+      removable: false,
+      show: true,
+    },
+    {
+      fieldName: 'test_name',
+      displayName: 'Test',
+      removable: false,
+      show: true,
+    },
     {
       fieldName: 'test_package',
       displayName: 'Test Package',
@@ -80,27 +92,46 @@ export class TestRunList implements AfterViewInit, OnDestroy {
       removable: true,
       show: true
     },
-    {fieldName: 'labels', displayName: 'Labels', removable: true, show: true},
+    {
+      fieldName: 'labels',
+      displayName: 'Labels',
+      removable: true,
+      show: true,
+    },
     {
       fieldName: 'create_time',
       displayName: 'Created',
       removable: true,
       show: true
     },
-    {fieldName: 'status', displayName: 'Status', removable: false, show: true},
+    {
+      fieldName: 'status',
+      displayName: 'Status',
+      removable: false,
+      show: true,
+    },
     {
       fieldName: 'failures',
       displayName: 'Test Failures',
       removable: false,
       show: true
     },
-    {fieldName: 'view', displayName: 'View', removable: false, show: true},
+    {
+      fieldName: 'view',
+      displayName: 'View',
+      removable: false,
+      show: true,
+    },
   ];
 
   isLoading = false;
   dataSource = new MatTableDataSource<TestRunSummary>([]);
   filters: string[] = [];
   states: TestRunState[] = [];
+  isFinalTestRunState = isFinalTestRunState;
+
+  selection = new SelectionModel<TestRunSummary>(
+      /*allow multi select*/ true, []);
 
   @ViewChild('table', {static: false, read: ElementRef}) table!: ElementRef;
   isTableScrolled = false;
@@ -147,6 +178,7 @@ export class TestRunList implements AfterViewInit, OnDestroy {
   load(previous = false) {
     this.isLoading = true;
     this.liveAnnouncer.announce('Loading', 'polite');
+    this.selection.clear();
     this.mtt
         .getTestRuns(
             this.paginator.pageSize,
@@ -271,5 +303,73 @@ export class TestRunList implements AfterViewInit, OnDestroy {
       this.filters.splice(index, 1);
       this.resetPageTokenAndReload();
     }
+  }
+
+  /**
+   * Whether the number of selected elements matches the total number of rows.
+   */
+  isAllSelected() {
+    let count = 0;
+    for (const row of this.dataSource.data) {
+      if (isFinalTestRunState(row.state)) {
+        count++;
+      }
+    }
+    return this.selection.selected.length === count;
+  }
+
+  /**
+   * Selects all rows if they are not all selected; otherwise clear selection.
+   */
+  toggleSelection() {
+    if (this.isAllSelected()) {
+      this.selection.clear();
+      return;
+    }
+
+    for (const row of this.dataSource.data) {
+      if (isFinalTestRunState(row.state)) {
+        this.selection.select(row);
+      }
+    }
+  }
+
+  /** Returns true if all test run states are final, false otherwise. */
+  validateSelectedRowDeletion() {
+    for (const summary of this.selection.selected) {
+      if (!isFinalTestRunState(summary.state)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  deleteSelectedRows() {
+    this.notifier
+        .confirm(
+            'Do you really want to delete these test runs?', 'Delete Test Runs')
+        .subscribe(result => {
+          if (!result) {
+            return;
+          }
+          this.isLoading = true;
+          this.mtt
+              .deleteTestRuns(
+                  this.selection.selected.map(testRun => testRun.id!))
+              .pipe(
+                  finalize(() => {
+                    this.load();
+                  }),
+                  )
+              .subscribe(
+                  (res) => {
+                    this.notifier.showMessage('Test runs deleted.');
+                  },
+                  (error) => {
+                    this.notifier.showError(
+                        'Failed to delete test runs.',
+                        buildApiErrorMessage(error));
+                  });
+        });
   }
 }

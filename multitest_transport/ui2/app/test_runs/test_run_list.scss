@@ -49,6 +49,11 @@ mat-table {
   }
 }
 
+.action-row {
+  margin: 10px 16px;
+  position: sticky;
+}
+
 .filter {
   padding: 0 8px 0 16px;
   align-items: center;
@@ -79,4 +84,9 @@ mat-table {
 .test-name-column {
   min-width: 150px;
   word-break: break-all;
+}
+
+.warning-icon {
+  color: $warning;
+  vertical-align: middle;
 }
