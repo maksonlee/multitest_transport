@@ -18,7 +18,6 @@ This tool is supposed to be bootstrapped by 'mtt' script and expects the current
 working directory to be the root of MTT package.
 """
 import argparse
-import enum
 import logging
 import os
 import os.path
@@ -37,6 +36,7 @@ import six
 from multitest_transport.cli import cli_util
 from multitest_transport.cli import command_util
 from multitest_transport.cli import host_util
+from tradefed_cluster.configs import lab_config_pb2
 
 _MTT_CONTAINER_NAME = 'mtt'
 # The port must be consistent with those in init.sh and serve.sh.
@@ -83,13 +83,6 @@ _TEST_HARNESS_IMAGE_KEY = 'testHarnessImage'
 
 PACKAGE_LOGGER_NAME = 'multitest_transport.cli'
 logger = logging.getLogger(__name__)
-
-
-class OperationMode(enum.Enum):
-  """Mode of ATS."""
-  CLOUD = 'cloud'
-  ON_PREMISE = 'on_premise'
-  STANDALONE = 'standalone'
 
 
 class ActionableError(Exception):
@@ -340,6 +333,10 @@ def _StartMttNode(args, host):
   host.control_server_client.SubmitHostUpdateStateChangedEvent(
       host.config.hostname, host_util.HostUpdateState.RESTARTING)
   control_server_url = args.control_server_url or host.config.control_server_url
+  operation_mode = lab_config_pb2.OperationMode.Value(args.operation_mode)
+  if operation_mode == lab_config_pb2.OperationMode.UNKNOWN and host.config.operation_mode:
+    # Override operation mode if arg value is UNKNOWN and host has config.
+    operation_mode = host.config.operation_mode
   image_name = _GetDockerImageName(
       args.image_name or host.config.docker_image, tag=args.tag)
   docker_server = args.docker_server or host.config.docker_server
@@ -367,7 +364,9 @@ def _StartMttNode(args, host):
     network = _DOCKER_HOST_NETWORK
   docker_helper.SetNetwork(network)
 
-  docker_helper.AddEnv('OPERATION_MODE', args.operation_mode)
+  docker_helper.AddEnv(
+      'OPERATION_MODE',
+      lab_config_pb2.OperationMode.Name(operation_mode).lower())
   docker_helper.AddEnv('MTT_CLI_VERSION', cli_util.GetVersion(args.cli_path)[0])
   if control_server_url:
     docker_helper.AddEnv('MTT_CONTROL_SERVER_URL', control_server_url)
@@ -375,9 +374,8 @@ def _StartMttNode(args, host):
     logger.info(
         'The control_server_url is not set; starting a standalone node.')
   # TODO: Use config to differentiate worker and controller.
-  if (control_server_url and
-      args.operation_mode == OperationMode.ON_PREMISE.value
-     ) or not control_server_url:
+  if (control_server_url and operation_mode
+      == lab_config_pb2.OperationMode.ON_PREMISE) or not control_server_url:
     if network == _DOCKER_BRIDGE_NETWORK:
       for host_port, docker_port in _GetMttServerPublicPorts(args.port):
         docker_helper.AddPort(host_port, docker_port)
@@ -941,8 +939,9 @@ def _CreateStartArgParser():
       action='store_true')
   parser.add_argument(
       '--operation_mode',
-      default=OperationMode.STANDALONE.value,
-      choices=[s.value for s in OperationMode],
+      default=lab_config_pb2.OperationMode.Name(
+          lab_config_pb2.OperationMode.UNKNOWN),
+      choices=lab_config_pb2.OperationMode.keys(),
       help='Run ATS in a certain operation mode.')
   parser.add_argument(
       '--control_server_url',

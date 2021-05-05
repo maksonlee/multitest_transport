@@ -28,6 +28,7 @@ py_library(
         ":host_util_lib",
         third_party("packaging"),
         third_party("six"),
+        "@tradefed_cluster//tradefed_cluster/configs:lab_config_py_pb2",
     ],
 )
 

@@ -134,7 +134,8 @@ class CliTest(parameterized.TestCase):
                   service_account_json_key_path=None,
                   extra_docker_args=(),
                   control_server_url='url',
-                  enable_ui_update=False):
+                  enable_ui_update=False,
+                  operation_mode=None):
 
     host = cli.host_util.Host(
         lab_config.CreateHostConfig(
@@ -151,7 +152,8 @@ class CliTest(parameterized.TestCase):
             enable_autoupdate=enable_autoupdate,
             enable_ui_update=enable_ui_update,
             service_account_json_key_path=service_account_json_key_path,
-            extra_docker_args=list(extra_docker_args)))
+            extra_docker_args=list(extra_docker_args),
+            operation_mode=operation_mode))
     host.context = self.mock_context
     return host
 
@@ -218,7 +220,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '--hostname', 'mock-host',
             '--network', 'bridge',
-            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
             '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'LAB_NAME=alab',
@@ -265,7 +267,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '--hostname', 'ahost',
             '--network', 'bridge',
-            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
             '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
@@ -322,7 +324,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '--hostname', 'mock-host',
             '--network', 'bridge',
-            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
             '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
@@ -374,7 +376,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '--hostname', 'mock-host',
             '--network', 'bridge',
-            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
             '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
@@ -405,9 +407,49 @@ class CliTest(parameterized.TestCase):
   def testStart_onPremise(self):
     args = self.arg_parser.parse_args([
         'start', '--port', '8100', '--adb_server_port', '5137',
-        '--operation_mode', 'on_premise'
+        '--operation_mode', 'ON_PREMISE'
     ])
     cli.Start(args, self._CreateHost())
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
+            'docker', 'create',
+            '--name', 'mtt', '-it',
+            '-v', '/dev/bus/usb:/dev/bus/usb',
+            '--device-cgroup-rule', 'c 189:* rwm',
+            '--cap-add', 'syslog',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=on_premise',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
+            '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '--mount', 'type=volume,src=mtt-data,dst=/data',
+            '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
+            '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
+            '--mount', ('type=bind,src=/var/run/docker.sock,'
+                        'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '8100:8000',
+            '-p', '8105:8005',
+            '-p', '8106:8006',
+            '-p', '127.0.0.1:5137:5037',
+            'gcr.io/android-mtt/mtt:prod']),
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
+
+  def testStart_withHostConfig_onPremise(self):
+    args = self.arg_parser.parse_args([
+        'start', '--port', '8100', '--adb_server_port', '5137'
+    ])
+    cli.Start(args, self._CreateHost(operation_mode='ON_PREMISE'))
 
     self.mock_context.Run.assert_has_calls([
         mock.call([
@@ -460,7 +502,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '--hostname', 'mock-host',
             '--network', 'bridge',
-            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
             '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
             '-e', 'USER=user',
@@ -564,7 +606,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '--hostname', 'mock-host',
             '--network', 'bridge',
-            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
             '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
@@ -612,7 +654,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '--hostname', 'mock-host',
             '--network', 'bridge',
-            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
             '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
@@ -669,7 +711,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '--hostname', 'mock-host',
             '--network', 'bridge',
-            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
             '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
@@ -729,7 +771,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '--hostname', 'mock-host',
             '--network', 'bridge',
-            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
             '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
@@ -772,7 +814,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '--hostname', 'mock-host',
             '--network', 'bridge',
-            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
             '-e', 'MTT_CONTROL_SERVER_URL=tfc',
             '-e', 'CLUSTER=acluster',
@@ -835,7 +877,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '--hostname', 'mock-host',
             '--network', 'bridge',
-            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
             '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
@@ -886,7 +928,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '--hostname', 'ahost',
             '--network', 'bridge',
-            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
             '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'CLUSTER=acluster',
@@ -929,7 +971,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '--hostname', 'mock-host',
             '--network', 'bridge',
-            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
             '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
@@ -987,7 +1029,7 @@ class CliTest(parameterized.TestCase):
               '--cap-add', 'syslog',
               '--hostname', 'mock-host',
               '--network', 'bridge',
-              '-e', 'OPERATION_MODE=standalone',
+              '-e', 'OPERATION_MODE=unknown',
               '-e', 'MTT_CLI_VERSION=dev_version',
               '-e', 'MTT_CONTROL_SERVER_URL=url',
               '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
@@ -1030,7 +1072,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'syslog',
             '--hostname', 'mock-host',
             '--network', 'bridge',
-            '-e', 'OPERATION_MODE=standalone',
+            '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
             '-e', 'MTT_CONTROL_SERVER_URL=url',
             '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
@@ -1072,7 +1114,7 @@ class CliTest(parameterized.TestCase):
             'docker', 'create', '--name', 'mtt', '-it', '-v',
             '/dev/bus/usb:/dev/bus/usb', '--device-cgroup-rule', 'c 189:* rwm',
             '--cap-add', 'syslog', '--hostname', 'mock-host', '--network',
-            'bridge', '-e', 'OPERATION_MODE=standalone', '-e',
+            'bridge', '-e', 'OPERATION_MODE=unknown', '-e',
             'MTT_CLI_VERSION=dev_version', '-e',
             'MTT_CONTROL_SERVER_URL=new_url', '-e', 'LAB_NAME=alab', '-e',
             'CLUSTER=acluster', '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
@@ -1647,7 +1689,7 @@ _ALL_START_OPTIONS = (
     ('port', 8001),
     ('max_local_virtual_devices', 1),
     ('server_log_level', 'info'),
-    ('operation_mode', 'standalone'),
+    ('operation_mode', 'UNKNOWN'),
 )
 _ALL_STOP_OPTIONS = (
     ('name', 'container'),
