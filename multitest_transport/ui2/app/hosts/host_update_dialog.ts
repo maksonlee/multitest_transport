@@ -185,10 +185,17 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
               if (!result.host_configs) {
                 return;
               }
+              // All host group names (including those are not enabled UI
+              // update) will be loaded for the purpose of displaying update
+              // states and version summaries.
+              this.hostGroupNames = [
+                ...new Set(
+                    result.host_configs.map((config) => config.cluster_name))
+              ].sort();
+              // Only host configs with UI-Update enabled are loaded for the
+              // purpose of triggering updates.
               this.hostConfigsInLab = result.host_configs.filter(
                   (config) => config.enable_ui_update);
-              this.hostGroupNames = [...new Set(
-                  this.hostConfigsInLab.map((config) => config.cluster_name))];
             },
             () => {
               this.notifier.showError('Failed to load host configs.');
@@ -237,7 +244,7 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
             (config) => config.cluster_name === this.selectedHostGroup) :
         this.hostConfigsInLab;
     this.hostNames =
-        this.candidateHostConfigs.map((config) => config.hostname);
+        this.candidateHostConfigs.map((config) => config.hostname).sort();
   }
 
   loadUpdateStateAndVersionCountTables() {

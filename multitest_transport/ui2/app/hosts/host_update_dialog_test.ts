@@ -149,6 +149,31 @@ describe('HostUpdateDialog', () => {
     });
   });
 
+  it('display all host groups and sorts them in alphabetical order.', () => {
+    const hostConfigsNotOrdered: HostConfig[] = [
+      newMockHostConfig('host-1', 'lab1', 'cluster-5', true),
+      newMockHostConfig('host-2', 'lab1', 'cluster-3', true),
+      newMockHostConfig('host-3', 'lab1', 'cluster-4', true),
+      newMockHostConfig('host-4', 'lab1', 'cluster-2', false),
+      newMockHostConfig('host-5', 'lab1', 'cluster-1', false),
+      newMockHostConfig('host-6', 'lab1', 'cluster-4', true),
+    ];
+    const hostConfigList = newMockHostConfigList(hostConfigsNotOrdered);
+    tfcClient.getHostConfigs.and.returnValue(observableOf(hostConfigList));
+
+    hostUpdateDialogFixture.detectChanges();
+
+    hostUpdateDialogFixture.whenStable().then(() => {
+      expect(hostUpdateDialog.hostGroupNames).toEqual([
+        'cluster-1',
+        'cluster-2',
+        'cluster-3',
+        'cluster-4',
+        'cluster-5',
+      ]);
+    });
+  });
+
   it('gets candidate host configs when host group is selected', () => {
     hostUpdateDialog.hostConfigsInLab = hostConfigs;
     hostUpdateDialog.selectedHostGroup = 'cluster-2';
@@ -165,6 +190,30 @@ describe('HostUpdateDialog', () => {
     hostUpdateDialog.loadHostConfigsInSelectedHostGroup();
 
     expect(hostUpdateDialog.candidateHostConfigs).toEqual(hostConfigs);
+  });
+
+  it('sorts host names in alphabetical order.', () => {
+    const hostConfigsNotOrdered: HostConfig[] = [
+      newMockHostConfig('host-2', 'lab1', 'cluster-1', true),
+      newMockHostConfig('host-1', 'lab1', 'cluster-1', true),
+      newMockHostConfig('host-3', 'lab1', 'cluster-1', true),
+      newMockHostConfig('host-5', 'lab1', 'cluster-2', true),
+      newMockHostConfig('host-6', 'lab1', 'cluster-2', true),
+      newMockHostConfig('host-4', 'lab1', 'cluster-2', true),
+    ];
+    hostUpdateDialog.hostConfigsInLab = hostConfigsNotOrdered;
+    hostUpdateDialog.selectedHostGroup = '';
+
+    hostUpdateDialog.loadHostConfigsInSelectedHostGroup();
+
+    expect(hostUpdateDialog.hostNames).toEqual([
+      'host-1',
+      'host-2',
+      'host-3',
+      'host-4',
+      'host-5',
+      'host-6',
+    ]);
   });
 
   it('selects hosts correctly', () => {
