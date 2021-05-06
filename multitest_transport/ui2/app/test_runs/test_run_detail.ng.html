@@ -135,6 +135,12 @@
 
     <!-- Output Info Tabs -->
     <mat-tab-group (selectedTabChange)="switchTab($event)" #tabGroup>
+      <mat-tab label="Test Results">
+        <test-module-result-list [testRunId]="testRunId"
+                                 [totalFailures]="testRun.failed_test_count"
+                                 [totalTests]="testRun.total_test_count">
+        </test-module-result-list>
+      </mat-tab>
       <mat-tab label="Progress">
         <test-run-progress [testRun]="testRun" [request]="request"></test-run-progress>
       </mat-tab>
@@ -144,12 +150,6 @@
       <mat-tab label="Logs" #console>
         <test-run-console [disabled]="!console.isActive"
                           [request]="request" [testRun]="testRun"></test-run-console>
-      </mat-tab>
-      <mat-tab label="Test Results">
-        <test-module-result-list [testRunId]="testRunId"
-                                 [totalFailures]="testRun.failed_test_count"
-                                 [totalTests]="testRun.total_test_count">
-        </test-module-result-list>
       </mat-tab>
       <mat-tab label="Test Resources">
         <test-resource-list [testRun]="testRun"></test-resource-list>
