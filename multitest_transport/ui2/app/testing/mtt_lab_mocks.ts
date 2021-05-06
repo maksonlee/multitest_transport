@@ -624,6 +624,7 @@ export function newMockHostInfo(
     lastRecoveryTime: string = TIMESTAMP,
     pools: string[] = POOLS,
     updateState: tfcModels.HostUpdateState|null = null,
+    updateStateDisplayMessage: string|null = null,
     ): tfcModels.HostInfo {
   return {
     extra_info: extraInfo,
@@ -633,6 +634,7 @@ export function newMockHostInfo(
     host_state: hostState,
     recovery_state: recoveryState,
     update_state: updateState,
+    update_state_display_message: updateStateDisplayMessage,
     lab_name: labName,
     last_recovery_time: lastRecoveryTime,
     note: newMockHostNote(0, '', '', '', ''),
@@ -666,11 +668,13 @@ export function newMockLabHostInfo(
         DEVICE_COUNT_SUMMARIES[0],
     pools = POOLS,
     updateState: tfcModels.HostUpdateState|null = null,
+    updateStateDisplayMessage: string|null = null,
     ): mttLabModels.LabHostInfo {
   return mttLabModels.convertToLabHostInfo(newMockHostInfo(
       hostname, testHarness, hostState, hidden, labName, hostGroup, extraInfo,
       recoveryState, assignee, deviceCountSummaries, TIMESTAMP,
-      OFFLINE_DEVICES[0], TOTAL_DEVICES[0], TIMESTAMP, pools, updateState));
+      OFFLINE_DEVICES[0], TOTAL_DEVICES[0], TIMESTAMP, pools, updateState,
+      updateStateDisplayMessage));
 }
 
 /** Creates a new mock unconverted HostInfo. */
@@ -688,6 +692,7 @@ export function newMockUnconvertedHostInfo(
         DEVICE_COUNT_SUMMARIES[0],
     lastRecoveryTime: string = TIMESTAMP,
     updateState: tfcModels.HostUpdateState|null = null,
+    updateStateDisplayMessage: string|null = null,
     ): mttLabModels.LabHostInfo {
   return {
     extraInfo,
@@ -708,6 +713,7 @@ export function newMockUnconvertedHostInfo(
     device_count_summaries: deviceCountSummaries,
     flatedExtraInfo: ['host_ip: 127.0.0.1', 'wi-fi: abc'],
     updateState,
+    updateStateDisplayMessage,
   };
 }
 

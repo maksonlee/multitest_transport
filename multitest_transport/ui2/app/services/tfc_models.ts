@@ -377,6 +377,8 @@ export declare interface HostInfo {
   readonly flated_extra_info: string[];
   /** Host update state. */
   readonly update_state: HostUpdateState|null;
+  /** Detailed description for host update state. */
+  readonly update_state_display_message: string|null;
 }
 
 /** Response for host history api call. */

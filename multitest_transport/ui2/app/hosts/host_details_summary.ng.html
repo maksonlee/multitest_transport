@@ -129,7 +129,17 @@
                 <mat-label> Update State </mat-label>
               </td>
               <td class="value-field">
-                <status-button *ngIf="data.updateState" [state]="data.updateState"></status-button>
+                <mat-expansion-panel class="mat-elevation-z0"
+                                     disabled="{{!data.updateStateDisplayMessage}}">
+                  <mat-expansion-panel-header aria-label="Host update state">
+                    <mat-panel-title>
+                      <status-button *ngIf="data.updateState"
+                                     [state]="data.updateState">
+                      </status-button>
+                    </mat-panel-title>
+                  </mat-expansion-panel-header>
+                  <p>{{data.updateStateDisplayMessage}}</p>
+                </mat-expansion-panel>
               </td>
             </tr>
           </table>

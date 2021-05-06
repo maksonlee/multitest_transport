@@ -156,6 +156,8 @@ export interface LabHostInfo {
   readonly flatedExtraInfo: string[];
   /** Host update state. */
   updateState: tfcModels.HostUpdateState|null;
+  /** Detailed description for host update state */
+  updateStateDisplayMessage: string|null;
 }
 
 /** Extra info from a host. */
@@ -364,6 +366,7 @@ export function convertToLabHostInfo(source: tfcModels.HostInfo): LabHostInfo {
     device_count_summaries: source.device_count_summaries || [],
     flatedExtraInfo: source.flated_extra_info,
     updateState: source.update_state,
+    updateStateDisplayMessage: source.update_state_display_message,
   };
 }
 
