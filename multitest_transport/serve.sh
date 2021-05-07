@@ -203,4 +203,5 @@ then
 else
   start_browsepy
   start_local_file_server
+  wait
 fi
