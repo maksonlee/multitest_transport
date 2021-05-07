@@ -76,8 +76,15 @@ describe('FileService', () => {
 
   it('can get file open URL for absolute file URLs', () => {
     const url = 'file:///root/path/to/file';
-    const expected = `${location.protocol}//${
-        location.hostname}:1234/open/path/to/file`;
+    const expected =
+        `${location.protocol}//${location.hostname}:1234/open/path/to/file`;
+    expect(fs.getFileOpenUrl(url)).toEqual(expected);
+  });
+
+  it('can get file open URL for http file URLs', () => {
+    const url = 'http://hostname.com:8006/file/path/to/file';
+    const expected =
+        `${location.protocol}//${location.hostname}:1234/open/path/to/file`;
     expect(fs.getFileOpenUrl(url)).toEqual(expected);
   });
 

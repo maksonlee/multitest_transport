@@ -115,7 +115,9 @@ export class FileService {
    */
   getRelativePath(fileUrl: string): string {
     const fileServerRoot = `file://${this.appData.fileServerRoot || ''}`;
-    return fileUrl.replace(new RegExp(`^${fileServerRoot}/?`), '');
+    fileUrl = fileUrl.replace(new RegExp(`^${fileServerRoot}/?`), '');
+    const fileHttpRoot = `http://[^/]+/file`;
+    return fileUrl.replace(new RegExp(`^${fileHttpRoot}/?`), '');
   }
 
   /**
