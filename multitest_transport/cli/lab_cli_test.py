@@ -14,6 +14,9 @@
 
 """Tests for lab_cli."""
 import atexit
+import copy
+import datetime
+import json
 import os
 import shutil
 import tempfile
@@ -25,6 +28,33 @@ from tradefed_cluster.configs import lab_config
 
 from multitest_transport.cli import lab_cli
 from multitest_transport.cli import unittest_util
+
+
+_PROJECT = 'aproject'
+_SERVICE_ACCOUNT_EMAIL = 'as@gsa.com'
+_KEY_CREATE_TIME = '2021-04-15T23:13:34Z'
+_SERVICE_ACCOUNT_KEY_ID = 'akey_id'
+_SERVICE_ACCOUNT_KEY = {
+    'type': 'service_account',
+    'project_id': _PROJECT,
+    'private_key_id': _SERVICE_ACCOUNT_KEY_ID,
+    'private_key': 'aprivate_key',
+    'client_email': _SERVICE_ACCOUNT_EMAIL,
+    'client_id': '1234',
+    'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
+    'token_uri': 'https://oauth2.googleapis.com/token',
+    'auth_provider_x509_cert_url': 'https://www.googleapis.com/oauth2/v1/certs',
+    'client_x509_cert_url': 'url'
+}
+_SERVICE_ACCOUNT_KEY_INFO = {
+    'name': (f'projects/{_PROJECT}/serviceAccounts/'
+             f'{_SERVICE_ACCOUNT_EMAIL}/keys/{_SERVICE_ACCOUNT_KEY_ID}'),
+    'validAfterTime': _KEY_CREATE_TIME,
+    'validBeforeTime': '2021-07-14T23:13:34Z',
+    'keyAlgorithm': 'KEY_ALG_RSA_2048',
+    'keyOrigin': 'GOOGLE_PROVIDED',
+    'keyType': 'USER_MANAGED'
+}
 
 
 class LabCliTest(parameterized.TestCase):
@@ -320,21 +350,59 @@ class LabCliTest(parameterized.TestCase):
     self.assertEqual('Setting up service account key', host.execution_state)
 
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
+  @mock.patch.object(lab_cli.google_auth_util, 'GetServiceAccountKeyInfo')
   @mock.patch.object(lab_cli.google_auth_util, 'GetSecret')
   @mock.patch.object(atexit, 'register')
   def testGetServiceAccountKeyFromSecretManager(
-      self, mock_register, mock_get_secret, mock_make_tmpfile):
+      self, mock_register, mock_get_secret, mock_get_key_info,
+      mock_make_tmpfile):
     mock_tmpfile = mock.MagicMock()
     mock_tmpfile.name = '/local/sa_key.json'
     mock_make_tmpfile.return_value = mock_tmpfile
-    mock_get_secret.return_value = b'secret'
+    mock_get_secret.return_value = json.dumps(_SERVICE_ACCOUNT_KEY).encode()
+    key_info = copy.deepcopy(_SERVICE_ACCOUNT_KEY_INFO)
+    key_info['validAfterTime'] = (
+        datetime.datetime.now(tz=datetime.timezone.utc)
+        - datetime.timedelta(days=3)).isoformat()
+    mock_get_key_info.return_value = key_info
 
     lab_cli._GetServiceAccountKeyFromSecretManager('secret_project', 'sa_key')
 
-    mock_tmpfile.write.assert_called_once_with(b'secret')
+    mock_get_key_info.assert_called_once_with(
+        _SERVICE_ACCOUNT_EMAIL, _SERVICE_ACCOUNT_KEY_ID)
+    mock_tmpfile.write.assert_called_once_with(
+        json.dumps(_SERVICE_ACCOUNT_KEY).encode())
     mock_tmpfile.flush.assert_called_once_with()
     mock_get_secret.assert_called_once_with('secret_project', 'sa_key')
     mock_register.assert_called_once_with(mock_tmpfile.close)
+
+  @mock.patch.object(lab_cli.google_auth_util, 'GetServiceAccountKeyInfo')
+  def testShouldRenewServiceAccountKey_noNeedToRenew(self, mock_get_key_info):
+    key_info = copy.deepcopy(_SERVICE_ACCOUNT_KEY_INFO)
+    key_info['validAfterTime'] = (
+        datetime.datetime.now(tz=datetime.timezone.utc)
+        - datetime.timedelta(days=3)).isoformat()
+    mock_get_key_info.return_value = key_info
+
+    shoud_renew = lab_cli._ShouldRenewServiceAccountKey(_SERVICE_ACCOUNT_KEY)
+
+    self.assertFalse(shoud_renew)
+    mock_get_key_info.assert_called_once_with(
+        _SERVICE_ACCOUNT_EMAIL, _SERVICE_ACCOUNT_KEY_ID)
+
+  @mock.patch.object(lab_cli.google_auth_util, 'GetServiceAccountKeyInfo')
+  def testShouldRenewServiceAccountKey_shouldRenew(self, mock_get_key_info):
+    key_info = copy.deepcopy(_SERVICE_ACCOUNT_KEY_INFO)
+    key_info['validAfterTime'] = (
+        datetime.datetime.now(tz=datetime.timezone.utc)
+        - datetime.timedelta(days=10)).isoformat()
+    mock_get_key_info.return_value = key_info
+
+    shoud_renew = lab_cli._ShouldRenewServiceAccountKey(_SERVICE_ACCOUNT_KEY)
+
+    self.assertTrue(shoud_renew)
+    mock_get_key_info.assert_called_once_with(
+        _SERVICE_ACCOUNT_EMAIL, _SERVICE_ACCOUNT_KEY_ID)
 
 
 if __name__ == '__main__':

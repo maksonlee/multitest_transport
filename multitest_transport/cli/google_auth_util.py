@@ -13,6 +13,8 @@
 # limitations under the License.
 
 """Google credential helpers."""
+import base64
+import json
 import logging
 
 import google.auth
@@ -20,12 +22,14 @@ import google.auth.transport.requests
 from google.cloud import secretmanager
 import google.oauth2.credentials
 import google.oauth2.service_account
+import googleapiclient.discovery
 
 
 logger = logging.getLogger(__name__)
 
 GCS_READ_SCOPE = 'https://www.googleapis.com/auth/devstorage.read_only'
 ANDROID_TEST_API_SCOPE = 'https://www.googleapis.com/auth/android-test.internal'
+AUTH_SCOPE = 'https://www.googleapis.com/auth/cloud-platform'
 
 LATEST_SECRET_VERSION = 'latest'
 
@@ -110,5 +114,68 @@ def GetSecret(
   credentials = credentials or GetDefaultCredential()
   client = secretmanager.SecretManagerServiceClient(credentials=credentials)
   name = client.secret_version_path(project_id, secret_id, version_id)
-  response = client.access_secret_version(name)
+  response = client.access_secret_version(request={'name': name})
   return response.payload.data
+
+
+def UpdateSecret(
+    project_id, secret_id, content, credentials=None):
+  """Update secret to Google Cloud Secret Manager.
+
+  Args:
+    project_id: Google Cloud project id.
+    secret_id: secret_id.
+    content: a bytearray secret content
+    credentials: credentials to access secret manager.
+  Returns:
+    a bytearray represent the secret.
+  """
+  logger.info('Update secret %s in %s.', secret_id, project_id)
+  credentials = credentials or GetDefaultCredential()
+  client = secretmanager.SecretManagerServiceClient(credentials=credentials)
+  name = client.secret_path(project_id, secret_id)
+  version = client.add_secret_version(
+      request={'parent': name, 'payload': {'data': content}}
+  )
+  logger.info('Create version %s for %s in %s.', version, secret_id, project_id)
+
+
+def _BuildIAMAPIClient(credentials=None):
+  """BUild API Client for Google Cloud IAM."""
+  credentials = credentials or GetDefaultCredential(AUTH_SCOPE)
+  return googleapiclient.discovery.build('iam', 'v1', credentials=credentials)
+
+
+def GetServiceAccountKeyInfo(
+    service_account_email, service_account_key_id, credentials=None):
+  """Get service account key's information.
+
+  Args:
+    service_account_email: the key's service account email.
+    service_account_key_id: the key's id.
+    credentials: credentials used to access the API.
+  Returns:
+    a dict represent service account key information.
+  """
+  client = _BuildIAMAPIClient(credentials)
+  key_info = client.projects().serviceAccounts().keys().get(
+      name=(f'projects/-/serviceAccounts/{service_account_email}'
+            f'/keys/{service_account_key_id}')
+      ).execute()
+  return key_info
+
+
+def CreateKey(service_account_email, credentials=None):
+  """Creates a key for a service account.
+
+  Args:
+    service_account_email: service account's email.
+    credentials: credentials to access service account key API.
+  Returns:
+    a json represents the service account key.
+  """
+  client = _BuildIAMAPIClient(credentials)
+  key = client.projects().serviceAccounts().keys().create(
+      name=f'projects/-/serviceAccounts/{service_account_email}', body={}
+      ).execute()
+  return json.loads(base64.urlsafe_b64decode(key['privateKeyData']))

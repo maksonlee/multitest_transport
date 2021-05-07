@@ -15,6 +15,8 @@
 """A lab management CLI for MTT."""
 import argparse
 import atexit
+import datetime
+import json
 import logging
 import os
 import shlex
@@ -22,6 +24,8 @@ import shutil
 import sys
 import tempfile
 import zipfile
+
+import dateutil
 
 from multitest_transport.cli import cli_util
 from multitest_transport.cli import google_auth_util
@@ -33,6 +37,12 @@ _MTT_BINARY_FILE = 'mtt_binary'
 _REMOTE_MTT_BINARY_FORMAT = '/tmp/%s/mtt'
 _REMOTE_CONFIG_FILE_FORMAT = '/tmp/%s/mtt_host_config.yaml'
 _REMOTE_KEY_FILE_FORMAT = '/tmp/%s/keyfile/key.json'
+
+_PRIVATE_KEY_ID_KEY = 'private_key_id'
+_CLIENT_EMAIL_KEY = 'client_email'
+_VALID_AFTER_TIME_KEY = 'validAfterTime'
+
+_SERVICE_ACCOUNT_KEY_RENEW_TIME_IN_DAYS = 7
 
 
 def _CreateLabCommandArgParser():
@@ -282,16 +292,42 @@ def CreateParser():
   return parser
 
 
-def _GetServiceAccountKeyFromSecretManager(secret_project_id, sercret_id):
+def _GetServiceAccountKeyFromSecretManager(secret_project_id, secret_id):
   """Get service account key based on lab config path."""
   service_account_key = google_auth_util.GetSecret(
-      secret_project_id, sercret_id)
+      secret_project_id, secret_id)
+  sa_key_dict = json.loads(service_account_key)
+  if _ShouldRenewServiceAccountKey(sa_key_dict):
+    # TODO: Add logic to renew key.
+    pass
   tmp_service_account_key_file = tempfile.NamedTemporaryFile(suffix='.json')
   tmp_service_account_key_file.write(service_account_key)
   tmp_service_account_key_file.flush()
   # Key file will be deleted at exit.
   atexit.register(tmp_service_account_key_file.close)
   return tmp_service_account_key_file.name
+
+
+def _ShouldRenewServiceAccountKey(sa_key_dict):
+  """Check if we need to renew the service account key or not."""
+  sa_key_id = sa_key_dict[_PRIVATE_KEY_ID_KEY]
+  sa_email = sa_key_dict[_CLIENT_EMAIL_KEY]
+  key_info = google_auth_util.GetServiceAccountKeyInfo(sa_email, sa_key_id)
+  logger.debug('Get %s key %s info: %s.', sa_email, sa_key_id, key_info)
+  create_time = dateutil.parser.parse(key_info[_VALID_AFTER_TIME_KEY])
+  renew_time = create_time + datetime.timedelta(
+      days=_SERVICE_ACCOUNT_KEY_RENEW_TIME_IN_DAYS)
+  now = datetime.datetime.now(tz=datetime.timezone.utc)
+  if now > renew_time:
+    logger.info(
+        'The service account key %s is created at %s (>%s days ago),'
+        ' try to renew.',
+        sa_key_id, create_time, _SERVICE_ACCOUNT_KEY_RENEW_TIME_IN_DAYS)
+    return True
+  logger.info(
+      'The service account key %s is created at %s, skip renew.',
+      sa_key_id, create_time)
+  return False
 
 
 def Main():
