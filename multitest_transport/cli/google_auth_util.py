@@ -30,6 +30,8 @@ logger = logging.getLogger(__name__)
 GCS_READ_SCOPE = 'https://www.googleapis.com/auth/devstorage.read_only'
 ANDROID_TEST_API_SCOPE = 'https://www.googleapis.com/auth/android-test.internal'
 AUTH_SCOPE = 'https://www.googleapis.com/auth/cloud-platform'
+_IAM_CREATE_SERVICE_ACCOUNT_KEY_PERMISSION = 'iam.serviceAccountKeys.create'
+_PERMISSIONS_KEY = 'permissions'
 
 LATEST_SECRET_VERSION = 'latest'
 
@@ -163,6 +165,17 @@ def GetServiceAccountKeyInfo(
             f'/keys/{service_account_key_id}')
       ).execute()
   return key_info
+
+
+def CanCreateKey(service_account_email, credentials=None):
+  """Check if the credentials have the permission to create new key."""
+  client = _BuildIAMAPIClient(credentials)
+  res = client.projects().serviceAccounts().testIamPermissions(
+      resource=f'projects/-/serviceAccounts/{service_account_email}',
+      body={
+          _PERMISSIONS_KEY: [_IAM_CREATE_SERVICE_ACCOUNT_KEY_PERMISSION]
+      }).execute()
+  return _IAM_CREATE_SERVICE_ACCOUNT_KEY_PERMISSION in res[_PERMISSIONS_KEY]
 
 
 def CreateKey(service_account_email, credentials=None):

@@ -298,8 +298,11 @@ def _GetServiceAccountKeyFromSecretManager(secret_project_id, secret_id):
       secret_project_id, secret_id)
   sa_key_dict = json.loads(service_account_key)
   if _ShouldRenewServiceAccountKey(sa_key_dict):
-    # TODO: Add logic to renew key.
-    pass
+    if google_auth_util.CanCreateKey(sa_key_dict[_CLIENT_EMAIL_KEY]):
+      # TODO: Add logic to renew key.
+      pass
+    else:
+      logger.info('No permission to create service account key, skip renew')
   tmp_service_account_key_file = tempfile.NamedTemporaryFile(suffix='.json')
   tmp_service_account_key_file.write(service_account_key)
   tmp_service_account_key_file.flush()

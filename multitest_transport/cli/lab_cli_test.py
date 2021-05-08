@@ -352,10 +352,11 @@ class LabCliTest(parameterized.TestCase):
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
   @mock.patch.object(lab_cli.google_auth_util, 'GetServiceAccountKeyInfo')
   @mock.patch.object(lab_cli.google_auth_util, 'GetSecret')
+  @mock.patch.object(lab_cli.google_auth_util, 'CanCreateKey')
   @mock.patch.object(atexit, 'register')
   def testGetServiceAccountKeyFromSecretManager(
-      self, mock_register, mock_get_secret, mock_get_key_info,
-      mock_make_tmpfile):
+      self, mock_register, mock_can_create_key, mock_get_secret,
+      mock_get_key_info, mock_make_tmpfile):
     mock_tmpfile = mock.MagicMock()
     mock_tmpfile.name = '/local/sa_key.json'
     mock_make_tmpfile.return_value = mock_tmpfile
@@ -365,11 +366,43 @@ class LabCliTest(parameterized.TestCase):
         datetime.datetime.now(tz=datetime.timezone.utc)
         - datetime.timedelta(days=3)).isoformat()
     mock_get_key_info.return_value = key_info
+    mock_can_create_key.return_value = True
 
     lab_cli._GetServiceAccountKeyFromSecretManager('secret_project', 'sa_key')
 
     mock_get_key_info.assert_called_once_with(
         _SERVICE_ACCOUNT_EMAIL, _SERVICE_ACCOUNT_KEY_ID)
+    self.assertFalse(mock_can_create_key.called)
+    mock_tmpfile.write.assert_called_once_with(
+        json.dumps(_SERVICE_ACCOUNT_KEY).encode())
+    mock_tmpfile.flush.assert_called_once_with()
+    mock_get_secret.assert_called_once_with('secret_project', 'sa_key')
+    mock_register.assert_called_once_with(mock_tmpfile.close)
+
+  @mock.patch.object(tempfile, 'NamedTemporaryFile')
+  @mock.patch.object(lab_cli.google_auth_util, 'GetServiceAccountKeyInfo')
+  @mock.patch.object(lab_cli.google_auth_util, 'GetSecret')
+  @mock.patch.object(lab_cli.google_auth_util, 'CanCreateKey')
+  @mock.patch.object(atexit, 'register')
+  def testGetServiceAccountKeyFromSecretManager_renew(
+      self, mock_register, mock_can_create_key, mock_get_secret,
+      mock_get_key_info, mock_make_tmpfile):
+    mock_tmpfile = mock.MagicMock()
+    mock_tmpfile.name = '/local/sa_key.json'
+    mock_make_tmpfile.return_value = mock_tmpfile
+    mock_get_secret.return_value = json.dumps(_SERVICE_ACCOUNT_KEY).encode()
+    key_info = copy.deepcopy(_SERVICE_ACCOUNT_KEY_INFO)
+    key_info['validAfterTime'] = (
+        datetime.datetime.now(tz=datetime.timezone.utc)
+        - datetime.timedelta(days=10)).isoformat()
+    mock_get_key_info.return_value = key_info
+    mock_can_create_key.return_value = True
+
+    lab_cli._GetServiceAccountKeyFromSecretManager('secret_project', 'sa_key')
+
+    mock_get_key_info.assert_called_once_with(
+        _SERVICE_ACCOUNT_EMAIL, _SERVICE_ACCOUNT_KEY_ID)
+    mock_can_create_key.assert_called_once_with(_SERVICE_ACCOUNT_EMAIL)
     mock_tmpfile.write.assert_called_once_with(
         json.dumps(_SERVICE_ACCOUNT_KEY).encode())
     mock_tmpfile.flush.assert_called_once_with()
