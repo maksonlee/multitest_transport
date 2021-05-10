@@ -292,23 +292,37 @@ def CreateParser():
   return parser
 
 
-def _GetServiceAccountKeyFromSecretManager(secret_project_id, secret_id):
-  """Get service account key based on lab config path."""
-  service_account_key = google_auth_util.GetSecret(
+def _GetServiceAccountKeyFilePath(secret_project_id, secret_id):
+  service_account_key = _GetServiceAccountKeyFromSecretManager(
       secret_project_id, secret_id)
-  sa_key_dict = json.loads(service_account_key)
-  if _ShouldRenewServiceAccountKey(sa_key_dict):
-    if google_auth_util.CanCreateKey(sa_key_dict[_CLIENT_EMAIL_KEY]):
-      # TODO: Add logic to renew key.
-      pass
-    else:
-      logger.info('No permission to create service account key, skip renew')
   tmp_service_account_key_file = tempfile.NamedTemporaryFile(suffix='.json')
   tmp_service_account_key_file.write(service_account_key)
   tmp_service_account_key_file.flush()
   # Key file will be deleted at exit.
   atexit.register(tmp_service_account_key_file.close)
   return tmp_service_account_key_file.name
+
+
+def _GetServiceAccountKeyFromSecretManager(secret_project_id, secret_id):
+  """Get service account key based on lab config path."""
+  service_account_key = google_auth_util.GetSecret(
+      secret_project_id, secret_id)
+  sa_key_dict = json.loads(service_account_key)
+  sa_email = sa_key_dict[_CLIENT_EMAIL_KEY]
+  if not _ShouldRenewServiceAccountKey(sa_key_dict):
+    logger.debug('The service account key is new, no need to renew.')
+    return service_account_key
+  if not google_auth_util.CanCreateKey(sa_email):
+    logger.info('No permission to create service account key, skip renew')
+    return service_account_key
+  if not google_auth_util.CanUpdateSecret(secret_project_id, secret_id):
+    logger.info('No permission to create service account key, skip renew')
+    return service_account_key
+  new_sa_key_dict = google_auth_util.CreateKey(sa_email)
+  new_service_account_key = json.dumps(new_sa_key_dict).encode()
+  google_auth_util.UpdateSecret(
+      secret_project_id, secret_id, new_service_account_key)
+  return new_service_account_key
 
 
 def _ShouldRenewServiceAccountKey(sa_key_dict):
@@ -361,7 +375,7 @@ def Main():
   service_account_key_path = None
   # Use service account in secret first, since this is the most secure way.
   if lab_config.secret_project_id and lab_config.service_account_key_secret_id:
-    service_account_key_path = _GetServiceAccountKeyFromSecretManager(
+    service_account_key_path = _GetServiceAccountKeyFilePath(
         lab_config.secret_project_id,
         lab_config.service_account_key_secret_id)
   service_account_key_path = (

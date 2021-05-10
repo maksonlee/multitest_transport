@@ -31,7 +31,9 @@ GCS_READ_SCOPE = 'https://www.googleapis.com/auth/devstorage.read_only'
 ANDROID_TEST_API_SCOPE = 'https://www.googleapis.com/auth/android-test.internal'
 AUTH_SCOPE = 'https://www.googleapis.com/auth/cloud-platform'
 _IAM_CREATE_SERVICE_ACCOUNT_KEY_PERMISSION = 'iam.serviceAccountKeys.create'
+_SECRET_MANAGER_ADD_VERSION_PERMISSION = 'secretmanager.versions.add'
 _PERMISSIONS_KEY = 'permissions'
+_RESOURCE_KEY = 'resource'
 
 LATEST_SECRET_VERSION = 'latest'
 
@@ -120,6 +122,29 @@ def GetSecret(
   return response.payload.data
 
 
+def CanUpdateSecret(project_id, secret_id, credentials=None):
+  """The credentials can update the secret.
+
+  Args:
+    project_id: Google Cloud project id.
+    secret_id: secret_id.
+    credentials: credentials to access secret manager.
+  Returns:
+    True if the credentials can update the secret, otherwise False.
+  """
+  credentials = credentials or GetDefaultCredential()
+  client = secretmanager.SecretManagerServiceClient(credentials=credentials)
+  res = client.test_iam_permissions({
+      _RESOURCE_KEY: client.secret_path(project_id, secret_id),
+      _PERMISSIONS_KEY: [_SECRET_MANAGER_ADD_VERSION_PERMISSION]
+  })
+  if _SECRET_MANAGER_ADD_VERSION_PERMISSION in res.permissions:
+    logger.debug('Can update secret %s %s.', project_id, secret_id)
+    return True
+  logger.debug('No permission to update secret %s %s.', project_id, secret_id)
+  return False
+
+
 def UpdateSecret(
     project_id, secret_id, content, credentials=None):
   """Update secret to Google Cloud Secret Manager.
@@ -175,7 +200,11 @@ def CanCreateKey(service_account_email, credentials=None):
       body={
           _PERMISSIONS_KEY: [_IAM_CREATE_SERVICE_ACCOUNT_KEY_PERMISSION]
       }).execute()
-  return _IAM_CREATE_SERVICE_ACCOUNT_KEY_PERMISSION in res[_PERMISSIONS_KEY]
+  if _IAM_CREATE_SERVICE_ACCOUNT_KEY_PERMISSION in res[_PERMISSIONS_KEY]:
+    logger.debug('Can create key for %s.', service_account_email)
+    return True
+  logger.debug('No permission to create key for %s.', service_account_email)
+  return False
 
 
 def CreateKey(service_account_email, credentials=None):
