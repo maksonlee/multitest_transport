@@ -138,7 +138,7 @@ def CanUpdateSecret(project_id, secret_id, credentials=None):
       _RESOURCE_KEY: client.secret_path(project_id, secret_id),
       _PERMISSIONS_KEY: [_SECRET_MANAGER_ADD_VERSION_PERMISSION]
   })
-  if _SECRET_MANAGER_ADD_VERSION_PERMISSION in res.permissions:
+  if _SECRET_MANAGER_ADD_VERSION_PERMISSION in (res.permissions or []):
     logger.debug('Can update secret %s %s.', project_id, secret_id)
     return True
   logger.debug('No permission to update secret %s %s.', project_id, secret_id)
@@ -200,7 +200,8 @@ def CanCreateKey(service_account_email, credentials=None):
       body={
           _PERMISSIONS_KEY: [_IAM_CREATE_SERVICE_ACCOUNT_KEY_PERMISSION]
       }).execute()
-  if _IAM_CREATE_SERVICE_ACCOUNT_KEY_PERMISSION in res[_PERMISSIONS_KEY]:
+  if (_IAM_CREATE_SERVICE_ACCOUNT_KEY_PERMISSION in
+      res.get(_PERMISSIONS_KEY, [])):
     logger.debug('Can create key for %s.', service_account_email)
     return True
   logger.debug('No permission to create key for %s.', service_account_email)
