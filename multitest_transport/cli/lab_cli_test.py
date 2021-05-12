@@ -356,11 +356,12 @@ class LabCliTest(parameterized.TestCase):
   @mock.patch.object(lab_cli.google_auth_util, 'GetSecret')
   @mock.patch.object(lab_cli.google_auth_util, 'CanCreateKey')
   @mock.patch.object(lab_cli.google_auth_util, 'CanUpdateSecret')
+  @mock.patch.object(lab_cli.google_auth_util, 'DisableSecretVersions')
   @mock.patch.object(atexit, 'register')
   def testGetServiceAccountKeyFilePath(
-      self, mock_register, mock_can_update_secret, mock_can_create_key,
-      mock_get_secret, mock_get_key_info, mock_update_secret,
-      mock_create_key, mock_make_tmpfile):
+      self, mock_register, mock_disable_versions, mock_can_update_secret,
+      mock_can_create_key, mock_get_secret, mock_get_key_info,
+      mock_update_secret, mock_create_key, mock_make_tmpfile):
     mock_tmpfile = mock.MagicMock()
     mock_tmpfile.name = '/local/sa_key.json'
     mock_make_tmpfile.return_value = mock_tmpfile
@@ -379,6 +380,7 @@ class LabCliTest(parameterized.TestCase):
     self.assertFalse(mock_can_update_secret.called)
     self.assertFalse(mock_create_key.called)
     self.assertFalse(mock_update_secret.called)
+    self.assertFalse(mock_disable_versions.called)
     mock_tmpfile.write.assert_called_once_with(
         json.dumps(_SERVICE_ACCOUNT_KEY).encode())
     mock_tmpfile.flush.assert_called_once_with()
@@ -392,11 +394,12 @@ class LabCliTest(parameterized.TestCase):
   @mock.patch.object(lab_cli.google_auth_util, 'GetSecret')
   @mock.patch.object(lab_cli.google_auth_util, 'CanCreateKey')
   @mock.patch.object(lab_cli.google_auth_util, 'CanUpdateSecret')
+  @mock.patch.object(lab_cli.google_auth_util, 'DisableSecretVersions')
   @mock.patch.object(atexit, 'register')
   def testGetServiceAccountKeyFilePath_renew(
-      self, mock_register, mock_can_update_secret, mock_can_create_key,
-      mock_get_secret, mock_get_key_info, mock_update_secret,
-      mock_create_key, mock_make_tmpfile):
+      self, mock_register, mock_disable_versions, mock_can_update_secret,
+      mock_can_create_key, mock_get_secret, mock_get_key_info,
+      mock_update_secret, mock_create_key, mock_make_tmpfile):
     mock_tmpfile = mock.MagicMock()
     mock_tmpfile.name = '/local/sa_key.json'
     mock_make_tmpfile.return_value = mock_tmpfile
@@ -404,7 +407,7 @@ class LabCliTest(parameterized.TestCase):
     key_info = copy.deepcopy(_SERVICE_ACCOUNT_KEY_INFO)
     key_info['validAfterTime'] = (
         datetime.datetime.now(tz=datetime.timezone.utc)
-        - datetime.timedelta(days=10)).isoformat()
+        - datetime.timedelta(days=20)).isoformat()
     mock_get_key_info.return_value = key_info
     mock_can_create_key.return_value = True
     mock_can_update_secret.return_value = True
@@ -422,6 +425,9 @@ class LabCliTest(parameterized.TestCase):
     mock_create_key.assert_called_once_with(_SERVICE_ACCOUNT_EMAIL)
     mock_update_secret.assert_called_once_with(
         'secret_project', 'sa_key', json.dumps(new_key).encode())
+    mock_disable_versions.assert_called_once_with(
+        'secret_project', 'sa_key', exclude_versions=['new_version'],
+        days_before=28)
     mock_tmpfile.write.assert_called_once_with(json.dumps(new_key).encode())
     mock_tmpfile.flush.assert_called_once_with()
     mock_get_secret.assert_called_once_with('secret_project', 'sa_key')
@@ -446,7 +452,7 @@ class LabCliTest(parameterized.TestCase):
     key_info = copy.deepcopy(_SERVICE_ACCOUNT_KEY_INFO)
     key_info['validAfterTime'] = (
         datetime.datetime.now(tz=datetime.timezone.utc)
-        - datetime.timedelta(days=10)).isoformat()
+        - datetime.timedelta(days=20)).isoformat()
     mock_get_key_info.return_value = key_info
 
     shoud_renew = lab_cli._ShouldRenewServiceAccountKey(_SERVICE_ACCOUNT_KEY)

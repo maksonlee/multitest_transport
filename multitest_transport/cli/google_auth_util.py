@@ -14,6 +14,7 @@
 
 """Google credential helpers."""
 import base64
+import datetime
 import json
 import logging
 
@@ -34,6 +35,8 @@ _IAM_CREATE_SERVICE_ACCOUNT_KEY_PERMISSION = 'iam.serviceAccountKeys.create'
 _SECRET_MANAGER_ADD_VERSION_PERMISSION = 'secretmanager.versions.add'
 _PERMISSIONS_KEY = 'permissions'
 _RESOURCE_KEY = 'resource'
+_DEFAULT_DAYS_FOR_DISABLE_SECRET_VERSIONS = '30'
+_VERSION_ENABLED = 'ENABLED'
 
 LATEST_SECRET_VERSION = 'latest'
 
@@ -145,6 +148,43 @@ def CanUpdateSecret(project_id, secret_id, credentials=None):
   return False
 
 
+def DisableSecretVersions(
+    project_id, secret_id,
+    exclude_versions=(),
+    days_before=_DEFAULT_DAYS_FOR_DISABLE_SECRET_VERSIONS,
+    credentials=None):
+  """Disable old secret versions.
+
+  Args:
+    project_id: secret project id.
+    secret_id: secret id.
+    exclude_versions: do not disable these versions.
+    days_before: only disable versions older than days.
+    credentials: credentials to access secret manager.
+  """
+  credentials = credentials or GetDefaultCredential()
+  before = (datetime.datetime.now(tz=datetime.timezone.utc) -
+            datetime.timedelta(days=days_before)).timestamp()
+  client = secretmanager.SecretManagerServiceClient(credentials=credentials)
+  res = client.list_secret_versions(
+      {'parent': client.secret_path(project_id, secret_id)})
+  versions_to_disable = []
+  for version in res:
+    if version.state.name != _VERSION_ENABLED:
+      logger.debug('Version %s is not ENABLED.', version.name)
+      continue
+    if version.name in exclude_versions:
+      logger.debug('Version %s is excluded.', version.name)
+      continue
+    if version.create_time.timestamp() > before:
+      logger.debug('Version %s is new.', version.name)
+      continue
+    versions_to_disable.append(version.name)
+  for version in versions_to_disable:
+    logger.debug('Disable %s.', version)
+    client.disable_secret_version({'name': version})
+
+
 def UpdateSecret(
     project_id, secret_id, content, credentials=None):
   """Update secret to Google Cloud Secret Manager.
@@ -165,6 +205,7 @@ def UpdateSecret(
       request={'parent': name, 'payload': {'data': content}}
   )
   logger.info('Create version %s for %s in %s.', version, secret_id, project_id)
+  return version.name
 
 
 def _BuildIAMAPIClient(credentials=None):

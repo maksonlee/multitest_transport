@@ -42,7 +42,13 @@ _PRIVATE_KEY_ID_KEY = 'private_key_id'
 _CLIENT_EMAIL_KEY = 'client_email'
 _VALID_AFTER_TIME_KEY = 'validAfterTime'
 
-_SERVICE_ACCOUNT_KEY_RENEW_TIME_IN_DAYS = 7
+# By default service account key is valid for 90 days.
+# And at most 10 keys can be created for a service account.
+# So we need to renew > 9 days (in theory we can remove old keys,
+# but that requires some work to delete keys properly), so that
+# we will not create more than 10 keys.
+_SERVICE_ACCOUNT_KEY_RENEW_TIME_IN_DAYS = 14
+_SECRET_VERSION_DISABLE_BEFORE_DAYS = 14 * 2
 
 
 def _CreateLabCommandArgParser():
@@ -309,6 +315,7 @@ def _GetServiceAccountKeyFromSecretManager(secret_project_id, secret_id):
       secret_project_id, secret_id)
   sa_key_dict = json.loads(service_account_key)
   sa_email = sa_key_dict[_CLIENT_EMAIL_KEY]
+
   if not _ShouldRenewServiceAccountKey(sa_key_dict):
     logger.debug('The service account key is new, no need to renew.')
     return service_account_key
@@ -320,8 +327,12 @@ def _GetServiceAccountKeyFromSecretManager(secret_project_id, secret_id):
     return service_account_key
   new_sa_key_dict = google_auth_util.CreateKey(sa_email)
   new_service_account_key = json.dumps(new_sa_key_dict).encode()
-  google_auth_util.UpdateSecret(
+  version = google_auth_util.UpdateSecret(
       secret_project_id, secret_id, new_service_account_key)
+  google_auth_util.DisableSecretVersions(
+      secret_project_id, secret_id,
+      exclude_versions=[version],
+      days_before=_SECRET_VERSION_DISABLE_BEFORE_DAYS)
   return new_service_account_key
 
 

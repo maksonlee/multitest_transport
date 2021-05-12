@@ -258,6 +258,19 @@ py_test(
 )
 
 py_test(
+    name = "google_auth_util_test",
+    srcs = [
+        "google_auth_util_test.py",
+    ],
+    python_version = "PY3",
+    deps = [
+        ":google_auth_util_lib",
+        third_party("absl/testing:absltest"),
+        third_party("mock"),
+    ],
+)
+
+py_test(
     name = "host_util_test",
     srcs = [
         "host_util_test.py",
