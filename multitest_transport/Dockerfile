@@ -26,6 +26,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         apt-utils \
         cron \
         daemontools \
+        fuse-zip \
         git \
         iputils-ping \
         libc++-dev \

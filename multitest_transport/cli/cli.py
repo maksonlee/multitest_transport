@@ -356,6 +356,11 @@ def _StartMttNode(args, host):
   if args.force_update or not docker_helper.DoesResourceExist(image_name):
     docker_helper.Pull()
 
+  # Enable FUSE
+  docker_helper.AddDeviceNode('/dev/fuse')
+  docker_helper.AddCapability('sys_admin')
+  docker_helper.AddExtraArgs(['--security-opt', 'apparmor:unconfined'])
+
   # TODO: Remove host network after a couple of releases.
   if 'MTT_SUPPORT_BRIDGE_NETWORK=true' in docker_helper.GetEnv(image_name):
     docker_helper.SetHostname(host.name)

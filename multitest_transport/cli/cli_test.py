@@ -237,6 +237,9 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -287,6 +290,9 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -339,6 +345,9 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -394,6 +403,9 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call([
             'docker', 'cp', '-L',
@@ -438,6 +450,9 @@ class CliTest(parameterized.TestCase):
             '-p', '8105:8005',
             '-p', '8106:8006',
             '-p', '127.0.0.1:5137:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -478,6 +493,9 @@ class CliTest(parameterized.TestCase):
             '-p', '8105:8005',
             '-p', '8106:8006',
             '-p', '127.0.0.1:5137:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -519,6 +537,9 @@ class CliTest(parameterized.TestCase):
             '-p', '8105:8005',
             '-p', '8106:8006',
             '-p', '127.0.0.1:5137:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -622,6 +643,9 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             'animage:atag']),
         mock.call(['docker', 'start', 'acontainer']),
         mock.call(
@@ -670,6 +694,9 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call([  # temp directory copied over to container
             'docker',
@@ -731,6 +758,9 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call([
             'docker', 'cp', '-L',
@@ -788,6 +818,9 @@ class CliTest(parameterized.TestCase):
                         'dst=/tmp/.mnt/.ats_storage'),
             '--mount', 'type=tmpfs,dst=/atmpfs,tmpfs-size=1000,tmpfs-mode=750',
             '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -830,6 +863,9 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             'a_docker_image']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -893,11 +929,14 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
             '--cap-add', 'net_admin',
+            '--device', '/dev/fuse',
             '--device', '/dev/kvm',
             '--device', '/dev/vhost-vsock',
             '--device', '/dev/net/tun',
             '--device', '/dev/vhost-net',
+            '--security-opt', 'apparmor:unconfined',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -944,6 +983,9 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             '--arg3', 'value3', '--arg1', 'value1', '--arg2', 'value2',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
@@ -989,6 +1031,9 @@ class CliTest(parameterized.TestCase):
             '--mount', 'type=bind,src=/path/to/dir,dst=/tmp/.mnt/remote',
             '--mount', 'type=bind,src=/path/to/dir,dst=/tmp/.mnt/absolute',
             '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -1044,6 +1089,9 @@ class CliTest(parameterized.TestCase):
                           'dst=/var/run/docker.sock'),
               '--mount', ('type=bind,src=/local/.ats_storage,'
                           'dst=/tmp/.mnt/.ats_storage'),
+              '--cap-add', 'sys_admin',
+              '--device', '/dev/fuse',
+              '--security-opt', 'apparmor:unconfined',
               'gcr.io/android-mtt/mtt:prod']),
           mock.call(['docker', 'start', 'mtt']),
           mock.call(
@@ -1089,13 +1137,16 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
             '--cap-add', 'net_admin',
+            '--device', '/dev/fuse',
             '--device', '/dev/kvm',
             '--device', '/dev/vhost-vsock',
             '--device', '/dev/net/tun',
             '--device', '/dev/vhost-net',
             '--sysctl', 'net.ipv6.conf.all.disable_ipv6=0',
             '--sysctl', 'net.ipv6.conf.all.forwarding=1',
+            '--security-opt', 'apparmor:unconfined',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -1127,6 +1178,9 @@ class CliTest(parameterized.TestCase):
              'dst=/var/run/docker.sock'), '--mount',
             ('type=bind,src=/local/.ats_storage,'
              'dst=/tmp/.mnt/.ats_storage'), '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
             'gcr.io/android-mtt/mtt:prod'
         ]),
         mock.call(['docker', 'start', 'mtt']),

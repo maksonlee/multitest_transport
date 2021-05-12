@@ -59,21 +59,31 @@ class MttContainer(object):
     self._control_server_port = portpicker.pick_unused_port()
     self._file_server_port = portpicker.pick_unused_port()
     kwargs = {
-        'stdin_open': True, 'tty': True,  # interactive
-        'hostname': socket.gethostname(),
-        'network_mode': 'bridge',
-        'ports': {'8000/tcp': self._control_server_port,
-                  '8005/tcp': self._file_server_port},
+        'cap_add': ['sys_admin'],
+        'devices': ['/dev/fuse'],
         'environment': {
             'MTT_SERVER_LOG_LEVEL': FLAGS.server_log_level,
         },
+        'stdin_open': True,
+        'tty': True,  # interactive
+        'hostname': socket.gethostname(),
+        'network_mode': 'bridge',
+        'ports': {
+            '8000/tcp': self._control_server_port,
+            '8005/tcp': self._file_server_port
+        },
+        'security_opt': ['apparmor:unconfined'],
     }
     if self._max_local_virtual_devices:
+      kwargs['cap_add'].append('net_admin')
+      kwargs['devices'].extend([
+          '/dev/kvm',
+          '/dev/net/tun',
+          '/dev/vhost-net',
+          '/dev/vhost-vsock',
+      ])
       kwargs['environment']['MAX_LOCAL_VIRTUAL_DEVICES'] = str(
           self._max_local_virtual_devices)
-      kwargs['devices'] = ['/dev/kvm', '/dev/vhost-vsock', '/dev/net/tun',
-                           '/dev/vhost-net']
-      kwargs['cap_add'] = ['net_admin']
     for env in FLAGS.env:
       pair = env.split('=', 1)
       kwargs['environment'][pair[0]] = (pair[1] if len(pair) > 1 else '')
