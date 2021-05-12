@@ -77,6 +77,8 @@ th.mat-header-cell:first-of-type {
 
 .name-column {
   min-width: 400px;
+  overflow-wrap: anywhere;
+  padding: 12px 4px;
 }
 
 .overflow {
@@ -128,10 +130,6 @@ th.mat-header-cell:first-of-type {
   font-size: 14px;
 }
 
-.testcase-row-indent {
-  padding-left: 64px;
-}
-
 .testcase-text-padding {
-  padding: 8px 0;
+  padding: 8px 4px;
 }

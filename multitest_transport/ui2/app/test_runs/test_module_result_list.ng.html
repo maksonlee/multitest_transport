@@ -26,6 +26,7 @@
     <table class="mat-table">
       <!-- TODO: Header should be sticky -->
       <thead class="mat-header-row">
+        <th class="mat-header-cell" fxFlex="40px"><!-- Expand button column --></th>
         <th class="mat-header-cell name-column" fxFlex>Modules ({{moduleResultNodes.length}})</th>
         <th class="mat-header-cell" fxFlex="180px">Failed/Total {{getTotalCountsString()}}</th>
         <th class="mat-header-cell" fxFlex="20">Failure Message</th>
@@ -39,14 +40,19 @@
 
     <div *ngFor="let moduleNode of moduleResultNodes; index as i" class="module-section">
       <div class="module-row row-divider">
-        <div fxFlex class="inline name-column">
+
+
+        <div fxFlex="40px">
           <button mat-icon-button aria-label="Toggle" (click)="expandModule(i)"
                   class="expand-button" [disabled]="!moduleNode.expandable">
             <mat-icon class="mat-icon-rtl-mirror">
               {{moduleNode.expanded ? 'expand_more' : 'chevron_right'}}
             </mat-icon>
           </button>
-          <span class="module-name" [title]="moduleNode.moduleResult.name">
+        </div>
+
+        <div fxFlex class="inline name-column">
+          <span class="module-name">
             {{moduleNode.moduleResult.name}}
           </span>
         </div>
@@ -76,12 +82,13 @@
       <!-- Display test cases when expanded -->
       <div *ngIf="moduleNode.expanded">
         <div *ngFor="let testCase of moduleNode.testCaseResults" class="row-divider">
+
+          <div fxFlex="40px"><!-- Filler for expand button column --></div>
+
           <div fxFlex class="name-column testcase-text-padding">
-            <div class='testcase-row-indent overflow'>
-              <span class='testcase-name' [title]="testCase.name">
+            <span class='testcase-name'>
               {{testCase.name}}
-              </span>
-            </div>
+            </span>
           </div>
 
           <div fxFlex="180px" class="module-status">
@@ -103,6 +110,7 @@
 
         <!-- Load more test cases button -->
         <div *ngIf="moduleNode.nextPageToken" class="testcase-row testcase-row-indent">
+          <div fxFlex="40px"><!-- Filler for expand button column --></div>
           <button mat-button class="load-test-cases-button"
                   (click)="loadMoreTestCases(i)" [disabled]='moduleNode.isLoading'>
           {{moduleNode.isLoading ? 'Loading more test cases...' : 'Load more test cases'}}
