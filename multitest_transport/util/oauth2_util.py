@@ -49,7 +49,7 @@ class CredentialsProperty(ndb.BlobProperty):
       if not hasattr(credentials, '_quota_project_id'):
         setattr(credentials, '_quota_project_id', None)
       return credentials
-    except (KeyError, pickle.PickleError):
+    except (KeyError, pickle.PickleError, UnicodeDecodeError):
       logging.warning('Unpickling credentials failed, reverting to JSON')
     # Try to parse JSON blob for backwards compatibility with oauth2client
     try:
