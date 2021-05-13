@@ -106,7 +106,8 @@ class ControlServerClient(object):
         self._control_server_url, self._service_account_json_key_path,
         self._api_key)
 
-  def SubmitHostUpdateStateChangedEvent(self, hostname, host_update_state_name):
+  def SubmitHostUpdateStateChangedEvent(
+      self, hostname, host_update_state_name, display_message=None):
     """Submit a HOST_UPDATE_STATE_CHANGED event to control server API.
 
       This function only submit the host event when control server API is
@@ -115,6 +116,8 @@ class ControlServerClient(object):
     Args:
       hostname: host name.
       host_update_state_name: text, the name of host update state.
+      display_message: optional text, the display message to further clarity a
+        host update state.
     Raises:
       apiclient.errors.HttpError.
     """
@@ -135,6 +138,7 @@ class ControlServerClient(object):
                 'event_type': _HOST_UPDATE_STATE_CHANGED_EVENT_TYPE,
                 'host_update_state': host_update_state_name,
                 'hostname': hostname,
+                'host_update_state_display_message': display_message,
             },
         ]
     }

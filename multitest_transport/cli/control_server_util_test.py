@@ -64,6 +64,7 @@ class ControlServerUtilTest(absltest.TestCase):
       self, mock_datetime, mock_creds):
     host_update_state = 'FAKE_EVENT'
     hostname = 'host1'
+    display_message = 'some message'
     fake_now = datetime.datetime(2020, 1, 2)
     mock_datetime.utcnow.return_value = fake_now
     expected_event_body = {
@@ -73,13 +74,14 @@ class ControlServerUtilTest(absltest.TestCase):
                 'event_type': 'HOST_UPDATE_STATE_CHANGED',
                 'host_update_state': host_update_state,
                 'hostname': hostname,
+                'host_update_state_display_message': display_message,
             },
         ]
     }
     control_server_client = control_server_util.ControlServerClient(
         'url1', 'key.json', 'fakeApiKey')
     control_server_client.SubmitHostUpdateStateChangedEvent(
-        hostname, host_update_state)
+        hostname, host_update_state, display_message)
 
     (self.mock_build_discovery_client
      .test().hostEvents().submit

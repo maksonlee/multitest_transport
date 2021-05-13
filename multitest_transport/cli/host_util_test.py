@@ -269,7 +269,8 @@ class HostUtilTest(parameterized.TestCase):
         [self.host_config1, self.host_config2]]
     for host in hosts:
       host._control_server_client = mock.MagicMock()
-    self.mock_func_exceptions['host2'] = Exception()
+    excecution_exception = Exception('some error message.')
+    self.mock_func_exceptions['host2'] = excecution_exception
     args_dict = self.default_args.copy()
     args_dict.update(
         parallel=True,
@@ -290,7 +291,8 @@ class HostUtilTest(parameterized.TestCase):
                      hosts[1].execution_state)
     (hosts[1].control_server_client.SubmitHostUpdateStateChangedEvent
      .assert_called_with(hosts[1].config.hostname,
-                         host_util.HostUpdateState.ERRORED))
+                         host_util.HostUpdateState.ERRORED,
+                         display_message=str(excecution_exception)))
 
   @mock.patch.object(host_util, 'BuildLabConfigPool')
   @mock.patch.object(socket, 'gethostname')

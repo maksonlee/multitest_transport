@@ -814,7 +814,9 @@ def _UpdateMttNode(args, host):
     _StopMttNode(args, host)
     _StartMttNode(args, host)
   except Exception as e:      host.control_server_client.SubmitHostUpdateStateChangedEvent(
-        host.config.hostname, host_util.HostUpdateState.ERRORED)
+        host.config.hostname,
+        host_util.HostUpdateState.ERRORED,
+        display_message=str(e))
     raise e
   host.control_server_client.SubmitHostUpdateStateChangedEvent(
       host.config.hostname, host_util.HostUpdateState.SUCCEEDED)

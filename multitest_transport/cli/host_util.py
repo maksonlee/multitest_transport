@@ -280,7 +280,8 @@ def _ParallelExecute(host_func, args, hosts, execution_state_printer=None):
           f.result()
         except Exception as e:            logger.error('Failed %s on %s: %s.', host_func.__name__, host.name, e)
           host.control_server_client.SubmitHostUpdateStateChangedEvent(
-              host.config.hostname, HostUpdateState.ERRORED)
+              host.config.hostname, HostUpdateState.ERRORED,
+              display_message=str(e))
         else:
           logger.info('Succeeded %s on %s.', host_func.__name__, host.name)
       # Instead of blocking on the futures.wait, we waiting with sleep,
