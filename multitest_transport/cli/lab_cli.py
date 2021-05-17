@@ -287,12 +287,12 @@ def CreateParser():
 
   subparser = subparsers.add_parser(
       'stop', help='Stop a MTT instance on a remote host.',
-      parents=[_CreateLabCommandArgParser()])
+      parents=[_CreateLabCommandArgParser(), _CreateServiceAccountArgParser()])
   subparser.set_defaults(host_func=Stop)
 
   subparser = subparsers.add_parser(
       'run_cmd', help='Run command line on a remote host.',
-      parents=[_CreateLabCommandArgParser()])
+      parents=[_CreateLabCommandArgParser(), _CreateServiceAccountArgParser()])
   subparser.add_argument('--cmd', type=str, help='Command line to run.')
   subparser.set_defaults(host_func=RunCmd)
   return parser

@@ -70,7 +70,7 @@ class HostUtilTest(parameterized.TestCase):
     # Instead of using mock package, this _MockFunc simulate the
     # real host_func behavior.
     host.context.Run('a_command')
-    self.mock_func_calls[host.name] = args
+    self.mock_func_calls[host.name] = (args, host.config)
     if host.name in self.mock_func_exceptions:
       raise self.mock_func_exceptions[host.name]
 
@@ -94,8 +94,15 @@ class HostUtilTest(parameterized.TestCase):
                   ssh_config=self.ssh_config1, sudo_ssh_config=None),
         mock.call('host2', 'user1',
                   ssh_config=self.ssh_config2, sudo_ssh_config=None)])
+    self.assertSameElements(['host1', 'host2'], self.mock_func_calls.keys())
+    self.assertEqual(args, self.mock_func_calls['host1'][0])
     self.assertEqual(
-        [('host1', args), ('host2', args)], list(self.mock_func_calls.items()))
+        self.host_config1.SetServiceAccountJsonKeyPath('path/to/key'),
+        self.mock_func_calls['host1'][1])
+    self.assertEqual(args, self.mock_func_calls['host2'][0])
+    self.assertEqual(
+        self.host_config2.SetServiceAccountJsonKeyPath('path/to/key'),
+        self.mock_func_calls['host2'][1])
 
   @mock.patch.object(getpass, 'getpass')
   @mock.patch.object(host_util, 'BuildLabConfigPool')
@@ -132,8 +139,7 @@ class HostUtilTest(parameterized.TestCase):
                   sudo_ssh_config=ssh_util.SshConfig(
                       user='sudo_user', hostname='host2',
                       password='sudo_pswd'))])
-    self.assertEqual(
-        [('host1', args), ('host2', args)], list(self.mock_func_calls.items()))
+    self.assertSameElements(['host1', 'host2'], self.mock_func_calls.keys())
 
   @mock.patch.object(host_util, 'BuildLabConfigPool')
   def testExecute_nativeSsh(self, mock_build_lab_config_pool):
@@ -165,8 +171,7 @@ class HostUtilTest(parameterized.TestCase):
                       ssh_args='-o op1=v1 -o op2=v2',
                       use_native_ssh=True),
                   sudo_ssh_config=None)])
-    self.assertEqual(
-        [('host1', args), ('host2', args)], list(self.mock_func_calls.items()))
+    self.assertSameElements(['host1', 'host2'], self.mock_func_calls.keys())
 
   @mock.patch.object(host_util, 'BuildLabConfigPool')
   def testExecute_nativeSsh_sshArgInConfig(self, mock_build_lab_config_pool):
@@ -193,8 +198,7 @@ class HostUtilTest(parameterized.TestCase):
                       ssh_args='-o op1=v1 -o op2=v2',
                       use_native_ssh=True),
                   sudo_ssh_config=None)])
-    self.assertEqual(
-        [('host1', args)], list(self.mock_func_calls.items()))
+    self.assertSameElements(['host1'], self.mock_func_calls.keys())
 
   def testSequentialExecute_exitOnError(self):
     """Test _SequentialExecute multiple hosts sequentially and failed."""
@@ -224,7 +228,7 @@ class HostUtilTest(parameterized.TestCase):
      .assert_called_with(hosts[0].config.hostname,
                          host_util.HostUpdateState.ERRORED))
 
-    self.assertEqual({'host1': args}, self.mock_func_calls)
+    self.assertSameElements(['host1'], self.mock_func_calls.keys())
     self.assertEqual(host_util.HostExecutionState.ERROR,
                      hosts[0].execution_state)
     self.assertEqual(host_util.HostExecutionState.UNKNOWN,
@@ -251,9 +255,8 @@ class HostUtilTest(parameterized.TestCase):
         hosts)
 
     # We don't know the order of the call since it's parallel.
-    self.assertEqual(
-        {'host1': args, 'host2': args, 'host3': args},
-        self.mock_func_calls)
+    self.assertSameElements(
+        ['host1', 'host2', 'host3'], self.mock_func_calls.keys())
     self.assertEqual(host_util.HostExecutionState.COMPLETED,
                      hosts[0].execution_state)
     self.assertEqual(host_util.HostExecutionState.COMPLETED,
@@ -284,7 +287,7 @@ class HostUtilTest(parameterized.TestCase):
         hosts)
 
     # We don't know the order of the call since it's parallel.
-    self.assertEqual({'host1': args, 'host2': args}, self.mock_func_calls)
+    self.assertSameElements(['host1', 'host2'], self.mock_func_calls.keys())
     self.assertEqual(host_util.HostExecutionState.COMPLETED,
                      hosts[0].execution_state)
     self.assertEqual(host_util.HostExecutionState.ERROR,
@@ -475,7 +478,7 @@ class HostUtilTest(parameterized.TestCase):
 
     f(args, host)
 
-    self.assertEqual({'host1': args}, self.mock_func_calls)
+    self.assertSameElements(['host1'], self.mock_func_calls.keys())
     self.assertEqual(host_util.HostExecutionState.COMPLETED,
                      host.execution_state)
     host.StartExecutionTimer.assert_called_once()
@@ -493,7 +496,7 @@ class HostUtilTest(parameterized.TestCase):
     with self.assertRaises(Exception):
       f(args, host)
 
-    self.assertEqual({'host1': args}, self.mock_func_calls)
+    self.assertSameElements(['host1'], self.mock_func_calls.keys())
     self.assertEqual(host_util.HostExecutionState.ERROR,
                      host.execution_state)
     self.assertEqual(e, host.error)

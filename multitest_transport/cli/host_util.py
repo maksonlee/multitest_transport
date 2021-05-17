@@ -261,8 +261,6 @@ def _ParallelExecute(host_func, args, hosts, execution_state_printer=None):
   logger.info('Parallel executing %r on %r hosts with %r parallel threads.',
               host_func.__name__, len(hosts), max_workers)
   for host in hosts:
-    host.config = host.config.SetServiceAccountJsonKeyPath(
-        args.service_account_json_key_path)
     host.InitControlServerClient()
   with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
     future_to_host = {executor.submit(host_func, args, host): host
@@ -391,12 +389,9 @@ def _SequentialExecute(
     exit_on_error: exit on error or continue to execute.
     execution_state_printer: to print execution state.
   """
-  for host in hosts:
-    host.config = host.config.SetServiceAccountJsonKeyPath(
-        args.service_account_json_key_path)
-    host.InitControlServerClient()
   # Run the function on a list of remote hosts sequentially.
   for host in hosts:
+    host.InitControlServerClient()
     try:
       host_func(args, host)
       execution_state_printer.PrintState()
@@ -500,9 +495,7 @@ def _GetHostConfigs(lab_config_pool, hosts_or_clusters):
 def Execute(args, lab_config_pool=None):
   """Execute a command on hosts."""
   lab_config_pool = lab_config_pool or BuildLabConfigPool(
-      args.lab_config_path,
-      key_path=getattr(args, 'service_account_json_key_path', None))
-
+      args.lab_config_path, args.service_account_json_key_path)
   host_configs = _GetHostConfigs(lab_config_pool, args.hosts_or_clusters)
   if not host_configs:
     logger.warning('No host configured in %s for %s.',
@@ -523,6 +516,10 @@ def Execute(args, lab_config_pool=None):
   host_configs.sort(key=lambda host_config: host_config.hostname)
   hosts = []
   for host_config in host_configs:
+    if (args.service_account_json_key_path and
+        not host_config.service_account_json_key_path):
+      host_config = host_config.SetServiceAccountJsonKeyPath(
+          args.service_account_json_key_path)
     ssh_args = args.ssh_arg or host_config.ssh_arg
     # only native ssh support ssh_args
     use_native_ssh = bool(args.use_native_ssh or ssh_args)
