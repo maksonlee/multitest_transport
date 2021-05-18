@@ -447,7 +447,8 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
           for p in test_run.prev_test_context.env_vars
       ], msg.prev_test_context.env_vars)
       self.assertEqual([
-          api_messages.TestResource(name=r.name, url=r.url)
+          api_messages.TestResource(
+              name=r.name, url=file_util.GetWorkerAccessibleUrl(r.url))
           for r in test_run.prev_test_context.test_resources
       ], msg.prev_test_context.test_resources)
 
@@ -714,7 +715,16 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
   @mock.patch.object(download_util, 'DownloadResources', autospec=True)
   def testKickTestRun_onPremiseMode(self, mock_download_resources,
                                     mock_new_request):
-    test_run_id = self._CreateMockTestRun().key.id()
+    test_run = self._CreateMockTestRun()
+    # test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    test_run.prev_test_context = ndb_models.TestContextObj(
+        command_line='prev_command_line',
+        env_vars=[],
+        test_resources=[
+            ndb_models.TestResourceObj(name='bar', url='file:///root/path')
+        ])
+    test_run.put()
+    test_run_id = test_run.key.id()
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     mock_download_resources.return_value = {
         r.url: 'file:///data/cache_url' for r in test_run.test_resources
@@ -743,6 +753,10 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                 .format(test_run_id)
         },
         command_line='command --invocation-data mtt=1')
+    self.assertEqual([
+        api_messages.TestResource(
+            name='bar', url='http://test.hostname.com:8006/file/root/path')
+    ], msg.prev_test_context.test_resources)
 
   @mock.patch.object(test_kicker, 'KickTestRun')
   def testEnqueueTestRun(self, mock_kick_test_run):

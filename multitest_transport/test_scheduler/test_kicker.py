@@ -356,7 +356,7 @@ def _ConvertToTFCTestResource(obj, url):
   """Convert ndb_models.TestResourceObj to TFC api_messages.TestResource."""
   return api_messages.TestResource(
       name=obj.name,
-      url=url,
+      url=file_util.GetWorkerAccessibleUrl(url),
       decompress=obj.decompress,
       decompress_dir=obj.decompress_dir)
 
@@ -451,9 +451,7 @@ def _CreateTFCRequest(test_run_id):
       prev_test_context.command_line = retry_command_line
 
   test_resources = [
-      _ConvertToTFCTestResource(r,
-                                file_util.GetWorkerAccessibleUrl(r.cache_url))
-      for r in test_run.test_resources
+      _ConvertToTFCTestResource(r, r.cache_url) for r in test_run.test_resources
   ]
 
   # add metadata URL to the test resources
