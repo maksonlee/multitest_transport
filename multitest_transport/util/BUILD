@@ -157,6 +157,7 @@ pytype_strict_library(
         third_party("apiclient"),
         third_party("httplib2"),
         third_party("protorpc"),
+        third_party("requests"),
     ],
 )
 

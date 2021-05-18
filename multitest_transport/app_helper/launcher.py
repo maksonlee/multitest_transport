@@ -162,13 +162,14 @@ class ModuleApplication(gunicorn.app.base.BaseApplication):
     os.environ['DEFAULT_VERSION_HOSTNAME'] = self.module.hostname
     os.environ['CURRENT_MODULE_ID'] = self.module.name
     # Set gunicorn config
-    self.cfg.set('bind', self.bind_address)
     self.cfg.set('accesslog', '-')  # Log requests to stdout
+    self.cfg.set('bind', self.bind_address)
     self.cfg.set('logconfig_dict', self.get_log_config())
-    self.cfg.set('reload', self.live_reload)
-    self.cfg.set('worker_class', 'gthread')
-    self.cfg.set('threads', 10)  # Default max_concurrent_requests value
     self.cfg.set('post_worker_init', lambda _: self.post_worker_init())
+    self.cfg.set('reload', self.live_reload)
+    self.cfg.set('threads', 10)  # Default max_concurrent_requests value
+    self.cfg.set('worker_class', 'gthread')
+    self.cfg.set('workers', 2)  # Have two workers to ensure availability
 
   def load(self):
     return RawPathMiddleware(CloudNdbMiddleware(self.module.app))

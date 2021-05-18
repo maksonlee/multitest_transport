@@ -20,6 +20,7 @@ from typing import Optional
 import apiclient
 import httplib2
 from protorpc import protojson
+import requests
 from tradefed_cluster import api_messages
 from tradefed_cluster.common import IsFinalCommandState
 from tradefed_cluster.services import app_manager
@@ -34,14 +35,40 @@ HTTP_TIMEOUT_SECONDS = 60
 _tls = threading.local()
 
 
+class _Http:
+  """A httplib2.Http-like object based on requests."""
+
+  def request(        self,
+      uri,
+      method='GET',
+      body=None,
+      headers=None,
+      redirections=None,
+      connection_type=None):
+    """Makes an HTTP request using httplib2 semantics."""
+    del connection_type  # Unused
+
+    with requests.Session() as session:
+      session.max_redirects = redirections
+      response = session.request(
+          method, uri, data=body, headers=headers, timeout=HTTP_TIMEOUT_SECONDS)
+      headers = dict(response.headers)
+      headers['status'] = response.status_code
+      content = response.content
+    return httplib2.Response(headers), content
+
+
 def _GetAPIClient():
+  """Returns a API client for TFC."""
   if not hasattr(_tls, 'api_client'):
-    http = httplib2.Http(timeout=HTTP_TIMEOUT_SECONDS)
     hostname = app_manager.GetInfo('default').hostname.replace(
         env.HOSTNAME, 'localhost')
     discovery_url = API_DISCOVERY_URL_FORMAT % (hostname, API_NAME, API_VERSION)
     _tls.api_client = apiclient.discovery.build(
-        API_NAME, API_VERSION, http=http, discoveryServiceUrl=discovery_url)
+        API_NAME,
+        API_VERSION,
+        discoveryServiceUrl=discovery_url,
+        http=_Http())
   return _tls.api_client
 
 
