@@ -135,7 +135,9 @@ class CliTest(parameterized.TestCase):
                   extra_docker_args=(),
                   control_server_url='url',
                   enable_ui_update=False,
-                  operation_mode=None):
+                  operation_mode=None,
+                  max_local_virtual_devices=None,
+                  ):
 
     host = cli.host_util.Host(
         lab_config.CreateHostConfig(
@@ -153,7 +155,8 @@ class CliTest(parameterized.TestCase):
             enable_ui_update=enable_ui_update,
             service_account_json_key_path=service_account_json_key_path,
             extra_docker_args=list(extra_docker_args),
-            operation_mode=operation_mode))
+            operation_mode=operation_mode,
+            max_local_virtual_devices=max_local_virtual_devices))
     host.context = self.mock_context
     return host
 
@@ -944,6 +947,51 @@ class CliTest(parameterized.TestCase):
             raise_on_failure=False),
     ])
 
+  def testStart_withLocalVirtualDeviceInHostConfig(self):
+    """Test start with virtual device configured in host config."""
+    args = self.arg_parser.parse_args(['start'])
+    cli.Start(args, self._CreateHost(max_local_virtual_devices=5))
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
+            'docker', 'create',
+            '--name', 'mtt', '-it',
+            '-v', '/dev/bus/usb:/dev/bus/usb',
+            '--device-cgroup-rule', 'c 189:* rwm',
+            '--cap-add', 'syslog',
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=unknown',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
+            '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'MAX_LOCAL_VIRTUAL_DEVICES=5',
+            '--mount', 'type=volume,src=mtt-data,dst=/data',
+            '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
+            '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
+            '--mount', ('type=bind,src=/var/run/docker.sock,'
+                        'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
+            '--cap-add', 'net_admin',
+            '--device', '/dev/fuse',
+            '--device', '/dev/kvm',
+            '--device', '/dev/vhost-vsock',
+            '--device', '/dev/net/tun',
+            '--device', '/dev/vhost-net',
+            '--security-opt', 'apparmor:unconfined',
+            'gcr.io/android-mtt/mtt:prod']),
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
+
   def testStart_withExtraDockerArgs(self):
     """Test start with extra docker args."""
     args = self.arg_parser.parse_args([
@@ -1048,13 +1096,20 @@ class CliTest(parameterized.TestCase):
     with self.assertRaises(cli.ActionableError):
       cli.Start(args, self._CreateHost())
 
-  def testStart_failDeviceNodesNotExisting(self):
+  def testStart_withVirtualDevicesArgs_failDeviceNodesNotExisting(self):
     """Test start without the device nodes required by local virtual devices."""
     self.mock_exist_files = []
     args = self.arg_parser.parse_args(
         ['start', '--max_local_virtual_devices', '1'])
     with self.assertRaises(cli.ActionableError):
       cli.Start(args, self._CreateHost())
+
+  def testStart_withVirtualDevicesConfig_failDeviceNodesNotExisting(self):
+    """Test start without the device nodes required by local virtual devices."""
+    self.mock_exist_files = []
+    args = self.arg_parser.parse_args(['start'])
+    with self.assertRaises(cli.ActionableError):
+      cli.Start(args, self._CreateHost(max_local_virtual_devices=1))
 
   @mock.patch.object(shutil, 'which')
   def testStart_withUseHostADB(self, mock_which):

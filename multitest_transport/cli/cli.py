@@ -232,11 +232,12 @@ def _GetHostTimezone():
     return f.read().strip()
 
 
-def _CheckMttNodePrerequisites(args):
+def _CheckMttNodePrerequisites(args, host):
   """Check whether the host is set up for mtt.
 
   Args:
     args: a parsed argparse.Namespace object.
+    host: an instance of host_util.Host.
 
   Raises:
     ActionableError: if any prerequisite is not met.
@@ -253,7 +254,8 @@ def _CheckMttNodePrerequisites(args):
                       'please run `adb kill-server` and try again.' %
                       args.adb_server_port)
   # Check the device nodes required by local virtual devices.
-  if (args.max_local_virtual_devices and
+  if ((args.max_local_virtual_devices or
+       host.config.max_local_virtual_devices) and
       not all(os.path.exists(path) for path in _LOCAL_VIRTUAL_DEVICE_NODES)):
     messages.append('Some required device nodes are missing. '
                     'Try `sudo modprobe -a kvm tun vhost_net vhost_vsock`.')
@@ -351,7 +353,7 @@ def _StartMttNode(args, host):
     logger.error('MTT is already running.')
     return
 
-  _CheckMttNodePrerequisites(args)
+  _CheckMttNodePrerequisites(args, host)
 
   if args.force_update or not docker_helper.DoesResourceExist(image_name):
     docker_helper.Pull()
@@ -506,9 +508,12 @@ def _StartMttNode(args, host):
     # TODO: support GCS files
     shutil.copy(args.custom_adb_path, '%s/adb' % custom_sdk_dir)
 
-  if args.max_local_virtual_devices:
+  max_local_virtual_devices = args.max_local_virtual_devices
+  if max_local_virtual_devices == 0 and host.config.max_local_virtual_devices:
+    max_local_virtual_devices = host.config.max_local_virtual_devices
+  if max_local_virtual_devices:
     docker_helper.AddEnv('MAX_LOCAL_VIRTUAL_DEVICES',
-                         str(args.max_local_virtual_devices))
+                         str(max_local_virtual_devices))
     # Add the dependency of crosvm and qemu.
     for device_node in _LOCAL_VIRTUAL_DEVICE_NODES:
       docker_helper.AddDeviceNode(device_node)
