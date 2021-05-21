@@ -2,6 +2,7 @@
 import logging
 import shlex
 import subprocess
+import tempfile
 
 from typing import List
 
@@ -34,6 +35,15 @@ def _build_remote_ssh_str(command_str, sudo=False):
   if sudo:
     remote_cmd_str = 'sudo ' + remote_cmd_str
   return remote_cmd_str
+
+
+def _ssh_with_password(password):
+  """Ssh with password need a password file and use sshpass."""
+  passfile = tempfile.NamedTemporaryFile()
+  passfile.write(password.encode())
+  passfile.flush()
+  # passfile will be deleted at exit.
+  return passfile, ['sshpass', '-f%s' % passfile.name]
 
 
 @attr.s
@@ -77,9 +87,10 @@ class Context(object):
     Args:
       ssh_config: SshConfig.
     """
-    # TOOD(xingdai): support password, sudo password, ssh config, etc.
+    # TOOD(xingdai): timeout, logging, environment, etc.
     self._hostname = ssh_config.hostname
     self._user = ssh_config.user
+    self._password = ssh_config.password
     self._ssh_config = ssh_config
 
   def run(self, command_str, **run_kwargs):
@@ -107,18 +118,29 @@ class Context(object):
 
   def _run(self, remote_cmd_str, **run_kwargs):
     """Run command on remote host."""
-    # TOOD(xingdai): support password, sudo password, ssh config, timeout, etc.
+    # TOOD(xingdai): timeout, logging, environment, etc.
+    password = self._password or run_kwargs.get('password')
     del run_kwargs
-    logger.debug('Run on %s@%s: %s', self._user, self._hostname, remote_cmd_str)
+    logger.debug(
+        'Run on %s@%s %s password: %s', self._user, self._hostname,
+        'with' if password else 'without', remote_cmd_str)
     ssh_cmds = ['ssh']
     ssh_cmds.extend(self._ssh_config.ssh_args)
     ssh_cmds.extend([
         '-o', 'User=%s' % self._user, self._hostname,
         remote_cmd_str])
-    logger.debug('Run: %r', ssh_cmds)
-    p = subprocess.Popen(ssh_cmds, stdin=subprocess.DEVNULL)
-    outs, errs = p.communicate()
-    return common.CommandResult(p.returncode, outs, errs)
+    password_file = None
+    try:
+      if password:
+        password_file, sshpass_cmds = _ssh_with_password(password)
+        ssh_cmds = sshpass_cmds + ssh_cmds
+      logger.debug('Run: %r', ssh_cmds)
+      p = subprocess.Popen(ssh_cmds, stdin=subprocess.DEVNULL)
+      outs, errs = p.communicate()
+      return common.CommandResult(p.returncode, outs, errs)
+    finally:
+      if password_file:
+        password_file.close()
 
   def put(self, local_file_path, remote_file_path):
     """Copy local file to remote.
@@ -129,7 +151,10 @@ class Context(object):
       local_file_path: local file path.
       remote_file_path: remote file path.
     """
-    logger.debug('Copy %s to %s', local_file_path, remote_file_path)
+    password = self._password
+    logger.debug(
+        'Copy %s to %s %s password', local_file_path, remote_file_path,
+        'with' if password else 'without')
     ssh_arg_str = ''
     if self._ssh_config.ssh_args:
       ssh_arg_str = ' '.join(['ssh'] + self._ssh_config.ssh_args)
@@ -140,8 +165,18 @@ class Context(object):
         local_file_path,
         '%s@%s:%s' % (self._user, self._hostname, remote_file_path)
     ])
-    p = subprocess.Popen(rsync_cmds)
-    p.communicate()
+    password_file = None
+    try:
+      if password:
+        password_file, sshpass_cmds = _ssh_with_password(password)
+        rsync_cmds = sshpass_cmds + rsync_cmds
+      logger.debug('Run: %r', rsync_cmds)
+      p = subprocess.Popen(rsync_cmds)
+      p.communicate()
+    finally:
+      if password_file:
+        # close will also delete the file.
+        password_file.close()
 
   def close(self):
     """Close connection to remote host."""
