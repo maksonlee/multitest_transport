@@ -35,6 +35,7 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
     private_node_config = ndb_models.GetPrivateNodeConfig()
     private_node_config.server_uuid = 'server'
     private_node_config.metrics_enabled = True
+    private_node_config.gms_client_id = 'test_user_tag'
     private_node_config.put()
 
   def assertValidEvent(self, data, server, category, action):
@@ -85,7 +86,7 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
     event = analytics_uploader._Event('server', 'category', 'action')
     data = dict(event)
     self.assertValidEvent(data, 'server', 'category', 'action')
-    self.assertLen(data, 8)  # no additional fields
+    self.assertLen(data, 9)  # no additional fields
 
   def testEvent_complex(self):
     """Tests that complex events can be constructed."""
@@ -102,11 +103,12 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
                                       failed_test_count=5)
     data = dict(event)
     self.assertValidEvent(data, 'server', 'category', 'action')
-    self.assertLen(data, 18)  # ten additional fields
+    self.assertLen(data, 19)  # ten additional fields
     self.assertEqual('name', data['cd2'])
     self.assertEqual('version', data['cd3'])
     self.assertEqual('COMPLETED', data['cd4'])
     self.assertEqual(True, data['cd5'])
+    self.assertEqual('test_user_tag', data['cd14'])
     self.assertEqual(0, data['cm1'])
     self.assertEqual(1, data['cm2'])
     self.assertEqual(2, data['cm3'])

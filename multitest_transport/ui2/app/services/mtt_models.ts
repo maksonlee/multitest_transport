@@ -376,6 +376,8 @@ export declare interface OptionDef {
 export declare interface PrivateNodeConfig {
   /** True to collect usage metrics. */
   metrics_enabled?: boolean;
+  /** User-provided label to identify their company. */
+  gms_client_id?: string;
   /** If false, trigger the setup wizard */
   setup_wizard_completed?: boolean;
   /** default service account credentials */

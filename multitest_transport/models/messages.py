@@ -1237,8 +1237,9 @@ class PrivateNodeConfig(messages.Message):
   """User-specific settings."""
   ndb_version = messages.IntegerField(1)
   metrics_enabled = messages.BooleanField(2)
-  setup_wizard_completed = messages.BooleanField(3)
-  default_credentials = messages.MessageField(CredentialsInfo, 4)
+  gms_client_id = messages.StringField(3)
+  setup_wizard_completed = messages.BooleanField(4)
+  default_credentials = messages.MessageField(CredentialsInfo, 5)
 
 
 @Converter(ndb_models.PrivateNodeConfig, PrivateNodeConfig)
@@ -1246,6 +1247,7 @@ def _PrivateNodeConfigConverter(obj):
   return PrivateNodeConfig(
       ndb_version=obj.ndb_version,
       metrics_enabled=obj.metrics_enabled,
+      gms_client_id=obj.gms_client_id,
       setup_wizard_completed=obj.setup_wizard_completed,
       default_credentials=Convert(obj.default_credentials, CredentialsInfo))
 
@@ -1256,5 +1258,6 @@ def _PrivateNodeConfigMessageConverter(msg):
   private_node_config = ndb_models.GetPrivateNodeConfig()
   private_node_config.ndb_version = msg.ndb_version
   private_node_config.metrics_enabled = msg.metrics_enabled
+  private_node_config.gms_client_id = msg.gms_client_id
   private_node_config.setup_wizard_completed = msg.setup_wizard_completed
   return private_node_config

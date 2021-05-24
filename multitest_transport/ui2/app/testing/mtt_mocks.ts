@@ -419,10 +419,11 @@ export function newMockTradefedConfigObjectList() {
 
 /** Creates a new PrivateNodeConfig */
 export function newMockPrivateNodeConfig(
-    metricsEnabled = false, setupWizardCompleted = false) {
+    metricsEnabled = false, setupWizardCompleted = false, gmsClientId = '') {
   return {
     metrics_enabled: metricsEnabled,
     // Add field only if it's true
+    ...gmsClientId && {gms_client_id: gmsClientId},
     ...setupWizardCompleted && {setup_wizard_completed: setupWizardCompleted},
   };
 }

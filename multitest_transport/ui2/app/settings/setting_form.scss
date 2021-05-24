@@ -22,9 +22,13 @@ h2 {
 
 .metrics {
   color: $grey-800;
-  width: 600px;
+  width: 800px;
 
   .notice {
     padding: 8px 0 18px 24px;
+  }
+
+  .tag-description {
+    padding-bottom: 12px;
   }
 }

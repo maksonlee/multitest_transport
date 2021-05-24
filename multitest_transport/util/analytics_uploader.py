@@ -53,6 +53,7 @@ _METRIC_KEYS = {
     'missing_previous_run': 'cd11',
     'test_id': 'cd12',
     'is_sequence_run': 'cd13',
+    'user_tag': 'cd14',
     'duration_seconds': 'cm1',
     'device_count': 'cm2',
     'attempt_count': 'cm3',
@@ -107,6 +108,9 @@ class _Event(object):
                label=None,
                value=None,
                **kwargs):
+
+    private_node_config = ndb_models.GetPrivateNodeConfig()
+
     # Required parameters
     self.v = _API_VERSION  # API version
     self.tid = _TRACKING_ID  # Tracking ID
@@ -122,6 +126,7 @@ class _Event(object):
     # Custom dimensions and metrics
     setattr(self, _METRIC_KEYS['app_version'], env.VERSION)
     setattr(self, _METRIC_KEYS['is_google'], env.IS_GOOGLE)
+    setattr(self, _METRIC_KEYS['user_tag'], private_node_config.gms_client_id)
     for key, value in six.iteritems(kwargs):
       if not _METRIC_KEYS[key]:
         logging.warning('Unknown metric key: %s', key)

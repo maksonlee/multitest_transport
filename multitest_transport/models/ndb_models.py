@@ -781,12 +781,14 @@ class PrivateNodeConfig(ndb.Model):
     ndb_version: Latest version the database has been updated to
     default_credentials: default service account credentials
     metrics_enabled: True to collect usage metrics.
+    gms_client_id: Optional user-provided label to identify their company
     setup_wizard_completed: If false, trigger the setup wizard on startup
     server_uuid: node's unique identifier.
   """
   ndb_version = ndb.IntegerProperty()
   default_credentials = oauth2_util.CredentialsProperty()
   metrics_enabled = ndb.BooleanProperty()
+  gms_client_id = ndb.StringProperty()
   setup_wizard_completed = ndb.BooleanProperty()
   server_uuid = ndb.StringProperty(required=True, default=str(uuid.uuid4()))
 

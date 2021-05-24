@@ -30,6 +30,18 @@
         <a href="https://accounts.google.com/TOS" target="_blank">Terms of Service</a> and
         <a href="https://accounts.google.com/TOS?privacy=true" target="_blank">Privacy Policy</a>.
       </div>
+      <div>
+        <div class="metrics tag-description">
+          (GMS Partner Only, Optional) If you wish to help us track the usage and adoption of this
+          tool, please enter your company's GMS Client ID here.
+        </div>
+        <div>
+          <mat-form-field class="small" appearance="outline" floatLabel="always" fxFlex>
+            <mat-label>GMS Client ID</mat-label>
+            <input matInput type="text" [(ngModel)]="privateNodeConfig.gms_client_id">
+          </mat-form-field>
+        </div>
+      </div>
     </div>
 
     <mat-divider></mat-divider>
