@@ -31,8 +31,8 @@ device_actions:
     Copy CTS media files to a device according to
     https://source.android.com/compatibility/cts/setup#file-installation
   test_resource_defs:
-  - name: android-cts-media-1.4.zip
-    default_download_url: https://dl.google.com/dl/android/cts/android-cts-media-1.4.zip
+  - name: android-cts-media-1.5.zip
+    default_download_url: https://dl.google.com/dl/android/cts/android-cts-media-1.5.zip
     test_resource_type: UNKNOWN
   tradefed_target_preparers:
   - class_name: com.android.tradefed.targetprep.RunHostCommandTargetPreparer
@@ -218,7 +218,7 @@ tests:
   description: Compatibility Test Suite 8.1 (ARM)
   test_resource_defs:
   - name: android-cts.zip
-    default_download_url: https://dl.google.com/dl/android/cts/android-cts-8.1_r22-linux_x86-arm.zip
+    default_download_url: https://dl.google.com/dl/android/cts/android-cts-8.1_r23-linux_x86-arm.zip
     test_resource_type: TEST_PACKAGE
   command: cts-suite
   env_vars:
@@ -251,7 +251,7 @@ tests:
   description: Compatibility Test Suite 9.0 (ARM)
   test_resource_defs:
   - name: android-cts.zip
-    default_download_url: https://dl.google.com/dl/android/cts/android-cts-9.0_r15-linux_x86-arm.zip
+    default_download_url: https://dl.google.com/dl/android/cts/android-cts-9.0_r16-linux_x86-arm.zip
     test_resource_type: TEST_PACKAGE
   command: cts
   env_vars:
@@ -284,7 +284,7 @@ tests:
   description: Compatibility Test Suite for Instant Apps 9.0 (ARM)
   test_resource_defs:
   - name: android-cts_instant.zip
-    default_download_url: https://dl.google.com/dl/android/cts/android-cts_instant-9.0_r15-linux_x86-arm.zip
+    default_download_url: https://dl.google.com/dl/android/cts/android-cts_instant-9.0_r16-linux_x86-arm.zip
     test_resource_type: TEST_PACKAGE
   command: cts-instant
   env_vars:
@@ -315,7 +315,7 @@ tests:
   description: Compatibility Test Suite 10.0 (ARM)
   test_resource_defs:
   - name: android-cts.zip
-    default_download_url: https://dl.google.com/dl/android/cts/android-cts-10_r7-linux_x86-arm.zip
+    default_download_url: https://dl.google.com/dl/android/cts/android-cts-10_r8-linux_x86-arm.zip
     test_resource_type: TEST_PACKAGE
   command: cts --enable-token-sharding
   env_vars:
@@ -347,7 +347,7 @@ tests:
   name: CTS 11.0 (ARM)
   description: Compatibility Test Suite 11.0 (ARM)
   test_resource_defs:
-  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-11_r3-linux_x86-arm.zip
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-11_r4-linux_x86-arm.zip
     name: android-cts.zip
     test_resource_type: TEST_PACKAGE
   command: cts --enable-token-sharding
