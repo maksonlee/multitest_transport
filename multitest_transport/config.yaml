@@ -151,9 +151,6 @@ device_actions:
     - cuttlefish
     - --boot-timeout
     - '540'
-  - name: cluster:mount-zip
-    values:
-    - 'false'
   test_resource_defs:
   - name: cvd-host_package.tar.gz
     test_resource_type: UNKNOWN
