@@ -30,6 +30,7 @@ ng_module(
         third_party_js("angular2:core"),
         third_party_js("angular2:material_button"),
         third_party_js("angular2:material_chips"),
+        third_party_js("angular2:material_mdc_table"),
         third_party_js("angular2:material_stepper"),
         third_party_js("angular2:material_table"),
         third_party_js("angular2:platform_browser"),

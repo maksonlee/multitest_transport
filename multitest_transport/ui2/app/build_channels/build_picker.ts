@@ -18,7 +18,7 @@ import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {SelectionModel} from '@angular/cdk/collections';
 import {Component, EventEmitter, Inject, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
-import {MatTable} from '@angular/material/table';
+import {MatTable} from '@angular/material/mdc-table';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {ReplaySubject, Subject, Subscription} from 'rxjs';
 import {debounceTime, delay, finalize, first, takeUntil} from 'rxjs/operators';

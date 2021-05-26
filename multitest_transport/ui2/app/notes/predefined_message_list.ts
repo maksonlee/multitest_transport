@@ -17,8 +17,8 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
+import {MatTable, MatTableDataSource} from '@angular/material/mdc-table';
 import {MatSort, Sort} from '@angular/material/sort';
-import {MatTable, MatTableDataSource} from '@angular/material/table';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 import {assertRequiredInput} from 'google3/third_party/py/multitest_transport/ui2/app/shared/util';
 import {Observable, of as observableOf, ReplaySubject, throwError} from 'rxjs';

@@ -22,18 +22,19 @@
   font-size: 12px;
 }
 
-.mat-row {
+.mat-mdc-row {
   height: auto;
   min-height: 49px;
 
-  .mat-cell.last-run-info {
+  .mat-mdc-cell.last-run-info {
     flex-wrap: wrap;
 
     .mat-icon {
       color: $icon-danger;
     }
 
-    a, span {
+    a,
+    span {
       align-items: center;
       display: flex;
       flex-basis: 100%;

@@ -25,7 +25,7 @@ h3 {
   font-weight: normal;
 }
 
-input[type=file] {
+input[type='file'] {
   display: none;
 }
 
@@ -35,12 +35,12 @@ input[type=file] {
   overflow-x: hidden;
   overflow-y: scroll;
 
-  .mat-row {
+  .mat-mdc-row {
     height: auto;
     min-height: 49px;
   }
 
-  .mat-cell.name {
+  .mat-mdc-cell.name {
     flex-wrap: wrap;
 
     span {
@@ -89,8 +89,9 @@ input[type=file] {
   margin-right: 20px;
 }
 
-.mat-row {
-  &:hover, &.selected {
+.mat-mdc-row {
+  &:hover,
+  &.selected {
     background-color: $accent-light;
     cursor: pointer;
   }

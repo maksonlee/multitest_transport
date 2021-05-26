@@ -35,6 +35,7 @@ ng_module(
         third_party_js("angular2:forms"),
         third_party_js("angular2:material_button"),
         third_party_js("angular2:material_dialog"),
+        third_party_js("angular2:material_mdc_table"),
         third_party_js("angular2:material_table"),
         third_party_js("angular2:material_tabs"),
         third_party_js("angular2:router"),

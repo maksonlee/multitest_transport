@@ -20,12 +20,12 @@ table {
   width: 100%;
 }
 
-th.mat-header-cell {
+th.mat-mdc-header-cell {
   border: 0;
   padding: 20px 0;
 }
 
-th.mat-header-cell:first-of-type {
+th.mat-mdc-header-cell:first-of-type {
   padding-left: 42px;
 }
 
@@ -45,7 +45,8 @@ th.mat-header-cell:first-of-type {
   vertical-align: middle;
 }
 
-.load-modules-button, .load-test-cases-button {
+.load-modules-button,
+.load-test-cases-button {
   border: 1px solid $primary-less;
   color: $accent;
   font-size: 12px;
@@ -58,7 +59,7 @@ th.mat-header-cell:first-of-type {
   padding-left: 16px;
 }
 
-.mat-header-row {
+.mat-mdc-header-row {
   background-color: $primary-less;
 }
 

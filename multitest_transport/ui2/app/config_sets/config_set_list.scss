@@ -27,12 +27,14 @@ input[type='file'] {
   margin: 20px;
 }
 
-.mat-button, .mat-flat-button {
+.mat-button,
+.mat-flat-button {
   margin-left: 20px;
 }
 
-.mat-table {
-  mat-header-cell:last-of-type, mat-cell:last-of-type {
+.mat-mdc-table {
+  mat-header-cell:last-of-type,
+  mat-cell:last-of-type {
     margin-right: 20px;
   }
 }

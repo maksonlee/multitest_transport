@@ -69,19 +69,18 @@ mat-table {
 
   mat-header-row,
   mat-row {
-    display: inline-flex !important;
     min-width: 100%;
   }
 
-  mat-header-cell.mat-table-sticky:last-of-type,
-  mat-cell.mat-table-sticky:last-of-type {
+  mat-header-cell.mat-mdc-table-sticky:last-of-type,
+  mat-cell.mat-mdc-table-sticky:last-of-type {
     justify-content: center;
     padding: 0 0 0 1px;
   }
 
   &:not(.scrolled) {
-    mat-header-cell.mat-table-sticky:last-of-type,
-    mat-cell.mat-table-sticky:last-of-type {
+    mat-header-cell.mat-mdc-table-sticky:last-of-type,
+    mat-cell.mat-mdc-table-sticky:last-of-type {
       border-left: 1px solid $primary-less;
       padding: 0;
     }

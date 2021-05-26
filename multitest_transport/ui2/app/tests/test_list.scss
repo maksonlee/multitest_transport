@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-.mat-button, .mat-flat-button {
+.mat-button,
+.mat-flat-button {
   margin-left: 20px;
 }
 
@@ -28,7 +29,7 @@
   }
 }
 
-.mat-table .mat-row {
+.mat-mdc-table .mat-mdc-row {
   height: auto;
   min-height: 49px;
 }

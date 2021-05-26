@@ -17,19 +17,19 @@
 @import 'third_party/py/multitest_transport/ui2/constants';
 
 button {
-  vertical-align: middle,
+  vertical-align: middle;
 }
 
 table {
   width: 100%;
 }
 
-th.mat-header-cell {
+th.mat-mdc-header-cell {
   border: 0;
   padding: 20px 0;
 }
 
-th.mat-header-cell:first-of-type {
+th.mat-mdc-header-cell:first-of-type {
   padding-left: 44px;
 }
 
@@ -38,6 +38,6 @@ th.mat-header-cell:first-of-type {
   vertical-align: middle;
 }
 
-.mat-header-row {
+.mat-mdc-header-row {
   background-color: $primary-less;
 }

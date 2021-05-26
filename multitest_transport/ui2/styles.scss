@@ -16,6 +16,7 @@
 
 // Angular Material styles
 @import 'third_party/javascript/angular2_material/src/lib/core/theming/theming';
+@import 'third_party/javascript/angular2_material/src/lib/core/typography/all-typography';
 
 @import 'constants';
 
@@ -28,6 +29,7 @@ $primary: mat-palette($mat-grey);
 $accent: mat-palette($mat-blue, 100);
 $warn: mat-palette($mat-amber);
 $theme: mat-light-theme($primary, $accent, $warn);
+$typography: mat-typography-config();
 
 // Add background theme
 $background-color: $white;
@@ -46,6 +48,8 @@ $theme: map_merge(
 );
 
 @include angular-material-theme($theme);
+@include mat-mdc-table-theme($theme);
+@include mat-mdc-table-typography($typography);
 @include mat-mdc-progress-spinner-theme($theme);
 @include mat-mdc-progress-bar-theme($theme);
 
@@ -142,28 +146,28 @@ mat-spinner.loading-spinner {
     font-size: 16px;
   }
 
-  .mat-cell:first-of-type {
+  .mat-mdc-cell:first-of-type {
     padding-left: 10px;
   }
 
-  .mat-cell:last-of-type {
+  .mat-mdc-cell:last-of-type {
     padding-right: 10px;
   }
 
-  .mat-header-cell:first-of-type {
+  .mat-mdc-header-cell:first-of-type {
     padding-left: 10px;
   }
 
-  .mat-header-cell:last-of-type {
+  .mat-mdc-header-cell:last-of-type {
     padding-right: 10px;
   }
 
-  .mat-header-row {
+  .mat-mdc-header-row {
     height: 32px;
     min-height: 32px;
   }
 
-  .mat-row {
+  .mat-mdc-row {
     height: 32px;
     min-height: 32px;
   }
@@ -258,11 +262,11 @@ mat-spinner.loading-spinner {
   flex-shrink: 0 !important;
 }
 
-.mat-cell:first-of-type {
+.mat-mdc-cell:first-of-type {
   padding-left: 20px;
 }
 
-.mat-cell:last-of-type {
+.mat-mdc-cell:last-of-type {
   padding-right: 20px;
 }
 
@@ -312,21 +316,20 @@ mat-spinner.loading-spinner {
   margin-top: 2px;
 }
 
-.mat-header-cell {
+.mat-mdc-header-cell {
   background-color: $background-table-header;
   color: $text-default;
-  padding: 4px;
 }
 
-.mat-header-cell:first-of-type {
+.mat-mdc-header-cell:first-of-type {
   padding-left: 20px;
 }
 
-.mat-header-cell:last-of-type {
+.mat-mdc-header-cell:last-of-type {
   padding-right: 20px;
 }
 
-.mat-header-row {
+.mat-mdc-header-row {
   background-color: $background-table-header;
 }
 
@@ -359,12 +362,16 @@ mat-spinner.loading-spinner {
   }
 }
 
-.mat-row {
+.mat-mdc-row {
   height: 49px; // Add 1 for border
 
   &:hover {
     background: $primary-light;
   }
+}
+
+.mat-mdc-table .mat-mdc-cell {
+  height: 48px;
 }
 
 .mat-raised-button {
@@ -419,12 +426,12 @@ mat-spinner.loading-spinner {
   font-weight: bold;
 }
 
-.mat-table.selectable {
-  .mat-row:hover {
+.mat-mdc-table.selectable {
+  .mat-mdc-row:hover {
     background-color: $primary-light;
   }
 
-  .mat-row.selected {
+  .mat-mdc-row.selected {
     background-color: $accent-light;
   }
 }

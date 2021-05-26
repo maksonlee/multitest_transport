@@ -20,7 +20,7 @@ import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatAutocomplete, MatAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatDialog} from '@angular/material/dialog';
-import {MatTable} from '@angular/material/table';
+import {MatTable} from '@angular/material/mdc-table';
 import {ActivatedRoute, ParamMap, Router} from '@angular/router';
 import {forkJoin, Observable, of as observableOf, ReplaySubject, throwError} from 'rxjs';
 import {catchError, concatMap, delay, filter, finalize, map, mergeMap, retryWhen, switchMap, take, takeUntil} from 'rxjs/operators';
@@ -37,6 +37,7 @@ import {FilterBarUtility} from '../shared/filterbar_util';
 import {OverflowListType} from '../shared/overflow_list';
 import {DEFAULT_PAGE_SIZE, Paginator} from '../shared/paginator';
 import {assertRequiredInput} from '../shared/util';
+
 import {HostUpdateDialog, HostUpdateDialogData} from './host_update_dialog';
 
 /** Displaying a list of hosts. */

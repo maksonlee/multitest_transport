@@ -51,8 +51,8 @@ mat-table {
     width: max-content;
   }
 
-  mat-header-cell.mat-table-sticky:last-of-type,
-  mat-cell.mat-table-sticky:last-of-type {
+  mat-header-cell.mat-mdc-table-sticky:last-of-type,
+  mat-cell.mat-mdc-table-sticky:last-of-type {
     padding: 0 0 0 1px;
   }
 
@@ -61,8 +61,8 @@ mat-table {
   }
 
   &:not(.scrolled) {
-    mat-header-cell.mat-table-sticky:last-of-type,
-    mat-cell.mat-table-sticky:last-of-type {
+    mat-header-cell.mat-mdc-table-sticky:last-of-type,
+    mat-cell.mat-mdc-table-sticky:last-of-type {
       border-left: 1px solid $primary-less;
       padding: 0;
     }
