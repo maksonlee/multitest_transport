@@ -47,7 +47,7 @@ device_actions:
       - ./copy_media.sh all -s $SERIAL
     - name: work-dir
       values:
-      - ${TF_WORK_DIR}/android-cts-media-1.4
+      - ${TF_WORK_DIR}/android-cts-media-1.5
 
 - id: cts_device_setup
   name: CTS Device Setup
