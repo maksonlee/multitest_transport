@@ -29,6 +29,7 @@ from google.cloud import logging as gcloud_logging
 from multitest_transport.cli import command_util
 from multitest_transport.cli import gcs_file_util
 from multitest_transport.cli import google_auth_util
+from multitest_transport.cli import version
 
 logger = logging.getLogger(__name__)
 _UNKNOWN = 'unknown'
@@ -48,28 +49,14 @@ _STACKDRIVER_CLOUD_PROJECT = 'tradefed-satellite-lab'
 _GCLOUD_LOGGING_WRITE_SCOPE = 'https://www.googleapis.com/auth/logging.write'
 
 
-def PrintVersion(args):
+def PrintVersion():
   """Print the version of MTT CLI."""
-  version, _ = GetVersion(args.cli_path)
-  print('Version: %s' % version)
+  print('Version: %s' % GetVersion()[0])
 
 
-def GetVersion(cli_path):
+def GetVersion():
   """Get the version and build environment of MTT CLI."""
-  version = _UNKNOWN
-  build_environment = _UNKNOWN
-  try:
-    with zipfile.ZipFile(cli_path, 'r') as mtt_zip:
-      try:
-        parser = six.moves.configparser.SafeConfigParser()
-        parser.readfp(six.StringIO(six.ensure_str(mtt_zip.read(_VERSION_FILE))))
-        version = parser.get('version', 'VERSION')
-        build_environment = parser.get('version', 'BUILD_ENVIRONMENT')
-      except KeyError:
-        logger.error('No %s in MTT Cli.', _VERSION_FILE)
-  except zipfile.BadZipfile:
-    logger.error('%s is not a zip file.', cli_path)
-  return version, build_environment
+  return version.VERSION, version.BUILD_ENVIRONMENT
 
 
 def CreateLoggingArgParser():
@@ -212,8 +199,10 @@ def CreateCliUpdateArgParser():
 def CheckAndUpdateTool(local_path, cli_update_url=None):
   """Check the remote version, if it's different, update the local CLI."""
   local_filename = os.path.basename(local_path)
+  if not zipfile.is_zipfile(local_path):
+    return None
   if not cli_update_url or not cli_update_url.strip():
-    _, build_environment = GetVersion(local_path)
+    _, build_environment = GetVersion()
     if build_environment == 'dev':
       logger.debug('CLI from dev and no "cli_update_url" set, not update CLI.')
       return None

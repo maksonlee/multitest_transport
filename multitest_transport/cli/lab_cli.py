@@ -378,7 +378,7 @@ def Main():
     parser.print_usage()
     return
   if args.action == 'version':
-    cli_util.PrintVersion(args)
+    cli_util.PrintVersion()
     return
 
   lab_config_pool = host_util.BuildLabConfigPool(args.lab_config_path)

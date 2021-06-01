@@ -41,6 +41,15 @@ VERSION=${VERSION}
 BUILD_ENVIRONMENT=${ENVIRONMENT}
 EOF
 
+chmod +w src/multitest_transport/cli/version.py
+cat << EOF > src/multitest_transport/cli/version.py
+VERSION = "${VERSION}"
+BUILD_ENVIRONMENT = "${ENVIRONMENT}"
+EOF
+
+chmod +w src/setup.py
+sed -i "s/VERSION =.*/VERSION = \"${VERSION}\"/" src/setup.py
+
 cat << EOF > Dockerfile
 FROM ubuntu:18.04
 

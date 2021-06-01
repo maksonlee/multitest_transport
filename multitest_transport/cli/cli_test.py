@@ -162,18 +162,16 @@ class CliTest(parameterized.TestCase):
 
   @mock.patch.object(cli_util, 'GetVersion')
   def testCheckDockerImageVersion(self, mock_get_version):
-    cli_path = 'cli_path'
     docker_helper = mock.MagicMock()
     container_name = 'container_name'
     mock_get_version.return_value = ('prod_R9.202009.001', 'prod')
     docker_helper.Exec.return_value = mock.MagicMock(
         stdout='prod_R9.202009.001')
 
-    cli._CheckDockerImageVersion(cli_path, docker_helper, container_name)
+    cli._CheckDockerImageVersion(docker_helper, container_name)
 
   @mock.patch.object(cli_util, 'GetVersion')
   def testCheckDockerImageVersion_withNewerImage(self, mock_get_version):
-    cli_path = 'cli_path'
     docker_helper = mock.MagicMock()
     container_name = 'container_name'
     mock_get_version.return_value = ('prod_R9.202009.001', 'prod')
@@ -181,29 +179,27 @@ class CliTest(parameterized.TestCase):
         stdout='prod_R10.202010.001')
 
     with self.assertRaises(cli.ActionableError):
-      cli._CheckDockerImageVersion(cli_path, docker_helper, container_name)
+      cli._CheckDockerImageVersion(docker_helper, container_name)
 
   @mock.patch.object(cli_util, 'GetVersion')
   def testCheckDockerImageVersion_withOlderImage(self, mock_get_version):
-    cli_path = 'cli_path'
     docker_helper = mock.MagicMock()
     container_name = 'container_name'
     mock_get_version.return_value = ('prod_R9.202009.001', 'prod')
     docker_helper.Exec.return_value = mock.MagicMock(
         stdout='prod_R8.202008.001')
 
-    cli._CheckDockerImageVersion(cli_path, docker_helper, container_name)
+    cli._CheckDockerImageVersion(docker_helper, container_name)
 
   @mock.patch.object(cli_util, 'GetVersion')
   def testCheckDockerImageVersion_multipleUnderScore(self, mock_get_version):
-    cli_path = 'cli_path'
     docker_helper = mock.MagicMock()
     container_name = 'container_name'
     mock_get_version.return_value = ('prod_R9_202009_001', 'prod')
     docker_helper.Exec.return_value = mock.MagicMock(
         stdout='prod_R9_202009_001')
 
-    cli._CheckDockerImageVersion(cli_path, docker_helper, container_name)
+    cli._CheckDockerImageVersion(docker_helper, container_name)
 
   def testStart(self):
     """Test start without service account."""

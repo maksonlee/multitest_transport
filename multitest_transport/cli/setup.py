@@ -15,11 +15,13 @@
 """Setup for mtt cli."""
 import setuptools
 
+VERSION = 'dev'
+
 setuptools.setup(
     name='Android_Test_Station_CLI',
     description='CLI for Android Test Station.',
     url='https://source.android.com/compatibility/tests/development/android-test-station/ats-user-guide',
-    version='1.0',
+    version=VERSION,
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Programming Language :: Python :: 3.6',
@@ -34,6 +36,8 @@ setuptools.setup(
         'console_scripts': ['mtt=multitest_transport.cli.cli:Main'],
     },
     install_requires=[
+        'attrs',
+        'fabric',
         'google-api-core',
         'google-api-python-client',
         'google-auth',
@@ -42,9 +46,11 @@ setuptools.setup(
         'google-cloud-storage',
         'google-cloud-logging',
         'grpcio',
-        'fabric',
         'packaging',
-        'strictyaml',
+        'python-dateutil',
         'requests',
+        'SecretStorage',
+        'six',
+        'strictyaml',
     ]
 )

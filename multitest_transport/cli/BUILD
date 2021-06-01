@@ -42,6 +42,7 @@ py_library(
         ":command_util_lib",
         ":gcs_file_util_lib",
         ":google_auth_util_lib",
+        ":version_data_lib",
         third_party("google/cloud/logging"),
         third_party("requests"),
         third_party("six"),
@@ -187,6 +188,14 @@ py_library(
     deps = [
         third_party("six"),
     ],
+)
+
+py_library(
+    name = "version_data_lib",
+    srcs = [
+        "version.py",
+    ],
+    srcs_version = "PY3",
 )
 
 # Test

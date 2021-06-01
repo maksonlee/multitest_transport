@@ -15,6 +15,7 @@
 """Tests for cli_util."""
 import os
 import tempfile
+import zipfile
 
 from absl.testing import absltest
 from absl.testing import parameterized
@@ -22,58 +23,14 @@ import mock
 import six
 
 from multitest_transport.cli import cli_util
-from multitest_transport.cli import unittest_util
-
+from multitest_transport.cli import version  
 
 class CliUtilTest(absltest.TestCase):
 
+  @mock.patch('__main__.version.VERSION', 'aversion')
+  @mock.patch('__main__.version.BUILD_ENVIRONMENT', 'test')
   def testGetVersion(self):
-    f = None
-    try:
-      f = tempfile.NamedTemporaryFile(delete=False)
-      unittest_util.CreateZipFile(
-          f.name, [unittest_util.File(
-              filename='VERSION',
-              content='[version]\nVERSION=aversion\nBUILD_ENVIRONMENT=test')])
-      self.assertEqual(
-          ('aversion', 'test'),
-          cli_util.GetVersion(f.name))
-    finally:
-      if f:
-        f.close()
-        os.remove(f.name)
-        self.assertFalse(os.path.exists(f.name))
-
-  def testGetVersion_notZip(self):
-    f = None
-    try:
-      f = tempfile.NamedTemporaryFile(delete=False)
-      f.write(b'afile')
-      f.close()
-      self.assertEqual(
-          ('unknown', 'unknown'),
-          cli_util.GetVersion(cli_path=f.name))
-    finally:
-      if f:
-        f.close()
-        os.remove(f.name)
-        self.assertFalse(os.path.exists(f.name))
-
-  def testGetVersion_noVersion(self):
-    f = None
-    try:
-      f = tempfile.NamedTemporaryFile(delete=False)
-      unittest_util.CreateZipFile(
-          f.name,
-          [unittest_util.File(filename='INVALID_VERSION', content='aversion')])
-      self.assertEqual(
-          ('unknown', 'unknown'),
-          cli_util.GetVersion(cli_path=f.name))
-    finally:
-      if f:
-        f.close()
-        os.remove(f.name)
-        self.assertFalse(os.path.exists(f.name))
+    self.assertEqual(('aversion', 'test'), cli_util.GetVersion())
 
   def testCreateLogger(self):
     try:
@@ -85,74 +42,104 @@ class CliUtilTest(absltest.TestCase):
     finally:
       f.close()
 
+  @mock.patch.object(zipfile, 'is_zipfile')
   @mock.patch.object(os, 'access')
   @mock.patch.object(cli_util, '_DownloadToolFromHttp')
-  def testCheckAndUpdateTool(self, mock_download, mock_access):
+  def testCheckAndUpdateTool(self, mock_download, mock_access, mock_is_zip):
     mock_access.return_value = True
+    mock_is_zip.return_value = True
     local_path = '/local/path/file.par'
     remote_path = 'http://googlestorage.com/remote/path/file.par'
     mock_download.return_value = local_path
     new_path = cli_util.CheckAndUpdateTool(local_path, remote_path)
     self.assertEqual(local_path, new_path)
 
+    mock_is_zip.assert_called_once_with(local_path)
     mock_access.assert_called_once_with('/local/path', os.W_OK)
     mock_download.assert_called_once_with(remote_path, local_path)
 
+  @mock.patch.object(zipfile, 'is_zipfile')
   @mock.patch.object(os, 'access')
   @mock.patch.object(cli_util, '_DownloadToolFromGCS')
-  def testCheckAndUpdateTool_withGCSUrl(self, mock_download, mock_access):
+  def testCheckAndUpdateTool_withGCSUrl(
+      self, mock_download, mock_access, mock_is_zip):
     mock_access.return_value = True
+    mock_is_zip.return_value = True
     local_path = '/local/path/file.par'
     remote_path = 'gs://bucket/remote/path/file.par'
     mock_download.return_value = local_path
     new_path = cli_util.CheckAndUpdateTool(local_path, remote_path)
     self.assertEqual(local_path, new_path)
 
+    mock_is_zip.assert_called_once_with(local_path)
     mock_access.assert_called_once_with('/local/path', os.W_OK)
     mock_download.assert_called_once_with(remote_path, local_path)
 
+  @mock.patch.object(zipfile, 'is_zipfile')
   @mock.patch.object(os, 'access')
   @mock.patch.object(cli_util, '_DownloadToolFromHttp')
   @mock.patch.object(cli_util, 'GetVersion')
   def testCheckAndUpdateTool_remoteNotSet(
-      self, mock_get_version, mock_download, mock_access):
+      self, mock_get_version, mock_download, mock_access, mock_is_zip):
     local_path = '/local/path/mtt'
     mock_access.return_value = True
+    mock_is_zip.return_value = True
     mock_download.return_value = local_path
     mock_get_version.return_value = ('aversion', 'prod')
 
     new_path = cli_util.CheckAndUpdateTool(local_path)
     self.assertEqual(local_path, new_path)
 
-    mock_get_version.assert_called_once_with(local_path)
+    mock_get_version.assert_called_once_with()
+    mock_is_zip.assert_called_once_with(local_path)
     mock_access.assert_called_once_with('/local/path', os.W_OK)
     mock_download.assert_called_once_with(
         'https://storage.googleapis.com/android-mtt.appspot.com/prod/mtt',
         local_path)
 
+  @mock.patch.object(zipfile, 'is_zipfile')
   @mock.patch.object(cli_util, 'GetVersion')
-  def testCheckAndUpdateTool_devEnvironment(self, mock_get_version):
+  def testCheckAndUpdateTool_devEnvironment(
+      self, mock_get_version, mock_is_zip):
+    mock_is_zip.return_value = True
     mock_get_version.return_value = ('dev', 'dev')
 
     new_path = cli_util.CheckAndUpdateTool('/local/path/mtt')
     self.assertIsNone(new_path)
 
-    mock_get_version.assert_called_once_with('/local/path/mtt')
+    mock_is_zip.assert_called_once_with('/local/path/mtt')
+    mock_get_version.assert_called_once_with()
 
-  def testCheckAndUpdateTool_remoteDifferentName(self):
+  @mock.patch.object(zipfile, 'is_zipfile')
+  def testCheckAndUpdateTool_remoteDifferentName(self, mock_is_zip):
+    mock_is_zip.return_value = True
     new_path = cli_util.CheckAndUpdateTool(
         '/local/path/file.par', 'gs://bucket/remote/path/new_file.par')
     self.assertIsNone(new_path)
+    mock_is_zip.assert_called_once_with('/local/path/file.par')
 
+  @mock.patch.object(zipfile, 'is_zipfile')
   @mock.patch.object(os, 'access')
-  def testCheckAndUpdateTool_noWriteAccess(self, mock_access):
+  def testCheckAndUpdateTool_noWriteAccess(self, mock_access, mock_is_zip):
+    mock_is_zip.return_value = True
     mock_access.return_value = False
 
     new_path = cli_util.CheckAndUpdateTool(
         '/local/path/file.par', 'gs://bucket/remote/path/file.par')
     self.assertIsNone(new_path)
 
+    mock_is_zip.assert_called_once_with('/local/path/file.par')
     mock_access.assert_called_once_with('/local/path', os.W_OK)
+
+  @mock.patch.object(zipfile, 'is_zipfile')
+  def testCheckAndUpdateTool_notZip(self, mock_is_zip):
+    mock_is_zip.return_value = False
+
+    new_path = cli_util.CheckAndUpdateTool(
+        '/local/path/file.par', 'gs://bucket/remote/path/file.par')
+    self.assertIsNone(new_path)
+
+    mock_is_zip.assert_called_once_with('/local/path/file.par')
 
   @mock.patch.object(os, 'rename')
   @mock.patch.object(os, 'chmod')

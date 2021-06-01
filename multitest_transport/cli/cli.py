@@ -263,18 +263,17 @@ def _CheckMttNodePrerequisites(args, host):
     raise ActionableError('\n'.join(messages))
 
 
-def _CheckDockerImageVersion(cli_path, docker_helper, container_name):
+def _CheckDockerImageVersion(docker_helper, container_name):
   """Check a Docker image is compatible with CLI.
 
   Args:
-    cli_path: a CLI path.
     docker_helper: a command_util.DockerHelper object.
     container_name: a container name.
   Raises:
     ActionableError: if a Docker image is newer than CLI.
   """
   res = docker_helper.Exec(container_name, ['printenv', 'MTT_VERSION'])
-  cli_version, _ = cli_util.GetVersion(cli_path)
+  cli_version, _ = cli_util.GetVersion()
   image_version = res.stdout
   if (not cli_version or '_' not in cli_version or
       not image_version or '_' not in image_version):
@@ -374,7 +373,7 @@ def _StartMttNode(args, host):
   docker_helper.AddEnv(
       'OPERATION_MODE',
       lab_config_pb2.OperationMode.Name(operation_mode).lower())
-  docker_helper.AddEnv('MTT_CLI_VERSION', cli_util.GetVersion(args.cli_path)[0])
+  docker_helper.AddEnv('MTT_CLI_VERSION', cli_util.GetVersion()[0])
   if control_server_url:
     docker_helper.AddEnv('MTT_CONTROL_SERVER_URL', control_server_url)
   else:
@@ -530,7 +529,7 @@ def _StartMttNode(args, host):
 
   docker_helper.Run(args.name)
 
-  _CheckDockerImageVersion(args.cli_path, docker_helper, args.name)
+  _CheckDockerImageVersion(docker_helper, args.name)
 
   # Delete temp tools directory
   if custom_sdk_dir:
@@ -1013,7 +1012,7 @@ def CreateParser():
   parser = argparse.ArgumentParser(
       parents=[cli_util.CreateLoggingArgParser(),
                cli_util.CreateCliUpdateArgParser()])
-  subparsers = parser.add_subparsers(title='Actions')
+  subparsers = parser.add_subparsers(title='Actions', dest='action')
 
   # Commands for users
   subparsers.add_parser(
@@ -1063,7 +1062,9 @@ def Main():
         os.execv(new_path, [new_path] + sys.argv[1:])
     except Exception as e:        logger.warning('Failed to check/update tool: %s', e)
   try:
-    if hasattr(args, 'func'):
+    if args.action == 'version':
+      cli_util.PrintVersion()
+    elif hasattr(args, 'func'):
       args.func(args)
     else:
       parser.print_usage()
