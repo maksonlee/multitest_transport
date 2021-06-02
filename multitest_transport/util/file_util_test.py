@@ -435,7 +435,9 @@ class FileUtilTest(parameterized.TestCase):
         'file://hostname.com/root/file/path',
         file_util.GetAppStorageUrl(['file', 'path'], 'hostname.com'))
 
-  def testGetWorkFileUrl(self):
+  @mock.patch('multitest_transport.util.env.OPERATION_MODE',
+              env.OperationMode.STANDALONE)
+  def testGetWorkFileUrl_standaloneMode(self):
     attempt = mock.MagicMock(attempt_id='attempt')
 
     self.assertEqual('file:///root/tmp/attempt/',
