@@ -52,7 +52,7 @@ ng_module(
         third_party_js("angular2:material_form_field"),
         third_party_js("angular2:material_icon"),
         third_party_js("angular2:material_input"),
-        third_party_js("angular2:material_snack_bar"),
+        third_party_js("angular2:material_mdc_snack_bar"),
         third_party_js("rxjs"),
     ],
 )

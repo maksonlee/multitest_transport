@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Injectable} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatSnackBar} from '@angular/material/mdc-snack-bar';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 

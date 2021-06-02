@@ -19,7 +19,7 @@ import {Clipboard} from '@angular/cdk/clipboard';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {Component, ElementRef, HostListener, Input, OnChanges, OnDestroy, SimpleChanges, ViewChild} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatSnackBar} from '@angular/material/mdc-snack-bar';
 import {firstValueFrom, Observable, Subject} from 'rxjs';
 
 import {AoaDevice, Key} from '../device/device';
