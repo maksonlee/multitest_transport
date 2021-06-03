@@ -16,7 +16,7 @@
 set -e
 
 # Kill all subprocesses when this script stops.
-trap "echo cleaning up... && pkill -P $$" SIGINT SIGTERM EXIT
+trap "echo cleaning up... && pkill -P $$ -TERM" SIGINT SIGTERM EXIT
 
 readonly SCRIPT_PATH="$(realpath "$0")"
 readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
@@ -189,7 +189,8 @@ function start_main_server {
       --live_reload="${LIVE_RELOAD}" \
       --module "default=multitest_transport.server:APP" \
       --module "core=multitest_transport.server:CORE" \
-      --module "tfc=tradefed_cluster.server:TFC"
+      --module "tfc=tradefed_cluster.server:TFC" \
+      &
 }
 
 if [ $FILE_SERVICE_ONLY == "false" ]
@@ -203,5 +204,5 @@ then
 else
   start_browsepy
   start_local_file_server
-  wait
 fi
+wait

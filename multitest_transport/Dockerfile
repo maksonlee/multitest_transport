@@ -38,6 +38,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         python3-pip \
         rabbitmq-server=3.8.2-0ubuntu1 \
         socat \
+        tini \
         tzdata \
         usbutils \
         unzip \
@@ -206,4 +207,6 @@ RUN chmod 755 \
 
 VOLUME /data
 
+# tini will forward signals to all child processes and wait for them to finish.
+ENTRYPOINT ["tini", "-g", "-v", "--"]
 CMD ["/mtt/scripts/init.sh"]
