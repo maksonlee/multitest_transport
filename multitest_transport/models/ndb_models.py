@@ -151,6 +151,24 @@ class TestResourceType(messages.Enum):
   SYSTEM_IMAGE = 3
 
 
+class TestResourceParameters(ndb.Model):
+  """Repeated properties of TestResourceObj and TestResourceDef.
+
+  Because the test resources are StructuredProperty of tests, they cannot
+  directly contain repeated properties. The test resource models use this class
+  to wrap the repeated properties in a LocalStructuredProperty.
+
+  Attributes:
+    decompress_files: the files to be decompressed from the downloaded file.
+  """
+  decompress_files = ndb.StringProperty(repeated=True)
+
+  @classmethod
+  def Clone(cls, obj):
+    """Copy all properties to a new object if it's not None."""
+    return cls(decompress_files=obj.decompress_files) if obj else None
+
+
 class TestResourceDef(ndb.Model):
   """A test resource definition.
 
@@ -160,12 +178,14 @@ class TestResourceDef(ndb.Model):
     test_resource_type: a test resource type.
     decompress: whether the host should decompress the downloaded file.
     decompress_dir: the directory where the host decompresses the file.
+    params: test resource parameters.
   """
   name = ndb.StringProperty(required=True)
   default_download_url = ndb.StringProperty()
   test_resource_type = ndb.EnumProperty(TestResourceType)
   decompress = ndb.BooleanProperty()
   decompress_dir = ndb.StringProperty()
+  params = ndb.LocalStructuredProperty(TestResourceParameters)
 
   def ToTestResourceObj(self):
     """Create a TestResourceObj from this definition."""
@@ -174,7 +194,8 @@ class TestResourceDef(ndb.Model):
         url=self.default_download_url,
         test_resource_type=self.test_resource_type,
         decompress=self.decompress or False,
-        decompress_dir=self.decompress_dir or '')
+        decompress_dir=self.decompress_dir or '',
+        params=TestResourceParameters.Clone(self.params))
 
 
 class TestRunParameter(ndb.Model):
@@ -338,6 +359,7 @@ class TestResourceObj(ndb.Model):
     test_resource_type: a test resource type.
     decompress: whether the host should decompress the downloaded file.
     decompress_dir: the directory where the host decompresses the file.
+    params: test resource parameters.
   """
   name = ndb.StringProperty(required=True)
   url = ndb.StringProperty()
@@ -345,6 +367,7 @@ class TestResourceObj(ndb.Model):
   test_resource_type = ndb.EnumProperty(TestResourceType)
   decompress = ndb.BooleanProperty()
   decompress_dir = ndb.StringProperty()
+  params = ndb.LocalStructuredProperty(TestResourceParameters)
 
 
 class TestRunConfig(ndb.Model):

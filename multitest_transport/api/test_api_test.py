@@ -17,10 +17,12 @@
 import json
 
 from absl.testing import absltest
+from protorpc import protojson
 
 from multitest_transport.api import api_test_util
 from multitest_transport.api import test_api
 from multitest_transport.models import ndb_models
+from multitest_transport.models import messages
 
 
 class TestApiTest(api_test_util.TestCase):
@@ -104,14 +106,19 @@ class TestApiTest(api_test_util.TestCase):
 
   def testUpdate(self):
     test = self._CreateMockTest()
-    data = test.to_dict()
-    data['name'] = 'bar'
+    test_msg = messages.Convert(test, messages.Test)
+    test_msg.name = 'bar'
+    test_msg.test_resource_defs[0].params = messages.TestResourceParameters(
+        decompress_files=['foo'])
+    data = protojson.encode_message(test_msg)
 
-    res = self.app.put_json('/_ah/api/mtt/v1/tests/%s' % test.key.id(), data)
+    res = self.app.put('/_ah/api/mtt/v1/tests/%s' % test.key.id(), data)
 
     obj = json.loads(res.body)
     self.assertEqual(str(test.key.id()), obj['id'])
-    self.assertEqual(data['name'], obj['name'])
+    self.assertEqual(test_msg.name, obj['name'])
+    self.assertEqual(test_msg.test_resource_defs[0].params.decompress_files,
+                     obj['test_resource_defs'][0]['params']['decompress_files'])
     # TODO: need to assert equality of all fields.
 
   def testDelete(self):

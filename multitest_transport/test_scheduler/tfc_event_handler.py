@@ -203,7 +203,9 @@ def _ConvertToTestResourceObj(msg):
       name=msg.name,
       url=msg.url,
       decompress=msg.decompress,
-      decompress_dir=msg.decompress_dir)
+      decompress_dir=msg.decompress_dir,
+      params=ndb_models.TestResourceParameters(
+          decompress_files=msg.params.decompress_files) if msg.params else None)
 
 
 def _TrackTestRun(test_run_id):

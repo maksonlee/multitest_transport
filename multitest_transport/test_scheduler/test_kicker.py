@@ -91,11 +91,11 @@ def ValidateDeviceActions(device_actions):
             (opt.name, device_actions[options[opt.name]].name, action.name))
 
 
-def _ConvertToTestResourceMap(test_resource_objs):
-  """Convert TestResourceObj objects to a dict.
+def _ConvertToTestResourceMap(test_resource_defs):
+  """Convert TestResourceDef objects to a dict of TestResourceObj objects.
 
   Args:
-    test_resource_objs: a collection of ndb_models.TestResourceObj objects.
+    test_resource_defs: a collection of ndb_models.TestResourceDef objects.
 
   Returns:
     a dict that maps names to ndb_models.TestResourceObj objects.
@@ -105,15 +105,31 @@ def _ConvertToTestResourceMap(test_resource_objs):
       attributes.
   """
   test_resource_map = {}
-  for obj in test_resource_objs:
+  for d in test_resource_defs:
+    obj = d.ToTestResourceObj()
+    if not obj.params:
+      obj.params = ndb_models.TestResourceParameters()
+    obj.params.decompress_files = [f for f in obj.params.decompress_files if f]
+
     existing_obj = test_resource_map.get(obj.name)
-    if existing_obj and (
-        existing_obj.decompress != obj.decompress or
+    if not existing_obj:
+      test_resource_map[obj.name] = obj
+      continue
+    if (existing_obj.decompress != obj.decompress or
         existing_obj.decompress_dir != obj.decompress_dir or
         existing_obj.test_resource_type != obj.test_resource_type):
-      raise ValueError('The test run has multiple test resources named %s '
-                       'and having different attributes.' % obj.name)
-    test_resource_map[obj.name] = obj
+      raise ValueError('The test run has multiple test resources named %s and '
+                       'having different attributes.' % obj.name)
+    if obj.decompress:
+      # Union decompress_files. An empty list means to decompress all files.
+      if existing_obj.params.decompress_files and obj.params.decompress_files:
+        existing_obj.params.decompress_files.extend(
+            obj.params.decompress_files)
+      else:
+        existing_obj.params.decompress_files.clear()
+
+  for obj in test_resource_map.values():
+    obj.params.decompress_files = sorted(set(obj.params.decompress_files))
   return test_resource_map
 
 
@@ -167,8 +183,7 @@ def CreateTestRun(labels,
   test_resource_defs = test.test_resource_defs[:]
   for device_action in before_device_actions:
     test_resource_defs += device_action.test_resource_defs
-  test_resource_map = _ConvertToTestResourceMap(
-      [d.ToTestResourceObj() for d in test_resource_defs])
+  test_resource_map = _ConvertToTestResourceMap(test_resource_defs)
   # Override test resource URLs based on
   # node_config.test_resource_default_download_urls.
   for pair in node_config.test_resource_default_download_urls:
@@ -358,7 +373,9 @@ def _ConvertToTFCTestResource(obj, url):
       name=obj.name,
       url=file_util.GetWorkerAccessibleUrl(url),
       decompress=obj.decompress,
-      decompress_dir=obj.decompress_dir)
+      decompress_dir=obj.decompress_dir,
+      params=api_messages.TestResourceParameters(
+          decompress_files=obj.params.decompress_files) if obj.params else None)
 
 
 def _CreateTFCRequest(test_run_id):

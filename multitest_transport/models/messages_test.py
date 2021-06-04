@@ -51,18 +51,38 @@ class MessagesTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(obj.value, msg.value)
 
   def assertSameTestResourceDef(self, obj, msg):
+    self.assertIsInstance(obj, ndb_models.TestResourceDef)
+    self.assertIsInstance(msg, messages.TestResourceDef)
     self.assertEqual(obj.name, msg.name)
     self.assertEqual(obj.default_download_url, msg.default_download_url)
     self.assertEqual(obj.decompress, msg.decompress)
     self.assertEqual(obj.decompress_dir, msg.decompress_dir)
+    if obj.params and msg.params:
+      self.assertEqual(obj.params.decompress_files, msg.params.decompress_files)
+    else:
+      self.assertIsNone(msg.params)
+      self.assertIsNone(obj.params)
 
   def testConvert_TestResourceDef(self):
     obj = ndb_models.TestResourceDef(
         name='foo', default_download_url='bar', decompress=True,
-        decompress_dir='dir')
-    msg = messages.Convert(obj, messages.TestResourceDef)
-    self.assertIsInstance(msg, messages.TestResourceDef)
-    self.assertSameTestResourceDef(obj, msg)
+        decompress_dir='dir',
+        params=ndb_models.TestResourceParameters(decompress_files=['file']))
+    msg = messages.TestResourceDef(
+        name='foo', default_download_url='bar', decompress=True,
+        decompress_dir='dir',
+        params=messages.TestResourceParameters(decompress_files=['file']))
+    self.assertSameTestResourceDef(
+        obj, messages.Convert(obj, messages.TestResourceDef))
+    self.assertSameTestResourceDef(
+        messages.Convert(msg, ndb_models.TestResourceDef), msg)
+
+    obj = ndb_models.TestResourceDef(name='foo')
+    msg = messages.TestResourceDef(name='foo')
+    self.assertSameTestResourceDef(
+        obj, messages.Convert(obj, messages.TestResourceDef))
+    self.assertSameTestResourceDef(
+        messages.Convert(msg, ndb_models.TestResourceDef), msg)
 
   def assertSameTestRunParameter(self, obj, msg):
     self.assertEqual(

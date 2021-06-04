@@ -233,6 +233,22 @@ def _EventLogEntryConverter(obj):
       message=obj.message)
 
 
+class TestResourceParameters(messages.Message):
+  """Repeated properties of TestResourceObj and TestResourceDef."""
+  decompress_files = messages.StringField(1, repeated=True)
+
+
+@Converter(ndb_models.TestResourceParameters, TestResourceParameters)
+def _TestResourceParametersConverter(obj):
+  return TestResourceParameters(decompress_files=obj.decompress_files)
+
+
+@Converter(TestResourceParameters, ndb_models.TestResourceParameters)
+def _TestResourceParametersMessageConverter(msg):
+  return ndb_models.TestResourceParameters(
+      decompress_files=msg.decompress_files)
+
+
 class TestResourceDef(messages.Message):
   """A test resource definition for a test."""
   name = messages.StringField(1, required=True)
@@ -240,6 +256,7 @@ class TestResourceDef(messages.Message):
   test_resource_type = messages.EnumField(ndb_models.TestResourceType, 3)
   decompress = messages.BooleanField(4)
   decompress_dir = messages.StringField(5)
+  params = messages.MessageField(TestResourceParameters, 6)
 
 
 @Converter(ndb_models.TestResourceDef, TestResourceDef)
@@ -247,15 +264,19 @@ def _TestResourceDefConverter(obj):
   return TestResourceDef(
       name=obj.name, default_download_url=obj.default_download_url,
       test_resource_type=obj.test_resource_type, decompress=obj.decompress,
-      decompress_dir=obj.decompress_dir)
+      decompress_dir=obj.decompress_dir,
+      params=Convert(obj.params, TestResourceParameters))
 
 
 @Converter(TestResourceDef, ndb_models.TestResourceDef)
 def _TestResourceDefMessageConverter(msg):
   return ndb_models.TestResourceDef(
-      name=msg.name, default_download_url=msg.default_download_url,
-      test_resource_type=msg.test_resource_type, decompress=msg.decompress,
-      decompress_dir=msg.decompress_dir)
+      name=msg.name,
+      default_download_url=msg.default_download_url,
+      test_resource_type=msg.test_resource_type,
+      decompress=msg.decompress,
+      decompress_dir=msg.decompress_dir,
+      params=Convert(msg.params, ndb_models.TestResourceParameters))
 
 
 class TestRunParameter(messages.Message):
@@ -740,6 +761,7 @@ class TestResourceObj(messages.Message):
   test_resource_type = messages.EnumField(ndb_models.TestResourceType, 4)
   decompress = messages.BooleanField(5)
   decompress_dir = messages.StringField(6)
+  params = messages.MessageField(TestResourceParameters, 7)
 
 
 @Converter(ndb_models.TestResourceObj, TestResourceObj)
@@ -747,7 +769,8 @@ def _TestResourceObjConverter(obj):
   return TestResourceObj(
       name=obj.name, url=obj.url, cache_url=obj.cache_url,
       test_resource_type=obj.test_resource_type, decompress=obj.decompress,
-      decompress_dir=obj.decompress_dir)
+      decompress_dir=obj.decompress_dir,
+      params=Convert(obj.params, TestResourceParameters))
 
 
 @Converter(TestResourceObj, ndb_models.TestResourceObj)
@@ -758,7 +781,8 @@ def _TestResourceObjMessageConverter(msg):
       cache_url=msg.cache_url,
       test_resource_type=msg.test_resource_type,
       decompress=msg.decompress,
-      decompress_dir=msg.decompress_dir)
+      decompress_dir=msg.decompress_dir,
+      params=Convert(msg.params, ndb_models.TestResourceParameters))
 
 
 class TestRunConfig(messages.Message):

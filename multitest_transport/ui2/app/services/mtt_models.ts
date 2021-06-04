@@ -542,15 +542,13 @@ export declare interface TestResourcePipe {
   test_resource_type: TestResourceType;
 }
 
-/**
- * A test resource definition.
- *
- *  name: a test resource name. (e.g. bootloader.img)
- *  default_download_url: a default download URL.
- *  test_resource_type: a test resource type. (e.g. DEVICE_IMAGE)
- *  decompress: whether the host should decompress the downloaded file.
- *  decompress_dir: the directory where the host decompresses the file.
- */
+/** Repeated properties of TestResourceObj and TestResourceDef. */
+export declare interface TestResourceParameters {
+  /* the files to be decompressed from the downloaded file */
+  decompress_files?: string[];
+}
+
+/** A test resource definition. */
 export declare interface TestResourceDef {
   /** a test resource name. (e.g. bootloader.img) */
   name: string;
@@ -562,6 +560,8 @@ export declare interface TestResourceDef {
   decompress?: boolean;
   /** the directory where the host decompresses the file */
   decompress_dir?: string;
+  /** test resource parameters. */
+  params?: TestResourceParameters;
 }
 
 /**
@@ -582,6 +582,8 @@ export declare interface TestResourceObj {
   decompress?: boolean;
   /** the directory where the host decompresses the file. */
   decompress_dir?: string;
+  /** test resource parameters. */
+  params?: TestResourceParameters;
 }
 
 /**
@@ -594,6 +596,10 @@ export function testResourceDefToObj(testResourceDef: TestResourceDef):
     url: testResourceDef.default_download_url,
     test_resource_type: testResourceDef.test_resource_type,
     decompress: testResourceDef.decompress,
+    decompress_dir: testResourceDef.decompress_dir,
+    params: testResourceDef.params?.decompress_files ?
+        {decompress_files: [...testResourceDef.params.decompress_files]} :
+        undefined
   };
 }
 

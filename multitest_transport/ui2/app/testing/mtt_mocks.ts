@@ -297,9 +297,10 @@ export function newMockTestPlan(id = TEST_PLAN_ID, name = TEST_PLAN_NAME) {
 export function newMockTestResourceDefs(): mttModels.TestResourceDef[] {
   return [
     newMockTestResourceDef(
-        'name1', 'url1', mttModels.TestResourceType.DEVICE_IMAGE, false, ''),
+        'name1', 'url1', mttModels.TestResourceType.DEVICE_IMAGE),
     newMockTestResourceDef(
-        'name2', 'url2', mttModels.TestResourceType.UNKNOWN, true, 'dir2'),
+        'name2', 'url2', mttModels.TestResourceType.UNKNOWN, true, 'dir2',
+        ['file2']),
   ];
 }
 
@@ -307,14 +308,16 @@ export function newMockTestResourceDefs(): mttModels.TestResourceDef[] {
 export function newMockTestResourceDef(
     name = TEST_RESOURCE_DEF_NAME,
     defaultDownloadUrl = TEST_RESOURCE_DEF_DEFAULT_DOWNLOAD_URL,
-    testResourceType: mttModels.TestResourceType, decompress = false,
-    decompressDir = ''): mttModels.TestResourceDef {
+    testResourceType: mttModels.TestResourceType, decompress?: boolean,
+    decompressDir?: string,
+    decompressFiles?: string[]): mttModels.TestResourceDef {
   return {
     name,
     default_download_url: defaultDownloadUrl,
     test_resource_type: testResourceType,
     decompress,
     decompress_dir: decompressDir,
+    params: {decompress_files: decompressFiles},
   };
 }
 

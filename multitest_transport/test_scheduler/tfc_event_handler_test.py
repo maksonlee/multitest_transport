@@ -206,7 +206,10 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
         test_resources=[
             api_messages.TestResource(
                 url='url', name='name', path='path', decompress=True,
-                decompress_dir='dir')
+                decompress_dir='dir',
+                params=api_messages.TestResourceParameters(
+                    decompress_files=['file'])),
+            api_messages.TestResource(url='url2', name='name2', path='path2')
         ])
     mock_get_test_context.return_value = mock_test_context
     expected_test_context = ndb_models.TestContextObj(
@@ -214,7 +217,10 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
         env_vars=[ndb_models.NameValuePair(name='key', value='value')],
         test_resources=[
             ndb_models.TestResourceObj(
-                url='url', name='name', decompress=True, decompress_dir='dir')
+                url='url', name='name', decompress=True, decompress_dir='dir',
+                params=ndb_models.TestResourceParameters(
+                    decompress_files=['file'])),
+            ndb_models.TestResourceObj(url='url2', name='name2')
         ])
 
     tfc_event_handler._AfterTestRunHandler(self.mock_test_run)

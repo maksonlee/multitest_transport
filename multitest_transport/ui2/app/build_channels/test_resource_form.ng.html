@@ -45,21 +45,6 @@
       </ng-template>
     </mat-form-field>
 
-    <div fxLayout="row" *ngIf="isDef(testResource)" fxFlex>
-      <!-- Decompress Field -->
-      <mat-checkbox class="align-with-form-field" [(ngModel)]="testResource.decompress"
-                    fxFlex="nogrow">
-        Decompress
-      </mat-checkbox>
-
-      <!-- Decompress Dir Field -->
-      <mat-form-field class="small" appearance="outline" floatLabel="always" fxFlex>
-        <mat-label> Destination </mat-label>
-        <input matInput type="text" [(ngModel)]="testResource.decompress_dir"
-               [disabled]="!testResource.decompress" name="decompress_dir">
-      </mat-form-field>
-    </div>
-
     <!-- Download Url Field -->
     <mat-form-field appearance="outline" floatLabel="always" fxFlex
                     (click)="openBuildPicker(testResource)"
@@ -79,6 +64,31 @@
           Download url is required
       </mat-error>
     </mat-form-field>
+
+    <div fxLayout="row" *ngIf="isDef(testResource)" fxFlex>
+      <!-- Decompress Field -->
+      <mat-checkbox class="align-with-form-field" [(ngModel)]="testResource.decompress"
+                    fxFlex="nogrow">
+        Decompress
+      </mat-checkbox>
+
+      <!-- Decompress Dir Field -->
+      <mat-form-field class="small" appearance="outline" floatLabel="always" fxFlex>
+        <mat-label> Destination </mat-label>
+        <input matInput type="text" [(ngModel)]="testResource.decompress_dir"
+               [disabled]="!testResource.decompress" name="decompress_dir">
+      </mat-form-field>
+
+      <!-- Decompress Files Field -->
+      <mat-form-field class="small" appearance="outline" floatLabel="always" fxFlex>
+        <mat-label> File Names </mat-label>
+        <textarea matInput type="text" cdkTextareaAutosize
+                  [ngModel]="arrayToString(testResource.params?.decompress_files, '\n')"
+                  (ngModelChange)="onDecompressFileNameChange($event, testResource)"
+                  [disabled]="!testResource.decompress" name="decompress_files">
+        </textarea>
+      </mat-form-field>
+    </div>
   </div>
 
   <!-- Delete Button -->

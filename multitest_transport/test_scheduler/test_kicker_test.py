@@ -225,10 +225,11 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertModelSetEqual([
         ndb_models.TestResourceObj(
             name='bar', url='default_download_url', decompress=True,
-            decompress_dir='dir'),
+            decompress_dir='dir', params=ndb_models.TestResourceParameters()),
         ndb_models.TestResourceObj(
             name='foo', url='origin_url', cache_url='cache_url',
-            decompress=False, decompress_dir=''),
+            decompress=False, decompress_dir='',
+            params=ndb_models.TestResourceParameters()),
     ], test_run.test_resources)
     self.assertEqual(ndb_models.TestRunState.PENDING, test_run.state)
     tasks = self.mock_task_scheduler.GetTasks(
@@ -279,13 +280,14 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertModelSetEqual([
         ndb_models.TestResourceObj(
             name='abc', url='default_download_url', decompress=False,
-            decompress_dir=''),
+            decompress_dir='', params=ndb_models.TestResourceParameters()),
         ndb_models.TestResourceObj(
             name='def', url='default_download_url2', decompress=False,
-            decompress_dir=''),
+            decompress_dir='', params=ndb_models.TestResourceParameters()),
         ndb_models.TestResourceObj(
             name='xyz', url='origin_url', cache_url='cache_url',
-            decompress=False, decompress_dir=''),
+            decompress=False, decompress_dir='',
+            params=ndb_models.TestResourceParameters()),
     ], test_run.test_resources)
     self.assertEqual(ndb_models.TestRunState.PENDING, test_run.state)
     tasks = self.mock_task_scheduler.GetTasks(
@@ -351,6 +353,79 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertModelEqual(sequence.test_run_configs[0], config1)
     self.assertModelEqual(sequence.test_run_configs[1], config2)
     self.assertModelEqual(sequence.test_run_configs[2], config3)
+
+  def testConvertToTestResourceMap_unionDecompressFiles(self):
+    test_resource_defs = [
+        ndb_models.TestResourceDef(
+            name='foo',
+            decompress=True,
+            decompress_dir='dir',
+            params=ndb_models.TestResourceParameters(
+                decompress_files=['a', 'b'])),
+        ndb_models.TestResourceDef(
+            name='foo',
+            decompress=True,
+            decompress_dir='dir',
+            params=ndb_models.TestResourceParameters(
+                decompress_files=['', 'b', 'c'])),
+        ndb_models.TestResourceDef(name='bar', decompress=True),
+        ndb_models.TestResourceDef(
+            name='bar', decompress=True,
+            params=ndb_models.TestResourceParameters(
+                decompress_files=['bar'])),
+    ]
+    objs = test_kicker._ConvertToTestResourceMap(test_resource_defs)
+    self.assertDictEqual(
+        objs, {
+            'foo':
+                ndb_models.TestResourceObj(
+                    name='foo',
+                    decompress=True,
+                    decompress_dir='dir',
+                    params=ndb_models.TestResourceParameters(
+                        decompress_files=['a', 'b', 'c'])),
+            'bar':
+                ndb_models.TestResourceObj(
+                    name='bar',
+                    decompress=True,
+                    decompress_dir='',
+                    params=ndb_models.TestResourceParameters(
+                        decompress_files=[])),
+        })
+
+    # Assert that the input objects are unchanged.
+    self.assertEqual(test_resource_defs[0].params.decompress_files, ['a', 'b'])
+    self.assertEqual(test_resource_defs[1].params.decompress_files,
+                     ['', 'b', 'c'])
+    self.assertIsNone(test_resource_defs[2].params)
+    self.assertEqual(test_resource_defs[3].params.decompress_files, ['bar'])
+
+  def testConvertToTestResourceMap_invalidArguments(self):
+    # Test test_resource_type field.
+    with self.assertRaises(ValueError):
+      test_kicker._ConvertToTestResourceMap([
+          ndb_models.TestResourceDef(
+              name='bar',
+              test_resource_type=ndb_models.TestResourceType.UNKNOWN),
+          ndb_models.TestResourceDef(
+              name='bar',
+              test_resource_type=ndb_models.TestResourceType.DEVICE_IMAGE),
+      ])
+
+    # Test decompress field.
+    with self.assertRaises(ValueError):
+      test_kicker._ConvertToTestResourceMap([
+          ndb_models.TestResourceDef(name='bar', decompress=True),
+          ndb_models.TestResourceDef(name='bar', decompress=False),
+      ])
+
+    # Test decompress_dir field.
+    with self.assertRaises(ValueError):
+      test_kicker._ConvertToTestResourceMap([
+          ndb_models.TestResourceDef(name='bar', decompress=True),
+          ndb_models.TestResourceDef(
+              name='bar', decompress=True, decompress_dir='dir'),
+      ])
 
   def testGetRerunInfo_empty(self):
     # no rerun info without context

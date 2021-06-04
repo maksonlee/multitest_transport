@@ -16,13 +16,13 @@
 
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
-import {of, Observable} from 'rxjs';
+import {Observable, of} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
 import {BuildChannel, BuildItem, TestResourceDef, TestResourceObj, TestResourceType} from '../services/mtt_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
-import {assertRequiredInput} from '../shared/util';
+import {arrayToString, assertRequiredInput} from '../shared/util';
 
 import {BuildPicker, BuildPickerData, BuildPickerMode} from './build_picker';
 
@@ -57,6 +57,7 @@ export class TestResourceForm extends FormChangeTracker implements OnInit {
   // true
   hasContentChanged = false;
   buildItemByUrl: { [url: string]: Observable<BuildItem|null> } = {};
+  arrayToString = arrayToString;
 
   ngOnInit() {
     assertRequiredInput(this.data, 'data', 'test-resource-form');
@@ -71,6 +72,13 @@ export class TestResourceForm extends FormChangeTracker implements OnInit {
       private readonly mttClient: MttClient,
       private readonly dialog: MatDialog) {
     super();
+  }
+
+  onDecompressFileNameChange(value: string, testResource: TestResourceDef) {
+    if (!testResource.params) {
+      testResource.params = {};
+    }
+    testResource.params.decompress_files = value ? value.split('\n') : [];
   }
 
   openBuildPicker(testResource: TestResourceObj|TestResourceDef) {

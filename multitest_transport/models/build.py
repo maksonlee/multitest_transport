@@ -420,7 +420,8 @@ def FindTestResources(test_resource_objs):
         url=url,
         test_resource_type=obj.test_resource_type,
         decompress=obj.decompress,
-        decompress_dir=obj.decompress_dir)
+        decompress_dir=obj.decompress_dir,
+        params=ndb_models.TestResourceParameters.Clone(obj.params))
   parsed_objs = sorted(test_resource_map.values(), key=lambda x: x.name)
   for r in parsed_objs:
     logging.info('\t%s: %s', r.name, r.cache_url)
