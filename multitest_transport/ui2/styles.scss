@@ -367,8 +367,6 @@ mat-spinner.loading-spinner {
 }
 
 .mat-mdc-row {
-  height: 49px; // Add 1 for border
-
   &:hover {
     background: $primary-light;
   }
