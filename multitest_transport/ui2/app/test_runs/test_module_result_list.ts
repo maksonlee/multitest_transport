@@ -51,6 +51,9 @@ export class TestModuleResultList implements OnInit {
   isModulesLoading = false;
   showOldView = false;
 
+  displayColumns =
+      ['expand', 'name', 'counts', 'failure_message', 'stack_trace'];
+
   constructor(
       private readonly notifier: Notifier,
       private readonly mttClient: MttClient,

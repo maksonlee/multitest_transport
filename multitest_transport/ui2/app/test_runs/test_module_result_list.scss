@@ -20,15 +20,6 @@ table {
   width: 100%;
 }
 
-th.mat-mdc-header-cell {
-  border: 0;
-  padding: 20px 0;
-}
-
-th.mat-mdc-header-cell:first-of-type {
-  padding-left: 42px;
-}
-
 .count-text-padding {
   padding-top: 10px;
 }
@@ -59,8 +50,9 @@ th.mat-mdc-header-cell:first-of-type {
   padding-left: 16px;
 }
 
-.mat-mdc-header-row {
-  background-color: $primary-less;
+.mat-mdc-header-cell {
+  border: 0;
+  padding: 20px 0;
 }
 
 .module-name {

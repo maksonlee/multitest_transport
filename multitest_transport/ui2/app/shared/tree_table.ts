@@ -47,11 +47,13 @@ export class TreeTable implements OnInit, OnChanges {
 
   treeControl = new NestedTreeControl<TreeNode>(node => node.children);
   dataSource = new MatTreeNestedDataSource<TreeNode>();
+  columnNames: string[] = [];
 
   ngOnInit() {
     assertRequiredInput(this.data, 'data', 'tree-table');
     assertRequiredInput(this.columns, 'columns', 'tree-table');
     this.update(this.data || []);
+    this.columnNames = this.columns.map(column => column.title);
   }
 
   ngOnChanges(changes: SimpleChanges) {

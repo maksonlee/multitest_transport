@@ -15,13 +15,15 @@
 -->
 
 <!-- Header row -->
-<table class="mat-table">
-  <thead class="mat-header-row">
-    <th class="mat-header-cell" *ngFor="let column of columns" [fxFlex]="column.flexWidth">
-      {{ column.title }}
-    </th>
-  </thead>
-</table>
+<mat-table [dataSource]="dataSource">
+  <ng-container *ngFor="let column of columns" [matColumnDef]="column.title">
+    <mat-header-cell *matHeaderCellDef class="mat-header-cell" [fxFlex]="column.flexWidth">
+      {{column.title}}
+    </mat-header-cell>
+  </ng-container>
+
+  <mat-header-row *matHeaderRowDef="columnNames"></mat-header-row>
+</mat-table>
 
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
 

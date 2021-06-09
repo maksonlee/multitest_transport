@@ -24,20 +24,16 @@ table {
   width: 100%;
 }
 
-th.mat-mdc-header-cell {
-  border: 0;
-  padding: 20px 0;
-}
-
-th.mat-mdc-header-cell:first-of-type {
-  padding-left: 44px;
-}
-
 .inline {
   display: inline-block;
   vertical-align: middle;
 }
 
-.mat-mdc-header-row {
-  background-color: $primary-less;
+.mat-mdc-header-cell {
+  border: 0;
+  padding: 20px 0;
+}
+
+.mat-mdc-header-cell:first-of-type {
+  padding-left: 44px;
 }
