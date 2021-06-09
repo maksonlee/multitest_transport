@@ -121,6 +121,24 @@ class TestResultApiTest(api_test_util.TestCase):
                             expect_errors=True)
     self.assertEqual('400 Bad Request', response.status)
 
+  @mock.patch.object(test_result_api.TestResultApi,
+                     '_GetLegacyTestModuleResults')
+  @mock.patch.object(tfc_client, 'GetRequest')
+  def testListTestModuleResults_noCompletedAttempts(self, mock_request,
+                                                    mock_legacy_results):
+    """Tests that legacy results are returned if no completed attempts found."""
+    ndb_models.TestRun(id='test_run_id', request_id='request_id').put()
+    mock_request.return_value = mock.MagicMock(command_attempts=[])
+    mock_result_list = messages.TestModuleResultList(extra_info='Mock results')
+    mock_legacy_results.return_value = mock_result_list
+
+    path = 'modules?test_run_id=test_run_id'
+    response = self.app.get('/_ah/api/mtt/v1/test_results/' + path)
+    self.assertEqual('200 OK', response.status)
+    result_list = protojson.decode_message(messages.TestModuleResultList,
+                                           response.body)
+    self.assertEqual(result_list, mock_result_list)
+
   @mock.patch.object(tfc_client, 'GetRequestInvocationStatus')
   @mock.patch.object(tfc_client, 'GetRequest')
   def testListTestModuleResults_legacy(self, mock_request,

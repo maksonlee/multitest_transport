@@ -68,8 +68,8 @@ class TestResultApi(remote.Service):
 
     latest_attempt = tfc_client.GetLatestFinishedAttempt(test_run.request_id)
     if not latest_attempt:
-      return mtt_messages.TestModuleResultList(
-          extra_info='Test run %s has no completed attempts' % test_run_id)
+      # No completed attempts, try fetching legacy results instead.
+      return self._GetLegacyTestModuleResults(test_run.request_id)
 
     result_list = self._GetTestModuleResults(latest_attempt.attempt_id)
     if not result_list.results:
