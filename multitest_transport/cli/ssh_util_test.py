@@ -30,7 +30,9 @@ class SshUtilTest(absltest.TestCase):
     self.mock_subprocess_pkg.Popen.assert_called_once_with(
         ['ssh', '-o', 'User=auser', 'ahost',
          '/bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
-        stdin=self.mock_subprocess_pkg.DEVNULL)
+        stdin=self.mock_subprocess_pkg.DEVNULL,
+        stdout=self.mock_subprocess_pkg.PIPE,
+        stderr=self.mock_subprocess_pkg.PIPE)
     self.assertEqual(0, res.return_code)
 
   def testRun_withSshArgs(self):
@@ -46,7 +48,9 @@ class SshUtilTest(absltest.TestCase):
          '-o', 'UserKnownHostsFile=/dev/null',
          '-o', 'User=auser', 'ahost',
          '/bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
-        stdin=self.mock_subprocess_pkg.DEVNULL)
+        stdin=self.mock_subprocess_pkg.DEVNULL,
+        stdout=self.mock_subprocess_pkg.PIPE,
+        stderr=self.mock_subprocess_pkg.PIPE)
     self.assertEqual(0, res.return_code)
 
   def testRun_withSshArgs_notTokenized(self):
@@ -63,7 +67,9 @@ class SshUtilTest(absltest.TestCase):
          '-o', 'UserKnownHostsFile=/dev/null',
          '-o', 'User=auser', 'ahost',
          '/bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
-        stdin=self.mock_subprocess_pkg.DEVNULL)
+        stdin=self.mock_subprocess_pkg.DEVNULL,
+        stdout=self.mock_subprocess_pkg.PIPE,
+        stderr=self.mock_subprocess_pkg.PIPE)
     self.assertEqual(0, res.return_code)
 
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
@@ -78,7 +84,9 @@ class SshUtilTest(absltest.TestCase):
     self.mock_subprocess_pkg.Popen.assert_called_once_with(
         ['sshpass', '-f/atmpfile', 'ssh', '-o', 'User=auser', 'ahost',
          '/bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
-        stdin=self.mock_subprocess_pkg.DEVNULL)
+        stdin=self.mock_subprocess_pkg.DEVNULL,
+        stdout=self.mock_subprocess_pkg.PIPE,
+        stderr=self.mock_subprocess_pkg.PIPE)
     self.assertEqual(0, res.return_code)
     mock_file.assert_has_calls([
         mock.call.write('apass'.encode()),
@@ -93,7 +101,9 @@ class SshUtilTest(absltest.TestCase):
     self.mock_subprocess_pkg.Popen.assert_called_once_with(
         ['ssh', '-o', 'User=auser', 'ahost',
          'sudo /bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
-        stdin=self.mock_subprocess_pkg.DEVNULL)
+        stdin=self.mock_subprocess_pkg.DEVNULL,
+        stdout=self.mock_subprocess_pkg.PIPE,
+        stderr=self.mock_subprocess_pkg.PIPE)
     self.assertEqual(0, res.return_code)
 
   def testSudo_withSshArgs(self):
@@ -109,7 +119,9 @@ class SshUtilTest(absltest.TestCase):
          '-o', 'UserKnownHostsFile=/dev/null',
          '-o', 'User=auser', 'ahost',
          'sudo /bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
-        stdin=self.mock_subprocess_pkg.DEVNULL)
+        stdin=self.mock_subprocess_pkg.DEVNULL,
+        stdout=self.mock_subprocess_pkg.PIPE,
+        stderr=self.mock_subprocess_pkg.PIPE)
     self.assertEqual(0, res.return_code)
 
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
@@ -124,7 +136,9 @@ class SshUtilTest(absltest.TestCase):
     self.mock_subprocess_pkg.Popen.assert_called_once_with(
         ['sshpass', '-f/atmpfile', 'ssh', '-o', 'User=auser', 'ahost',
          'sudo /bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
-        stdin=self.mock_subprocess_pkg.DEVNULL)
+        stdin=self.mock_subprocess_pkg.DEVNULL,
+        stdout=self.mock_subprocess_pkg.PIPE,
+        stderr=self.mock_subprocess_pkg.PIPE)
     self.assertEqual(0, res.return_code)
     mock_file.assert_has_calls([
         mock.call.write('apass'.encode()),

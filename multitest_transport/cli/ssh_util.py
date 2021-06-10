@@ -135,7 +135,11 @@ class Context(object):
         password_file, sshpass_cmds = _ssh_with_password(password)
         ssh_cmds = sshpass_cmds + ssh_cmds
       logger.debug('Run: %r', ssh_cmds)
-      p = subprocess.Popen(ssh_cmds, stdin=subprocess.DEVNULL)
+      p = subprocess.Popen(
+          ssh_cmds,
+          stdin=subprocess.DEVNULL,
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE)
       outs, errs = p.communicate()
       return common.CommandResult(p.returncode, outs, errs)
     finally:
