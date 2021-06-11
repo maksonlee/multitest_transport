@@ -78,23 +78,37 @@ EOF
 docker pull gcr.io/android-mtt/pex:latest
 docker build -t docker_pex . --cache-from gcr.io/android-mtt/pex:latest > /dev/null
 
-docker run --rm --mount type=bind,source="$CLI_DIR",target=/workspace docker_pex sh -c \
-  '/protoc/bin/protoc --python_out=/workspace/src/tradefed_cluster/configs/ \
-    --proto_path /workspace/src/tradefed_cluster/configs/ \
-    /workspace/src/tradefed_cluster/configs/lab_config.proto && \
-  cd /workspace && \
-  pex --python="python3.9" --python="python3.8" --python="python3.7" --python="python3.6" \
-    --python-shebang="/usr/bin/env python3" \
-    -D src -r requirements.txt \
-    -m multitest_transport.cli.cli \
-    -o mtt && \
-  cd src/ && zip -r /workspace/mtt.zip * && cd .. &&
-  cp mtt src/mtt_binary && \
-  pex --python="python3.9" --python="python3.8" --python="python3.7" --python="python3.6" \
-    --python-sheban="/usr/bin/env python3" \
-    -D src -r requirements.txt \
-    -m multitest_transport.cli.lab_cli \
-    -o mtt_lab'
+cat << EOF > inside_docker_build.sh
+# Build python file from proto
+/protoc/bin/protoc --python_out=/workspace/src/tradefed_cluster/configs/ \
+  --proto_path /workspace/src/tradefed_cluster/configs/ \
+  /workspace/src/tradefed_cluster/configs/lab_config.proto
+
+cd /workspace
+# Build mtt pex package.
+pex --python="python3.9" --python="python3.8" --python="python3.7" --python="python3.6" \
+  --python-shebang="/usr/bin/env python3" \
+  -D src -r requirements.txt \
+  -m multitest_transport.cli.cli \
+  -o mtt
+# Build zip file include all mtt source.
+cd src/
+zip -r /workspace/mtt.zip *
+# Build wheel
+python setup.py sdist -d "/workspace" bdist_wheel -d "/workspace"
+cd ..
+
+# Build mtt_lab pex package.
+cp mtt src/mtt_binary
+pex --python="python3.9" --python="python3.8" --python="python3.7" --python="python3.6" \
+  --python-sheban="/usr/bin/env python3" \
+  -D src -r requirements.txt \
+  -m multitest_transport.cli.lab_cli \
+  -o mtt_lab
+EOF
+chmod +x inside_docker_build.sh
+
+docker run --rm --mount type=bind,source="$CLI_DIR",target=/workspace docker_pex sh -c /workspace/inside_docker_build.sh
 cd -
 
 popd
