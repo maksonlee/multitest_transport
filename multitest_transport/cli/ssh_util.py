@@ -141,6 +141,7 @@ class Context(object):
           stdout=subprocess.PIPE,
           stderr=subprocess.PIPE)
       outs, errs = p.communicate()
+      logger.debug('stdout: %s\nstderr: %s\n', outs, errs)
       return common.CommandResult(p.returncode, outs, errs)
     finally:
       if password_file:
@@ -175,8 +176,13 @@ class Context(object):
         password_file, sshpass_cmds = _ssh_with_password(password)
         rsync_cmds = sshpass_cmds + rsync_cmds
       logger.debug('Run: %r', rsync_cmds)
-      p = subprocess.Popen(rsync_cmds)
-      p.communicate()
+      p = subprocess.Popen(
+          rsync_cmds,
+          stdin=subprocess.DEVNULL,
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE)
+      outs, errs = p.communicate()
+      logger.debug('stdout: %s\nstderr: %s\n', outs, errs)
     finally:
       if password_file:
         # close will also delete the file.

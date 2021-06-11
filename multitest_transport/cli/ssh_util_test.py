@@ -151,7 +151,10 @@ class SshUtilTest(absltest.TestCase):
     c = ssh_util.Context(ssh_util.SshConfig(user='auser', hostname='ahost'))
     c.put('/path/to/local/file', '/path/to/remote/file')
     self.mock_subprocess_pkg.Popen.assert_called_once_with(
-        ['rsync', '/path/to/local/file', 'auser@ahost:/path/to/remote/file'])
+        ['rsync', '/path/to/local/file', 'auser@ahost:/path/to/remote/file'],
+        stdin=self.mock_subprocess_pkg.DEVNULL,
+        stdout=self.mock_subprocess_pkg.PIPE,
+        stderr=self.mock_subprocess_pkg.PIPE)
     self.assertTrue(self.mock_process.communicate.called)
 
   def testPut_withSshArgs(self):
@@ -164,7 +167,10 @@ class SshUtilTest(absltest.TestCase):
     self.mock_subprocess_pkg.Popen.assert_called_once_with(
         ['rsync', '-e',
          'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null',
-         '/path/to/local/file', 'auser@ahost:/path/to/remote/file'])
+         '/path/to/local/file', 'auser@ahost:/path/to/remote/file'],
+        stdin=self.mock_subprocess_pkg.DEVNULL,
+        stdout=self.mock_subprocess_pkg.PIPE,
+        stderr=self.mock_subprocess_pkg.PIPE)
     self.assertTrue(self.mock_process.communicate.called)
 
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
@@ -178,7 +184,10 @@ class SshUtilTest(absltest.TestCase):
     c.put('/path/to/local/file', '/path/to/remote/file')
     self.mock_subprocess_pkg.Popen.assert_called_once_with(
         ['sshpass', '-f/atmpfile', 'rsync', '/path/to/local/file',
-         'auser@ahost:/path/to/remote/file'])
+         'auser@ahost:/path/to/remote/file'],
+        stdin=self.mock_subprocess_pkg.DEVNULL,
+        stdout=self.mock_subprocess_pkg.PIPE,
+        stderr=self.mock_subprocess_pkg.PIPE)
     self.assertTrue(self.mock_process.communicate.called)
     mock_file.assert_has_calls([
         mock.call.write('apass'.encode()),
