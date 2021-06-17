@@ -386,5 +386,6 @@ class TestRunApi(remote.Service):
           mtt_messages.TestRunMetadataList, zf.read(metadata_file))
       # TODO: last command attempt is missing
       return metadata_list.test_runs
-    except Exception:        logging.exception('Failed to read remote metadata')
+    except Exception:
+      logging.exception('Failed to read remote metadata')
       return []

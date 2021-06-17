@@ -197,7 +197,8 @@ class TestResourceDownloader(object):
       logging.info('Downloading %s completed', self.url)
       # Mark download as completed
       self._UpdateTracker(1.0, completed=True)
-    except Exception as e:        logging.error('Failed to download %s: %s', self.url, e)
+    except Exception as e:
+      logging.error('Failed to download %s: %s', self.url, e)
       self._UpdateTracker(0.0, error=str(e))
       raise
 
