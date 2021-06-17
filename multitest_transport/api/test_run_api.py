@@ -235,9 +235,10 @@ class TestRunApi(remote.Service):
           'Cannot delete non-final test run %s' % test_run_id)
 
     # Remove output files
-    output_folder_url = file_util.GetAppStorageUrl([test_run.output_path])
-    output_folder = file_util.FileHandle.Get(output_folder_url)
-    output_folder.DeleteDir()
+    if test_run.output_path is not None:
+      output_folder_url = file_util.GetAppStorageUrl([test_run.output_path])
+      output_folder = file_util.FileHandle.Get(output_folder_url)
+      output_folder.DeleteDir()
 
     # Delete test results database
     with sql_models.db.Session() as session:
