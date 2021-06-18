@@ -30,7 +30,7 @@ import {MatListModule} from '@angular/material/list';
 import {MatProgressBarModule} from '@angular/material/mdc-progress-bar';
 import {MatSnackBarModule} from '@angular/material/mdc-snack-bar';
 import {MatSelectModule} from '@angular/material/select';
-import {MatTooltipModule} from '@angular/material/tooltip';
+import {MatTooltipModule} from '@angular/material/mdc-tooltip';
 
 import {AoaActionEditor} from './action_editor';
 import {TouchScreen} from './touch_screen';

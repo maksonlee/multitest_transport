@@ -48,6 +48,7 @@ $theme: map_merge(
 );
 
 @include angular-material-theme($theme);
+@include mat-mdc-tooltip-theme($theme);
 @include mat-mdc-button-theme($theme);
 @include mat-mdc-button-typography($typography);
 @include mat-mdc-snack-bar-theme($theme);

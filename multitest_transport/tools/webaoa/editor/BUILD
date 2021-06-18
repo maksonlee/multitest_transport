@@ -43,9 +43,9 @@ ng_module(
         third_party_js("angular2:material_list"),
         third_party_js("angular2:material_mdc_progress_bar"),
         third_party_js("angular2:material_mdc_snack_bar"),
+        third_party_js("angular2:material_mdc_tooltip"),
         third_party_js("angular2:material_progress_bar"),
         third_party_js("angular2:material_select"),
-        third_party_js("angular2:material_tooltip"),
         third_party_js("rxjs"),
     ],
 )

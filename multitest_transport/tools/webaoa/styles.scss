@@ -22,6 +22,7 @@
 @import 'third_party/javascript/angular2_material/src/lib/mdc-progress-bar/progress-bar-theme';
 @import 'third_party/javascript/angular2_material/src/lib/mdc-snack-bar/snack-bar-theme';
 @import 'third_party/javascript/angular2_material/src/lib/mdc-table/table-theme';
+@import 'third_party/javascript/angular2_material/src/lib/mdc-tooltip/tooltip-theme';
 
 // Core material styles
 @include mat-core();
@@ -38,6 +39,7 @@ $theme: mat-light-theme(
   )
 );
 @include angular-material-theme($theme);
+@include mat-mdc-tooltip-theme($theme);
 @include mat-mdc-button-theme($theme);
 @include mat-mdc-snack-bar-theme($theme);
 @include mat-mdc-table-theme($theme);

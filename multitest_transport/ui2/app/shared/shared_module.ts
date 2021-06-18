@@ -46,7 +46,7 @@ import {MatSortModule} from '@angular/material/sort';
 import {MatStepperModule} from '@angular/material/stepper';
 import {MatTabsModule} from '@angular/material/tabs';
 import {MatToolbarModule} from '@angular/material/toolbar';
-import {MatTooltipModule} from '@angular/material/tooltip';
+import {MatTooltipModule} from '@angular/material/mdc-tooltip';
 import {MatTreeModule} from '@angular/material/tree';
 
 import {ErrorDialog} from '../services/error_dialog';

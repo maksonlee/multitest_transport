@@ -34,6 +34,7 @@ ng_module(
     assets = [
         ":app_style",
         "app.ng.html",
+        "index.html",
     ],
     deps = [
         "//multitest_transport/tools/webaoa/device",
@@ -41,8 +42,8 @@ ng_module(
         third_party_js("angular2:core"),
         third_party_js("angular2:material_button"),
         third_party_js("angular2:material_icon"),
+        third_party_js("angular2:material_mdc_tooltip"),
         third_party_js("angular2:material_toolbar"),
-        third_party_js("angular2:material_tooltip"),
         third_party_js("angular2:platform_browser"),
         third_party_js("angular2:platform_browser_animations"),
     ],
@@ -68,6 +69,7 @@ ts_development_sources(
     name = "dev_sources",
     deps = [
         ":app_lib",
+        ":app_ng",
     ],
 )
 
@@ -76,6 +78,7 @@ ts_config(
     name = "tsconfig",
     deps = [
         ":app_lib",
+        ":app_ng",
         ":app_tests",
         "//multitest_transport/tools/webaoa/device:tests",
         "//multitest_transport/tools/webaoa/editor:tests",
