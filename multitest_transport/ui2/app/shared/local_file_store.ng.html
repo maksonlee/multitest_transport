@@ -73,7 +73,7 @@
         Size
       </mat-header-cell>
       <mat-cell *matCellDef="let file" [fxFlex]="10">
-        {{ file.type !== FileType.DIRECTORY ? file.size : "" }}
+        {{ file.type !== FileType.DIRECTORY ? getHumanFileSize(file.size) : "" }}
       </mat-cell>
     </ng-container>
 

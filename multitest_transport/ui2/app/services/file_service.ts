@@ -282,3 +282,15 @@ export function readBlobAsText(blob: Blob): Promise<string> {
     reader.readAsText(blob);
   });
 }
+
+/** Convert file size in bytes to human readble string. */
+export function humanFileSize(size: number): string {
+  const thresh = 1000;
+  const units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB'];
+  if (size === 0) {
+    return '0 B';
+  }
+  const i = Math.floor(Math.log(size) / Math.log(thresh));
+  const value = Number((size / Math.pow(thresh, i)).toFixed(1));
+  return `${value} ${units[i]}`;
+}

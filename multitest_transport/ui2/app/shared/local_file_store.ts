@@ -20,7 +20,7 @@ import {MatTable} from '@angular/material/mdc-table';
 import {ReplaySubject, Subject} from 'rxjs';
 import {filter, finalize, mergeMap, takeUntil} from 'rxjs/operators';
 
-import {FileNode, FileService, FileType, getDirectoryPath, joinPath} from '../services/file_service';
+import {FileNode, FileService, FileType, getDirectoryPath, humanFileSize, joinPath} from '../services/file_service';
 import {Notifier} from '../services/notifier';
 
 import {buildApiErrorMessage, noAwait} from './util';
@@ -175,5 +175,10 @@ export class LocalFileStore implements OnInit, OnDestroy {
                   `Failed to delete file '${file.name}'.`,
                   buildApiErrorMessage(error));
             });
+  }
+
+  /** Get human readable file size. */
+  getHumanFileSize(size: number): string {
+    return humanFileSize(size);
   }
 }
