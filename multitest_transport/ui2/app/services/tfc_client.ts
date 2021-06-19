@@ -25,6 +25,9 @@ import * as mttLabModels from './mtt_lab_models';
 import * as tfcModels from './tfc_models';
 import {DeviceInfosResponse, InvocationStatus, Request} from './tfc_models';
 
+/** Device states to return when excluding offline devices. */
+export const ONLINE_DEVICE_STATES = ['Allocated', 'Available', 'Fastboot'];
+
 /** Client for TFC API access */
 @Injectable({
   providedIn: 'root',
@@ -54,7 +57,8 @@ export class TfcClient {
   }
 
   getDeviceInfos(): Observable<DeviceInfosResponse> {
-    const params = new HttpParams().set('include_offline_devices', 'false');
+    const params =
+        new HttpParams().appendAll({'device_states': ONLINE_DEVICE_STATES});
     return this.http.get<DeviceInfosResponse>(
         `${this.tfcApiUrl}/devices`, {params});
   }
@@ -148,8 +152,9 @@ export class TfcClient {
         searchCriteria.extraInfo.length === 1) {
       params = params.append('flated_extra_info', searchCriteria.extraInfo[0]);
     }
-    if (searchCriteria && searchCriteria.includeOfflineDevices === false) {
-      params = params.append('include_offline_devices', 'false');
+    if (searchCriteria && searchCriteria.includeOfflineDevices === false &&
+        (!searchCriteria.deviceStates || !searchCriteria.deviceStates.length)) {
+      params = params.appendAll({'device_states': ONLINE_DEVICE_STATES});
     }
     return this.http
         .get<mttLabModels.LabDeviceInfosResponse>(

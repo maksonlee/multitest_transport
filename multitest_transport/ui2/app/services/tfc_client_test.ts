@@ -23,7 +23,7 @@ import {newMockDeviceInfo, newMockHostUpdateStateSummary} from '../testing/mtt_l
 import {newMockCommand, newMockCommandAttempt, newMockInvocationStatus, newMockRequest} from '../testing/mtt_mocks';
 
 import {AnalyticsParams} from './analytics_service';
-import {TfcClient} from './tfc_client';
+import {ONLINE_DEVICE_STATES, TfcClient} from './tfc_client';
 import * as tfcModels from './tfc_models';
 import {DeviceInfosResponse} from './tfc_models';
 
@@ -48,16 +48,12 @@ describe('TfcClient', () => {
 
     it('calls API and parses response correctly', () => {
       const observable = tfcClient.getDeviceInfos();
+      const params = new HttpParams().appendAll({
+        'device_states': ONLINE_DEVICE_STATES,
+      });
       expect(httpClientSpy.get)
-          .toHaveBeenCalledWith(
-              `${tfcClient.tfcApiUrl}/devices`, jasmine.anything());
-      expect(httpClientSpy.get).toHaveBeenCalledWith(jasmine.anything(), {
-        params: new HttpParams().set('include_offline_devices', 'false')
-      });
+          .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/devices`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
-      expect(httpClientSpy.get).not.toHaveBeenCalledWith(jasmine.anything(), {
-        params: new HttpParams().set('wrong argument', 'false')
-      });
 
       observable.subscribe((response) => {
         expect(response).toEqual(DEVICES);
@@ -711,7 +707,6 @@ describe('TfcClient', () => {
     });
 
     it('calls API with includeOfflineDevices correctly', () => {
-      const includeOfflineDevices = false;
       const searchCriteria = {
         lab: '',
         hostnames: [],
@@ -722,18 +717,18 @@ describe('TfcClient', () => {
         runTargets: [],
         deviceSerial: [],
         extraInfo: [],
-        includeOfflineDevices,
+        includeOfflineDevices: false,
       };
       tfcClient.queryDeviceInfos(searchCriteria);
-      let params = new HttpParams({
+      const params = new HttpParams({
         fromObject: {
           'count': String(maxResults),
           'cursor': pageToken,
           'backwards': String(backwards),
         }
+      }).appendAll({
+        'device_states': ONLINE_DEVICE_STATES,
       });
-      params = params.append(
-          'include_offline_devices', String(includeOfflineDevices));
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/devices`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
