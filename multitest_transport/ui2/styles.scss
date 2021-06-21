@@ -15,6 +15,8 @@
  */
 
 // Angular Material styles
+@use 'sass:list';
+
 @import 'third_party/javascript/angular2_material/src/lib/core/theming/theming';
 @import 'third_party/javascript/angular2_material/src/lib/core/typography/all-typography';
 
@@ -107,7 +109,7 @@ mat-form-field.small {
 }
 
 mat-panel-title {
-  font: 400 #{$panel-title-font-size}/#{$panel-title-line-height};
+  font: 400 list.slash($panel-title-font-size, $panel-title-line-height);
 }
 
 mat-spinner.loading-spinner {
