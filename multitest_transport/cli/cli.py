@@ -332,7 +332,8 @@ def _StartMttNode(args, host):
     RuntimeError: if a MTT node fails to start.
   """
   host.control_server_client.SubmitHostUpdateStateChangedEvent(
-      host.config.hostname, host_util.HostUpdateState.RESTARTING)
+      host.config.hostname, host_util.HostUpdateState.RESTARTING,
+      target_image=host.config.docker_image)
   control_server_url = args.control_server_url or host.config.control_server_url
   operation_mode = lab_config_pb2.OperationMode.Value(args.operation_mode)
   if operation_mode == lab_config_pb2.OperationMode.UNKNOWN and host.config.operation_mode:
@@ -606,7 +607,8 @@ def _StopMttNode(args, host):
     host: an instance of host_util.Host.
   """
   host.control_server_client.SubmitHostUpdateStateChangedEvent(
-      host.config.hostname, host_util.HostUpdateState.SHUTTING_DOWN)
+      host.config.hostname, host_util.HostUpdateState.SHUTTING_DOWN,
+      target_image=host.config.docker_image)
   docker_context = command_util.DockerContext(host.context, login=False)
   docker_helper = command_util.DockerHelper(docker_context)
   # TODO: The kill logic should be more general and works for both
@@ -740,7 +742,9 @@ def _PullUpdate(args, host):
   if args.force_update:
     logger.info('force_update==True, updating.')
     return True
-  image_name = _GetDockerImageName(args.image_name or host.config.docker_image)
+  if args.image_name:
+    host.config = host.config.SetDockerImage(args.image_name)
+  image_name = _GetDockerImageName(host.config.docker_image)
   docker_server = args.docker_server or host.config.docker_server
   logger.debug('Using image %s.', image_name)
   docker_context = command_util.DockerContext(
@@ -776,7 +780,8 @@ def _PullUpdate(args, host):
                 args.name)
     return False
   host.control_server_client.SubmitHostUpdateStateChangedEvent(
-      host.config.hostname, host_util.HostUpdateState.SYNCING)
+      host.config.hostname, host_util.HostUpdateState.SYNCING,
+      target_image=host.config.docker_image)
   docker_helper.CleanupUnusedImages()
   logger.info(
       '%s != %s, should restart.',
@@ -820,10 +825,12 @@ def _UpdateMttNode(args, host):
   except Exception as e:      host.control_server_client.SubmitHostUpdateStateChangedEvent(
         host.config.hostname,
         host_util.HostUpdateState.ERRORED,
-        display_message=str(e))
+        display_message=str(e),
+        target_image=host.config.docker_image)
     raise e
   host.control_server_client.SubmitHostUpdateStateChangedEvent(
-      host.config.hostname, host_util.HostUpdateState.SUCCEEDED)
+      host.config.hostname, host_util.HostUpdateState.SUCCEEDED,
+      target_image=host.config.docker_image)
 
 
 def Restart(args, host=None):

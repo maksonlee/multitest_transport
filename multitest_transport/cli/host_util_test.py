@@ -37,11 +37,11 @@ class HostUtilTest(parameterized.TestCase):
     self.mock_create_context = self.context_patcher.start()
     self.host_config1 = host_util.lab_config.CreateHostConfig(
         cluster_name='cluster1', hostname='host1',
-        host_login_name='user1')
+        host_login_name='user1', docker_image='image1')
     self.ssh_config1 = ssh_util.SshConfig(user='user1', hostname='host1')
     self.host_config2 = host_util.lab_config.CreateHostConfig(
         cluster_name='cluster2', hostname='host2',
-        host_login_name='user1')
+        host_login_name='user1', docker_image='image1')
     self.ssh_config2 = ssh_util.SshConfig(user='user1', hostname='host2')
     self.host_config3 = host_util.lab_config.CreateHostConfig(
         cluster_name='cluster3', hostname='host3', host_login_name='user1')
@@ -226,7 +226,8 @@ class HostUtilTest(parameterized.TestCase):
 
     (hosts[0].control_server_client.SubmitHostUpdateStateChangedEvent
      .assert_called_with(hosts[0].config.hostname,
-                         host_util.HostUpdateState.ERRORED))
+                         host_util.HostUpdateState.ERRORED,
+                         target_image='image1'))
 
     self.assertSameElements(['host1'], self.mock_func_calls.keys())
     self.assertEqual(host_util.HostExecutionState.ERROR,
@@ -295,7 +296,8 @@ class HostUtilTest(parameterized.TestCase):
     (hosts[1].control_server_client.SubmitHostUpdateStateChangedEvent
      .assert_called_with(hosts[1].config.hostname,
                          host_util.HostUpdateState.ERRORED,
-                         display_message=str(excecution_exception)))
+                         display_message=str(excecution_exception),
+                         target_image='image1'))
 
   @mock.patch.object(host_util, 'BuildLabConfigPool')
   @mock.patch.object(socket, 'gethostname')
@@ -307,9 +309,7 @@ class HostUtilTest(parameterized.TestCase):
     args = mock.MagicMock(
         lab_config_path='lab_config.yaml', service_account_json_key_path=None)
     host = host_util.CreateHost(args)
-    expected_host_config = self.host_config1.SetDockerImage(
-        host_util._DEFAULT_DOCKERIZED_TF_IMAGE)
-    self.assertEqual(expected_host_config, host.config)
+    self.assertEqual(self.host_config1, host.config)
     self.assertIsNotNone(host.context)
 
   @mock.patch.object(host_util, 'BuildLabConfigPool')
