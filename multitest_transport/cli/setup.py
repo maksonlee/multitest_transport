@@ -15,7 +15,7 @@
 """Setup for mtt cli."""
 import setuptools
 
-VERSION = 'dev'
+VERSION = '0.0'
 
 setuptools.setup(
     name='Android_Test_Station_CLI',

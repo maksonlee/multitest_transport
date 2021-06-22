@@ -26,9 +26,10 @@ blaze build :setup_zip
 
 CLI_ZIP="${GOOGLE3_BASE}/blaze-bin/third_party/py/multitest_transport/cli/setup.zip"
 CLI_DIR="$(mktemp -d)"
-unzip -q "${CLI_ZIP}" -d "${CLI_DIR}"
 # Unzip files
-$SCRIPT_ROOT/_build.sh --cli_dir $CLI_DIR --version dev --environment dev
+unzip -q "${CLI_ZIP}" -d "${CLI_DIR}"
+CANDIDATE="$(date +%Y%m%d%H%M)"
+$SCRIPT_ROOT/_build.sh --cli_dir $CLI_DIR --version dev --environment dev --release "${CANDIDATE}"
 
 # Move the output files
 OUT_DIR="$(mktemp -d)"

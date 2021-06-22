@@ -22,6 +22,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --cli_dir) CLI_DIR="$2";;
     --version) VERSION="$2";;
+    --release) RELEASE="$2";;
     --environment) ENVIRONMENT="$2";;
     *) echo "Unknown argument $1"; exit 1; # fail-fast on unknown key
   esac
@@ -48,7 +49,8 @@ BUILD_ENVIRONMENT = "${ENVIRONMENT}"
 EOF
 
 chmod +w src/setup.py
-sed -i "s/VERSION =.*/VERSION = \"${VERSION}\"/" src/setup.py
+# setup.py's version must obey pep-440.
+sed -i "s/VERSION =.*/VERSION = \"${RELEASE}\"/" src/setup.py
 
 cat << EOF > Dockerfile
 FROM ubuntu:18.04
@@ -94,8 +96,6 @@ pex --python="python3.9" --python="python3.8" --python="python3.7" --python="pyt
 # Build zip file include all mtt source.
 cd src/
 zip -r /workspace/mtt.zip *
-# Build wheel
-python setup.py sdist -d "/workspace" bdist_wheel -d "/workspace"
 cd ..
 
 # Build mtt_lab pex package.
