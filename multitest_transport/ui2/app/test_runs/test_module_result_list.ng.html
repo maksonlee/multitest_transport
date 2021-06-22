@@ -101,7 +101,13 @@
           {{moduleNode.moduleResult.error_message}}
         </div>
 
-        <div fxFlex="40px"><!-- Filler for stack trace button column --></div>
+        <div fxFlex="40px">
+            <button mat-icon-button *ngIf="moduleNode.moduleResult.error_message"
+                    (click)="showErrorMessage(moduleNode.moduleResult)"
+                    aria-label="Error message" class="stack-trace-button">
+              <mat-icon class="stack-trace-icon">info</mat-icon>
+            </button>
+        </div>
       </div>
 
       <!-- Display test cases when expanded -->

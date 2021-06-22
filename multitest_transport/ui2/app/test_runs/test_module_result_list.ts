@@ -92,6 +92,14 @@ export class TestModuleResultList implements OnInit {
     this.loadTestCases(moduleIndex);
   }
 
+  showErrorMessage(testModuleResult: mttModels.TestModuleResult) {
+    this.notifier.showError(
+        testModuleResult.name, {
+          message: testModuleResult.error_message,
+        },
+        'Error message');
+  }
+
   loadTestCases(moduleIndex: number) {
     if (this.moduleResultNodes[moduleIndex].testCaseResults.length) {
       // Only load items the first time the node is expanded
