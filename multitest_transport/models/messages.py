@@ -256,15 +256,19 @@ class TestResourceDef(messages.Message):
   test_resource_type = messages.EnumField(ndb_models.TestResourceType, 3)
   decompress = messages.BooleanField(4)
   decompress_dir = messages.StringField(5)
-  params = messages.MessageField(TestResourceParameters, 6)
+  mount_zip = messages.BooleanField(6)
+  params = messages.MessageField(TestResourceParameters, 7)
 
 
 @Converter(ndb_models.TestResourceDef, TestResourceDef)
 def _TestResourceDefConverter(obj):
   return TestResourceDef(
-      name=obj.name, default_download_url=obj.default_download_url,
-      test_resource_type=obj.test_resource_type, decompress=obj.decompress,
+      name=obj.name,
+      default_download_url=obj.default_download_url,
+      test_resource_type=obj.test_resource_type,
+      decompress=obj.decompress,
       decompress_dir=obj.decompress_dir,
+      mount_zip=obj.mount_zip,
       params=Convert(obj.params, TestResourceParameters))
 
 
@@ -276,6 +280,7 @@ def _TestResourceDefMessageConverter(msg):
       test_resource_type=msg.test_resource_type,
       decompress=msg.decompress,
       decompress_dir=msg.decompress_dir,
+      mount_zip=msg.mount_zip,
       params=Convert(msg.params, ndb_models.TestResourceParameters))
 
 
@@ -761,15 +766,20 @@ class TestResourceObj(messages.Message):
   test_resource_type = messages.EnumField(ndb_models.TestResourceType, 4)
   decompress = messages.BooleanField(5)
   decompress_dir = messages.StringField(6)
-  params = messages.MessageField(TestResourceParameters, 7)
+  mount_zip = messages.BooleanField(7)
+  params = messages.MessageField(TestResourceParameters, 8)
 
 
 @Converter(ndb_models.TestResourceObj, TestResourceObj)
 def _TestResourceObjConverter(obj):
   return TestResourceObj(
-      name=obj.name, url=obj.url, cache_url=obj.cache_url,
-      test_resource_type=obj.test_resource_type, decompress=obj.decompress,
+      name=obj.name,
+      url=obj.url,
+      cache_url=obj.cache_url,
+      test_resource_type=obj.test_resource_type,
+      decompress=obj.decompress,
       decompress_dir=obj.decompress_dir,
+      mount_zip=obj.mount_zip,
       params=Convert(obj.params, TestResourceParameters))
 
 
@@ -782,6 +792,7 @@ def _TestResourceObjMessageConverter(msg):
       test_resource_type=msg.test_resource_type,
       decompress=msg.decompress,
       decompress_dir=msg.decompress_dir,
+      mount_zip=msg.mount_zip,
       params=Convert(msg.params, ndb_models.TestResourceParameters))
 
 

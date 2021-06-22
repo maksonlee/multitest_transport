@@ -184,6 +184,8 @@ tests:
   - name: android-cts.zip
     default_download_url: https://dl.google.com/dl/android/cts/android-cts-8.0_r26-linux_x86-arm.zip
     test_resource_type: TEST_PACKAGE
+    decompress: true
+    mount_zip: true
   command: cts-suite
   env_vars:
   - name: TF_PATH
@@ -217,6 +219,8 @@ tests:
   - name: android-cts.zip
     default_download_url: https://dl.google.com/dl/android/cts/android-cts-8.1_r23-linux_x86-arm.zip
     test_resource_type: TEST_PACKAGE
+    decompress: true
+    mount_zip: true
   command: cts-suite
   env_vars:
   - name: TF_PATH
@@ -250,6 +254,8 @@ tests:
   - name: android-cts.zip
     default_download_url: https://dl.google.com/dl/android/cts/android-cts-9.0_r16-linux_x86-arm.zip
     test_resource_type: TEST_PACKAGE
+    decompress: true
+    mount_zip: true
   command: cts
   env_vars:
   - name: TF_PATH
@@ -283,6 +289,8 @@ tests:
   - name: android-cts_instant.zip
     default_download_url: https://dl.google.com/dl/android/cts/android-cts_instant-9.0_r16-linux_x86-arm.zip
     test_resource_type: TEST_PACKAGE
+    decompress: true
+    mount_zip: true
   command: cts-instant
   env_vars:
   - name: TF_PATH
@@ -314,6 +322,8 @@ tests:
   - name: android-cts.zip
     default_download_url: https://dl.google.com/dl/android/cts/android-cts-10_r8-linux_x86-arm.zip
     test_resource_type: TEST_PACKAGE
+    decompress: true
+    mount_zip: true
   command: cts --enable-token-sharding
   env_vars:
   - name: TF_PATH
@@ -347,6 +357,8 @@ tests:
   - default_download_url: https://dl.google.com/dl/android/cts/android-cts-11_r4-linux_x86-arm.zip
     name: android-cts.zip
     test_resource_type: TEST_PACKAGE
+    decompress: true
+    mount_zip: true
   command: cts --enable-token-sharding
   env_vars:
   - name: TF_PATH

@@ -224,11 +224,19 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertModelEqual(test_run_config, test_run.test_run_config)
     self.assertModelSetEqual([
         ndb_models.TestResourceObj(
-            name='bar', url='default_download_url', decompress=True,
-            decompress_dir='dir', params=ndb_models.TestResourceParameters()),
+            name='bar',
+            url='default_download_url',
+            decompress=True,
+            decompress_dir='dir',
+            mount_zip=False,
+            params=ndb_models.TestResourceParameters()),
         ndb_models.TestResourceObj(
-            name='foo', url='origin_url', cache_url='cache_url',
-            decompress=False, decompress_dir='',
+            name='foo',
+            url='origin_url',
+            cache_url='cache_url',
+            decompress=False,
+            decompress_dir='',
+            mount_zip=False,
             params=ndb_models.TestResourceParameters()),
     ], test_run.test_resources)
     self.assertEqual(ndb_models.TestRunState.PENDING, test_run.state)
@@ -279,14 +287,26 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertModelEqual(test_run_config, test_run.test_run_config)
     self.assertModelSetEqual([
         ndb_models.TestResourceObj(
-            name='abc', url='default_download_url', decompress=False,
-            decompress_dir='', params=ndb_models.TestResourceParameters()),
+            name='abc',
+            url='default_download_url',
+            decompress=False,
+            decompress_dir='',
+            mount_zip=False,
+            params=ndb_models.TestResourceParameters()),
         ndb_models.TestResourceObj(
-            name='def', url='default_download_url2', decompress=False,
-            decompress_dir='', params=ndb_models.TestResourceParameters()),
+            name='def',
+            url='default_download_url2',
+            decompress=False,
+            decompress_dir='',
+            mount_zip=False,
+            params=ndb_models.TestResourceParameters()),
         ndb_models.TestResourceObj(
-            name='xyz', url='origin_url', cache_url='cache_url',
-            decompress=False, decompress_dir='',
+            name='xyz',
+            url='origin_url',
+            cache_url='cache_url',
+            decompress=False,
+            decompress_dir='',
+            mount_zip=False,
             params=ndb_models.TestResourceParameters()),
     ], test_run.test_resources)
     self.assertEqual(ndb_models.TestRunState.PENDING, test_run.state)
@@ -382,6 +402,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                     name='foo',
                     decompress=True,
                     decompress_dir='dir',
+                    mount_zip=False,
                     params=ndb_models.TestResourceParameters(
                         decompress_files=['a', 'b', 'c'])),
             'bar':
@@ -389,6 +410,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                     name='bar',
                     decompress=True,
                     decompress_dir='',
+                    mount_zip=False,
                     params=ndb_models.TestResourceParameters(
                         decompress_files=[])),
         })

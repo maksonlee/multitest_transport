@@ -374,6 +374,7 @@ def _ConvertToTFCTestResource(obj, url):
       url=file_util.GetWorkerAccessibleUrl(url),
       decompress=obj.decompress,
       decompress_dir=obj.decompress_dir,
+      mount_zip=obj.mount_zip,
       params=api_messages.TestResourceParameters(
           decompress_files=obj.params.decompress_files) if obj.params else None)
 
