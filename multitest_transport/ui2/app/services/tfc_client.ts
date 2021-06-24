@@ -236,6 +236,11 @@ export class TfcClient {
         params = params.append('recovery_states', recoveryState);
       }
     }
+    if (searchCriteria && searchCriteria.hostUpdateStates) {
+      for (const hostUpdateState of searchCriteria.hostUpdateStates) {
+        params = params.append('host_update_states', hostUpdateState);
+      }
+    }
     if (searchCriteria?.extraInfo?.length === 1) {
       params = params.append('flated_extra_info', searchCriteria.extraInfo[0]);
     }

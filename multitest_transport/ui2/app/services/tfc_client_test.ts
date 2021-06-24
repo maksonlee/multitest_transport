@@ -144,6 +144,7 @@ describe('TfcClient', () => {
         testHarnessVersions: [],
         pools: [],
         hostStates: [],
+        hostUpdateStates: [],
         extraInfo: [],
       };
       tfcClient.getHostInfos(searchCriteria);
@@ -169,6 +170,7 @@ describe('TfcClient', () => {
         testHarnessVersions: [],
         pools: [],
         hostStates: [],
+        hostUpdateStates: [],
         extraInfo: [],
       };
       tfcClient.getHostInfos(searchCriteria);
@@ -195,6 +197,7 @@ describe('TfcClient', () => {
         testHarnessVersions: [],
         pools: [],
         hostStates: [],
+        hostUpdateStates: [],
         extraInfo: [],
       };
       tfcClient.getHostInfos(searchCriteria);
@@ -224,6 +227,7 @@ describe('TfcClient', () => {
         testHarnessVersions: [],
         pools: [],
         hostStates: [],
+        hostUpdateStates: [],
         extraInfo: [],
       };
       tfcClient.getHostInfos(searchCriteria);
@@ -253,6 +257,7 @@ describe('TfcClient', () => {
         testHarnessVersions: [],
         pools: [],
         hostStates: [],
+        hostUpdateStates: [],
         extraInfo: [],
       };
       tfcClient.getHostInfos(searchCriteria);
@@ -282,6 +287,7 @@ describe('TfcClient', () => {
         testHarnessVersions,
         pools: [],
         hostStates: [],
+        hostUpdateStates: [],
         extraInfo: [],
       };
       tfcClient.getHostInfos(searchCriteria);
@@ -311,6 +317,7 @@ describe('TfcClient', () => {
         testHarnessVersions: [],
         pools,
         hostStates: [],
+        hostUpdateStates: [],
         extraInfo: [],
       };
       tfcClient.getHostInfos(searchCriteria);
@@ -369,6 +376,7 @@ describe('TfcClient', () => {
         testHarnessVersions: [],
         pools: [],
         hostStates: [],
+        hostUpdateStates: [],
         recoveryStates,
         extraInfo: [],
       };
@@ -398,6 +406,7 @@ describe('TfcClient', () => {
         testHarnessVersions: [],
         pools: [],
         hostStates: [],
+        hostUpdateStates: [],
         extraInfo,
       };
       tfcClient.getHostInfos(searchCriteria);

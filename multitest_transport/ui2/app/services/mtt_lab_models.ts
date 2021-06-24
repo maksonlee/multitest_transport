@@ -676,6 +676,7 @@ export declare interface HostSearchCriteria {
   testHarnessVersions?: string[];
   timestamp?: Date;
   timestampOperator?: string;
+  hostUpdateStates?: string[];
 }
 
 /** Info for host list query params. */

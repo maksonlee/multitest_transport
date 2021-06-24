@@ -542,6 +542,7 @@ export enum FilterHintType {
   DEVICE_STATE = 'DEVICE_STATE',
   HOST_STATE = 'HOST_STATE',
   HOST_GROUP = 'HOST_GROUP',
+  UPDATE_STATE = 'UPDATE_STATE',
 }
 
 /** Info for a single hint. */

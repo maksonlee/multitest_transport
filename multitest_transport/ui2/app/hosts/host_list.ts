@@ -164,6 +164,7 @@ export class HostList implements OnDestroy, OnInit {
     ['State', FilterHintType.HOST_STATE],
     ['Test Harness', FilterHintType.TEST_HARNESS],
     ['Test Harness Version', FilterHintType.TEST_HARNESS_VERSION],
+    ['Host Update State', FilterHintType.UPDATE_STATE],
   ]);
   readonly extraInfoDisplay = 'Extra Info';
   readonly extraInfoParamName = 'extraInfo';
@@ -633,6 +634,10 @@ export class HostList implements OnDestroy, OnInit {
     if (this.getSelectedOptions(FilterHintType.HOST_STATE)) {
       searchCriteria.hostStates =
           this.getSelectedOptions(FilterHintType.HOST_STATE);
+    }
+    if (this.getSelectedOptions(FilterHintType.UPDATE_STATE)) {
+      searchCriteria.hostUpdateStates =
+          this.getSelectedOptions(FilterHintType.UPDATE_STATE);
     }
     searchCriteria.extraInfo =
         [this.filterBarUtility.getInputFilterOption(this.extraInfoDisplay)];
