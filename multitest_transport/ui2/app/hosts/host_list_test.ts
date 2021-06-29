@@ -118,7 +118,7 @@ describe('HostList', () => {
     window.sessionStorage.clear();
     await hostListFixture.whenStable();
     expect(tfcClient.getHostInfos).toHaveBeenCalledTimes(1);
-    expect(tfcClient.getFilterHintList).toHaveBeenCalledTimes(7);
+    expect(tfcClient.getFilterHintList).toHaveBeenCalledTimes(8);
   });
 
   it('can load previous page of host list', () => {

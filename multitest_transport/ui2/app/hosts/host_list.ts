@@ -164,7 +164,7 @@ export class HostList implements OnDestroy, OnInit {
     ['State', FilterHintType.HOST_STATE],
     ['Test Harness', FilterHintType.TEST_HARNESS],
     ['Test Harness Version', FilterHintType.TEST_HARNESS_VERSION],
-    ['Host Update State', FilterHintType.UPDATE_STATE],
+    ['Update State', FilterHintType.UPDATE_STATE],
   ]);
   readonly extraInfoDisplay = 'Extra Info';
   readonly extraInfoParamName = 'extraInfo';
@@ -251,6 +251,7 @@ export class HostList implements OnDestroy, OnInit {
       'State',
       'Test Harness',
       'Test Harness Version',
+      'Update State',
       this.extraInfoDisplay,
     ];
 
@@ -263,6 +264,7 @@ export class HostList implements OnDestroy, OnInit {
       ['State', 'hostStates'],
       ['Test Harness', 'testHarness'],
       ['Test Harness Version', 'testHarnessVersions'],
+      ['Update State', 'hostUpdateStates'],
       [this.extraInfoDisplay, this.extraInfoParamName],
     ]);
 
@@ -283,6 +285,7 @@ export class HostList implements OnDestroy, OnInit {
       this.getFilterHintObservable(FilterHintType.POOL),
       this.getFilterHintObservable(FilterHintType.TEST_HARNESS),
       this.getFilterHintObservable(FilterHintType.TEST_HARNESS_VERSION),
+      this.getFilterHintObservable(FilterHintType.UPDATE_STATE),
     ])
         .pipe(
             retryWhen((errors) => errors.pipe(delay(500), take(3))),
