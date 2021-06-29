@@ -38,7 +38,9 @@ class EventHandlerIntegrationTest(integration_util.DockerContainerTest):
 
   def testFatalError(self):
     """Test that fatal errors should stop run and set state to ERROR."""
-    self.container.SubmitCommandEvent(self.task, 'ConfigurationError')
+    self.container.SubmitCommandEvent(
+        self.task, 'ConfigurationError',
+        data={'error_status': 'CUSTOMER_ISSUE'})
     self.container.WaitForState(self.test_run_id, 'ERROR')
 
   def testError(self):
