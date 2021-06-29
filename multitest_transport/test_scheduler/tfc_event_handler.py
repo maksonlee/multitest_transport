@@ -16,6 +16,7 @@
 import datetime
 import json
 import logging
+import zlib
 
 import flask
 from protorpc import protojson
@@ -389,6 +390,11 @@ def HandleTask(fake=None):
   """Handle tasks from the TFC event queue."""
   del fake
   body = flask.request.get_data()
+  try:
+    body = zlib.decompress(body)
+  except zlib.error:
+    logging.warning(
+        'payload may not be compressed: %s', body, exc_info=True)
   message_type = json.loads(body).get('type')
   message_cls, handler = _EVENT_HANDLERS[message_type]
   if not message_cls or not handler:
