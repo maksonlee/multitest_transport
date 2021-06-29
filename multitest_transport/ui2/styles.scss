@@ -375,6 +375,13 @@ mat-spinner.loading-spinner {
   }
 }
 
+/*
+ * TODO: Remove the extra selector for setting the height on the
+ * cell. The data table will chagne its height styles to be defined on the
+ * row rather than cell. This temporary additional selector is necessary to
+ * enable backwards compatibility while the height style change is being made.
+ */
+.mat-mdc-table .mat-mdc-row,
 .mat-mdc-table .mat-mdc-cell {
   height: 48px;
 }
