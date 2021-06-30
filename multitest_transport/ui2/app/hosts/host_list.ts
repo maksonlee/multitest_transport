@@ -989,7 +989,7 @@ export class HostList implements OnDestroy, OnInit {
     };
     this.matDialog.open(HostUpdateDialog, {
       height: '600px',
-      width: '1200px',
+      width: '1250px',
       data,
       autoFocus: true,
     });

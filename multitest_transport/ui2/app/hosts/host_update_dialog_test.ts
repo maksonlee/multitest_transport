@@ -451,6 +451,104 @@ describe('HostUpdateDialog', () => {
             ]);
       });
     });
+
+    it('loads lab update state summary for selected version', () => {
+      hostUpdateDialog.labInfo = {
+        labName: 'lab1',
+        owners: ['user1'],
+        hostUpdateStateSummary:
+            convertToHostUpdateStateSummary(newMockHostUpdateStateSummary(
+                '30', '5', '2', '10', '10', '1', '1', '1', '0')),
+        hostCountByHarnessVersion: [
+          {key: 'v1', value: '2'},
+          {key: 'v2', value: '2'},
+        ],
+        hostUpdateStateSummariesByVersion: [
+          convertToHostUpdateStateSummary(newMockHostUpdateStateSummary(
+              '8', '1', '1', '1', '1', '1', '1', '1', '1', undefined, 'v1')),
+          convertToHostUpdateStateSummary(newMockHostUpdateStateSummary(
+              '22', '3', '1', '9', '9', '0', '0', '0', '0', undefined, 'v2')),
+        ],
+      };
+
+      hostUpdateDialog.selectedTargetVersion = 'v1';
+      hostUpdateDialog.loadUpdateStateAndVersionCountTables();
+
+      expect(hostUpdateDialog.hostUpdateStateSummaryTableDataSource.data)
+          .toEqual([
+            {state: HostUpdateState.PENDING, count: 1},
+            {state: HostUpdateState.SYNCING, count: 1},
+            {state: HostUpdateState.SHUTTING_DOWN, count: 1},
+            {state: HostUpdateState.RESTARTING, count: 1},
+            {state: HostUpdateState.SUCCEEDED, count: 1},
+            {state: HostUpdateState.TIMED_OUT, count: 1},
+            {state: HostUpdateState.ERRORED, count: 1},
+            {state: HostUpdateState.UNKNOWN, count: 1},
+          ]);
+
+      hostUpdateDialog.selectedTargetVersion = 'v2';
+      hostUpdateDialog.loadUpdateStateAndVersionCountTables();
+      expect(hostUpdateDialog.hostUpdateStateSummaryTableDataSource.data)
+          .toEqual([
+            {state: HostUpdateState.PENDING, count: 3},
+            {state: HostUpdateState.SYNCING, count: 1},
+            {state: HostUpdateState.SHUTTING_DOWN, count: 9},
+            {state: HostUpdateState.RESTARTING, count: 9},
+            {state: HostUpdateState.SUCCEEDED, count: 0},
+            {state: HostUpdateState.TIMED_OUT, count: 0},
+            {state: HostUpdateState.ERRORED, count: 0},
+            {state: HostUpdateState.UNKNOWN, count: 0},
+          ]);
+    });
+
+    it('loads host group update state summary for selected version', () => {
+      hostUpdateDialog.selectedHostGroup = 'hostGroup1';
+      hostUpdateDialog.clusterInfo = {
+        clusterId: 'hostGroup1',
+        hostUpdateStateSummary:
+            convertToHostUpdateStateSummary(newMockHostUpdateStateSummary(
+                '30', '5', '2', '10', '10', '1', '1', '1', '0')),
+        hostCountByHarnessVersion: [
+          {key: 'v1', value: '2'},
+          {key: 'v2', value: '2'},
+        ],
+        hostUpdateStateSummariesByVersion: [
+          convertToHostUpdateStateSummary(newMockHostUpdateStateSummary(
+              '8', '1', '1', '1', '1', '1', '1', '1', '1', undefined, 'v1')),
+          convertToHostUpdateStateSummary(newMockHostUpdateStateSummary(
+              '22', '3', '1', '9', '9', '0', '0', '0', '0', undefined, 'v2')),
+        ],
+      };
+
+      hostUpdateDialog.selectedTargetVersion = 'v1';
+      hostUpdateDialog.loadUpdateStateAndVersionCountTables();
+
+      expect(hostUpdateDialog.hostUpdateStateSummaryTableDataSource.data)
+          .toEqual([
+            {state: HostUpdateState.PENDING, count: 1},
+            {state: HostUpdateState.SYNCING, count: 1},
+            {state: HostUpdateState.SHUTTING_DOWN, count: 1},
+            {state: HostUpdateState.RESTARTING, count: 1},
+            {state: HostUpdateState.SUCCEEDED, count: 1},
+            {state: HostUpdateState.TIMED_OUT, count: 1},
+            {state: HostUpdateState.ERRORED, count: 1},
+            {state: HostUpdateState.UNKNOWN, count: 1},
+          ]);
+
+      hostUpdateDialog.selectedTargetVersion = 'v2';
+      hostUpdateDialog.loadUpdateStateAndVersionCountTables();
+      expect(hostUpdateDialog.hostUpdateStateSummaryTableDataSource.data)
+          .toEqual([
+            {state: HostUpdateState.PENDING, count: 3},
+            {state: HostUpdateState.SYNCING, count: 1},
+            {state: HostUpdateState.SHUTTING_DOWN, count: 9},
+            {state: HostUpdateState.RESTARTING, count: 9},
+            {state: HostUpdateState.SUCCEEDED, count: 0},
+            {state: HostUpdateState.TIMED_OUT, count: 0},
+            {state: HostUpdateState.ERRORED, count: 0},
+            {state: HostUpdateState.UNKNOWN, count: 0},
+          ]);
+    });
   });
 
   describe('getBatchUpdateHostMetadataRequest', () => {

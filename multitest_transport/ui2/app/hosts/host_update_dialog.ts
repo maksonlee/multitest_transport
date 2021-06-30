@@ -75,6 +75,8 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
   selectedLab: string;
   selectedHostGroupValue = '';
   selectedHosts: string[] = [];
+  selectedTargetVersion = '';
+  selectableTargetVersions: string[] = [];
   hostConfigsInLab: HostConfig[] = [];
   candidateHostConfigs: HostConfig[] = [];
   hostGroupNames: string[] = [];
@@ -169,6 +171,7 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy))
         .subscribe(
             (result) => {
+              this.selectedTargetVersion = '';
               this.labInfo = result;
               this.loadUpdateStateAndVersionCountTables();
             },
@@ -207,6 +210,7 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy))
         .subscribe(
             (result) => {
+              this.selectedTargetVersion = '';
               this.clusterInfo = result;
               this.loadUpdateStateAndVersionCountTables();
             },
@@ -247,6 +251,48 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
         this.candidateHostConfigs.map((config) => config.hostname).sort();
   }
 
+  private getSelectableTargetVersions(hostUpdateStateSummariesByVersion:
+                                          HostUpdateStateSummary[]|
+                                      undefined): string[] {
+    if (!hostUpdateStateSummariesByVersion) {
+      return [];
+    }
+    const targetVersions = hostUpdateStateSummariesByVersion
+                               .map(summary => summary.targetVersion || '')
+                               .filter(Boolean)
+                               .sort()
+                               .reverse();
+    targetVersions.unshift('');
+    return targetVersions;
+  }
+
+  private getHostUpdateStateSummaryForDisplay(
+      targetVersion: string,
+      hostUpdateStateSummariesByVersion: HostUpdateStateSummary[]|undefined,
+      fullHostUpdateStateSummary: HostUpdateStateSummary|
+      null): HostUpdateStateSummary|null|undefined {
+    let summary;
+    if (targetVersion && hostUpdateStateSummariesByVersion) {
+      let found = false;
+      for (const summaryWithVersion of hostUpdateStateSummariesByVersion) {
+        if (summaryWithVersion.targetVersion === targetVersion) {
+          summary = summaryWithVersion;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        this.notifier.showError(`No host update summary is found for
+              selected version ${targetVersion}.
+              Displaying summary for all versions as a whole.`);
+        summary = fullHostUpdateStateSummary;
+      }
+    } else {
+      summary = fullHostUpdateStateSummary;
+    }
+    return summary;
+  }
+
   loadUpdateStateAndVersionCountTables() {
     let summary;
     let versionCount;
@@ -254,13 +300,24 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
       if (!this.clusterInfo) {
         return;
       }
-      summary = this.clusterInfo.hostUpdateStateSummary;
+      this.selectableTargetVersions = this.getSelectableTargetVersions(
+          this.clusterInfo.hostUpdateStateSummariesByVersion);
+
+      summary = this.getHostUpdateStateSummaryForDisplay(
+          this.selectedTargetVersion,
+          this.clusterInfo.hostUpdateStateSummariesByVersion,
+          this.clusterInfo.hostUpdateStateSummary);
       versionCount = this.clusterInfo.hostCountByHarnessVersion;
     } else {
       if (!this.labInfo) {
         return;
       }
-      summary = this.labInfo.hostUpdateStateSummary;
+      this.selectableTargetVersions = this.getSelectableTargetVersions(
+          this.labInfo.hostUpdateStateSummariesByVersion);
+      summary = this.getHostUpdateStateSummaryForDisplay(
+          this.selectedTargetVersion,
+          this.labInfo.hostUpdateStateSummariesByVersion,
+          this.labInfo.hostUpdateStateSummary);
       versionCount = this.labInfo.hostCountByHarnessVersion;
     }
     if (summary) {

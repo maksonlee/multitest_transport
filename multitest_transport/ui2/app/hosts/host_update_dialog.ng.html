@@ -19,6 +19,19 @@
   {{selectedHostGroup ? 'Host Group: ' + selectedHostGroup : ''}}
 </h1>
 <div fxLayout="row" fxLayoutAlign="start center">
+
+  <mat-form-field class="mat-select-filter target-version-selector"
+                  appearance="outline">
+    <mat-select [(ngModel)]="selectedTargetVersion"
+                (ngModelChange)="loadUpdateStateAndVersionCountTables()"
+                >
+      <mat-select-trigger> Selected Version: {{ selectedTargetVersion }} </mat-select-trigger>
+      <mat-option *ngFor="let version of selectableTargetVersions" [value]="version">
+        {{version}}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
   <h2 *ngIf="!selectedHostGroup && labInfo?.hostUpdateStateSummary">
     Updating:
     {{ updatingHostCountInSelectedLab }} of
@@ -32,6 +45,7 @@
     {{clusterInfo.hostUpdateStateSummary.total}}
     (refreshed {{clusterInfo.hostUpdateStateSummary.update_timestamp | utc | fromNow}})
   </h2>
+
   <button mat-icon-button
           matTooltip="Refresh update state and version summaries"
           aria-label="Refresh update state and version summaries"
@@ -39,10 +53,12 @@
   >
     <mat-icon>refresh</mat-icon>
   </button>
+
 </div>
 
 <div class="host-update-panel">
   <div class="host-update-state-summary-panel">
+
     <table mat-table
            [dataSource]="hostUpdateStateSummaryTableDataSource">
 

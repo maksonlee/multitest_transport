@@ -16,12 +16,12 @@
 @import 'third_party/py/multitest_transport/ui2/styles';
 
 .host-update-state-summary-table-panel {
-  flex: 1 1 20%;
+  flex: 0 0 20%;
   flex-direction: column;
 }
 
 .host-count-by-version-table-panel {
-  flex: 1 1 20%;
+  flex: 0 0 20%;
   flex-direction: column;
 }
 
@@ -31,7 +31,7 @@
 
 .host-update-control-panel {
   display: flex;
-  flex: 1 1 50%;
+  flex: 0 0 50%;
   flex-direction: column;
 
   .update-mode-selection-group {
@@ -54,6 +54,12 @@
   .set-image-button {
     width: 100px;
     align-self: center;
+  }
+}
+
+::ng-deep .target-version-selector {
+  .mat-form-field-wrapper {
+    padding: 0;
   }
 }
 
