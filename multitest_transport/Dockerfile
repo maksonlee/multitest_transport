@@ -60,7 +60,8 @@ RUN wget -q --retry-connrefused -O /tmp/get-pip.py https://bootstrap.pypa.io/pip
 RUN pip install six==1.12.0
 
 # Installing dependencies for VTS
-# Reference: https://cs.android.com/android/platform/superproject/+/master:test/vts/script/setup.sh
+# Reference: https://android.googlesource.com/platform/test/vts/+/refs/heads/android10-tests-dev/script/setup.sh
+# VTS 9.0 depends on libncurses5.
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y \
         python-dev \
         python-protobuf \
@@ -72,6 +73,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         build-essential \
         python-tk \
         libjpeg-dev \
+        libncurses5 \
         libtiff-dev
 # Pin the virtualenv version to use a one with a proven compatibility with VTS.
 RUN pip install virtualenv==20.0.31
