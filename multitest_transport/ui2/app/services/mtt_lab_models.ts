@@ -201,6 +201,8 @@ export declare interface HostUpdateStateSummary {
   readonly succeeded: number;
   /** Timestamp when the summary is updated. */
   readonly updateTimestamp: string;
+  /** The test harness version which the hosts update to. */
+  readonly targetVersion: string|null;
 }
 
 /** Info of a single lab. */
@@ -213,6 +215,8 @@ export declare interface LabInfo {
   readonly hostUpdateStateSummary: HostUpdateStateSummary|null;
   /** Host counts by test harness versions in the lab. */
   readonly hostCountByHarnessVersion: KeyValuePair[];
+  /** Host update state summaries for each version. */
+  readonly hostUpdateStateSummariesByVersion?: HostUpdateStateSummary[];
 }
 
 /** Response for lab list api call. */
@@ -229,6 +233,8 @@ export declare interface ClusterInfo {
   readonly hostUpdateStateSummary: HostUpdateStateSummary|null;
   /** Host counts by test harness versions in the lab. */
   readonly hostCountByHarnessVersion: KeyValuePair[];
+  /** Host update state summaries for each version. */
+  readonly hostUpdateStateSummariesByVersion?: HostUpdateStateSummary[];
 }
 
 /** Info for create or update a device note or a host note. */
@@ -432,6 +438,7 @@ export function convertToHostUpdateStateSummary(
     timedOut: isNaN(Number(source.timed_out)) ? 0 : Number(source.timed_out),
     errored: isNaN(Number(source.errored)) ? 0 : Number(source.errored),
     updateTimestamp: source.update_timestamp,
+    targetVersion: source.target_version || null,
   };
 }
 
@@ -573,6 +580,11 @@ export function convertToLabInfo(source: tfcModels.LabInfo): LabInfo {
     hostCountByHarnessVersion: source.host_count_by_harness_version ?
         source.host_count_by_harness_version :
         [],
+    hostUpdateStateSummariesByVersion:
+        source.host_update_state_summaries_by_version ?
+        source.host_update_state_summaries_by_version.map(
+            summary => convertToHostUpdateStateSummary(summary)) :
+        [],
   };
 }
 
@@ -588,6 +600,11 @@ export function convertToClusterInfo(source: tfcModels.ClusterInfo):
         null,
     hostCountByHarnessVersion: source.host_count_by_harness_version ?
         source.host_count_by_harness_version :
+        [],
+    hostUpdateStateSummariesByVersion:
+        source.host_update_state_summaries_by_version ?
+        source.host_update_state_summaries_by_version.map(
+            summary => convertToHostUpdateStateSummary(summary)) :
         [],
   };
 }

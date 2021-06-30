@@ -955,12 +955,14 @@ export function newMockRawLabInfo(
     owners: string[],
     hostUpdateStateSummary?: tfcModels.HostUpdateStateSummary,
     hostCountByHarnessVersion?: mttLabModels.KeyValuePair[],
+    hostUpdateStateSummariesByVersion?: tfcModels.HostUpdateStateSummary[],
     ): tfcModels.LabInfo {
   return {
     lab_name: labName,
     owners,
     host_update_state_summary: hostUpdateStateSummary,
     host_count_by_harness_version: hostCountByHarnessVersion,
+    host_update_state_summaries_by_version: hostUpdateStateSummariesByVersion,
   };
 }
 
@@ -969,11 +971,13 @@ export function newMockRawClusterInfo(
     clusterId: string,
     hostUpdateStateSummary?: tfcModels.HostUpdateStateSummary,
     hostCountByHarnessVersion?: mttLabModels.KeyValuePair[],
+    hostUpdateStateSummariesByVersion?: tfcModels.HostUpdateStateSummary[],
     ): tfcModels.ClusterInfo {
   return {
     cluster_id: clusterId,
     host_update_state_summary: hostUpdateStateSummary,
     host_count_by_harness_version: hostCountByHarnessVersion,
+    host_update_state_summaries_by_version: hostUpdateStateSummariesByVersion,
   };
 }
 
@@ -1027,12 +1031,15 @@ export function newMockLabInfo(
     owners: string[] = [],
     hostUpdateStateSummary: mttLabModels.HostUpdateStateSummary|null = null,
     hostCountByHarnessVersion: mttLabModels.KeyValuePair[]|null = null,
+    hostUpdateStateSummariesByVersion: mttLabModels.HostUpdateStateSummary[]|
+    null = null,
     ): mttLabModels.LabInfo {
   return {
     labName,
     owners,
     hostUpdateStateSummary,
     hostCountByHarnessVersion: hostCountByHarnessVersion || [],
+    hostUpdateStateSummariesByVersion: hostUpdateStateSummariesByVersion || [],
   };
 }
 
@@ -1041,11 +1048,14 @@ export function newMockClusterInfo(
     clusterId: string,
     hostUpdateStateSummary: mttLabModels.HostUpdateStateSummary|null = null,
     hostCountByHarnessVersion: mttLabModels.KeyValuePair[]|null = null,
+    hostUpdateStateSummariesByVersion: mttLabModels.HostUpdateStateSummary[]|
+    null = null,
     ): mttLabModels.ClusterInfo {
   return {
     clusterId,
     hostUpdateStateSummary,
     hostCountByHarnessVersion: hostCountByHarnessVersion || [],
+    hostUpdateStateSummariesByVersion: hostUpdateStateSummariesByVersion || [],
   };
 }
 
@@ -1089,8 +1099,8 @@ export function newMockHostUpdateStateSummary(
     shuttingDown: string = '10', restarting: string = '10',
     timedOut: string = '1', errored: string = '1', succeeded: string = '1',
     unknown: string = '0',
-    updateTimestamp: string =
-        '2021-01-01T07:02:02.356030'): tfcModels.HostUpdateStateSummary {
+    updateTimestamp: string = '2021-01-01T07:02:02.356030',
+    targetVersion: string = 'v-default'): tfcModels.HostUpdateStateSummary {
   return {
     total,
     pending,
@@ -1102,6 +1112,7 @@ export function newMockHostUpdateStateSummary(
     succeeded,
     unknown,
     update_timestamp: updateTimestamp,
+    target_version: targetVersion,
   };
 }
 

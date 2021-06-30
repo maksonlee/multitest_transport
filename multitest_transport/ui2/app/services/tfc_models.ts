@@ -435,6 +435,8 @@ export declare interface HostUpdateStateSummary {
   succeeded: string;
   /** Timestamp when the summary is updated. */
   update_timestamp: string;
+  /** The test harness version which the hosts update to. */
+  target_version?: string|null;
 }
 
 /** Info of a single lab. */
@@ -447,6 +449,8 @@ export declare interface LabInfo {
   readonly host_update_state_summary?: HostUpdateStateSummary|null;
   /** Host counts by test harness versions in the lab. */
   readonly host_count_by_harness_version?: KeyValuePair[];
+  /** Host update state summaries for each version. */
+  readonly host_update_state_summaries_by_version?: HostUpdateStateSummary[];
 }
 
 /** Response for lab list api call. */
@@ -463,6 +467,8 @@ export declare interface ClusterInfo {
   readonly host_update_state_summary?: HostUpdateStateSummary|null;
   /** Host counts by test harness versions in the lab. */
   readonly host_count_by_harness_version?: KeyValuePair[];
+  /** Host update state summaries for each version. */
+  readonly host_update_state_summaries_by_version?: HostUpdateStateSummary[];
 }
 
 /** Info of a single note. */
