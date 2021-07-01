@@ -164,6 +164,30 @@ class ConfigSetHelperTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(imported_message, updated_messages[1])
     self.assertEqual(updatable_message_combined, updated_messages[2])
 
+  @mock.patch.object(config_set_helper, 'GetRemoteConfigSetInfo')
+  def testGetLatestVersion_noUpdates(self, mock_get_remote_config_set_info):
+    imported_config = self._CreateImportedConfig()
+    imported_message = self._CreateConfigSetInfoMessage(
+        imported_config, ndb_models.ConfigSetStatus.IMPORTED)
+
+    mock_get_remote_config_set_info.return_value = imported_config
+
+    updated_message = config_set_helper.GetLatestVersion(imported_config)
+
+    self.assertEqual(imported_message, updated_message)
+
+  @mock.patch.object(config_set_helper, 'GetRemoteConfigSetInfo')
+  def testGetLatestVersion_updatable(self, mock_get_remote_config_set_info):
+    updatable_config_old, updatable_config_new = self._CreateUpdatableConfig()
+    updatable_message_combined = self._CreateConfigSetInfoMessage(
+        updatable_config_old, ndb_models.ConfigSetStatus.UPDATABLE)
+
+    mock_get_remote_config_set_info.return_value = updatable_config_new
+
+    updated_message = config_set_helper.GetLatestVersion(updatable_config_old)
+
+    self.assertEqual(updated_message, updatable_message_combined)
+
   def testDeleteConfigSetInfo(self):
     config = self._CreateImportedConfig()
     namespaced_test = self._CreateMockTest('test.1', config.url)

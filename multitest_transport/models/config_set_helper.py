@@ -32,6 +32,33 @@ CONFIG_SET_BUILD_CHANNEL_IDS = ['google_cloud_storage']
 CONFIG_SET_URL = 'mtt:///google_cloud_storage/android-test-catalog/prod'
 
 
+def _ConvertToMessage(info, status=None):
+  """Converts a ndb_models.ConfigSetInfo to an mtt_messages.ConfigSetInfo."""
+  message = mtt_messages.Convert(info, mtt_messages.ConfigSetInfo)
+  message.status = status
+  return message
+
+
+def _GetAuthorizedBuildChannel():
+  """Gets the build channel for config sets if it is authorized.
+
+  Raises ValueError if the channel is not authorized.
+
+  Returns:
+    build_channel: The build channel object
+    locator: The parsed url
+  """
+  locator = build.BuildLocator.ParseUrl(CONFIG_SET_URL)
+  if not locator:
+    raise ValueError('Invalid URL: %s' % CONFIG_SET_URL)
+  build_channel = build.GetBuildChannel(locator.build_channel_id)
+  if (not build_channel) or (build_channel.auth_state ==
+                             ndb_models.AuthorizationState.UNAUTHORIZED):
+    raise ValueError('Build channel %s not authorized' %
+                     locator.build_channel_id)
+  return build_channel, locator
+
+
 def _GetEntityKeysByPrefix(model, prefix):
   """Gets keys for all entities of the given model whose id starts with prefix.
 
@@ -45,6 +72,43 @@ def _GetEntityKeysByPrefix(model, prefix):
   return model.query().filter(
       model.key >= ndb.Key(model, prefix),
       model.key < ndb.Key(model, prefix + u'ufffd')).fetch(keys_only=True)
+
+
+def _ParseConfigSet(content):
+  """Converts a string of data into a ConfigSet object.
+
+  Args:
+    content: a string, usually the contents of a config file
+  Returns:
+    A ndb_models.ConfigSet object
+  """
+  config_set = config_encoder.Decode(content)
+  info = config_set.info
+  # TODO: Split HostConfigs from ConfigSets and make info required
+  if info:
+    info.hash = _Hash(content)
+  return config_set
+
+
+def _ParseBuildItem(build_item):
+  """Converts a built item to a config set."""
+  if not build_item:
+    logging.info('Failed to find build item')
+    return None
+
+  if (not build_item.is_file or not build_item.name or
+      not build_item.name.endswith('.yaml')):
+    logging.info('%s is not a valid config file', build_item.name)
+    return None
+
+  # Read and parse file
+  file_url = '%s/%s' % (CONFIG_SET_URL, build_item.name)
+  try:
+    contents = ReadRemoteFile(file_url)
+    return _ParseConfigSet(contents)
+  except errors.FilePermissionError as err:
+    logging.info('No permission to access %s: %s', file_url, err)
+    return None  # Ignore files users don't have access to
 
 
 def GetLocalConfigSetInfos():
@@ -64,6 +128,23 @@ def GetLocalConfigSetInfos():
   return info_messages
 
 
+def GetRemoteConfigSetInfo(url):
+  """Reads a remote config set from the given url and parses the info."""
+  # Get the build item
+  build_channel, locator = _GetAuthorizedBuildChannel()
+  try:
+    channel_path = locator.path
+    path = channel_path + url.split(channel_path)[1]
+    build_item = build_channel.GetBuildItem(path)
+  except errors.FilePermissionError as err:
+    logging.info('No permission to access %s: %s', CONFIG_SET_URL, err)
+    return None
+
+  # Parse the build item
+  remote_config = _ParseBuildItem(build_item)
+  return remote_config.info if remote_config else None
+
+
 def GetRemoteConfigSetInfos():
   """Gets a list of build items, and downloads and parses each config info.
 
@@ -72,14 +153,7 @@ def GetRemoteConfigSetInfos():
   """
   # TODO: Allow for multiple config set sources
   # Get build items from MTT GCS bucket
-  locator = build.BuildLocator.ParseUrl(CONFIG_SET_URL)
-  if not locator:
-    raise ValueError('Invalid URL: %s' % CONFIG_SET_URL)
-  build_channel = build.GetBuildChannel(locator.build_channel_id)
-  if (not build_channel) or (build_channel.auth_state ==
-                             ndb_models.AuthorizationState.UNAUTHORIZED):
-    return []
-
+  build_channel, locator = _GetAuthorizedBuildChannel()
   try:
     build_items, _ = build_channel.ListBuildItems(path=locator.path)
   except errors.FilePermissionError as err:
@@ -89,22 +163,14 @@ def GetRemoteConfigSetInfos():
   # Parse build items to config set infos
   info_messages = []
   for build_item in build_items:
-    if (not build_item.is_file or not build_item.name or
-        not build_item.name.endswith('.yaml')):
+    remote_config = _ParseBuildItem(build_item)
+    if not remote_config or not remote_config.info:
       continue
 
-    # Read file
-    file_url = '%s/%s' % (CONFIG_SET_URL, build_item.name)
-    try:
-      contents = ReadRemoteFile(file_url)
-      info = _ParseConfigSet(contents).info
-      if info:
-        info_message = mtt_messages.Convert(info, mtt_messages.ConfigSetInfo)
-        info_message.status = ndb_models.ConfigSetStatus.NOT_IMPORTED
-        info_messages.append(info_message)
-    except errors.FilePermissionError as err:
-      logging.warning('No permission to access %s: %s', file_url, err)
-      continue  # Ignore files users don't have access to
+    info_message = _ConvertToMessage(remote_config.info,
+                                     ndb_models.ConfigSetStatus.NOT_IMPORTED)
+    info_messages.append(info_message)
+
   return info_messages
 
 
@@ -136,6 +202,24 @@ def UpdateConfigSetInfos(imported_infos, remote_infos):
   for key in sorted(info_map):
     info_list.append(info_map.get(key))
   return info_list
+
+
+def GetLatestVersion(imported_info):
+  """Checks if there's an update available for an imported info.
+
+  Args:
+    imported_info: an already imported config set info
+  Returns:
+    the imported info message with the updated state
+  """
+  updated_message = _ConvertToMessage(imported_info,
+                                      ndb_models.ConfigSetStatus.IMPORTED)
+
+  remote_info = GetRemoteConfigSetInfo(imported_info.url)
+  if remote_info and remote_info.hash != imported_info.hash:
+    updated_message.status = ndb_models.ConfigSetStatus.UPDATABLE
+
+  return updated_message
 
 
 def Import(content):
@@ -197,22 +281,6 @@ def ReadRemoteFile(url):
   """
   local_url = download_util.DownloadResource(url)
   return file_util.OpenFile(local_url).read()
-
-
-def _ParseConfigSet(content):
-  """Converts a string of data into a ConfigSet object.
-
-  Args:
-    content: a string, usually the contents of a config file
-  Returns:
-    A ndb_models.ConfigSet object
-  """
-  config_set = config_encoder.Decode(content)
-  info = config_set.info
-  # TODO: Split HostConfigs from ConfigSets and make info required
-  if info:
-    info.hash = _Hash(content)
-  return config_set
 
 
 def _Hash(content):

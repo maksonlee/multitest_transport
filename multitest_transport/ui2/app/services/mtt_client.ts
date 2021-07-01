@@ -32,12 +32,14 @@ export const MTT_API_URL = '/_ah/api/mtt/v1';
   providedIn: 'root',
 })
 export class MttClient {
+  readonly configSets: ConfigSetClient;
   readonly testRunActions: TestRunActionClient;
   readonly testResults: TestResultClient;
 
   constructor(
       private readonly http: HttpClient, private readonly auth: AuthService) {
     // TODO: Reorganize MttClient methods
+    this.configSets = new ConfigSetClient(http);
     this.testRunActions = new TestRunActionClient(http, auth);
     this.testResults = new TestResultClient(http);
   }
@@ -396,6 +398,19 @@ export class MttClient {
     return this.http.get<model.TestRunOutput>(
         `${MTT_API_URL}/test_runs/${encodeURIComponent(testRunId)}/output`,
         {params});
+  }
+}
+
+/** Provides access to the config set API. */
+export class ConfigSetClient {
+  static readonly PATH = `${MTT_API_URL}/config_sets`;
+
+  constructor(private readonly http: HttpClient) {}
+
+  getLatestVersion(importedInfo: model.ConfigSetInfo):
+      Observable<model.ConfigSetInfo> {
+    return this.http.post<model.ConfigSetInfo>(
+        `${ConfigSetClient.PATH}/latest_version`, importedInfo);
   }
 }
 

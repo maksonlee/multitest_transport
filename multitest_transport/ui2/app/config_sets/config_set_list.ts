@@ -32,8 +32,10 @@ import {buildApiErrorMessage} from '../shared/util';
 })
 export class ConfigSetList implements OnInit, OnDestroy {
   isLoading = false;
-  infos: ConfigSetInfo[] = [];
+  infoMap: {[id: string]: ConfigSetInfo} = {};
+  infoStatusLoadingSet = new Set<string>();
   readonly ConfigSetStatus = ConfigSetStatus;
+  readonly Object = Object;
 
   private readonly destroy = new ReplaySubject<void>();
 
@@ -66,7 +68,7 @@ export class ConfigSetList implements OnInit, OnDestroy {
 
     this.mttClient
         .getConfigSetInfos(
-            /* includeRemote */ true,
+            /* includeRemote */ false,
             [ConfigSetStatus.IMPORTED, ConfigSetStatus.UPDATABLE])
         .pipe(
             takeUntil(this.destroy),
@@ -75,15 +77,35 @@ export class ConfigSetList implements OnInit, OnDestroy {
             }),
             )
         .subscribe(
-            result => {
-              this.infos = result.config_set_infos || [];
+            infoListRes => {
               this.liveAnnouncer.announce('Config set loaded', 'assertive');
+
+              for (const info of infoListRes.config_set_infos || []) {
+                this.infoMap[info.url] = info;
+                this.getLatestVersion(info);
+              }
             },
             error => {
               this.notifier.showError(
                   'Failed to load config sets.', buildApiErrorMessage(error));
             },
         );
+  }
+
+  getLatestVersion(importedInfo: ConfigSetInfo) {
+    this.infoStatusLoadingSet.add(importedInfo.url);
+    this.mttClient.configSets.getLatestVersion(importedInfo)
+        .pipe(finalize(() => {
+          this.infoStatusLoadingSet.delete(importedInfo.url);
+        }))
+        .subscribe(
+            infoRes => {
+              this.infoMap[infoRes.url] = infoRes;
+            },
+            error => {  // Ignore urls that weren't found
+              console.log(
+                  `No remote config set found for url: ${importedInfo.url}`);
+            });
   }
 
   /**

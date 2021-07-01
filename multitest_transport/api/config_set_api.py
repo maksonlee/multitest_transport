@@ -31,6 +31,11 @@ from multitest_transport.models import ndb_models
 class ConfigSetApi(remote.Service):
   """A handler for Config Set API."""
 
+  def _ConvertFromMessage(self, msg):
+    """Convert a message to a config set info."""
+    return mtt_messages.Convert(
+        msg, ndb_models.ConfigSetInfo, from_cls=mtt_messages.ConfigSetInfo)
+
   @base.ApiMethod(
       endpoints.ResourceContainer(
           message_types.VoidMessage,),
@@ -77,6 +82,16 @@ class ConfigSetApi(remote.Service):
 
     return mtt_messages.ConfigSetInfoList(
         config_set_infos=info_message_list)
+
+  @base.ApiMethod(
+      endpoints.ResourceContainer(mtt_messages.ConfigSetInfo),
+      mtt_messages.ConfigSetInfo,
+      path='latest_version',
+      http_method='POST',
+      name='latest_version')
+  def GetLatestVersion(self, request):
+    imported_info = self._ConvertFromMessage(request)
+    return config_set_helper.GetLatestVersion(imported_info)
 
   @base.ApiMethod(
       endpoints.ResourceContainer(

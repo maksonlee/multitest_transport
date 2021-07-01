@@ -20,8 +20,8 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
-import {MttClient} from '../services/mtt_client';
-import {ConfigSetInfo} from '../services/mtt_models';
+import {ConfigSetClient, MttClient} from '../services/mtt_client';
+import {ConfigSetInfo, ConfigSetStatus} from '../services/mtt_models';
 import {getTextContent} from '../testing/jasmine_util';
 import * as testUtil from '../testing/mtt_mocks';
 
@@ -34,19 +34,29 @@ describe('ConfigSetList', () => {
   let configSetList: ConfigSetList;
   let configSetListFixture: ComponentFixture<ConfigSetList>;
   let mttClient: jasmine.SpyObj<MttClient>;
+  let configSetClient: jasmine.SpyObj<ConfigSetClient>;
   let el: DebugElement;
 
   let imported: ConfigSetInfo;
   let notImported: ConfigSetInfo;
+  let updatable: ConfigSetInfo;
 
   beforeEach(() => {
     imported = testUtil.newMockImportedConfigSetInfo();
     notImported = testUtil.newMockNotImportedConfigSetInfo();
+    updatable = testUtil.newMockImportedConfigSetInfo();
+    updatable.status = ConfigSetStatus.UPDATABLE;
 
-    mttClient = jasmine.createSpyObj(
-        'mttClient', ['getBuildChannels', 'getConfigSetInfos']);
+    configSetClient =
+        jasmine.createSpyObj('configSetClient', ['getLatestVersion']);
+    configSetClient.getLatestVersion.and.returnValue(observableOf());
+    mttClient = {
+      ...jasmine.createSpyObj(
+          'mttClient', ['getBuildChannels', 'getConfigSetInfos']),
+      configSets: configSetClient,
+    };
     mttClient.getConfigSetInfos.and.returnValue(
-        observableOf({config_set_infos: [imported]}));
+        observableOf({config_set_infos: []}));
 
     TestBed.configureTestingModule({
       imports: [ConfigSetsModule, NoopAnimationsModule, RouterTestingModule],
@@ -60,7 +70,17 @@ describe('ConfigSetList', () => {
     el = configSetListFixture.debugElement;
     configSetListFixture.detectChanges();
     configSetList = configSetListFixture.componentInstance;
+
+    reload([], notImported);
   });
+
+  function reload(configSetInfos: ConfigSetInfo[], updatedInfo: ConfigSetInfo) {
+    mttClient.getConfigSetInfos.and.returnValue(
+        observableOf({config_set_infos: configSetInfos}));
+    configSetClient.getLatestVersion.and.returnValue(observableOf(updatedInfo));
+    configSetList.load();
+    configSetListFixture.detectChanges();
+  }
 
   it('initializes a component', () => {
     expect(configSetList).toBeTruthy();
@@ -68,9 +88,17 @@ describe('ConfigSetList', () => {
     expect(getTextContent(el)).toContain('Upload');
   });
 
-  it('lists configs', () => {
+  it('lists imported configs', () => {
+    reload([imported], imported);
     const text = getTextContent(el);
     expect(text).toContain(imported.name);
     expect(text).not.toContain(notImported.name);
+  });
+
+  it('checks for updates', () => {
+    reload([imported, updatable], updatable);
+    const text = getTextContent(el);
+    expect(text).toContain(updatable.name);
+    expect(text).toContain('Update');
   });
 });

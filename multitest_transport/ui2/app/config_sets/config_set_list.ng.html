@@ -39,14 +39,14 @@
     </div>
   </div>
 
-  <mat-table [dataSource]="infos" aria-label="Config set list">
+  <mat-table [dataSource]="infoMap | keyvalue" aria-label="Config set list">
 
     <!-- Name Column -->
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef fxFlex="200px"> Name </mat-header-cell>
       <mat-cell *matCellDef="let element" fxFlex="200px">
-        <span title='{{element.url}}'>
-          {{element.name}}
+        <span title='{{element.value.url}}'>
+          {{element.value.name}}
         </span>
       </mat-cell>
     </ng-container>
@@ -55,20 +55,24 @@
     <ng-container matColumnDef="description">
       <mat-header-cell *matHeaderCellDef fxFlex> Description </mat-header-cell>
       <mat-cell *matCellDef="let element" fxFlex>
-        <span title="{{element.description}}" class="info-description">
-          {{element.description}}
+        <span title="{{element.value.description}}" class="info-description">
+          {{element.value.description}}
         </span>
       </mat-cell>
     </ng-container>
 
     <!-- Status Column -->
     <ng-container matColumnDef="status">
-      <mat-header-cell *matHeaderCellDef fxFlex="240px"> Status </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef fxFlex="240px">Status</mat-header-cell>
       <mat-cell *matCellDef="let element" fxFlex="240px">
-        <status-button class='config-set' [state]="element.status">
+        <status-button class='config-set' [state]="element.value.status">
         </status-button>
-        <button mat-button color='accent' class='update-button' (click)="updateConfigSet(element)"
-                *ngIf="element.status==ConfigSetStatus.UPDATABLE">
+        <mat-spinner [diameter]="20" color="accent" class="info-loading-spinner"
+                     title="Checking for updates..."
+                     *ngIf="this.infoStatusLoadingSet.has(element.value.url)"></mat-spinner>
+        <button mat-button color='accent' class='update-button'
+                (click)="updateConfigSet(element.value)"
+                *ngIf="element.value.status==ConfigSetStatus.UPDATABLE">
           Update
         </button>
       </mat-cell>
@@ -77,7 +81,7 @@
     <!-- Action Menu Column -->
     <ng-container matColumnDef="actions">
       <mat-header-cell *matHeaderCellDef fxFlex="100px"></mat-header-cell>
-      <mat-cell *matCellDef="let info" fxFlex="100px">
+      <mat-cell *matCellDef="let element" fxFlex="100px">
         <button
           id="menuButton"
           aria-label="More actions"
@@ -88,7 +92,7 @@
         </button>
         <mat-menu #menu="matMenu">
           <button id="removeButton" mat-menu-item
-                  (click)="deleteConfigSet(info)">
+                  (click)="deleteConfigSet(element.value)">
             Remove
           </button>
         </mat-menu>
@@ -99,7 +103,7 @@
     <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
   </mat-table>
 
-  <div class="empty" *ngIf="!infos.length">
+  <div class="empty" *ngIf="!Object.keys(infoMap).length">
     No config sets found.
   </div>
 </div>
