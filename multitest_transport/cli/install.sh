@@ -63,7 +63,6 @@ function setup_sudoless_docker {
 function install_mtt {
   # Clean up existing mtt.
   echo "Removing old mtt binary."
-  rm -f ${HOME_BIN_DIR}/mtt
   rm -f ${OLD_HOME_BIN_DIR}/mtt
 
   echo "Install MTT CLI with pip."
