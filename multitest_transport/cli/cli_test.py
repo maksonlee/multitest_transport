@@ -16,6 +16,7 @@
 import os
 import shutil
 import tempfile
+import time
 
 from absl.testing import absltest
 from absl.testing import parameterized
@@ -85,6 +86,13 @@ class CliTest(parameterized.TestCase):
         cli.host_util.control_server_util, 'ControlServerClient',
         return_value=self.mock_control_server_client)
     self.submit_host_update_event_patcher.start()
+    self.mock_tf_console_started_patcher = mock.patch.object(
+        cli, '_IsTfConsoleSuccessfullyStarted', return_value=True)
+    self.mock_tf_console_started_patcher.start()
+    self.mock_tf_console_print_out_patcher = mock.patch.object(
+        command_util.DockerContext, 'RequestTfConsolePrintOut',
+        return_value=None)
+    self.mock_tf_console_print_out_patcher.start()
 
   def tearDown(self):
     self.get_version_patcher.stop()
@@ -95,6 +103,11 @@ class CliTest(parameterized.TestCase):
     self.socket_patcher.stop()
     self.context_patcher.stop()
     self.submit_host_update_event_patcher.stop()
+    try:
+      self.mock_tf_console_started_patcher.stop()
+    except RuntimeError:
+      # ignore if mock_tf_console_started_patcher already stoped in the test
+      pass
     super(CliTest, self).tearDown()
 
   def testGetDockerImageName(self):
@@ -200,6 +213,37 @@ class CliTest(parameterized.TestCase):
         stdout='prod_R9_202009_001')
 
     cli._CheckDockerImageVersion(docker_helper, container_name)
+
+  @mock.patch.object(command_util.DockerContext, 'Run')
+  def testCheckTfConsoleSuccessfullyStarted_withSuccessIndicator(
+      self, mock_command_result):
+    self.mock_tf_console_started_patcher.stop()
+    mock_command_result.return_value = common.CommandResult(
+        return_code=0, stdout=cli._TF_CONSOLE_SUCCESS_INDICATOR, stderr='')
+    self.assertTrue(cli._IsTfConsoleSuccessfullyStarted(self._CreateHost()))
+
+  @mock.patch.object(command_util.DockerContext, 'Run')
+  def testCheckTfConsoleSuccessfullyStarted_withException(
+      self, mock_command_result):
+    self.mock_tf_console_started_patcher.stop()
+    stderr = 'com.android.tradefed.config.ConfigurationException'
+    mock_command_result.return_value = common.CommandResult(
+        return_code=0, stdout='', stderr=stderr)
+    with self.assertRaisesRegex(
+        RuntimeError, r'.*Tradefed failed to start with exception:*'):
+      cli._IsTfConsoleSuccessfullyStarted(self._CreateHost())
+
+  @mock.patch.object(time, 'time')
+  @mock.patch.object(command_util.DockerContext, 'Run')
+  def testCheckTfConsoleSuccessfullyStarted_withTimeout(
+      self, mock_command_result, mock_time):
+    self.mock_tf_console_started_patcher.stop()
+    mock_command_result.return_value = common.CommandResult(
+        return_code=0, stdout='', stderr='')
+    mock_time.side_effect = iter([0, cli._MTT_SERVER_WAIT_TIME_SECONDS + 1])
+    with self.assertRaisesRegex(
+        RuntimeError, r'.*ATS server failed to start in*'):
+      cli._IsTfConsoleSuccessfullyStarted(self._CreateHost())
 
   def testStart(self):
     """Test start without service account."""

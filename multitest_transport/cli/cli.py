@@ -80,6 +80,14 @@ _DETECT_INTERVAL_SEC = 30
 # The dict key name of test harness image from host metadata
 _TEST_HARNESS_IMAGE_KEY = 'testHarnessImage'
 
+# Success indicator once tradefed console started, should match to the println
+# string in startConsole() method after console.start();
+# in tools/tradefederation/core/src/com/android/tradefed/command/Console.java
+_TF_CONSOLE_SUCCESS_INDICATOR = 'tf >'
+# command for check log: "docker logs mtt"
+_DOCKER_LOGS_MTT_COMMAND = ['logs', 'mtt']
+# interval in second for checking out the logs
+_LOG_INQUIRE_INTERVAL_SEC = 5
 
 PACKAGE_LOGGER_NAME = 'multitest_transport.cli'
 logger = logging.getLogger(__name__)
@@ -297,6 +305,36 @@ def _CheckDockerImageVersion(docker_helper, container_name):
     raise ActionableError(
         'CLI is older than Docker image; please update CLI to a newer version'
         '(%s < %s)' % (cli_version, image_version))
+
+
+def _IsTfConsoleSuccessfullyStarted(host):
+  """Check is TF console started successfully.
+
+  Args:
+    host: an instance of host_util.Host.
+  Returns:
+    True if find the TF console success indicator in docker logs.
+  Raises:
+    RuntimeError: if exceptions detected in docker logs.
+  """
+  docker_context = command_util.DockerContext(host.context, login=False)
+  end_time = time.time() + _MTT_SERVER_WAIT_TIME_SECONDS
+  docker_context.RequestTfConsolePrintOut()
+  while time.time() <= end_time:
+    remaining_time = int(end_time - time.time())
+    command_result = docker_context.Run(_DOCKER_LOGS_MTT_COMMAND,
+                                        timeout=remaining_time)
+    docker_log = command_result.stderr + '\n' + command_result.stdout
+
+    if _TF_CONSOLE_SUCCESS_INDICATOR in command_result.stdout:
+      return True
+    elif 'exception' in docker_log.lower():
+      raise RuntimeError(
+          f'Tradefed failed to start with exception:\n{docker_log}')
+    time.sleep(_LOG_INQUIRE_INTERVAL_SEC)
+  # when timeout
+  raise RuntimeError(
+      'ATS server failed to start in %ss' % _MTT_SERVER_WAIT_TIME_SECONDS)
 
 
 def Start(args, host=None):
@@ -543,7 +581,8 @@ def _StartMttNode(args, host):
     # localhost URL.
     hostname = 'localhost'
   if control_server_url:
-    logger.info('ATS replica is running.')
+    if _IsTfConsoleSuccessfullyStarted(host):
+      logger.info('ATS replica is running.')
   else:
     url = 'http://%s:%s' % (hostname, args.port)
     if not _WaitForServer(url, timeout=_MTT_SERVER_WAIT_TIME_SECONDS):

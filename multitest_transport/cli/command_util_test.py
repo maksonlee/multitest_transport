@@ -707,9 +707,15 @@ class DockerContextTest(absltest.TestCase):
     self.command_context.gcloud = 'gcloud'
     self.auth_patcher = mock.patch('__main__.command_util.google_auth_util')
     self.mock_auth_util = self.auth_patcher.start()
+    self.subprocess_patcher = mock.patch('__main__.command_util.subprocess')
+    self.mock_subprocess_pkg = self.subprocess_patcher.start()
+    self.mock_process = mock.MagicMock(returncode=0)
+    self.mock_subprocess_pkg.Popen.return_value = self.mock_process
+    self.mock_process.communicate.return_value = ('stdout', 'stderr')
 
   def tearDown(self):
     self.auth_patcher.stop()
+    self.subprocess_patcher.stop()
     super(DockerContextTest, self).tearDown()
 
   def testInit(self):
@@ -769,6 +775,20 @@ class DockerContextTest(absltest.TestCase):
                       raise_on_failure=False),
         mock.call.Run(['docker', 'images'])
     ])
+
+  def testRequestTfConsolePrintOut(self):
+    self.command_context.Run.side_effect = [
+        mock.MagicMock(return_code=0),
+        mock.MagicMock(return_code=0)
+    ]
+    docker_context = command_util.DockerContext(self.command_context)
+    docker_context.RequestTfConsolePrintOut()
+    self.mock_subprocess_pkg.assert_has_calls([
+        mock.call.Popen(command_util._DOCKER_ATTACH_COMMAND,
+                        stderr=13, stdin=13, stdout=13),
+        mock.call.Popen().communicate(
+            timeout=command_util._TF_CONSOLE_CMD_TIMEOUT_SEC
+        )])
 
 
 class HostCommandOutStreamTest(absltest.TestCase):
