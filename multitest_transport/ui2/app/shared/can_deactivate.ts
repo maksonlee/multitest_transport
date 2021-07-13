@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {ElementRef, HostListener, Injectable, QueryList, ViewChildren} from '@angular/core';
+import { ElementRef, HostListener, Injectable, QueryList, ViewChildren, Directive } from '@angular/core';
 import {NgModel} from '@angular/forms';
 import {MatInput} from '@angular/material/input';
 import {MatSelect} from '@angular/material/select';
@@ -28,6 +28,7 @@ import {Notifier} from '../services/notifier';
  * If a page want to trigger UnsavedChangeGuard on navigating away from the
  * page, it has to extend this class.
  */
+@Directive()
 export abstract class FormChangeTracker {
   /**
    * A form should be consisted of MatInputs, MatSelects and other components
