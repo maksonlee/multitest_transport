@@ -29,5 +29,9 @@ py_test(
         third_party("mock"),
         third_party("webtest"),
         "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
+        "//multitest_transport/test_scheduler:download_util_lib",
+        "//multitest_transport/util:analytics_lib",
+        "//multitest_transport/util:tfc_client_lib",
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
     ],
 )

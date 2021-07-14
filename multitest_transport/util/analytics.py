@@ -13,9 +13,14 @@
 # limitations under the License.
 
 """Utilities for tracking Google Analytics events."""
+import collections
 import json
+import shutil
+import uuid
 
 from tradefed_cluster.services import task_scheduler
+from multitest_transport.util import env
+from multitest_transport.util import tfc_client
 from tradefed_cluster import common
 
 
@@ -29,6 +34,9 @@ SYSTEM_CATEGORY = 'system'
 TEST_RUN_ACTION_CATEGORY = 'test_run_action'
 TEST_RUN_CATEGORY = 'test_run'
 INVOCATION_CATEGORY = 'invocation'
+DISK_USAGE_CATEGORY = 'disk_usage'
+DEVICE_COUNT_PER_WORKER_CATEGORY = 'device_count_per_worker'
+WORKER_COUNT_CATEGORY = 'worker_count'
 
 # GA actions
 DOWNLOAD_ACTION = 'download'
@@ -48,4 +56,38 @@ def Log(category, action, **kwargs):
 def HeartbeatSender():
   """Request handler which periodically logs that this instance is up."""
   Log(SYSTEM_CATEGORY, HEARTBEAT_ACTION)
+  _LogDiskUsage()
+  _LogWorkerAndDeviceCount()
   return common.HTTP_OK
+
+
+def _LogDiskUsage():
+  """Uploads the disk usage to GA."""
+  total, used, free = shutil.disk_usage('/')
+  Log(DISK_USAGE_CATEGORY,
+      HEARTBEAT_ACTION,
+      total_disk_size_byte=total,
+      used_disk_size_byte=used,
+      free_disk_size_byte=free)
+
+
+def _LogWorkerAndDeviceCount():
+  """Uploads number of workers and device counts for each worker."""
+  worker_count = 0
+  device_collection = tfc_client.ListDevices()
+  if device_collection:
+    worker_device_map = collections.defaultdict(int)
+    for device_info in device_collection.device_infos:
+      worker_id = uuid.uuid3(uuid.NAMESPACE_DNS, device_info.hostname)
+      worker_device_map[worker_id] += 1
+    for worker_id, device_count in worker_device_map.items():
+      Log(DEVICE_COUNT_PER_WORKER_CATEGORY,
+          HEARTBEAT_ACTION,
+          worker_id=worker_id,
+          device_count=device_count)
+    worker_count = len(worker_device_map)
+  operation_mode = env.OPERATION_MODE.value
+  Log(WORKER_COUNT_CATEGORY,
+      HEARTBEAT_ACTION,
+      operation_mode=operation_mode,
+      worker_count=worker_count)

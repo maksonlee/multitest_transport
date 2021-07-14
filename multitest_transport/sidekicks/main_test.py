@@ -7,6 +7,8 @@ import webtest
 from multitest_transport.sidekicks import main
 from multitest_transport.test_scheduler import download_util
 from multitest_transport.util import analytics
+from multitest_transport.util import tfc_client
+from tradefed_cluster import api_messages
 
 
 class MainTest(absltest.TestCase):
@@ -16,12 +18,25 @@ class MainTest(absltest.TestCase):
     super(MainTest, self).setUp()
     self.testapp = webtest.TestApp(main.APP)
 
+  @mock.patch.object(tfc_client, 'ListDevices')
   @mock.patch.object(analytics, 'Log')
-  def testHeartbeatSender(self, mock_log):
+  def testHeartbeatSenderWithNoDevices(self, mock_log, mock_list_devices):
+    mock_list_devices.return_value = None
     response = self.testapp.get('/sidekicks/heartbeat_sender')
     self.assertEqual('200 OK', response.status)
-    mock_log.assert_called_once_with(
-        analytics.SYSTEM_CATEGORY, analytics.HEARTBEAT_ACTION)
+    self.assertEqual(mock_log.call_count, 3)
+
+  @mock.patch.object(tfc_client, 'ListDevices')
+  @mock.patch.object(analytics, 'Log')
+  def testHeartbeatSenderWithMultipleWorkers(self, mock_log, mock_list_devices):
+    device_1 = api_messages.DeviceInfo(hostname='worker_1.com')
+    device_2 = api_messages.DeviceInfo(hostname='worker_2.com')
+    device_infos = [device_1, device_2]
+    mock_list_devices.return_value = api_messages.DeviceInfoCollection(
+        device_infos=device_infos)
+    response = self.testapp.get('/sidekicks/heartbeat_sender')
+    self.assertEqual('200 OK', response.status)
+    self.assertEqual(mock_log.call_count, 5)
 
   @mock.patch.object(download_util, 'CleanTestResourceCache')
   def testTestResourceCacheCleaner(self, mock_clean_test_resource_cache):

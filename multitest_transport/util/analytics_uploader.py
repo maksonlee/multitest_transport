@@ -54,6 +54,8 @@ _METRIC_KEYS = {
     'test_id': 'cd12',
     'is_sequence_run': 'cd13',
     'user_tag': 'cd14',
+    'operation_mode': 'cd15',
+    'worker_id': 'cd16',
     'duration_seconds': 'cm1',
     'device_count': 'cm2',
     'attempt_count': 'cm3',
@@ -64,6 +66,10 @@ _METRIC_KEYS = {
     'prev_total_test_count': 'cm8',
     'prev_failed_module_count': 'cm9',
     'prev_failed_test_count': 'cm10',
+    'total_disk_size_byte': 'cm11',
+    'used_disk_size_byte': 'cm12',
+    'free_disk_size_byte': 'cm13',
+    'worker_count': 'cm14'
 }
 
 

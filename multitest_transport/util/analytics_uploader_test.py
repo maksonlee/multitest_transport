@@ -90,31 +90,46 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
 
   def testEvent_complex(self):
     """Tests that complex events can be constructed."""
-    event = analytics_uploader._Event('server', 'category', 'action',
-                                      test_name='name',
-                                      test_version='version',
-                                      state='COMPLETED',
-                                      is_rerun=True,
-                                      duration_seconds=0,
-                                      device_count=1,
-                                      attempt_count=2,
-                                      failed_module_count=3,
-                                      test_count=4,
-                                      failed_test_count=5)
+    event = analytics_uploader._Event(
+        'server',
+        'category',
+        'action',
+        test_name='name',
+        test_version='version',
+        state='COMPLETED',
+        is_rerun=True,
+        operation_mode='on_premise',
+        worker_id='worker_id',
+        duration_seconds=0,
+        device_count=1,
+        attempt_count=2,
+        failed_module_count=3,
+        test_count=4,
+        failed_test_count=5,
+        total_disk_size_byte=100000,
+        used_disk_size_byte=40000,
+        free_disk_size_byte=60000,
+        worker_count=2)
     data = dict(event)
     self.assertValidEvent(data, 'server', 'category', 'action')
-    self.assertLen(data, 19)  # ten additional fields
+    self.assertLen(data, 25)  # 15 additional fields
     self.assertEqual('name', data['cd2'])
     self.assertEqual('version', data['cd3'])
     self.assertEqual('COMPLETED', data['cd4'])
     self.assertEqual(True, data['cd5'])
     self.assertEqual('test_user_tag', data['cd14'])
+    self.assertEqual('on_premise', data['cd15'])
+    self.assertEqual('worker_id', data['cd16'])
     self.assertEqual(0, data['cm1'])
     self.assertEqual(1, data['cm2'])
     self.assertEqual(2, data['cm3'])
     self.assertEqual(3, data['cm4'])
     self.assertEqual(4, data['cm5'])
     self.assertEqual(5, data['cm6'])
+    self.assertEqual(100000, data['cm11'])
+    self.assertEqual(40000, data['cm12'])
+    self.assertEqual(60000, data['cm13'])
+    self.assertEqual(2, data['cm14'])
 
 
 if __name__ == '__main__':

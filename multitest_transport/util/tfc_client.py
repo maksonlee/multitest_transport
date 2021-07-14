@@ -168,6 +168,17 @@ def GetLatestFinishedAttempt(
   return next((a for a in attempts if IsFinalCommandState(a.state)), None)
 
 
+def ListDevices() -> Optional[api_messages.DeviceInfoCollection]:
+  """Gets a list of all devices.
+
+  Returns:
+    A DeviceInfoCollection object.
+  """
+  res = _GetAPIClient().devices().list().execute()
+  return protojson.decode_message(  # pytype: disable=module-attr
+      api_messages.DeviceInfoCollection, json.dumps(res))
+
+
 def GetDeviceInfo(serial_num: str) -> Optional[api_messages.DeviceInfo]:
   """Gets device info.
 

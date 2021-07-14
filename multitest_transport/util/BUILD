@@ -11,6 +11,8 @@ pytype_strict_library(
     ],
     srcs_version = "PY2AND3",
     deps = [
+        ":env_lib",
+        ":tfc_client_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster/services:task_scheduler_lib",
     ],
@@ -56,8 +58,12 @@ py_test(
     python_version = "PY3",
     srcs_version = "PY3",
     deps = [
+        third_party("six"),
+        third_party("absl/testing:absltest"),
         ":analytics_uploader_lib",
+        ":env_lib",
         "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
+        "//multitest_transport/models:ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("mock"),
     ],
