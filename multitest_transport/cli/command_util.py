@@ -65,11 +65,11 @@ _DOCKER_KILL_CMD_TIMEOUT_SEC = 60
 _DOCKER_WAIT_CMD_TIMEOUT_SEC = 2 * 60 * 60
 _DOCKER_LIVELINESS_CHECKING_MESSAGE = 'Checking container liveliness.'
 _DOCKER_LIVELINESS_CHECKING_TIMEOUT_SEC = 2 * 60
-_TF_CONSOLE_CMD_TIMEOUT_SEC = 5
-# docker command for attaching TF console: "docker attach --detach-keys Z mtt"
-_DOCKER_ATTACH_COMMAND = ['docker', 'attach', '--detach-keys', 'Z', 'mtt']
+_DEFAULT_TF_CONSOLE_CMD_TIMEOUT_SEC = 2
+# docker command for attaching TF console: "docker attach mtt"
+_DOCKER_ATTACH_COMMAND = ['docker', 'attach', 'mtt']
 # dockerized TF command for checking TF version
-_TF_VERSION_COMMAND = b'version\nZ'
+_TF_VERSION_COMMAND = b'\nversion\n'
 
 # To exec command on a dead container, docker will output:
 # OCI runtime exec failed: exec failed: cannot exec a container that has
@@ -555,15 +555,20 @@ class DockerContext(object):
     args = ['docker']
     return self._context.Run(args + command, **kwargs)
 
-  def RequestTfConsolePrintOut(self):
-    """Attach to the dockerized TF console and print out the TF version.
-    """
+  def RequestTfConsolePrintOut(
+      self, timeout=_DEFAULT_TF_CONSOLE_CMD_TIMEOUT_SEC):
+    """Attach to the dockerized TF console and print out the TF version."""
     main_file_descriptor, child_file_descriptor = pty.openpty()
     process = subprocess.Popen(
         _DOCKER_ATTACH_COMMAND, stdin=child_file_descriptor,
         stdout=child_file_descriptor, stderr=child_file_descriptor)
     os.write(main_file_descriptor, _TF_VERSION_COMMAND)
-    process.communicate(timeout=_TF_CONSOLE_CMD_TIMEOUT_SEC)
+    try:
+      process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+      # Timeout is expected, we communicate just to send the input
+      # to TF console.
+      process.kill()
 
 
 class BridgeNetworkInfo(object):

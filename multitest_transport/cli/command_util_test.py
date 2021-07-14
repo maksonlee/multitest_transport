@@ -16,6 +16,7 @@
 import getpass
 import os
 import socket
+import subprocess
 
 from absl.testing import absltest
 import mock
@@ -710,6 +711,7 @@ class DockerContextTest(absltest.TestCase):
     self.subprocess_patcher = mock.patch('__main__.command_util.subprocess')
     self.mock_subprocess_pkg = self.subprocess_patcher.start()
     self.mock_process = mock.MagicMock(returncode=0)
+    self.mock_subprocess_pkg.TimeoutExpired = subprocess.TimeoutExpired
     self.mock_subprocess_pkg.Popen.return_value = self.mock_process
     self.mock_process.communicate.return_value = ('stdout', 'stderr')
 
@@ -779,15 +781,15 @@ class DockerContextTest(absltest.TestCase):
   def testRequestTfConsolePrintOut(self):
     self.command_context.Run.side_effect = [
         mock.MagicMock(return_code=0),
-        mock.MagicMock(return_code=0)
+        mock.MagicMock(return_code=0),
     ]
     docker_context = command_util.DockerContext(self.command_context)
     docker_context.RequestTfConsolePrintOut()
     self.mock_subprocess_pkg.assert_has_calls([
         mock.call.Popen(command_util._DOCKER_ATTACH_COMMAND,
-                        stderr=13, stdin=13, stdout=13),
+                        stderr=mock.ANY, stdin=mock.ANY, stdout=mock.ANY),
         mock.call.Popen().communicate(
-            timeout=command_util._TF_CONSOLE_CMD_TIMEOUT_SEC
+            timeout=command_util._DEFAULT_TF_CONSOLE_CMD_TIMEOUT_SEC
         )])
 
 

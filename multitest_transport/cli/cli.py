@@ -319,9 +319,9 @@ def _IsTfConsoleSuccessfullyStarted(host):
   """
   docker_context = command_util.DockerContext(host.context, login=False)
   end_time = time.time() + _MTT_SERVER_WAIT_TIME_SECONDS
-  docker_context.RequestTfConsolePrintOut()
   while time.time() <= end_time:
     remaining_time = int(end_time - time.time())
+    docker_context.RequestTfConsolePrintOut()
     command_result = docker_context.Run(_DOCKER_LOGS_MTT_COMMAND,
                                         timeout=remaining_time)
     docker_log = command_result.stderr + '\n' + command_result.stdout
