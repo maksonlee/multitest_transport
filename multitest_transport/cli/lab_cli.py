@@ -315,15 +315,14 @@ def _GetServiceAccountKeyFromSecretManager(secret_project_id, secret_id):
       secret_project_id, secret_id)
   sa_key_dict = json.loads(service_account_key)
   sa_email = sa_key_dict[_CLIENT_EMAIL_KEY]
-
-  if not _ShouldRenewServiceAccountKey(sa_key_dict):
-    logger.debug('The service account key is new, no need to renew.')
-    return service_account_key
   if not google_auth_util.CanCreateKey(sa_email):
     logger.info('No permission to create service account key, skip renew')
     return service_account_key
   if not google_auth_util.CanUpdateSecret(secret_project_id, secret_id):
     logger.info('No permission to create service account key, skip renew')
+    return service_account_key
+  if not _ShouldRenewServiceAccountKey(sa_key_dict):
+    logger.debug('The service account key is new, no need to renew.')
     return service_account_key
   new_sa_key_dict = google_auth_util.CreateKey(sa_email)
   new_service_account_key = json.dumps(new_sa_key_dict).encode()

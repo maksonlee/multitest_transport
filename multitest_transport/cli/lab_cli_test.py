@@ -376,8 +376,8 @@ class LabCliTest(parameterized.TestCase):
 
     mock_get_key_info.assert_called_once_with(
         _SERVICE_ACCOUNT_EMAIL, _SERVICE_ACCOUNT_KEY_ID)
-    self.assertFalse(mock_can_create_key.called)
-    self.assertFalse(mock_can_update_secret.called)
+    self.assertTrue(mock_can_create_key.called)
+    self.assertTrue(mock_can_update_secret.called)
     self.assertFalse(mock_create_key.called)
     self.assertFalse(mock_update_secret.called)
     self.assertFalse(mock_disable_versions.called)
