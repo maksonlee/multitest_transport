@@ -32,7 +32,8 @@ class SshUtilTest(absltest.TestCase):
          '/bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
         stdin=self.mock_subprocess_pkg.DEVNULL,
         stdout=self.mock_subprocess_pkg.PIPE,
-        stderr=self.mock_subprocess_pkg.PIPE)
+        stderr=self.mock_subprocess_pkg.PIPE,
+        universal_newlines=True)
     self.assertEqual(0, res.return_code)
 
   def testRun_withSshArgs(self):
@@ -50,7 +51,8 @@ class SshUtilTest(absltest.TestCase):
          '/bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
         stdin=self.mock_subprocess_pkg.DEVNULL,
         stdout=self.mock_subprocess_pkg.PIPE,
-        stderr=self.mock_subprocess_pkg.PIPE)
+        stderr=self.mock_subprocess_pkg.PIPE,
+        universal_newlines=True)
     self.assertEqual(0, res.return_code)
 
   def testRun_withSshArgs_notTokenized(self):
@@ -69,7 +71,8 @@ class SshUtilTest(absltest.TestCase):
          '/bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
         stdin=self.mock_subprocess_pkg.DEVNULL,
         stdout=self.mock_subprocess_pkg.PIPE,
-        stderr=self.mock_subprocess_pkg.PIPE)
+        stderr=self.mock_subprocess_pkg.PIPE,
+        universal_newlines=True)
     self.assertEqual(0, res.return_code)
 
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
@@ -86,7 +89,8 @@ class SshUtilTest(absltest.TestCase):
          '/bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
         stdin=self.mock_subprocess_pkg.DEVNULL,
         stdout=self.mock_subprocess_pkg.PIPE,
-        stderr=self.mock_subprocess_pkg.PIPE)
+        stderr=self.mock_subprocess_pkg.PIPE,
+        universal_newlines=True)
     self.assertEqual(0, res.return_code)
     mock_file.assert_has_calls([
         mock.call.write('apass'.encode()),
@@ -103,7 +107,8 @@ class SshUtilTest(absltest.TestCase):
          'sudo /bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
         stdin=self.mock_subprocess_pkg.DEVNULL,
         stdout=self.mock_subprocess_pkg.PIPE,
-        stderr=self.mock_subprocess_pkg.PIPE)
+        stderr=self.mock_subprocess_pkg.PIPE,
+        universal_newlines=True)
     self.assertEqual(0, res.return_code)
 
   def testSudo_withSshArgs(self):
@@ -121,7 +126,8 @@ class SshUtilTest(absltest.TestCase):
          'sudo /bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
         stdin=self.mock_subprocess_pkg.DEVNULL,
         stdout=self.mock_subprocess_pkg.PIPE,
-        stderr=self.mock_subprocess_pkg.PIPE)
+        stderr=self.mock_subprocess_pkg.PIPE,
+        universal_newlines=True)
     self.assertEqual(0, res.return_code)
 
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
@@ -138,7 +144,8 @@ class SshUtilTest(absltest.TestCase):
          'sudo /bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
         stdin=self.mock_subprocess_pkg.DEVNULL,
         stdout=self.mock_subprocess_pkg.PIPE,
-        stderr=self.mock_subprocess_pkg.PIPE)
+        stderr=self.mock_subprocess_pkg.PIPE,
+        universal_newlines=True)
     self.assertEqual(0, res.return_code)
     mock_file.assert_has_calls([
         mock.call.write('apass'.encode()),
@@ -154,7 +161,8 @@ class SshUtilTest(absltest.TestCase):
         ['rsync', '/path/to/local/file', 'auser@ahost:/path/to/remote/file'],
         stdin=self.mock_subprocess_pkg.DEVNULL,
         stdout=self.mock_subprocess_pkg.PIPE,
-        stderr=self.mock_subprocess_pkg.PIPE)
+        stderr=self.mock_subprocess_pkg.PIPE,
+        universal_newlines=True)
     self.assertTrue(self.mock_process.communicate.called)
 
   def testPut_withSshArgs(self):
@@ -170,7 +178,8 @@ class SshUtilTest(absltest.TestCase):
          '/path/to/local/file', 'auser@ahost:/path/to/remote/file'],
         stdin=self.mock_subprocess_pkg.DEVNULL,
         stdout=self.mock_subprocess_pkg.PIPE,
-        stderr=self.mock_subprocess_pkg.PIPE)
+        stderr=self.mock_subprocess_pkg.PIPE,
+        universal_newlines=True)
     self.assertTrue(self.mock_process.communicate.called)
 
   @mock.patch.object(tempfile, 'NamedTemporaryFile')
@@ -187,7 +196,8 @@ class SshUtilTest(absltest.TestCase):
          'auser@ahost:/path/to/remote/file'],
         stdin=self.mock_subprocess_pkg.DEVNULL,
         stdout=self.mock_subprocess_pkg.PIPE,
-        stderr=self.mock_subprocess_pkg.PIPE)
+        stderr=self.mock_subprocess_pkg.PIPE,
+        universal_newlines=True)
     self.assertTrue(self.mock_process.communicate.called)
     mock_file.assert_has_calls([
         mock.call.write('apass'.encode()),

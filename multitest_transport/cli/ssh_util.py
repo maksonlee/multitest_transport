@@ -134,15 +134,7 @@ class Context(object):
       if password:
         password_file, sshpass_cmds = _ssh_with_password(password)
         ssh_cmds = sshpass_cmds + ssh_cmds
-      logger.debug('Run: %r', ssh_cmds)
-      p = subprocess.Popen(
-          ssh_cmds,
-          stdin=subprocess.DEVNULL,
-          stdout=subprocess.PIPE,
-          stderr=subprocess.PIPE)
-      outs, errs = p.communicate()
-      logger.debug('stdout: %s\nstderr: %s\n', outs, errs)
-      return common.CommandResult(p.returncode, outs, errs)
+      return self._execute_cmd(ssh_cmds)
     finally:
       if password_file:
         password_file.close()
@@ -175,14 +167,7 @@ class Context(object):
       if password:
         password_file, sshpass_cmds = _ssh_with_password(password)
         rsync_cmds = sshpass_cmds + rsync_cmds
-      logger.debug('Run: %r', rsync_cmds)
-      p = subprocess.Popen(
-          rsync_cmds,
-          stdin=subprocess.DEVNULL,
-          stdout=subprocess.PIPE,
-          stderr=subprocess.PIPE)
-      outs, errs = p.communicate()
-      logger.debug('stdout: %s\nstderr: %s\n', outs, errs)
+      self._execute_cmd(rsync_cmds)
     finally:
       if password_file:
         # close will also delete the file.
@@ -193,3 +178,34 @@ class Context(object):
     # ssh session is controlled by ssh client, we don't need to
     # do anything here.
     pass
+
+  def _execute_cmd(self, cmd):
+    """Execute command line.
+
+    Args:
+      cmd: a list represents a command line.
+    Returns:
+      CommandResult.
+    """
+    logger.debug('Run: %r', cmd)
+    p = subprocess.Popen(
+        cmd,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True)
+    outs, errs = p.communicate()
+    self._print_pipe(outs)
+    self._print_pipe(errs)
+    return common.CommandResult(p.returncode, outs, errs)
+
+  def _print_pipe(self, outs):
+    """Print stdout and stderr.
+
+    Args:
+      outs: stdout or stderr of subprocess.
+    """
+    if not outs:
+      return
+    for line in outs.split('\n'):
+      logger.debug('%s@%s stdout: %s', self._user, self._hostname, line)
