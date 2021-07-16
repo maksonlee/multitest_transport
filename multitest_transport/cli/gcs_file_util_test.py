@@ -73,12 +73,12 @@ class GCSFileUtilTest(absltest.TestCase):
     mock_client = mock.MagicMock()
     mock_blob1 = mock.MagicMock()
     mock_blob1.name = 'configs/config1.yaml'
-    mock_blob1.download_as_string.return_value = 'config1'
+    mock_blob1.download_as_string.return_value = b'config1'
     mock_blob2 = mock.MagicMock()
     mock_blob2.name = 'configs/folder'
     mock_blob3 = mock.MagicMock()
     mock_blob3.name = 'configs/config2.yaml'
-    mock_blob3.download_as_string.return_value = 'config2'
+    mock_blob3.download_as_string.return_value = b'config2'
     mock_bucket = mock.MagicMock()
     mock_bucket.list_blobs.return_value = iter(
         [mock_blob1, mock_blob2, mock_blob3])

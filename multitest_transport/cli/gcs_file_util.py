@@ -102,7 +102,7 @@ def GCSFileEnumerator(storage_client, path, filename_filter=None):
     if filename_filter and not filename_filter(blob.name):
       continue
     logger.debug('Downloading gs://%s/%s.', bucket_name, blob.name)
-    string_obj = six.moves.StringIO(blob.download_as_string())
+    string_obj = six.moves.StringIO(six.ensure_str(blob.download_as_string()))
     yield string_obj
 
 
