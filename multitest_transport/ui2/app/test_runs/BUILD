@@ -13,7 +13,6 @@ ng_module(
     srcs = [
         "attempt_status.ts",
         "new_test_run_page.ts",
-        "test_job_tree.ts",
         "test_module_result_list.ts",
         "test_package_info_pipe.ts",
         "test_resource_list.ts",
@@ -82,7 +81,6 @@ ng_module(
     srcs = [
         "attempt_status_test.ts",
         "new_test_run_page_test.ts",
-        "test_job_tree_test.ts",
         "test_module_result_list_test.ts",
         "test_package_info_pipe_test.ts",
         "test_resource_list_test.ts",

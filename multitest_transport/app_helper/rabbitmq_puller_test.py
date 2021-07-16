@@ -49,15 +49,15 @@ class MessagePullerTest(absltest.TestCase):
     self.mock_conn_ctor.assert_called_with(self.conn_params)
     self.mock_channel.assert_has_calls([
         mock.call.queue_declare(queue='queue'),
-        mock.call.basic_consume('queue', mock.ANY),
+        mock.call.queue_purge(queue='queue'),
+        mock.call.basic_consume('queue', mock.ANY, auto_ack=True),
         mock.call.start_consuming(),
         mock.call.stop_consuming(),
     ])
 
-  @mock.patch.object(rabbitmq_puller.MessagePuller, 'ack_message')
   @mock.patch.object(urllib.request, 'urlopen', autospec=True)
   @mock.patch.object(urllib.request, 'Request', autospec=True)
-  def testOnMessage(self, mock_request_ctor, mock_urlopen, mock_ack):
+  def testOnMessage(self, mock_request_ctor, mock_urlopen):
     message_puller = rabbitmq_puller.MessagePuller(
         self.conn_params, 'queue', 'target_url')
     method = mock.MagicMock(pika.spec.Basic.Deliver, autospec=True)
@@ -81,14 +81,10 @@ class MessagePullerTest(absltest.TestCase):
     mock_urlopen.assert_called_with(
         mock_request_ctor.return_value,
         timeout=rabbitmq_puller.INVOKE_TIMEOUT_SECONDS)
-    mock_ack.assert_called_with(self.mock_conn, self.mock_channel,
-                                method.delivery_tag)
 
-  @mock.patch.object(rabbitmq_puller.MessagePuller, 'ack_message')
   @mock.patch.object(urllib.request, 'urlopen', autospec=True)
   @mock.patch.object(urllib.request, 'Request', autospec=True)
-  def testOnMessage_withDynamicTargetUrl(self, mock_request_ctor, mock_urlopen,
-                                         mock_ack):
+  def testOnMessage_withDynamicTargetUrl(self, mock_request_ctor, mock_urlopen):
     message_puller = rabbitmq_puller.MessagePuller(
         self.conn_params, 'queue', 'target_url/{queue}')
     method = mock.MagicMock(pika.spec.Basic.Deliver, autospec=True)
@@ -112,16 +108,13 @@ class MessagePullerTest(absltest.TestCase):
     mock_urlopen.assert_called_with(
         mock_request_ctor.return_value,
         timeout=rabbitmq_puller.INVOKE_TIMEOUT_SECONDS)
-    mock_ack.assert_called_with(self.mock_conn, self.mock_channel,
-                                method.delivery_tag)
 
-  @mock.patch.object(rabbitmq_puller.MessagePuller, 'ack_message')
   @mock.patch.object(urllib.request, 'urlopen', autospec=True)
   @mock.patch.object(urllib.request, 'Request', autospec=True)
   @mock.patch.object(rabbitmq_puller.MessagePuller, 'delay_message')
   @mock.patch.object(datetime, 'datetime', wraps=datetime.datetime)
   def testOnMessage_messageWithETA(self, mock_datetime, mock_delay_message,
-                                   mock_request_ctor, mock_urlopen, mock_ack):
+                                   mock_request_ctor, mock_urlopen):
     epoch = datetime.datetime(1970, 1, 1)
     now = datetime.datetime(2020, 9, 1)
     mock_datetime.utcnow = mock.MagicMock(return_value=now)
@@ -145,17 +138,14 @@ class MessagePullerTest(absltest.TestCase):
 
     mock_delay_message.assert_called_with(self.mock_conn, self.mock_channel,
                                           properties, body, 1234)
-    mock_ack.assert_called_with(self.mock_conn, self.mock_channel,
-                                method.delivery_tag)
     mock_request_ctor.assert_not_called()
     mock_urlopen.assert_not_called()
 
-  @mock.patch.object(rabbitmq_puller.MessagePuller, 'ack_message')
   @mock.patch.object(rabbitmq_puller.MessagePuller, 'delay_message')
   @mock.patch.object(urllib.request, 'urlopen', autospec=True)
   @mock.patch.object(urllib.request, 'Request', autospec=True)
   def testOnMessage_onError(self, mock_request_ctor, mock_urlopen,
-                            mock_delay_message, mock_ack):
+                            mock_delay_message):
     message_puller = rabbitmq_puller.MessagePuller(
         self.conn_params, 'queue', 'target_url')
     method = mock.MagicMock(pika.spec.Basic.Deliver, autospec=True)
@@ -183,8 +173,6 @@ class MessagePullerTest(absltest.TestCase):
     mock_delay_message.assert_called_with(self.mock_conn, self.mock_channel,
                                           properties, body,
                                           rabbitmq_puller.MIN_BACKOFF_SECONDS)
-    mock_ack.assert_called_with(self.mock_conn, self.mock_channel,
-                                method.delivery_tag)
 
   def testDelayMessage(self):
     message_puller = rabbitmq_puller.MessagePuller(

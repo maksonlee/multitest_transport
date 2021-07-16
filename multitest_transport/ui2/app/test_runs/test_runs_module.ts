@@ -30,7 +30,6 @@ import {TestRunActionsModule} from '../test_run_actions/test_run_actions_module'
 
 import {AttemptStatus} from './attempt_status';
 import {NewTestRunPage} from './new_test_run_page';
-import {TestJobTree} from './test_job_tree';
 import {TestModuleResultList} from './test_module_result_list';
 import {TestPackageInfoPipe} from './test_package_info_pipe';
 import {TestResourceList} from './test_resource_list';
@@ -49,7 +48,7 @@ import {TestRunTargetPicker} from './test_run_target_picker';
 import {TestRunTreeTable} from './test_run_tree_table';
 
 const COMPONENTS = [
-  AttemptStatus,       NewTestRunPage,    TestJobTree,
+  AttemptStatus,       NewTestRunPage,
   TestPackageInfoPipe, TestResourceList,  TestModuleResultList,
   TestRunConfigEditor, TestRunConfigList, TestRunConfigSummary,
   TestRunConsole,      TestRunDetail,     TestRunDetailPage,

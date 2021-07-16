@@ -32,8 +32,7 @@
     </div>
     <div class="attempt-content">
       <div class="attempt-header">
-        <!-- TODO: get a command from TFC command object. -->
-        <div>Running "{{testRun.test_run_config && testRun.test_run_config.command}}" (attempt {{entity.attempt_id}})</div>
+        <div>Running "{{entity.command.name || entity.command.command_line}}" (attempt {{entity.attempt_id}})</div>
       </div>
       <attempt-status [testRun]="testRun" [attempt]="entity"></attempt-status>
     </div>

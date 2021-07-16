@@ -18,7 +18,7 @@ import {ChangeDetectionStrategy, Component, Input, OnChanges, OnInit} from '@ang
 import * as moment from 'moment';
 
 import {EventLogEntry, EventLogLevel, TestRun} from '../services/mtt_models';
-import {CommandAttempt, Request} from '../services/tfc_models';
+import {Command, CommandAttempt, Request} from '../services/tfc_models';
 import {assertRequiredInput, millisToDuration} from '../shared/util';
 
 /** Progress entity which represents a log entry. */
@@ -62,11 +62,17 @@ export class TestRunProgress implements OnInit, OnChanges {
       return {progressType: 'log', timestamp: moment.utc(e.create_time), ...e};
     });
     // Convert attempts
+    const commands = this.request && this.request.commands || [];
+    const commandMap = commands.reduce((map: Map<string, Command>, obj: Command) => {
+      map.set(obj.id, obj);
+      return map;
+    }, new Map<string, Command>());
     const attempts = this.request && this.request.command_attempts || [];
     const attemptEntities: AttemptEntity[] = attempts.map(e => {
       return {
         progressType: 'attempt',
         timestamp: moment.utc(e.create_time),
+        command: commandMap.get(e.command_id),
         ...e,
       };
     });

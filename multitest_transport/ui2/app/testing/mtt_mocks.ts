@@ -384,7 +384,7 @@ export function newMockTestRunConfig(
     run_target: runTarget,
     run_count: 1,
     shard_count: 1,
-    sharding_mode: mttModels.TFShardingMode.RUNNER,
+    sharding_mode: mttModels.ShardingMode.RUNNER,
     max_retry_on_test_failures: 1,
     output_idle_timeout_seconds: 3600,
     queue_timeout_seconds: 100,

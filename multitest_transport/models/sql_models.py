@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """SQL-based model classes (for the test results DB)."""
-from typing import Iterable, Optional
+from typing import Iterable, List, Optional
 import uuid
 
 import sqlalchemy as sa
@@ -148,3 +148,17 @@ def InsertTestResults(test_run_id: str,
     # Persist any remaining modules and test cases
     session.commit()
     session.bulk_insert_mappings(TestCaseResult, test_case_data)
+
+
+def GetTestModuleResults(attempt_ids: List[str]) -> List[TestModuleResult]:
+  """Queries test modules results for a given attempt IDs.
+
+  Args:
+    attempt_ids: attempt IDs.
+  Returns:
+    a list of test module results.
+  """
+  with db.Session() as session:
+    query = session.query(TestModuleResult)
+    query = query.filter(TestModuleResult.attempt_id.in_(attempt_ids))
+    return query.all()

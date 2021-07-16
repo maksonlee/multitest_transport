@@ -61,6 +61,11 @@ DEFAULT_TF_CONFIG_OBJECTS = [
 APP = flask.Flask(__name__)
 
 
+class TestKickerError(errors.BaseError):
+  """A base error for test kick errors."""
+  pass
+
+
 def ValidateDeviceActions(device_actions):
   """Validate a list of device actions for a test run.
 
@@ -151,8 +156,7 @@ def CreateTestRun(labels,
   Returns:
     a ndb_models.TestRun object.
   Raises:
-    ValueError: if a given test is not found in DB.
-    ValueError: if a both rerun_configs and sequence_id are passed
+    ValueError: some of given parameters are invalid.
     errors.TestResourceError: if some of test resources don't have URLs.
   """
   # Set defaults for null test_run_config fields for backward compatibility.
@@ -162,6 +166,21 @@ def CreateTestRun(labels,
   test = test_run_config.test_key.get()
   if not test:
     raise ValueError('cannot find test %s' % test_run_config.test_key)
+
+  if test_run_config.sharding_mode == ndb_models.ShardingMode.MODULE:
+    if (not test.module_config_pattern or not test.module_execution_args):
+      raise ValueError(
+          'test "%s" does not support module sharding: '
+          'module_config_pattern or module_exeuction_args not defined' % (
+              test.name))
+    test_package_urls = [
+        r.cache_url
+        for r in test_run_config.test_resource_objs
+        if r.test_resource_type == ndb_models.TestResourceType.TEST_PACKAGE]
+    if not test_package_urls:
+      raise ValueError(
+          'cannot use module sharding: '
+          'no test package is found in test resources')
 
   node_config = ndb_models.GetNodeConfig()
   test.env_vars.extend(node_config.env_vars)
@@ -424,28 +443,63 @@ def _CreateTFCRequest(test_run_id):
          'retry_extra_args: %s'),
         test_run_id, retry_command_line)
 
-  # Append sharding arguments
-  sharding_mode = (
-      test_run.test_run_config.sharding_mode or ndb_models.ShardingMode.RUNNER)
+  # Prepare TFC request parameters
+  run_target = test_run.test_run_config.run_target
   if test_run.test_run_config.device_specs:
     run_target = _DeviceSpecsToTFCRunTarget(
         test_run.test_run_config.device_specs)
-  else:
-    run_target = test_run.test_run_config.run_target
-  shard_count = test_run.test_run_config.shard_count
+
+  # Buid command infos
+  command_infos = []
+  max_concurrent_tasks = None
+  sharding_mode = (
+      test_run.test_run_config.sharding_mode or ndb_models.ShardingMode.RUNNER)
   if sharding_mode == ndb_models.ShardingMode.RUNNER:
-    if shard_count > 1 and test_run.test.runner_sharding_args:
+    if (test_run.test_run_config.shard_count > 1 and
+        test_run.test.runner_sharding_args):
       tmpl = string.Template(test_run.test.runner_sharding_args)
       sharding_args = tmpl.safe_substitute({
-          'TF_SHARD_COUNT': str(shard_count)
+          'TF_SHARD_COUNT': str(test_run.test_run_config.shard_count)
       })
       command_line = ' '.join([command_line, sharding_args])
       if retry_command_line:
         retry_command_line = ' '.join([retry_command_line, sharding_args])
-    shard_count = 1
+    command_infos.append(
+        api_messages.CommandInfo(
+            command_line=command_line,
+            cluster=test_run.test_run_config.cluster,
+            run_target=run_target,
+            run_count=test_run.test_run_config.run_count,
+            shard_count=1))
+  elif sharding_mode == ndb_models.ShardingMode.MODULE:
+    test_package_urls = [
+        r.cache_url
+        for r in test_run.test_resources
+        if r.test_resource_type == ndb_models.TestResourceType.TEST_PACKAGE]
+    # get module infos
+    module_infos = file_util.GetTestModuleInfos(
+        file_util.OpenFile(test_package_urls[0]),
+        test_run.test.module_config_pattern)
+    tmpl = string.Template(test_run.test.module_execution_args)
+    for info in sorted(module_infos, key=lambda x: x.name):
+      module_args = tmpl.safe_substitute({'MODULE_NAME': info.name})
+      command_info = api_messages.CommandInfo(
+          name=info.name,
+          command_line=' '.join([command_line, module_args]),
+          cluster=test_run.test_run_config.cluster,
+          run_target=run_target,
+          run_count=test_run.test_run_config.run_count,
+          shard_count=1)
+      # Give a priority to CtsDeqpTestCases since it takes the longest time.
+      if info.name == 'CtsDeqpTestCases':
+        command_infos.insert(0, command_info)
+      else:
+        command_infos.append(command_info)
+    max_concurrent_tasks = test_run.test_run_config.shard_count
 
   # Append extra command args to flag as a MTT run.
-  command_line = ' '.join([command_line] + EXTRA_COMMAND_ARGS)
+  for info in command_infos:
+    info.command_line = ' '.join([info.command_line] + EXTRA_COMMAND_ARGS)
   if retry_command_line:
     retry_command_line = ' '.join([retry_command_line] + EXTRA_COMMAND_ARGS)
 
@@ -489,14 +543,10 @@ def _CreateTFCRequest(test_run_id):
   # Record metrics
   _TrackTestRun(test_run)
 
-  new_request_msg = api_messages.NewRequestMessage(
+  new_request_msg = api_messages.NewMultiCommandRequestMessage(
       type=api_messages.RequestType.MANAGED,
       user='test_kicker',
-      command_line=command_line,
-      cluster=test_run.test_run_config.cluster,
-      run_target=run_target,
-      run_count=test_run.test_run_config.run_count,
-      shard_count=shard_count,
+      command_infos=command_infos,
       max_retry_on_test_failures=(
           test_run.test_run_config.max_retry_on_test_failures),
       queue_timeout_seconds=test_run.test_run_config.queue_timeout_seconds,
@@ -526,7 +576,8 @@ def _CreateTFCRequest(test_run_id):
           tradefed_config_objects=tradefed_config_objects,
           use_parallel_setup=test_run.test_run_config.use_parallel_setup),
       test_resources=test_resources,
-      prev_test_context=prev_test_context)
+      prev_test_context=prev_test_context,
+      max_concurrent_tasks=max_concurrent_tasks)
   logging.info('new_request_msg=%s', new_request_msg)
   request = tfc_client.NewRequest(new_request_msg)
   logging.info('TFC request %s is created', request.id)
@@ -620,7 +671,9 @@ def HandleTask(fake=None):
   test_run_id = payload['test_run_id']
   try:
     KickTestRun(test_run_id)
-  except Exception as e:      if isinstance(e, messages.ValidationError):
+  except Exception as e:      if isinstance(e, errors.BaseError) and not e.retriable:
+      logging.exception('Non retriable error %s, no retry needed', e)
+    elif isinstance(e, messages.ValidationError):
       logging.exception('Non retriable error %s, no retry needed', e)
     elif isinstance(e, HttpError) and e.resp.status == 400:
       logging.exception('Non retriable error %s, no retry needed', e)

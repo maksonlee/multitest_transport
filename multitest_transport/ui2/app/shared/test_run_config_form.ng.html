@@ -129,6 +129,20 @@
   </button>
 
   <div fxLayout="column" *ngIf="showAdvancedSettings">
+    <!-- Sharding mode -->
+    <mat-form-field
+      appearance="outline"
+      floatLabel="always"
+      fxLayout="column"
+    >
+      <mat-label>Sharding Mode</mat-label>
+      <mat-select [(ngModel)]="testRunConfig.sharding_mode" required>
+        <mat-option matInput *ngFor="let mode of SHARDING_MODES" [value]="mode">
+          {{mode}} {{ mode == SHARDING_MODES.MODULE ? "(Experimental)" : "" }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
     <!-- Queue Timeout (Seconds) Field -->
     <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
       <mat-label> Queue Timeout (Seconds) </mat-label>

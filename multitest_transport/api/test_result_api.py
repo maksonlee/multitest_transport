@@ -13,6 +13,8 @@
 # limitations under the License.
 
 """Test results APIs."""
+import typing
+
 # Non-standard docstrings are used to generate the API documentation.
 import endpoints
 from protorpc import message_types
@@ -50,7 +52,8 @@ class TestResultApi(remote.Service):
     """
     if request.attempt_id:
       # Use attempt_id directly if provided
-      return self._GetTestModuleResults(request.attempt_id)
+      return mtt_messages.TestModuleResultList(
+          results=self._GetTestModuleResults(request.attempt_id))
 
     if not request.test_run_id:
       # Invalid request (test_run_id and attempt_id not provided)
@@ -66,19 +69,17 @@ class TestResultApi(remote.Service):
       return mtt_messages.TestModuleResultList(
           extra_info='Test run %s not started' % test_run_id)
 
-    latest_attempt = tfc_client.GetLatestFinishedAttempt(test_run.request_id)
-    if not latest_attempt:
-      # No completed attempts, try fetching legacy results instead.
-      return self._GetLegacyTestModuleResults(test_run.request_id)
-
-    result_list = self._GetTestModuleResults(latest_attempt.attempt_id)
+    attempts = tfc_client.GetLatestFinishedAttempts(test_run.request_id)
+    result_list = mtt_messages.TestModuleResultList()
+    for attempt in attempts:
+      result_list.results.extend(self._GetTestModuleResults(attempt.attempt_id))
     if not result_list.results:
       # No results found for latest attempt, try fetching legacy results instead
       return self._GetLegacyTestModuleResults(test_run.request_id)
     return result_list
 
   def _GetTestModuleResults(
-      self, attempt_id: str) -> mtt_messages.TestModuleResultList:
+      self, attempt_id: str) -> typing.List[mtt_messages.TestModuleResult]:
     """Fetch test module results from the DB."""
     with sql_models.db.Session() as session:
       query = session.query(sql_models.TestModuleResult)
@@ -87,9 +88,7 @@ class TestResultApi(remote.Service):
                              sql_models.TestModuleResult.id)
       query = query.filter_by(attempt_id=attempt_id)
       modules = query.all()
-    results = mtt_messages.ConvertList(modules, mtt_messages.TestModuleResult)
-    return mtt_messages.TestModuleResultList(
-        results=results, extra_info='Test results from attempt %s' % attempt_id)
+    return mtt_messages.ConvertList(modules, mtt_messages.TestModuleResult)
 
   def _GetLegacyTestModuleResults(
       self, request_id: int) -> mtt_messages.TestModuleResultList:

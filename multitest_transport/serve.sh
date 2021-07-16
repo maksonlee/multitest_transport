@@ -100,7 +100,7 @@ function start_browsepy {
 function start_local_file_server {
   # Start local file server
   echo "Starting local file server..."
-  NUM_FILE_SERVER_WORKERS=$(($(nproc) + 1))
+  NUM_FILE_SERVER_WORKERS=2
   # Uses gthread workers since the default sync workers would time out when sending large files:
   # https://docs.gunicorn.org/en/stable/design.html?highlight=gthread#asyncio-workers
   NUM_THREADS=10
@@ -190,6 +190,7 @@ function start_main_server {
       --module "default=multitest_transport.server:APP" \
       --module "core=multitest_transport.server:CORE" \
       --module "tfc=tradefed_cluster.server:TFC" \
+      --init "core:/init" \
       &
 }
 

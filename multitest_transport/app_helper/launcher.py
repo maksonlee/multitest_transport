@@ -28,6 +28,7 @@ import multiprocessing
 import os
 import socket
 import threading
+import time
 
 from absl import app as absl_app
 from absl import flags
@@ -57,6 +58,7 @@ flags.DEFINE_enum(
     'Log level',
     case_sensitive=False)
 flags.DEFINE_bool('live_reload', False, 'Restart modules when code changes')
+flags.DEFINE_string('init', None, 'Init request. e.g. module:/init')
 
 LOG_FORMAT = ('%(levelname)s\t%(asctime)s '
               '{module}:%(filename)s:%(lineno)d] %(message)s')
@@ -81,6 +83,7 @@ LOG_CONFIG = {
         }
     }
 }
+LAUNCH_TIMEOUT_SECONDS = 60
 
 
 class RawPathMiddleware(object):
@@ -168,6 +171,7 @@ class ModuleApplication(gunicorn.app.base.BaseApplication):
     self.cfg.set('post_worker_init', lambda _: self.post_worker_init())
     self.cfg.set('reload', self.live_reload)
     self.cfg.set('threads', 10)  # Default max_concurrent_requests value
+    self.cfg.set('timeout', 60)
     self.cfg.set('worker_class', 'gthread')
     self.cfg.set('workers', 2)  # Have two workers to ensure availability
 
@@ -230,6 +234,19 @@ def set_env_config(modules):
       task_scheduler=rabbitmq_plugin.TaskScheduler())
 
 
+def _wait_for_port(host, port, timeout):
+  """Wait for a port to be ready."""
+  end_time = time.time() + timeout
+  while time.time() < end_time:
+    try:
+      with socket.create_connection((host, port), timeout=timeout):
+        return
+    except OSError:
+      time.sleep(0.1)
+  raise TimeoutError(
+      '%s:%s not ready within %s seconds' % (host, port, timeout))
+
+
 def main(_):
   # Parse module information and assign ports
   modules = {}
@@ -249,6 +266,17 @@ def main(_):
     module_app = ModuleApplication(module)
     multiprocessing.Process(target=module_app.run).start()
 
+  # Call init handler.
+  if FLAGS.init:
+    name, path = FLAGS.init.split(':', 2)
+    _wait_for_port(FLAGS.host, modules[name].port, LAUNCH_TIMEOUT_SECONDS)
+    url = 'http://%s:%s%s' % (FLAGS.host, modules[name].port, path)
+    logging.info('Sending a init request: url=%s', url)
+    response = requests.get(url)
+    if response.ok:
+      logging.info('The init complete!.')
+    else:
+      logging.critical('The init failed: response=%s', response)
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('application_id')

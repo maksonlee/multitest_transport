@@ -31,10 +31,10 @@ from multitest_transport.util import analytics_uploader
 
 
 CORE = RegexDispatcher([
-    # Initialization
-    (r'/_ah/start', core.APP),
     # Cron handlers
     (r'/_ah/queue/cron-kicker-queue', cron_kicker.APP),
+    # Initialization
+    (r'/.*', core.APP),
 ])
 
 APP = RegexDispatcher([

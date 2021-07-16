@@ -28,7 +28,7 @@ import {MttClient} from '../services/mtt_client';
 import {isFinalTestRunState, TestRun, TestRunSummary, TestRunSummaryList} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {TfcClient} from '../services/tfc_client';
-import {InvocationStatus, isFinalCommandState, Request} from '../services/tfc_models';
+import {isFinalCommandState, Request} from '../services/tfc_models';
 import {OverflowListType} from '../shared/overflow_list';
 import {assertRequiredInput, buildApiErrorMessage} from '../shared/util';
 
@@ -59,8 +59,6 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
   testRun?: TestRun;
   /** Underlying TFC request, only present if test run has started. */
   request?: Request;
-  /** Test statuses (number of passed/failed). */
-  invocationStatus?: InvocationStatus;
   /** List of summaries of reruns */
   reruns: TestRunSummary[] = [];
   /** Link to view the latest output files */
@@ -130,7 +128,6 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
           if (testRun && testRun.request_id) {
             return zip(
                 this.tfc.getRequest(testRun.request_id),
-                this.tfc.getRequestInvocationStatus(testRun.request_id),
             );
           }
           return EMPTY;
@@ -142,9 +139,8 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
           }
         }))
         .subscribe(
-            ([request, invocationStatus]) => {
+            ([request]) => {
               this.request = request;
-              this.invocationStatus = invocationStatus;
               this.updateOutputFilesUrl();
               this.liveAnnouncer.announce(
                   'Test run details loaded', 'assertive');

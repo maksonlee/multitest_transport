@@ -32,7 +32,7 @@ from tradefed_cluster import common
 APP = flask.Flask(__name__)
 
 
-@APP.route('/_ah/start')
+@APP.route('/init')
 def AppStartHandler():
   """App start event handler."""
   logging.info(

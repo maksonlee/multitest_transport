@@ -86,11 +86,12 @@ class MessagePuller(threading.Thread):
             futures.ThreadPoolExecutor(max_workers=1) as executor:
           channel = connection.channel()
           channel.queue_declare(queue=self._queue)
+          channel.queue_purge(queue=self._queue)
           # Handle messages in a worker thread to prevent blocking the puller
           # thread (which could cause a heartbeat timeout)
           on_message_callback = functools.partial(executor.submit,
                                                   self.on_message, connection)
-          channel.basic_consume(self._queue, on_message_callback)
+          channel.basic_consume(self._queue, on_message_callback, auto_ack=True)
           self._logger.info('Start consuming from queue %s', self._queue)
           channel.start_consuming()
           self._logger.info('Stopping consuming from queue %s', self._queue)
@@ -115,8 +116,8 @@ class MessagePuller(threading.Thread):
       properties: a pika.spec.BasicProperties.
       body: a message body (bytes)
     """
-    self._logger.info('[%s] Processing a message %s', self._queue,
-                      method.delivery_tag)
+    self._logger.debug(
+        '[%s] Processing a message %s', self._queue, method.delivery_tag)
     message_headers = properties.headers
 
     # Check ETA
@@ -127,7 +128,6 @@ class MessagePuller(threading.Thread):
     if eta and now < eta:
       self.delay_message(connection, channel, properties, body,
                          (eta - now).total_seconds())
-      self.ack_message(connection, channel, method.delivery_tag)
       return
 
     retry_count = message_headers.get('x-retry-count', 0)
@@ -165,12 +165,6 @@ class MessagePuller(threading.Thread):
         self._logger.error(
             'Completely failed to process message %s (attempt %d): e=%s',
             method.delivery_tag, retry_count, e)
-    self.ack_message(connection, channel, method.delivery_tag)
-
-  def ack_message(self, connection, channel, delivery_tag):
-    """Acknowledges a message in the puller thread."""
-    callback = functools.partial(channel.basic_ack, delivery_tag=delivery_tag)
-    connection.add_callback_threadsafe(callback)
 
   def delay_message(self, connection, channel, properties, body, delay_seconds):
     """Delays a message by delay_seconds in the puller thread.

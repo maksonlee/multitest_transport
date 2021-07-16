@@ -15,7 +15,7 @@
 """A TFC client module."""
 import json
 import threading
-from typing import Optional
+from typing import List, Optional
 
 import apiclient
 import httplib2
@@ -30,7 +30,7 @@ from multitest_transport.util import env
 API_NAME = 'tradefed_cluster'
 API_VERSION = 'v1'
 API_DISCOVERY_URL_FORMAT = 'http://%s/_ah/api/discovery/v1/apis/%s/%s/rest'
-HTTP_TIMEOUT_SECONDS = 60
+HTTP_TIMEOUT_SECONDS = 5 * 60
 
 _tls = threading.local()
 
@@ -88,17 +88,17 @@ def BackfillRequestSyncs():
 
 
 def NewRequest(
-    new_request_msg: api_messages.NewRequestMessage
+    new_request_msg: api_messages.NewMultiCommandRequestMessage
 ) -> api_messages.RequestMessage:
   """Creates a new request.
 
   Args:
-    new_request_msg: an api_messages.NewRequest object.
+    new_request_msg: an api_messages.NewMultiCommandRequest object.
   Returns:
     A api_messages.Request object.
   """
   body = json.loads(protojson.encode_message(new_request_msg))  # pytype: disable=module-attr
-  res = _GetAPIClient().requests().new(body=body).execute()
+  res = _GetAPIClient().requests().newMultiCommandRequest(body=body).execute()
   return protojson.decode_message(api_messages.RequestMessage, json.dumps(res))  # pytype: disable=module-attr
 
 
@@ -154,18 +154,22 @@ def GetAttempt(request_id: int,
   return next((a for a in attempts if a.attempt_id == attempt_id), None)
 
 
-def GetLatestFinishedAttempt(
-    request_id: int) -> Optional[api_messages.CommandAttemptMessage]:
-  """Find the latest TFC command attempt in a final state.
+def GetLatestFinishedAttempts(
+    request_id: int) -> List[api_messages.CommandAttemptMessage]:
+  """Find the latest TFC command attempts in a final state.
 
   Args:
     request_id: request ID.
   Returns:
-    Finished TFC command attempt, or None if not found
+    A list of finished TFC command attempts
   """
   request = GetRequest(request_id)
-  attempts = reversed(request.command_attempts or [])
-  return next((a for a in attempts if IsFinalCommandState(a.state)), None)
+  attempt_map = {}
+  for attempt in request.command_attempts:
+    if not IsFinalCommandState(attempt.state):
+      continue
+    attempt_map[attempt.command_id] = attempt
+  return list(attempt_map.values())
 
 
 def ListDevices() -> Optional[api_messages.DeviceInfoCollection]:

@@ -144,9 +144,6 @@
       <mat-tab label="Progress">
         <test-run-progress [testRun]="testRun" [request]="request"></test-run-progress>
       </mat-tab>
-      <mat-tab label="Jobs">
-        <test-job-tree [testRun]="testRun" [request]="request"></test-job-tree>
-      </mat-tab>
       <mat-tab label="Logs" #console>
         <test-run-console [disabled]="!console.isActive"
                           [request]="request" [testRun]="testRun"></test-run-console>

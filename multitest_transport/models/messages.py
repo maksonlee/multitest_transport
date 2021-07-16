@@ -323,6 +323,8 @@ class Test(messages.Message):
   retry_command_line = messages.StringField(14)
   runner_sharding_args = messages.StringField(15)
   default_test_run_parameters = messages.MessageField(TestRunParameter, 16)
+  module_config_pattern = messages.StringField(17)
+  module_execution_args = messages.StringField(18)
 
 
 @Converter(ndb_models.Test, Test)
@@ -344,7 +346,9 @@ def _TestConverter(obj):
       retry_command_line=obj.retry_command_line,
       runner_sharding_args=obj.runner_sharding_args,
       default_test_run_parameters=Convert(
-          obj.default_test_run_parameters, TestRunParameter))
+          obj.default_test_run_parameters, TestRunParameter),
+      module_config_pattern=obj.module_config_pattern,
+      module_execution_args=obj.module_execution_args)
 
 
 @Converter(Test, ndb_models.Test)
@@ -368,7 +372,9 @@ def _TestMessageConverter(msg):
       retry_command_line=msg.retry_command_line,
       runner_sharding_args=msg.runner_sharding_args,
       default_test_run_parameters=Convert(
-          msg.default_test_run_parameters, ndb_models.TestRunParameter))
+          msg.default_test_run_parameters, ndb_models.TestRunParameter),
+      module_config_pattern=msg.module_config_pattern,
+      module_execution_args=msg.module_execution_args)
 
 
 class TestList(messages.Message):
@@ -806,7 +812,8 @@ class TestRunConfig(messages.Message):
   run_target = messages.StringField(6)  # Deprecated
   run_count = messages.IntegerField(7, required=True, default=1)
   shard_count = messages.IntegerField(8, required=True, default=1)
-  sharding_mode = messages.EnumField(ndb_models.ShardingMode, 9)
+  sharding_mode = messages.EnumField(
+      ndb_models.ShardingMode, 9, default=ndb_models.ShardingMode.RUNNER)
   extra_args = messages.StringField(10)  # TODO: Deprecated
   retry_extra_args = messages.StringField(11)  # TODO: Deprecated
   max_retry_on_test_failures = messages.IntegerField(12)
@@ -871,6 +878,7 @@ def _TestRunConfigMessageConverter(msg):
       run_target=msg.run_target,
       run_count=msg.run_count,
       shard_count=msg.shard_count,
+      sharding_mode=msg.sharding_mode,
       extra_args=msg.extra_args,  # TODO: Deprecated
       retry_extra_args=msg.retry_extra_args,  # TODO: Deprecated
       max_retry_on_test_failures=msg.max_retry_on_test_failures,

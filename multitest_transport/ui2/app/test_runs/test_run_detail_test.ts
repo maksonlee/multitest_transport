@@ -26,7 +26,7 @@ import {FileService} from '../services/file_service';
 import {MttClient, TestResultClient} from '../services/mtt_client';
 import {Test, TestPackageInfo, TestRun, TestRunState} from '../services/mtt_models';
 import {TfcClient} from '../services/tfc_client';
-import {CommandAttempt, DeviceInfo, InvocationStatus, Request} from '../services/tfc_models';
+import {Command, CommandAttempt, DeviceInfo, Request} from '../services/tfc_models';
 import {getEl, getTextContent} from '../testing/jasmine_util';
 import {newMockDeviceInfo} from '../testing/mtt_lab_mocks';
 import * as testUtil from '../testing/mtt_mocks';
@@ -46,7 +46,7 @@ describe('TestRunDetail', () => {
   let el: DebugElement;
   let liveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
 
-  let invocationStatus: InvocationStatus;
+  let command: Command;
   let attempt: CommandAttempt;
   let request: Request;
   let test: Test;
@@ -64,9 +64,9 @@ describe('TestRunDetail', () => {
         testDevices);
     retryRun = testUtil.newMockTestRun(test);
     retryRun.prev_test_run_id = testRun.id;
+    command = testUtil.newMockCommand();
     attempt = testUtil.newMockCommandAttempt();
     request = testUtil.newMockRequest();
-    invocationStatus = testUtil.newMockInvocationStatus();
 
     liveAnnouncer =
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
@@ -148,7 +148,7 @@ describe('TestRunDetail', () => {
     expect(testRunDetail.outputFilesUrl).toBeUndefined();
 
     // Output files ready
-    testRunDetail.request = testUtil.newMockRequest([], [attempt]);
+    testRunDetail.request = testUtil.newMockRequest([command], [attempt]);
     testRunDetail.updateOutputFilesUrl();
     testRunDetailFixture.detectChanges();
     textContent = getTextContent(el);

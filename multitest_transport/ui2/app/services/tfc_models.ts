@@ -146,6 +146,10 @@ export declare interface Command {
   readonly id: string;
   /** id for the parent request */
   readonly request_id: string;
+  /** name */
+  readonly name?: string;
+  /** command line */
+  readonly command_line?: string;
   /** state of the command */
   readonly state: CommandState;
   /** timestamp when the command started executing */

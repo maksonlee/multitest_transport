@@ -65,7 +65,8 @@ def _GetLatestAttempt(test_run, attempt_id):
     # Fetch specific attempt (should also always be the latest attempt)
     return tfc_client.GetAttempt(test_run.request_id, attempt_id)
   # Fetch latest finished attempt if ID not specified
-  return tfc_client.GetLatestFinishedAttempt(test_run.request_id)
+  attempts = tfc_client.GetLatestFinishedAttempts(test_run.request_id)
+  return attempts[-1] if attempts else None
 
 
 def _ExecuteHook(action, hook_context):

@@ -613,10 +613,10 @@ export enum TestResourceType {
   TEST_PACKAGE = 'TEST_PACKAGE'
 }
 
-/** TradeFed Sharding Mode */
-export enum TFShardingMode {
-  RUNNER,
-  SCHEDULER,
+/** Sharding Mode */
+export enum ShardingMode {
+  RUNNER = "RUNNER",
+  MODULE = "MODULE",
 }
 
 /**
@@ -637,8 +637,8 @@ export declare interface TestRunConfig {
   run_count: number;
   /** Number of shards used */
   shard_count: number;
-  /** Tradefed sharding mode */
-  sharding_mode?: TFShardingMode;
+  /** Sharding mode */
+  sharding_mode?: ShardingMode;
   /** Max number of retries */
   max_retry_on_test_failures?: number;
   /** Invocation timeout in seconds */
@@ -667,7 +667,7 @@ export function initTestRunConfig(test?: Test): Partial<TestRunConfig> {
     retry_command: '',
     device_specs: [],
     shard_count: DEFAULT_SHARD_COUNT,
-    sharding_mode: TFShardingMode.RUNNER,
+    sharding_mode: ShardingMode.RUNNER,
     max_retry_on_test_failures: DEFAULT_MAX_RETRY_ON_TEST_FAILURES,
     queue_timeout_seconds: DEFAULT_QUEUE_TIMEOUT_SECONDS,
     invocation_timeout_seconds: DEFAULT_INVOCATION_TIMEOUT_SECONDS,

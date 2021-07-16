@@ -138,6 +138,27 @@ class SqlModelsTest(parameterized.TestCase):
       self.assertEqual(modules[1].passed_tests, 0)
       self.assertEqual(modules[1].failed_tests, 1)
 
+  def testGetTestModuleResults(self):
+    attempt_ids = ['attempt_id_%s' % i for i in range(3)]
+    with sql_models.db.Session() as session:
+      for attempt_id in attempt_ids:
+        session.add(
+            sql_models.TestModuleResult(
+                id=str(uuid.uuid4()),
+                test_run_id='test_run_id',
+                attempt_id=attempt_id,
+                name=attempt_id,
+                complete=True,
+                duration_ms=123,
+                passed_tests=1,
+                failed_tests=0,
+                total_tests=1))
+
+    modules = sql_models.GetTestModuleResults(attempt_ids[:2])
+
+    self.assertLen(modules, 2)
+    self.assertCountEqual(
+        ['attempt_id_0', 'attempt_id_1'], [m.name for m in modules])
 
 if __name__ == '__main__':
   absltest.main()

@@ -88,9 +88,9 @@ class FileServerIntegrationTest(integration_util.DockerContainerTest):
     self.container.SubmitCommandEvent(self.task, 'InvocationCompleted')
     self.container.WaitForState(self.test_run_id, 'COMPLETED')
     test_run = self.container.GetTestRun(self.test_run_id)
-    self.assertEqual('34', test_run['failed_test_count'])
-    self.assertEqual('22', test_run['failed_test_run_count'])
-    self.assertEqual('46', test_run['total_test_count'])
+    self.assertEqual('4', test_run['failed_test_count'])
+    self.assertEqual('1', test_run['failed_test_run_count'])
+    self.assertEqual('297', test_run['total_test_count'])
 
 
 if __name__ == '__main__':

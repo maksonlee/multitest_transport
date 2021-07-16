@@ -384,6 +384,8 @@ tests:
   runner_sharding_args: --shard-count ${TF_SHARD_COUNT}
   default_test_run_parameters:
   - max_retry_on_test_failures: 3
+  module_config_pattern: 'android-cts/testcases/.*\.config'
+  module_execution_args: '-m ${MODULE_NAME}'
 
 - id : android.cts.12_0
   name: CTS 12.0 (ARM)
@@ -420,3 +422,5 @@ tests:
   runner_sharding_args: --shard-count ${TF_SHARD_COUNT}
   default_test_run_parameters:
   - max_retry_on_test_failures: 3
+  module_config_pattern: 'android-cts/testcases/.*\.config'
+  module_execution_args: '-m ${MODULE_NAME}'

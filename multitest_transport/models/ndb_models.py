@@ -240,6 +240,8 @@ class Test(ndb.Model):
     runner_sharding_args: extra args to enable runner sharding. It can contain
         a reference to a desired shard count (e.g. ${TF_SHARD_COUNT})
     default_test_run_parameters: default test run parameters.
+    module_config_pattern: a regex pattern for module config files.
+    module_execution_args: extra args to run a specific module.
   """
   name = ndb.StringProperty(required=True)
   description = ndb.StringProperty()
@@ -256,11 +258,13 @@ class Test(ndb.Model):
   retry_command_line = ndb.StringProperty()
   runner_sharding_args = ndb.StringProperty()
   default_test_run_parameters = ndb.LocalStructuredProperty(TestRunParameter)
+  module_config_pattern = ndb.StringProperty()
+  module_execution_args = ndb.StringProperty()
 
 
 class ShardingMode(messages.Enum):
   RUNNER = 0  # Let a test runner to take care of sharding.
-  SCHEDULER = 1  # Schedule each shard as a separate command.
+  MODULE = 1  # Schedule each module as a separate command
 
 
 class TradefedConfigObject(ndb.Model):

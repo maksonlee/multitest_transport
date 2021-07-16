@@ -1,20 +1,445 @@
-<?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<!--
- Copyright 2019 Google LLC
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
--->
-
-<Result>
-  <Summary pass="12" failed="34" modules_done="56" modules_total="78" />
+<?xml version='1.0' encoding='UTF-8' standalone='no' ?><?xml-stylesheet type="text/xsl" href="compatibility_result.xsl"?>
+<Result start="1625180462722" end="1625181471590" start_display="Thu Jul 01 16:01:02 PDT 2021" end_display="Thu Jul 01 16:17:51 PDT 2021" command_line_args="cts -m CtsAccessibilityServiceTestCases --invocation-data mtt=1 --serial 0.0.0.0:6520" suite_name="CTS" suite_variant="CTS" suite_version="11_r4" suite_plan="cts" suite_build_number="7352019" report_version="5.0" devices="0.0.0.0:6520" host_name="moonk.mtv.corp.google.com" os_name="Linux" os_version="5.10.28-1rodete2-amd64" os_arch="amd64" java_vendor="Oracle Corporation" java_version="9">
+  <Build command_line_args="cts -m CtsAccessibilityServiceTestCases --invocation-data mtt=1 --serial 0.0.0.0:6520" invocation-id="1" setup_time_ms="32968" adb_version="1.0.41 subVersion: 31.0.2-7242960 install path: /sdk_tools/adb" java_version="9" device_release_state="AVAILABLE" mtt="1" device_done_timestamp="1625181469056" tf_objects_tracking="com.android.tradefed.testtype.AndroidJUnitTest=2,com.android.compatibility.common.tradefed.targetprep.ApkInstrumentationPreparer=2,com.android.compatibility.common.tradefed.targetprep.WifiCheck=1,com.android.tradefed.targetprep.suite.SuiteApkInstaller=4,com.android.compatibility.common.tradefed.targetprep.DynamicConfigPusher=1,com.android.tradefed.targetprep.BaseTargetPreparer=22,com.android.compatibility.common.tradefed.targetprep.ApkPreconditionCheck=1,com.android.compatibility.common.tradefed.targetprep.DeviceInfoCollector=1,com.android.compatibility.common.tradefed.testtype.suite.CompatibilityTestSuite=1,com.android.tradefed.testtype.InstrumentationTest=2,com.android.compatibility.common.tradefed.targetprep.PreconditionPreparer=12,com.android.compatibility.common.tradefed.targetprep.PropertyCheck=3,com.android.compatibility.common.tradefed.build.CompatibilityBuildProvider=1,com.android.compatibility.common.tradefed.targetprep.StayAwakePreparer=1,com.android.compatibility.common.tradefed.targetprep.PackageDisabler=1,com.android.tradefed.targetprep.RunCommandTargetPreparer=4,com.android.tradefed.testtype.suite.BaseTestSuite=1,com.android.tradefed.testtype.suite.ITestSuite=1,com.android.compatibility.common.tradefed.targetprep.SettingsPreparer=3,com.android.compatibility.common.tradefed.targetprep.DeviceFileCollector=2,com.android.tradefed.targetprep.TestAppInstallSetup=4,com.android.compatibility.common.tradefed.targetprep.ReportLogCollector=1" fetch_build_time_ms="15" java_classpath="/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/subprocess-results-reporter.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/tools/compatibility-host-util.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/tools/cts-tradefed.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/tools/tradefed.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/tools/hosttestlib.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/tools/compatibility-common-util-tests.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/tools/compatibility-tradefed-tests.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/tools/tradefed-test-framework.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/tools/cts-tradefed-tests.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/tools/loganalysis.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/tools/compatibility-host-util-tests.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest920HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/compatibility-host-telephony-preconditions.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsUsesLibraryHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1979HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/compatibility-host-vm-targetprep.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsAtraceHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJdwpSecurityHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsRollbackManagerHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest940HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1934HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest945HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1995HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest2006HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1943HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/cts-dalvik-host-test-runner.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1900HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsMediaHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/cts-dalvik-device-test-runner.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest912HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1908HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/jdi-support.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsAppCompatHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsScopedStorageHostTest.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsMediaBitstreamsTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsBootStatsTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest991HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1967HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1933HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest989HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest918HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsHostsideNetworkTests.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsCarHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest982HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsMonkeyTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest927HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest947HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1981HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsDynamicMimeHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1958HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1988HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsIncidentHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest908HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest931HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsSustainedPerformanceHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest2003HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1928HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsHostsideNumberBlockingTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1901HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1923HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1911HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsExtractNativeLibsHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsSyncContentHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsDexMetadataHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1975HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1915HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1922HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsBackupHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsThemeHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/compatibility-host-provider-preconditions.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsCompilationTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest986HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJdwpTunnelHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsStrictJavaPackagesTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsDumpsysHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1968HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1917HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1910HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsAdbManagerHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsGpuProfilingDataTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsAppUsageHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1991HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1902HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1994HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsGpuToolsHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsSecurityBulletinHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1969HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsSampleHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsStagedInstallHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest923HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1942HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsShortcutHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1932HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest992HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1974HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest903HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1921HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsDevicePolicyManagerTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsDeqpTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJdwpApp.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1978HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest926HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest932HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsHarmfulAppWarningHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1937HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1997HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest984HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1925HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsBlobStoreHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1914HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1913HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1931HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest928HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1982HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsSeccompHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsUserspaceRebootHostSideTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1941HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsInputMethodServiceHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsDeviceIdleHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1939HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest994HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsApexTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiAttachingHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsUsbTests.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsSecurityHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsEdiHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest911HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest922HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1912HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest951HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsCodePathHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsClassloaderSplitsHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1904HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRedefineClassesHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest924HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest996HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1996HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest990HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest905HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiTaggingHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsAdbHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest983HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1983HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest904HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1926HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1977HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1970HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsTelephonyProviderHostCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsSettingsHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsAppSecurityHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1927HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest902HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsTaggingHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1990HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1976HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1971HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsTelephonyHostCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsCppToolsTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest944HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsHostsideWebViewTests.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1999HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsSignedConfigHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsHostTzDataTests.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsInputMethodServiceCommon.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsWifiBroadcastsHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsAbiOverrideHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1920HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest907HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1916HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1984HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest914HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1906HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsIncrementalInstallHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1992HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsTrustedVoiceHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1903HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsHostsideTvTests.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest985HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest993HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsAngleIntegrationHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1924HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1930HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsAccountsHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1989HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest942HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiTrackingHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest906HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest995HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/android.core.vm-tests-tf.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1909HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsMultiUserHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest915HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest919HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1962HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsAppBindingHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsHdmiCecHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest997HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsSystemUiHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1998HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsTestHarnessModeTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1936HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest2004HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest910HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest2007HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest913HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1953HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest930HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsInputMethodServiceLib.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest2001HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest1907HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest2005HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJdwpTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest2002HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsStatsdHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest988HostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsOsHostTestCases.jar:/data/tmp/3e3aa991-d87f-4466-a52c-5d5832463c5b/android-cts/testcases/CtsJvmtiRunTest917HostTestCases.jar" build_manufacturer="Google" build_abis_32="x86,armeabi-v7a,armeabi" build_reference_fingerprint="" build_product="aosp_cf_x86_64_phone" build_tags="test-keys" build_version_incremental="7468133" build_brand="generic" build_fingerprint="generic/aosp_cf_x86_64_phone/vsoc_x86_64:11/RPM1.210504.001/7468133:userdebug/test-keys" build_model="Cuttlefish x86_64 phone" build_device="vsoc_x86_64" build_id="RPM1.210504.001" build_version_sdk="30" build_serial="CUTTLEFISHCVD011" build_version_security_patch="2021-06-05" build_abi="x86_64" build_abis_64="x86_64,arm64-v8a" build_vendor_fingerprint="generic/aosp_cf_x86_64_phone/vsoc_x86_64:11/RPM1.210504.001/7468133:userdebug/test-keys" build_version_base_os="" build_abis="x86_64,arm64-v8a,x86,armeabi-v7a,armeabi" build_board="cutf" build_type="userdebug" build_version_release="11" build_abi2="" />
+  <Summary pass="293" failed="4" modules_done="1" modules_total="2" />
+  <Module name="CtsAccessibilityServiceTestCases" abi="x86_64" runtime="498465" done="true" pass="197" total_tests="199">
+    <TestCase name="android.accessibilityservice.cts.AccessibilityButtonTest">
+      <Test result="pass" name="testCallbackRegistrationUnregistration_serviceDoesNotCrash" />
+      <Test result="pass" name="testGetAccessibilityButtonControllerByDisplayId_NotReturnNull" />
+      <Test result="pass" name="testUpdateRequestAccessibilityButtonFlag_targetSdkGreaterThanQ_ignoresUpdate" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityEmbeddedDisplayTest">
+      <Test result="pass" name="testA11yWindowInfoAndA11yNodeInfoHasCorrectBoundsInScreen" />
+      <Test result="pass" name="testA11yWindowNotifyWhenResizeWindowInActivityView" />
+      <Test result="pass" name="testA11yWindowNotifyWhenResizeWindowInActivityViewAfterServiceOffAndOn" />
+      <Test result="pass" name="testA11yWindowInfoHasCorrectLayer" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityEmbeddedHierarchyTest">
+      <Test result="pass" name="testEmbeddedViewHasCorrectBound" />
+      <Test result="pass" name="testEmbeddedViewCanBeFound" />
+      <Test result="pass" name="testEmbeddedViewHasCorrectBoundAfterHostViewMove" />
+      <Test result="pass" name="testEmbeddedViewCanFindItsHostParent" />
+      <Test result="pass" name="testEmbeddedViewIsInvisibleAfterMovingOutOfScreen" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityEndToEndTest">
+      <Test result="pass" name="testTouchDelegateInfoReportedToAccessibility" />
+      <Test result="pass" name="testTypeViewFocusedAccessibilityEvent" />
+      <Test result="pass" name="testTooltipTextActionsReportedToAccessibility" />
+      <Test result="pass" name="testTouchDelegateCoverParentWithEbt_HoverChildAndBack_FocusTargetAgain" />
+      <Test result="pass" name="testTypeNotificationStateChangedAccessibilityEvent" />
+      <Test result="pass" name="testA11yActionTriggerMotionEventActionOutside" />
+      <Test result="pass" name="testTypeViewLongClickedAccessibilityEvent" />
+      <Test result="pass" name="testTypeWindowStateChangedAccessibilityEvent" />
+      <Test result="pass" name="testTypeViewClickedAccessibilityEvent" />
+      <Test result="pass" name="testPackageNameCannotBeFakedAppWidget" />
+      <Test result="pass" name="testTouchDelegateWithEbtBetweenView_ReHoverDelegate_FocusTargetAgain" />
+      <Test result="pass" name="testPackageNameCannotBeFaked" />
+      <Test result="pass" name="testTraversalBeforeReportedToAccessibility" />
+      <Test result="pass" name="testViewHeadingReportedToAccessibility" />
+      <Test result="pass" name="testInterrupt_notifiesService" />
+      <Test result="pass" name="testTypeViewTextChangedAccessibilityEvent" />
+      <Test result="pass" name="testTraversalAfterReportedToAccessibility" />
+      <Test result="pass" name="testTypeViewSelectedAccessibilityEvent" />
+      <Test result="pass" name="testTooltipTextReportedToAccessibility" />
+      <Test result="pass" name="testLabelForReportedToAccessibility" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityFingerprintGestureTest">
+      <Test result="pass" name="testGestureDetectionListener_whenAuthenticationStartsAndStops_calledBack" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityFocusAndInputFocusSyncTest">
+      <Test result="pass" name="testActionClearAccessibilityFocus" />
+      <Test result="pass" name="testActionAccessibilityFocus" />
+      <Test result="pass" name="testScreenReaderFocusableAttribute_reportedToAccessibility" />
+      <Test result="pass" name="testOnlyOneNodeHasAccessibilityFocus" />
+      <Test result="pass" name="testFindAccessibilityFocus" />
+      <Test result="pass" name="testInitialStateNoAccessibilityFocus" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityGestureDetectorTest">
+      <Test result="pass" name="testRecognizeGesturePathOnVirtualDisplay" />
+      <Test result="pass" name="testVerifyGestureTouchEventOnVirtualDisplay" />
+      <Test result="pass" name="testRecognizeGesturePath" />
+      <Test result="pass" name="testVerifyGestureTouchEvent" />
+      <Test result="pass" name="testDispatchGesture_privateDisplay_gestureCancelled" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityGestureDispatchTest">
+      <Test result="pass" name="testContinuedGesture_withLineDisconnect_isCancelled" />
+      <Test result="pass" name="testLongClickAt_producesEventsWithLongClickTiming" />
+      <Test result="pass" name="testClickWhenMagnified_matchesActualTouch" />
+      <Test result="pass" name="testContinuingGesture_withNothingToContinue_isCancelled" />
+      <Test result="pass" name="testClickAt_producesDownThenUp" />
+      <Test result="pass" name="testAngledPinch_looksReasonable" />
+      <Test result="pass" name="testContinuedGesture_nextGestureDoesntContinue_isCancelled" />
+      <Test result="pass" name="testContinuedGestures_motionEventsContinue" />
+      <Test result="pass" name="testSwipe_shouldContainPointsInALine" />
+      <Test result="pass" name="testSlowSwipe_shouldNotContainMovesForTinyMovement" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityGlobalActionsTest">
+      <Test result="pass" name="testPerformGlobalActionBack" />
+      <Test result="pass" name="testPerformGlobalActionHome" />
+      <Test result="pass" name="testPerformGlobalActionNotifications" />
+      <Test result="pass" name="testPerformGlobalActionPowerDialog" />
+      <Test result="pass" name="testPerformGlobalActionRecents" />
+      <Test result="pass" name="testPerformGlobalActionQuickSettings" />
+      <Test result="pass" name="testPerformActionScreenshot" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityLoggingTest">
+      <Test result="pass" name="testServiceLogged" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityMagnificationTest">
+      <Test result="pass" name="testGetMagnificationRegion_whenCantControlMagnification_shouldBeEmpty" />
+      <Test result="pass" name="testAnimatingMagnification" />
+      <Test result="pass" name="testGetMagnificationRegion_whenMagnificationGesturesEnabled_shouldNotBeEmpty" />
+      <Test result="pass" name="testGetMagnificationRegion_whenCanControlMagnification_shouldNotBeEmpty" />
+      <Test result="pass" name="testMagnificationServiceShutsDownWhileMagnifying_shouldReturnTo1x" />
+      <Test result="fail" name="testA11yNodeInfoVisibility_whenOutOfMagnifiedArea_shouldVisible">
+        <Failure message="java.lang.IndexOutOfBoundsException: Index: 0, Size: 0&#13;">
+          <StackTrace>java.lang.IndexOutOfBoundsException: Index: 0, Size: 0
+  at java.util.ArrayList.get(ArrayList.java:437)
+  at android.accessibilityservice.cts.AccessibilityMagnificationTest.testA11yNodeInfoVisibility_whenOutOfMagnifiedArea_shouldVisible(AccessibilityMagnificationTest.java:298)
+  at java.lang.reflect.Method.invoke(Native Method)
+  at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+  at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+  at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:52)
+  at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+  at org.junit.internal.runners.statements.FailOnTimeout$CallableStatement.call(FailOnTimeout.java:148)
+  at org.junit.internal.runners.statements.FailOnTimeout$CallableStatement.call(FailOnTimeout.java:142)
+  at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+  at java.lang.Thread.run(Thread.java:923)
+</StackTrace>
+        </Failure>
+      </Test>
+      <Test result="pass" name="testSetScaleAndCenter" />
+      <Test result="pass" name="testListener" />
+      <Test result="pass" name="testSetScale" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityOverlayTest">
+      <Test result="pass" name="testA11yServiceShowsOverlay_shouldAppear" />
+      <Test result="pass" name="testA11yServiceShowsOverlayOnVirtualDisplay_shouldAppear" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityPaneTest">
+      <Test result="fail" name="windowLikeViewSettersWork_andNewValuesReportedToAccessibility">
+        <Failure message="java.lang.IndexOutOfBoundsException: Index: 0&#13;">
+          <StackTrace>java.lang.IndexOutOfBoundsException: Index: 0
+  at java.util.Collections$EmptyList.get(Collections.java:4511)
+  at android.accessibilityservice.cts.AccessibilityPaneTest.getPaneNode(AccessibilityPaneTest.java:134)
+  at android.accessibilityservice.cts.AccessibilityPaneTest.windowLikeViewSettersWork_andNewValuesReportedToAccessibility(AccessibilityPaneTest.java:107)
+  at java.lang.reflect.Method.invoke(Native Method)
+  at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+  at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+  at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:52)
+  at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+  at org.junit.internal.runners.statements.FailOnTimeout$CallableStatement.call(FailOnTimeout.java:148)
+  at org.junit.internal.runners.statements.FailOnTimeout$CallableStatement.call(FailOnTimeout.java:142)
+  at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+  at java.lang.Thread.run(Thread.java:923)
+</StackTrace>
+        </Failure>
+      </Test>
+      <Test result="pass" name="windowLikeViewVisibility_reportAsWindowStateChanges" />
+      <Test result="pass" name="paneTitleFromXml_reportedToAccessibility" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityServiceInfoTest">
+      <Test result="pass" name="testMarshalling" />
+      <Test result="pass" name="testFlagToString" />
+      <Test result="pass" name="testDescribeContents" />
+      <Test result="pass" name="testFeedbackTypeToString" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilitySettingsTest">
+      <Test result="pass" name="testAccessibilitySettingsIntentHandled" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilitySoftKeyboardTest">
+      <Test result="pass" name="testApiReturnValues_shouldChangeValueOnRequestAndSendCallback" />
+      <Test result="pass" name="secondServiceChangingTheShowMode_updatesModeAndNotifiesFirstService" />
+      <Test result="pass" name="testSwitchToInputMethod" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilitySystemActionTest">
+      <Test result="pass" name="testPerformOverriddenLegacyAction" />
+      <Test result="pass" name="testNewActionNotInGetSystemActions" />
+      <Test result="pass" name="testRegisterOverriddenLegacyAction" />
+      <Test result="pass" name="testNewActionInGetSystemActions" />
+      <Test result="pass" name="testUnregisterAction" />
+      <Test result="pass" name="testPerformNewAction" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityTakeScreenshotTest">
+      <Test result="pass" name="testTakeScreenshotOnVirtualDisplay_GetScreenshotResult" />
+      <Test result="pass" name="testTakeScreenshot_GetScreenshotResult" />
+      <Test result="pass" name="testTakeScreenshotWithSecureWindow_GetScreenshotAndVerifyBitmap" />
+      <Test result="pass" name="testTakeScreenshot_RequestIntervalTime" />
+      <Test result="pass" name="testTakeScreenshotOnPrivateDisplay_GetErrorCode" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityTextActionTest">
+      <Test result="pass" name="testExtraRendering_viewGroupShouldNotProvideLayoutParamsWhenNotRequested" />
+      <Test result="pass" name="testEditableTextView_shouldExposeAndRespondToSetTextAction" />
+      <Test result="pass" name="testTextLocations_textOutsideOfViewBounds_locationsShouldBeNull" />
+      <Test result="pass" name="testClickableSpan_shouldWorkFromAccessibilityService" />
+      <Test result="pass" name="testTextLocations_textViewShouldProvideWhenRequested" />
+      <Test result="pass" name="testUrlSpan_shouldWorkFromAccessibilityService" />
+      <Test result="pass" name="testTextLocations_withRequestPreparer_shouldHoldOffUntilReady" />
+      <Test result="pass" name="testTextLocations_withUnresponsiveRequestPreparer_shouldTimeout" />
+      <Test result="pass" name="testEditableTextView_shouldExposeAndRespondToImeEnterAction" />
+      <Test result="pass" name="testImageSpan_accessibilityServiceShouldSeeContentDescription" />
+      <Test result="pass" name="testEditText_shouldExposeAndRespondToSetTextAction" />
+      <Test result="pass" name="testExtraRendering_textViewShouldProvideExtraDataTextSizeWhenRequested" />
+      <Test result="pass" name="testNotEditableTextView_shouldNotExposeOrRespondToSetTextAction" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityTextTraversalTest">
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityCharacterOverContentDescription" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityCharacterOverTextExtend" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityLineOverText" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityLineOverTextExtend" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityParagraphOverTextExtend" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityWordOverText" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityCharacterOverText" />
+      <Test result="pass" name="testSetSelectionInContentDescription" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityWordOverContentDescription" />
+      <Test result="pass" name="testSelectionPositionForNonEditableView" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityWordOverEditTextWithContentDescription" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityWordOverTextExtend" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityParagraphOverText" />
+      <Test result="pass" name="testTextEditingActions" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityViewTreeReportingTest">
+      <Test result="pass" name="testHideView_receiveSubtreeEvent" />
+      <Test result="pass" name="testAccessibilityImportanceReportingForUnimportantView" />
+      <Test result="pass" name="testUnhideView_receiveSubtreeEvent" />
+      <Test result="pass" name="testDrawingOrderRootNodeHasIndex0" />
+      <Test result="pass" name="testDescendantsOfNotImportantViewReportedInOrder1" />
+      <Test result="pass" name="testDescendantsOfNotImportantViewReportedInOrder2" />
+      <Test result="pass" name="testDescendantsOfNotImportantViewReportedInOrder3" />
+      <Test result="pass" name="testDrawingOrderGettingAllViewsFollowsXmlOrder" />
+      <Test result="pass" name="testDrawingOrderWithCustomDrawingOrder" />
+      <Test result="pass" name="testDrawingOrderInImportantParentFollowsXmlOrder" />
+      <Test result="pass" name="testDrawingOrderWithZCoordsDrawsHighestZLast" />
+      <Test result="pass" name="testDrawingOrderWithNotImportantParentConsidersParentSibling" />
+      <Test result="pass" name="testAccessibilityImportanceReportingForImportantView" />
+      <Test result="pass" name="testDrawingOrderWithNotImportantSiblingConsidersItsChildren" />
+      <Test result="pass" name="testAddViewToLayout_receiveSubtreeEvent" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityVolumeTest">
+      <Test result="pass" name="testChangeAccessibilityVolume_outsideValidAccessibilityService_shouldFail" />
+      <Test result="pass" name="testChangeAccessibilityVolume_inAccessibilityService_shouldWork" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityWindowQueryTest">
+      <Test result="pass" name="testPerformActionLongClick" />
+      <Test result="pass" name="testGetEventSource" />
+      <Test result="pass" name="testFindByContentDescription" />
+      <Test result="pass" name="testGetWindows_resultIsSortedByLayerDescending" />
+      <Test result="pass" name="testFindPictureInPictureWindow" />
+      <Test result="pass" name="testSingleAccessibilityFocusAcrossWindows" />
+      <Test result="pass" name="testInteractWithAppWindow" />
+      <Test result="pass" name="testPerformActionClearSelection" />
+      <Test result="pass" name="testFindByText" />
+      <Test result="pass" name="testPerformActionClick" />
+      <Test result="pass" name="testPerformCustomAction" />
+      <Test result="pass" name="testTraverseAllWindows" />
+      <Test result="pass" name="testGetWindowsOnAllDisplays_resultIsSortedByLayerDescending" />
+      <Test result="pass" name="testTraverseWindowFromEvent" />
+      <Test result="pass" name="testPerformActionSetAndClearFocus" />
+      <Test result="pass" name="testTraverseWindow" />
+      <Test result="pass" name="testToggleSplitScreen" />
+      <Test result="pass" name="testNoWindowsAccessIfFlagNotSet" />
+      <Test result="pass" name="testPerformActionSelect" />
+      <Test result="pass" name="testObjectContract" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityWindowReportingTest">
+      <Test result="pass" name="putWindowInPictureInPicture_generatesEventAndReportsProperty" />
+      <Test result="pass" name="testUpdatedWindowTitle_generatesEventAndIsReturnedByGetTitle" />
+      <Test result="pass" name="moveFocusToAnotherWindow_generatesEventsAndMovesActiveAndFocus" />
+      <Test result="pass" name="moveFocusToAnotherDisplay_movesActiveAndFocusWindow" />
+      <Test result="pass" name="testChangeAccessibilityFocusWindow_getEvent" />
+      <Test result="pass" name="testWindowAddedMovedAndRemoved_generatesEventsForAllThree" />
+      <Test result="pass" name="testGetAnchorForDropDownForAutoCompleteTextView_returnsTextViewNode" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.GestureDescriptionTest">
+      <Test result="pass" name="testCreateStroke_pathWithMultipleContours_shouldThrow" />
+      <Test result="pass" name="testAddStroke_allowUpToMaxPaths" />
+      <Test result="pass" name="testSetDisplayId_getCorrectDisplayId" />
+      <Test result="pass" name="testCreateStroke_negativeStartY_shouldThrow" />
+      <Test result="pass" name="testEmptyDescription_shouldThrow" />
+      <Test result="pass" name="testCreateStroke_negativeStartX_shouldThrow" />
+      <Test result="pass" name="testCreateStroke_negativeStartTime_shouldThrow" />
+      <Test result="pass" name="testCreateStroke_negativeEndY_shouldThrow" />
+      <Test result="pass" name="testCreateStroke_withEmptyPath_shouldThrow" />
+      <Test result="pass" name="testStrokeDescriptionGetters_workAsExpected" />
+      <Test result="pass" name="testCreateStroke_negativeEndX_shouldThrow" />
+      <Test result="pass" name="testStrokeDescriptionWillContinue" />
+      <Test result="pass" name="testAddStroke_withDurationTooLong_shouldThrow" />
+      <Test result="pass" name="testCreateStroke_noDuration_shouldThrow" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.MagnificationGestureHandlerTest">
+      <Test result="pass" name="testZoomOnOff" />
+      <Test result="pass" name="testPanning" />
+      <Test result="pass" name="testViewportDragging" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.TouchExplorerTest">
+      <Test result="pass" name="testDoubleTapAndHoldNoFocus_doesNotPerformLongClick" />
+      <Test result="pass" name="testTwoFingerDrag_dispatchesEventsBetweenFingers" />
+      <Test result="pass" name="testDoubleTapNoFocus_doesNotPerformClick" />
+      <Test result="pass" name="testFastSwipe_doesNotInitiateTouchExploration" />
+      <Test result="pass" name="testDoubleTapNoAccessibilityFocus_sendsTouchEvents" />
+      <Test result="pass" name="testThreeFingerMovement_shouldDelegate" />
+      <Test result="pass" name="testSecondFingerDoubleTapTouchExploring_performsClick" />
+      <Test result="pass" name="testDoubleTapAccessibilityFocus_performsClick" />
+      <Test result="pass" name="testSlowSwipe_initiatesTouchExploration" />
+      <Test result="pass" name="testSloppyDoubleTapAccessibilityFocus_performsClick" />
+      <Test result="pass" name="testDoubleTapAndHoldNoAccessibilityFocus_sendsTouchEvents" />
+      <Test result="pass" name="testTouchExplorationPassthrough_sendsTouchEvents" />
+      <Test result="pass" name="testGestureDetectionPassthrough_initiatesTouchExploration" />
+      <Test result="pass" name="testSingleTap_initiatesTouchExploration" />
+      <Test result="pass" name="testSecondFingerDoubleTapNotTouchExploring_performsClick" />
+      <Test result="pass" name="testTwoFingersMovingIndependently_shouldDelegate" />
+    </TestCase>
+  </Module>
+  <Module name="CtsAccessibilityServiceTestCases[instant]" abi="x86_64" runtime="452817" done="false" pass="96" total_tests="98">
+    <Reason message="Instrumentation run failed due to 'keyDispatchingTimedOut'" />
+    <TestCase name="android.accessibilityservice.cts.AccessibilityEmbeddedDisplayTest">
+      <Test result="pass" name="testA11yWindowInfoAndA11yNodeInfoHasCorrectBoundsInScreen" />
+      <Test result="pass" name="testA11yWindowNotifyWhenResizeWindowInActivityView" />
+      <Test result="pass" name="testA11yWindowNotifyWhenResizeWindowInActivityViewAfterServiceOffAndOn" />
+      <Test result="pass" name="testA11yWindowInfoHasCorrectLayer" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityEmbeddedHierarchyTest">
+      <Test result="pass" name="testEmbeddedViewHasCorrectBound" />
+      <Test result="pass" name="testEmbeddedViewCanBeFound" />
+      <Test result="pass" name="testEmbeddedViewHasCorrectBoundAfterHostViewMove" />
+      <Test result="pass" name="testEmbeddedViewCanFindItsHostParent" />
+      <Test result="pass" name="testEmbeddedViewIsInvisibleAfterMovingOutOfScreen" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityEndToEndTest">
+      <Test result="pass" name="testTouchDelegateInfoReportedToAccessibility" />
+      <Test result="pass" name="testTypeViewFocusedAccessibilityEvent" />
+      <Test result="pass" name="testTooltipTextActionsReportedToAccessibility" />
+      <Test result="pass" name="testTouchDelegateCoverParentWithEbt_HoverChildAndBack_FocusTargetAgain" />
+      <Test result="pass" name="testA11yActionTriggerMotionEventActionOutside" />
+      <Test result="pass" name="testTypeViewLongClickedAccessibilityEvent" />
+      <Test result="pass" name="testTypeWindowStateChangedAccessibilityEvent" />
+      <Test result="pass" name="testTypeViewClickedAccessibilityEvent" />
+      <Test result="pass" name="testTouchDelegateWithEbtBetweenView_ReHoverDelegate_FocusTargetAgain" />
+      <Test result="pass" name="testPackageNameCannotBeFaked" />
+      <Test result="pass" name="testTraversalBeforeReportedToAccessibility" />
+      <Test result="pass" name="testViewHeadingReportedToAccessibility" />
+      <Test result="pass" name="testInterrupt_notifiesService" />
+      <Test result="pass" name="testTypeViewTextChangedAccessibilityEvent" />
+      <Test result="pass" name="testTraversalAfterReportedToAccessibility" />
+      <Test result="pass" name="testTypeViewSelectedAccessibilityEvent" />
+      <Test result="pass" name="testTooltipTextReportedToAccessibility" />
+      <Test result="pass" name="testLabelForReportedToAccessibility" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityFocusAndInputFocusSyncTest">
+      <Test result="pass" name="testActionClearAccessibilityFocus" />
+      <Test result="pass" name="testActionAccessibilityFocus" />
+      <Test result="pass" name="testScreenReaderFocusableAttribute_reportedToAccessibility" />
+      <Test result="pass" name="testOnlyOneNodeHasAccessibilityFocus" />
+      <Test result="pass" name="testFindAccessibilityFocus" />
+      <Test result="pass" name="testInitialStateNoAccessibilityFocus" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityLoggingTest">
+      <Test result="pass" name="testServiceLogged" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityOverlayTest">
+      <Test result="pass" name="testA11yServiceShowsOverlay_shouldAppear" />
+      <Test result="pass" name="testA11yServiceShowsOverlayOnVirtualDisplay_shouldAppear" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityPaneTest">
+      <Test result="pass" name="windowLikeViewSettersWork_andNewValuesReportedToAccessibility" />
+      <Test result="pass" name="windowLikeViewVisibility_reportAsWindowStateChanges" />
+      <Test result="pass" name="paneTitleFromXml_reportedToAccessibility" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityServiceInfoTest">
+      <Test result="pass" name="testMarshalling" />
+      <Test result="pass" name="testFlagToString" />
+      <Test result="pass" name="testDescribeContents" />
+      <Test result="pass" name="testFeedbackTypeToString" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityTakeScreenshotTest">
+      <Test result="pass" name="testTakeScreenshotOnVirtualDisplay_GetScreenshotResult" />
+      <Test result="pass" name="testTakeScreenshot_GetScreenshotResult" />
+      <Test result="pass" name="testTakeScreenshotWithSecureWindow_GetScreenshotAndVerifyBitmap" />
+      <Test result="pass" name="testTakeScreenshot_RequestIntervalTime" />
+      <Test result="pass" name="testTakeScreenshotOnPrivateDisplay_GetErrorCode" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityTextActionTest">
+      <Test result="pass" name="testExtraRendering_viewGroupShouldNotProvideLayoutParamsWhenNotRequested" />
+      <Test result="pass" name="testEditableTextView_shouldExposeAndRespondToSetTextAction" />
+      <Test result="pass" name="testTextLocations_textOutsideOfViewBounds_locationsShouldBeNull" />
+      <Test result="pass" name="testClickableSpan_shouldWorkFromAccessibilityService" />
+      <Test result="pass" name="testTextLocations_textViewShouldProvideWhenRequested" />
+      <Test result="pass" name="testUrlSpan_shouldWorkFromAccessibilityService" />
+      <Test result="pass" name="testTextLocations_withRequestPreparer_shouldHoldOffUntilReady" />
+      <Test result="pass" name="testTextLocations_withUnresponsiveRequestPreparer_shouldTimeout" />
+      <Test result="pass" name="testEditableTextView_shouldExposeAndRespondToImeEnterAction" />
+      <Test result="pass" name="testImageSpan_accessibilityServiceShouldSeeContentDescription" />
+      <Test result="pass" name="testEditText_shouldExposeAndRespondToSetTextAction" />
+      <Test result="pass" name="testExtraRendering_textViewShouldProvideExtraDataTextSizeWhenRequested" />
+      <Test result="pass" name="testNotEditableTextView_shouldNotExposeOrRespondToSetTextAction" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityTextTraversalTest">
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityCharacterOverContentDescription" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityCharacterOverTextExtend" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityLineOverText" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityLineOverTextExtend" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityParagraphOverTextExtend" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityWordOverText" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityCharacterOverText" />
+      <Test result="pass" name="testSetSelectionInContentDescription" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityWordOverContentDescription" />
+      <Test result="pass" name="testSelectionPositionForNonEditableView" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityWordOverEditTextWithContentDescription" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityWordOverTextExtend" />
+      <Test result="pass" name="testActionNextAndPreviousAtGranularityParagraphOverText" />
+      <Test result="fail" name="testTextEditingActions">
+        <Failure message="java.lang.AssertionError: expected:&amp;lt;12&amp;gt; but was:&amp;lt;0&amp;gt;&#13;">
+          <StackTrace>java.lang.AssertionError: expected:&amp;lt;12&amp;gt; but was:&amp;lt;0&amp;gt;
+  at org.junit.Assert.fail(Assert.java:88)
+  at org.junit.Assert.failNotEquals(Assert.java:834)
+  at org.junit.Assert.assertEquals(Assert.java:645)
+  at org.junit.Assert.assertEquals(Assert.java:631)
+  at android.accessibilityservice.cts.AccessibilityTextTraversalTest.testTextEditingActions(AccessibilityTextTraversalTest.java:3809)
+  at java.lang.reflect.Method.invoke(Native Method)
+  at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+  at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+  at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:52)
+  at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+  at org.junit.internal.runners.statements.FailOnTimeout$CallableStatement.call(FailOnTimeout.java:148)
+  at org.junit.internal.runners.statements.FailOnTimeout$CallableStatement.call(FailOnTimeout.java:142)
+  at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+  at java.lang.Thread.run(Thread.java:923)
+</StackTrace>
+        </Failure>
+      </Test>
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityViewTreeReportingTest">
+      <Test result="pass" name="testHideView_receiveSubtreeEvent" />
+      <Test result="pass" name="testAccessibilityImportanceReportingForUnimportantView" />
+      <Test result="pass" name="testUnhideView_receiveSubtreeEvent" />
+      <Test result="pass" name="testDrawingOrderRootNodeHasIndex0" />
+      <Test result="pass" name="testDescendantsOfNotImportantViewReportedInOrder1" />
+      <Test result="pass" name="testDescendantsOfNotImportantViewReportedInOrder2" />
+      <Test result="pass" name="testDescendantsOfNotImportantViewReportedInOrder3" />
+      <Test result="pass" name="testDrawingOrderGettingAllViewsFollowsXmlOrder" />
+      <Test result="pass" name="testDrawingOrderWithCustomDrawingOrder" />
+      <Test result="pass" name="testDrawingOrderInImportantParentFollowsXmlOrder" />
+      <Test result="pass" name="testDrawingOrderWithZCoordsDrawsHighestZLast" />
+      <Test result="pass" name="testDrawingOrderWithNotImportantParentConsidersParentSibling" />
+      <Test result="pass" name="testAccessibilityImportanceReportingForImportantView" />
+      <Test result="pass" name="testDrawingOrderWithNotImportantSiblingConsidersItsChildren" />
+      <Test result="pass" name="testAddViewToLayout_receiveSubtreeEvent" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityVolumeTest">
+      <Test result="pass" name="testChangeAccessibilityVolume_outsideValidAccessibilityService_shouldFail" />
+    </TestCase>
+    <TestCase name="android.accessibilityservice.cts.AccessibilityWindowReportingTest">
+      <Test result="pass" name="putWindowInPictureInPicture_generatesEventAndReportsProperty" />
+      <Test result="pass" name="testUpdatedWindowTitle_generatesEventAndIsReturnedByGetTitle" />
+      <Test result="pass" name="moveFocusToAnotherWindow_generatesEventsAndMovesActiveAndFocus" />
+      <Test result="fail" name="moveFocusToAnotherDisplay_movesActiveAndFocusWindow">
+        <Failure message="Test failed to run to completion. Reason: 'Instrumentation run failed due to 'keyDispatchingTimedOut''. Check device logcat for details">
+          <StackTrace>Test failed to run to completion. Reason: 'Instrumentation run failed due to 'keyDispatchingTimedOut''. Check device logcat for details</StackTrace>
+        </Failure>
+      </Test>
+      <Test result="pass" name="testChangeAccessibilityFocusWindow_getEvent" />
+      <Test result="pass" name="testWindowAddedMovedAndRemoved_generatesEventsForAllThree" />
+      <Test result="pass" name="testGetAnchorForDropDownForAutoCompleteTextView_returnsTextViewNode" />
+    </TestCase>
+  </Module>
 </Result>

@@ -20,7 +20,7 @@ import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
 
 import {FileService} from '../services/file_service';
-import {initTestRunConfig, RerunContext, Test, TestRunConfig} from '../services/mtt_models';
+import {initTestRunConfig, RerunContext, ShardingMode, Test, TestRunConfig} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {FormChangeTracker} from '../shared/can_deactivate';
 
@@ -41,6 +41,8 @@ import {assertRequiredInput, buildApiErrorMessage, noAwait} from './util';
 export class TestRunConfigForm extends FormChangeTracker implements OnInit,
                                                                     OnChanges,
                                                                     OnDestroy {
+  readonly SHARDING_MODES = Object.values(ShardingMode);
+
   @Input() testMap!: {[id: string]: Test};
   @Input() testRunConfig!: Partial<TestRunConfig>;
   /** True to allow users to select previous test runs to resume. */

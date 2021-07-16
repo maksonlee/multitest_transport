@@ -101,7 +101,9 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     mock_after_test.assert_not_called()
 
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
-  def testProcessRequestEvent_completed(self, mock_after_test):
+  @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
+  def testProcessRequestEvent_completed(
+      self, mock_update_summary, mock_after_test):
     # state changed to COMPLETED from UNKNOWN
     mock_event = self.CreateMockRequestEvent(
         datetime.timedelta(hours=1), state=api_messages.RequestState.COMPLETED)
@@ -113,10 +115,13 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(mock_event.event_time, self.mock_test_run.update_time)
     self.assertEqual(ndb_models.TestRunState.COMPLETED,
                      self.mock_test_run.state)
+    mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
     mock_after_test.assert_called_with(self.mock_test_run)
 
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
-  def testProcessRequestEvent_alreadyFinal(self, mock_after_test):
+  @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
+  def testProcessRequestEvent_alreadyFinal(
+      self, mock_update_summary, mock_after_test):
     # test run state already final and post-run handlers already executed
     self.mock_test_run.state = ndb_models.TestRunState.ERROR
     self.mock_test_run.is_finalized = True
@@ -132,6 +137,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     # test run information updated, but state preserved and post-run skipped
     self.assertEqual(mock_event.event_time, self.mock_test_run.update_time)
     self.assertEqual(ndb_models.TestRunState.ERROR, self.mock_test_run.state)
+    mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
     mock_after_test.assert_not_called()
 
   @mock.patch.object(tfc_client, 'GetDeviceInfo')

@@ -65,12 +65,17 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
       run_target='run_target',
       shard_count=1,
       sharding_mode=ndb_models.ShardingMode.RUNNER,
-      edited_command=None):
+      edited_command=None,
+      module_config_pattern=None,
+      module_execution_args=None,
+      extra_test_resources=None):
     test = ndb_models.Test(
         name=test_name,
         command=command,
         retry_command_line=retry_command_line,
-        runner_sharding_args=runner_sharding_args)
+        runner_sharding_args=runner_sharding_args,
+        module_config_pattern=module_config_pattern,
+        module_execution_args=module_execution_args)
     test.put()
     test_run_config = ndb_models.TestRunConfig(
         test_key=test.key, cluster='cluster', run_target=run_target,
@@ -79,7 +84,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     test_resources = [
         ndb_models.TestResourceObj(name='foo', url='http://foo_origin_url'),
         ndb_models.TestResourceObj(name='bar', url='https://bar_origin_url'),
-    ]
+    ] + (extra_test_resources or [])
     test_run = ndb_models.TestRun(
         id=str(uuid.uuid4()),
         test=test, labels=['label'], test_run_config=test_run_config,
@@ -491,29 +496,36 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                               test_run,
                               output_url,
                               test_resource_urls,
-                              command_line=None,
+                              command_lines,
                               retry_command_line=None,
                               run_target=None,
-                              shard_count=1):
+                              shard_count=None,
+                              max_concurrent_tasks=None):
     """Compare a new request message to its associated test run."""
     test = test_run.test
     test_run_config = test_run.test_run_config
     # compare general options
     self.assertEqual(api_messages.RequestType.MANAGED, msg.type)
-    self.assertEqual(command_line, msg.command_line)
-    self.assertEqual(test_run_config.cluster, msg.cluster)
-    if test_run_config.device_specs:
-      expected_run_target = test_kicker._DeviceSpecsToTFCRunTarget(
-          test_run_config.device_specs)
-    else:
-      expected_run_target = run_target or test_run_config.run_target
-    self.assertEqual(expected_run_target, msg.run_target)
-    self.assertEqual(test_run_config.run_count, msg.run_count)
+    expected_run_target = run_target
+    if not expected_run_target:
+      if test_run_config.device_specs:
+        expected_run_target = test_kicker._DeviceSpecsToTFCRunTarget(
+            test_run_config.device_specs)
+      else:
+        expected_run_target = test_run_config.run_target
+    expected_shard_count = shard_count or test_run_config.shard_count
+    for command_line, info in zip(command_lines, msg.command_infos):
+      self.assertEqual(command_line, info.command_line)
+      self.assertEqual(test_run_config.cluster, info.cluster)
+      self.assertEqual(expected_run_target, info.run_target)
+      self.assertEqual(test_run_config.run_count, info.run_count)
+      self.assertEqual(expected_shard_count, info.shard_count)
     self.assertEqual(
-        shard_count or test_run_config.shard_count, msg.shard_count)
+        retry_command_line, msg.test_environment.retry_command_line)
     self.assertEqual(
         test_run_config.max_retry_on_test_failures,
         msg.max_retry_on_test_failures)
+    self.assertEqual(max_concurrent_tasks, msg.max_concurrent_tasks)
     # compare test environment
     self.assertTrue(msg.test_environment.use_subprocess_reporting)
     self.assertEqual(output_url, msg.test_environment.output_file_upload_url)
@@ -521,8 +533,6 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                      msg.test_environment.context_file_pattern)
     self.assertEqual([test_kicker.METADATA_FILE],
                      msg.test_environment.extra_context_files)
-    self.assertEqual(
-        retry_command_line, msg.test_environment.retry_command_line)
     self.assertEqual(common.LogLevel.INFO, msg.test_environment.log_level)
     self.assertEqual(
         test_run_config.use_parallel_setup,
@@ -584,7 +594,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                 'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
         },
-        command_line='command --invocation-data mtt=1')
+        command_lines=['command --invocation-data mtt=1'])
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
@@ -628,9 +638,79 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                 'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
         },
-        command_line='command --shard-count 2 --invocation-data mtt=1',
+        command_lines=['command --shard-count 2 --invocation-data mtt=1'],
         run_target='run_target;run_target',
         shard_count=1)
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    self.assertEqual(mock_request.id, test_run.request_id)
+    self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
+
+  @mock.patch.object(tfc_client, 'NewRequest', autospec=True)
+  @mock.patch.object(file_util, 'GetTestModuleInfos', autospec=True)
+  @mock.patch.object(file_util, 'OpenFile', autospec=True)
+  @mock.patch.object(download_util, 'DownloadResources', autospec=True)
+  def testKickTestRun_moduleSharding(
+      self,
+      mock_download_resources,
+      mock_open_file,
+      mock_get_test_module_infos,
+      mock_new_request):
+    test_run = self._CreateMockTestRun(
+        command='command',
+        run_target='run_target',
+        shard_count=6,
+        sharding_mode=ndb_models.ShardingMode.MODULE,
+        module_config_pattern='path/to/.*\\.config',
+        module_execution_args='-m ${MODULE_NAME}',
+        extra_test_resources=[
+            ndb_models.TestResourceObj(
+                name='test_package',
+                url='test_package_url',
+                test_resource_type=ndb_models.TestResourceType.TEST_PACKAGE)
+        ])
+    test_run_id = test_run.key.id()
+    test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    mock_download_resources.return_value = {
+        r.url: '%s_cache_url' % r.name for r in test_run.test_resources
+    }
+    mock_get_test_module_infos.return_value = [
+        file_util.TestModuleInfo(name='CtsFooTestCases'),
+        file_util.TestModuleInfo(name='CtsDeqpTestCases'),
+        file_util.TestModuleInfo(name='CtsBarTestCases'),
+    ]
+    mock_request = api_messages.RequestMessage(id='request_id')
+    mock_new_request.return_value = mock_request
+
+    test_kicker.KickTestRun(test_run_id)
+
+    mock_download_resources.assert_called_once_with(
+        [r.url for r in test_run.test_resources], test_run=test_run)
+    mock_open_file.assert_called_with('test_package_cache_url')
+    mock_get_test_module_infos.assert_called_once_with(
+        mock_open_file.return_value, 'path/to/.*\\.config')
+    mock_new_request.assert_called()
+    msg = mock_new_request.call_args[0][0]
+    self._CheckNewRequestMessage(
+        msg=msg,
+        test_run=test_run,
+        output_url='file:///data/app_default_bucket/test_runs/{}/output'.format(
+            test_run_id),
+        test_resource_urls={
+            'foo': 'foo_cache_url',
+            'bar': 'bar_cache_url',
+            'test_package': 'test_package_cache_url',
+            'mtt.json':
+                'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
+                .format(test_run_id)
+        },
+        command_lines=[
+            'command -m CtsDeqpTestCases --invocation-data mtt=1',
+            'command -m CtsBarTestCases --invocation-data mtt=1',
+            'command -m CtsFooTestCases --invocation-data mtt=1',
+        ],
+        run_target='run_target',
+        shard_count=1,
+        max_concurrent_tasks=6)
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
@@ -668,7 +748,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                 'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
         },
-        command_line='edited command --invocation-data mtt=1',
+        command_lines=['edited command --invocation-data mtt=1'],
         shard_count=1)
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
@@ -716,7 +796,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                 'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
         },
-        command_line='command --shard-count 6 --invocation-data mtt=1',
+        command_lines=['command --shard-count 6 --invocation-data mtt=1'],
         retry_command_line=(
             'retry_command_line --shard-count 6 --invocation-data mtt=1'),
         shard_count=1)
@@ -782,7 +862,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                 'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
         },
-        command_line='command --invocation-data mtt=1')
+        command_lines=['command --invocation-data mtt=1'])
 
     # TFC request has two TF result reporters with right class names and options
     tradefed_config_objects = msg.test_environment.tradefed_config_objects
@@ -849,7 +929,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                 'http://test.hostname.com:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
         },
-        command_line='command --invocation-data mtt=1')
+        command_lines=['command --invocation-data mtt=1'])
     self.assertEqual([
         api_messages.TestResource(
             name='bar', url='http://test.hostname.com:8006/file/root/path')

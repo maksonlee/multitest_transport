@@ -21,36 +21,40 @@ from tradefed_cluster.util import ndb_shim as ndb
 from multitest_transport.models import ndb_models
 from multitest_transport.models import sql_models
 from multitest_transport.util import file_util
+from multitest_transport.util import tfc_client
 from multitest_transport.util import xts_result
 
 
 def StoreTestResults(test_run_id, attempt_id, test_results_url):
   """Parses and stores test results for a test run and attempt."""
   start_time = time.time()
-  with file_util.OpenFile(test_results_url) as test_results_stream:
-    try:
+  try:
+    with file_util.OpenFile(test_results_url) as test_results_stream:
       test_results = xts_result.TestResults(test_results_stream)
-    except Exception:        logging.exception('Failed to parse test results')
-      return
 
-    # Update test run summary
-    def _UpdateSummaryTxn():
-      summary = test_results.summary
-      if not summary:
-        return
-      test_run = ndb_models.TestRun.get_by_id(test_run_id)
-      if not test_run:
-        return
-      test_run.total_test_count = summary.passed + summary.failed
-      test_run.failed_test_count = summary.failed
-      test_run.failed_test_run_count = (
-          summary.modules_total - summary.modules_done)
-      test_run.put()
-    ndb.transaction(_UpdateSummaryTxn)
-
-    # Store test results in DB
-    try:
+      # Store test results in DB
       sql_models.InsertTestResults(test_run_id, attempt_id, test_results)
-    except Exception:        logging.exception('Failed to store test results')
-  logging.info('Stored test results from %s (took %.1fs)',
-               attempt_id, time.time() - start_time)
+      logging.info('Stored test results from %s (took %.1fs)',
+                   attempt_id, time.time() - start_time)
+  except FileNotFoundError:
+    logging.warning('Test result file not found: %s', test_results_url)
+  UpdateTestRunSummary(test_run_id)
+
+
+@ndb.transactional()
+def UpdateTestRunSummary(test_run_id):
+  """Update test run numbers."""
+  logging.info('Updating summary for test run %s', test_run_id)
+  test_run = ndb_models.TestRun.get_by_id(test_run_id)
+  test_run.total_test_count = 0
+  test_run.failed_test_count = 0
+  test_run.failed_test_run_count = 0
+  attempts = tfc_client.GetLatestFinishedAttempts(test_run.request_id)
+  modules = sql_models.GetTestModuleResults(
+      [attempt.attempt_id for attempt in attempts])
+  for module in modules:
+    test_run.total_test_count += module.total_tests
+    test_run.failed_test_count += module.failed_tests
+    if module.error_message:
+      test_run.failed_test_run_count += 1
+  test_run.put()

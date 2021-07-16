@@ -19,6 +19,7 @@ import json
 import logging
 import mimetypes
 import os
+import pathlib
 import re
 import shutil
 import socket
@@ -55,6 +56,12 @@ class TestSuiteInfo(object):
   name: str
   fullname: str
   version: str
+
+
+@attr.s(auto_attribs=True, frozen=True)
+class TestModuleInfo(object):
+  """Test module information."""
+  name: str
 
 
 @attr.s(auto_attribs=True, frozen=True)
@@ -674,6 +681,27 @@ def GetTestSuiteInfo(file_obj: BinaryIO) -> Optional[TestSuiteInfo]:
                              version=suite_info.get('version'))
   except Exception:      logging.exception('Failed to get test suite info')
   return None
+
+
+def GetTestModuleInfos(
+    file_obj: BinaryIO, module_config_pattern: str) -> List[TestModuleInfo]:
+  """Finds test module infos from a test package zip.
+
+  Args:
+    file_obj: a file object for a test package zip.
+    module_config_pattern: a pattern for module config files.
+  Returns:
+    A list of test module infos.
+  """
+  infos = []
+  zf = zipfile.ZipFile(file_obj)
+  r = re.compile(module_config_pattern)
+  for file_name in zf.namelist():
+    if not r.match(file_name):
+      continue
+    name = pathlib.Path(file_name).stem
+    infos.append(TestModuleInfo(name=name))
+  return infos
 
 
 class FileHandleMediaUpload(apiclient.http.MediaIoBaseUpload):

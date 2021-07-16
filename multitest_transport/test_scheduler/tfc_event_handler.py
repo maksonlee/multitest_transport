@@ -118,8 +118,15 @@ def ProcessRequestEvent(message):
   """
   request_id = message.request_id
   test_run = _GetTestRunToUpdate(request_id, message)
-  if test_run:
-    _ProcessRequestEvent(test_run.key.id(), message)
+  if not test_run:
+    return
+  _ProcessRequestEvent(test_run.key.id(), message)
+  test_run = test_run.key.get()
+  if test_run.IsFinal():
+    if test_run.test.result_file:
+      test_result_handler.UpdateTestRunSummary(test_run.key.id())
+    if not test_run.is_finalized:
+      _AfterTestRunHandler(test_run)
 
 
 @ndb.transactional()
@@ -140,12 +147,9 @@ def _ProcessRequestEvent(test_run_id, message):
                                  message.passed_test_count)
     test_run.failed_test_count = message.failed_test_count
     test_run.failed_test_run_count = message.failed_test_run_count
-  test_run.cancel_reason =\
-    message.request.cancel_reason if message.request is not None else None
+  test_run.cancel_reason = (
+      message.request.cancel_reason if message.request else None)
   test_run.put()
-
-  if test_run.IsFinal() and not test_run.is_finalized:
-    _AfterTestRunHandler(test_run)
 
 
 def ProcessCommandAttemptEvent(message):

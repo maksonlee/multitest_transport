@@ -20,7 +20,7 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {FileService} from '../services/file_service';
 import {EventLogEntry, TestRun} from '../services/mtt_models';
-import {CommandAttempt, CommandState, Request} from '../services/tfc_models';
+import {Command, CommandAttempt, CommandState, Request} from '../services/tfc_models';
 import {getEl, getEls, hasEl} from '../testing/jasmine_util';
 
 import {TestRunProgress} from './test_run_progress';
@@ -53,9 +53,13 @@ describe('TestRunProgress', () => {
   /** Convenience method to reload a new set of progress entities. */
   function reload(
       logEntries?: Array<Partial<EventLogEntry>>,
+      commands?: Array<Partial<Command>>,
       attempts?: Array<Partial<CommandAttempt>>) {
     component.testRun = {log_entries: logEntries} as TestRun;
-    component.request = {command_attempts: attempts} as Request;
+    component.request = {
+      commands,
+      command_attempts: attempts
+    } as Request;
     component.ngOnChanges();
     fixture.detectChanges();
   }
@@ -81,11 +85,19 @@ describe('TestRunProgress', () => {
 
   it('can display an attempt', () => {
     fs.getFileBrowseUrl.and.returnValue('http://browse_url/');
-    reload([], [{
-             attempt_id: 'attempt_id',
-             create_time: '2000-01-01T00:00:00',
-             state: CommandState.COMPLETED,
-           }]);
+    reload(
+        [],
+        [{
+          id: 'command_id',
+          name: 'name',
+          command_line: 'command_line',
+        }],
+        [{
+          attempt_id: 'attempt_id',
+          command_id: 'command_id',
+          create_time: '2000-01-01T00:00:00',
+          state: CommandState.COMPLETED,
+        }]);
 
     // One attempt entity is displayed
     expect(hasEl(element, '.log')).toBeFalsy();
@@ -111,7 +123,13 @@ describe('TestRunProgress', () => {
           }
         ],
         [{
+          id: 'command_id',
+          name: 'name',
+          command_line: 'command_line',
+        }],
+        [{
           attempt_id: 'Attempt #1',
+          command_id: 'command_id',
           create_time: '2000-01-02T00:00:00',
           state: CommandState.COMPLETED,
         }]);
