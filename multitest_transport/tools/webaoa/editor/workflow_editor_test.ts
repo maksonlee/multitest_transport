@@ -18,7 +18,7 @@
 import {Clipboard} from '@angular/cdk/clipboard';
 import {DebugElement, SimpleChange} from '@angular/core';
 import {ComponentFixture, fakeAsync, flush, TestBed, tick} from '@angular/core/testing';
-import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {MatDialog, MatDialogRef} from '@angular/material/mdc-dialog';
 import {MatSnackBar} from '@angular/material/mdc-snack-bar';
 import {By} from '@angular/platform-browser';
 import {getEl, getEls} from 'google3/third_party/py/multitest_transport/ui2/app/testing/jasmine_util';

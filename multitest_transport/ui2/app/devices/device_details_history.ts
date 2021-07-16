@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
 import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
-import {MatDialog} from '@angular/material/dialog';
+import {MatDialog} from '@angular/material/mdc-dialog';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 import {DEFAULT_PAGE_SIZE, Paginator} from 'google3/third_party/py/multitest_transport/ui2/app/shared/paginator';
@@ -26,8 +26,7 @@ import {ReplaySubject} from 'rxjs';
 import {first, mergeMap, takeUntil} from 'rxjs/operators';
 
 import {NoteDialogParams, NoteDialogState, NotesDialog} from '../notes/notes_dialog';
-import {NoteType} from '../services/mtt_lab_models';
-import {LabDeviceInfo, LabDeviceInfoHistoryList} from '../services/mtt_lab_models';
+import {LabDeviceInfo, LabDeviceInfoHistoryList, NoteType} from '../services/mtt_lab_models';
 import {TfcClient} from '../services/tfc_client';
 import {UserService} from '../services/user_service';
 

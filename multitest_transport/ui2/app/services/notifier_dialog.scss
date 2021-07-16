@@ -16,9 +16,8 @@
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
-[mat-dialog-title] {
-  align-items: center;
-  display: flex;
+[mat-dialog-title] mat-icon {
+  vertical-align: bottom;
 }
 
 [mat-dialog-title].error {

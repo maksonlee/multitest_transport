@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
 import {Component, ElementRef, HostListener, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
-import {MatDialog} from '@angular/material/dialog';
+import {MatDialog} from '@angular/material/mdc-dialog';
 import {ActivatedRoute, Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {first, mergeMap, takeUntil} from 'rxjs/operators';

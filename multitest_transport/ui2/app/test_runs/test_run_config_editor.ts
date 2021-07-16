@@ -15,7 +15,7 @@
  */
 
 import {Component, EventEmitter, Inject, OnInit, Output, ViewChild} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/mdc-dialog';
 import {MatStepper} from '@angular/material/stepper';
 
 import {TestResourceClassType, TestResourceForm} from '../build_channels/test_resource_form';

@@ -33,6 +33,7 @@ ng_module(
         third_party_js("angular2:cdk_a11y"),
         third_party_js("angular2:core"),
         third_party_js("angular2:material_dialog"),
+        third_party_js("angular2:material_mdc_dialog"),
         third_party_js("angular2:material_stepper"),
         third_party_js("angular2:platform_browser"),
         third_party_js("rxjs"),

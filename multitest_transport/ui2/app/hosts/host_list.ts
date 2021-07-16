@@ -19,7 +19,7 @@ import {Location} from '@angular/common';
 import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatAutocomplete, MatAutocompleteTrigger} from '@angular/material/autocomplete';
-import {MatDialog} from '@angular/material/dialog';
+import {MatDialog} from '@angular/material/mdc-dialog';
 import {MatTable} from '@angular/material/mdc-table';
 import {ActivatedRoute, ParamMap, Router} from '@angular/router';
 import {forkJoin, Observable, of as observableOf, ReplaySubject, throwError} from 'rxjs';

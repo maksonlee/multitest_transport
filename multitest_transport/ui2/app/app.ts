@@ -16,15 +16,13 @@
 
 import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
 import {Component, Inject, NgModule, OnDestroy} from '@angular/core';
-import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/mdc-dialog';
 import {MatTooltipModule} from '@angular/material/mdc-tooltip';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {NavigationEnd, Router, RouterModule, Routes} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
-import {first} from 'rxjs/operators';
-import {takeUntil} from 'rxjs/operators';
+import {first, takeUntil} from 'rxjs/operators';
 
 import {AuthModule} from './auth/auth_module';
 import {AuthReturnPage} from './auth/auth_return_page';
