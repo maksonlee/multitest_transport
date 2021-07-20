@@ -168,6 +168,7 @@ export declare interface LabHostExtraInfo {
   total_devices: string;
   device_count_time_stamp: string;
   host_note_id: number;
+  [key: string]: string | number;
 }
 
 
@@ -324,37 +325,37 @@ export function filterHostInfoCount(
 /**
  * Converts the value of HostInfo.extra_info into LabHostExtraInfo object.
  */
-export function convertToHostExtraInfo(source: KeyValuePair[]):
+export function convertToHostExtraInfo(
+    source: KeyValuePair[], extraInfo: LabHostExtraInfo):
     LabHostExtraInfo {
-  return {
-    allocated_devices: getKeyValue(source, 'allocated_devices'),
-    available_devices: getKeyValue(source, 'available_devices'),
-    offline_devices: getKeyValue(source, 'offline_devices'),
-    total_devices: getKeyValue(source, 'total_devices'),
-    device_count_time_stamp: getKeyValue(source, 'device_count_time_stamp'),
-    host_note_id: !Number.isNaN(Number(getKeyValue(source, 'host_note_id'))) ?
-        Number(getKeyValue(source, 'host_note_id')) :
-        0,
-  };
+  for (const entity of source) {
+    if (entity.key === 'host_note_id') {
+      extraInfo.host_note_id = !Number.isNaN(Number(entity.value))?
+          Number(entity.value): 0;
+    } else {
+      extraInfo[entity.key] = entity.value;
+    }
+  }
+  return extraInfo;
 }
 
 /**
  * Converts the HostInfo object which returned from backend into LabHostInfo.
  */
 export function convertToLabHostInfo(source: tfcModels.HostInfo): LabHostInfo {
+  const extraInfo: LabHostExtraInfo = {
+    allocated_devices: source.allocated_devices || '0',
+    available_devices: source.available_devices || '0',
+    offline_devices: source.offline_devices || '0',
+    total_devices: source.total_devices || '0',
+    device_count_time_stamp: '',
+    host_note_id: 0,
+  };
+  if (source.extra_info) {
+    convertToHostExtraInfo(source.extra_info, extraInfo);
+  }
   return {
-    extraInfo:
-        (source.extra_info && getKeyValue(source.extra_info, 'total_devices') &&
-         getKeyValue(source.extra_info, 'offline_devices')) ?
-        convertToHostExtraInfo(source.extra_info) :
-        {
-          allocated_devices: source.allocated_devices || '0',
-          available_devices: source.available_devices || '0',
-          offline_devices: source.offline_devices || '0',
-          total_devices: source.total_devices || '0',
-          device_count_time_stamp: '',
-          host_note_id: 0,
-        },
+    extraInfo,
     hidden: source.hidden,
     hostname: source.hostname,
     host_state: source.host_state,

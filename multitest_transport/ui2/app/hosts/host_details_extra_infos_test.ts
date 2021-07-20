@@ -24,6 +24,8 @@ import {getTextContent} from '../testing/jasmine_util';
 import {HostDetailsExtraInfos} from './host_details_extra_infos';
 import {HostsModule} from './hosts_module';
 import {HostsModuleNgSummary} from './hosts_module.ngsummary';
+import {newMockLabHostExtraInfo} from '../testing/mtt_lab_mocks';
+
 
 describe('HostDetailsExtraInfos', () => {
   let hostDetailsExtraInfos: HostDetailsExtraInfos;
@@ -44,7 +46,10 @@ describe('HostDetailsExtraInfos', () => {
     hostDetailsExtraInfosFixture =
         TestBed.createComponent(HostDetailsExtraInfos);
     hostDetailsExtraInfos = hostDetailsExtraInfosFixture.componentInstance;
-    hostDetailsExtraInfos.extraInfos = [];
+    hostDetailsExtraInfos.extraInfo = newMockLabHostExtraInfo(0);
+    hostDetailsExtraInfos.extraInfoList = (
+        hostDetailsExtraInfos.extraInfoToExtraInfoList(
+            hostDetailsExtraInfos.extraInfo));
     hostDetailsExtraInfosFixture.detectChanges();
     el = hostDetailsExtraInfosFixture.debugElement;
   });
@@ -57,29 +62,40 @@ describe('HostDetailsExtraInfos', () => {
     expect(hostDetailsExtraInfos).toBeTruthy();
   });
 
-  it('correctly displays a given empty list', () => {
-    hostDetailsExtraInfos.extraInfos = [];
-    hostDetailsExtraInfosFixture.detectChanges();
-    expect(getTextContent(el)).toContain('No host extra infos found.');
-  });
-
   it('correctly displays a given extra infos', () => {
-    const ip = '127.0.0.1';
-    hostDetailsExtraInfos.extraInfos = [ip];
+    const expectedIp = '127.0.0.1';
+    hostDetailsExtraInfos.extraInfo = newMockLabHostExtraInfo(0);
+    hostDetailsExtraInfos.extraInfo['ip'] = expectedIp;
+    hostDetailsExtraInfos.extraInfoList = (
+        hostDetailsExtraInfos.extraInfoToExtraInfoList(
+            hostDetailsExtraInfos.extraInfo));
     hostDetailsExtraInfosFixture.detectChanges();
-    expect(getTextContent(el)).toContain(ip);
+    let ip = null;
+    for (const entry of hostDetailsExtraInfos.extraInfoList) {
+      if (entry.key === 'ip') {
+        ip = entry.value;
+      }
+    }
+    expect(ip).toEqual(expectedIp);
+    expect(getTextContent(el)).toContain(expectedIp);
   });
 
   it('set new values correctly when params changed', () => {
     const hostIp = '127.0.0.1';
     const wifi = 'abc-123';
-    hostDetailsExtraInfos.extraInfos = [hostIp];
+    hostDetailsExtraInfos.extraInfo = newMockLabHostExtraInfo(0);
+    hostDetailsExtraInfos.extraInfo['hostIp'] = hostIp;
+    hostDetailsExtraInfos.extraInfoList = (
+        hostDetailsExtraInfos.extraInfoToExtraInfoList(
+            hostDetailsExtraInfos.extraInfo));
+
     hostDetailsExtraInfosFixture.detectChanges();
     expect(getTextContent(el)).toContain(hostIp);
 
     hostDetailsExtraInfos.ngOnChanges(
-        {extraInfos: new SimpleChange(null, [hostIp, wifi], false)});
+        {extraInfo: new SimpleChange(null, {hostIp, wifi}, false)});
     hostDetailsExtraInfosFixture.detectChanges();
-    expect(hostDetailsExtraInfos.extraInfos).toEqual([hostIp, wifi]);
+    expect(hostDetailsExtraInfos.extraInfo['hostIp']).toEqual(hostIp);
+    expect(hostDetailsExtraInfos.extraInfo['wifi']).toEqual(wifi);
   });
 });

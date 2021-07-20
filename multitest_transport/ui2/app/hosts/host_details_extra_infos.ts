@@ -16,6 +16,7 @@
 
 import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
 import {assertRequiredInput} from '../shared/util';
+import {LabHostExtraInfo} from '../services/mtt_lab_models';
 
 
 /** Displaying extra info list of a host. */
@@ -25,20 +26,31 @@ import {assertRequiredInput} from '../shared/util';
   templateUrl: 'host_details_extra_infos.ng.html',
 })
 export class HostDetailsExtraInfos implements OnChanges, OnInit {
-  @Input() extraInfos!: string[];
+  @Input() extraInfo!: LabHostExtraInfo;
+  extraInfoList: Array<{key: string, value: string|number}> = [];
 
   displayedColumns: string[] = [
-    'extraInfo',
+    'key', 'value'
   ];
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['extraInfos']) {
-      this.extraInfos = changes['extraInfos'].currentValue;
+    if (changes['extraInfo']) {
+      this.extraInfo = changes['extraInfo'].currentValue;
+      this.extraInfoList = this.extraInfoToExtraInfoList(this.extraInfo);
     }
   }
 
   ngOnInit() {
     assertRequiredInput(
-        this.extraInfos, 'extraInfos', 'host-details-extra-infos');
+        this.extraInfo, 'extraInfo', 'host-details-extra-infos');
+    this.extraInfoList = this.extraInfoToExtraInfoList(this.extraInfo);
+  }
+
+  /**
+   * LabHostExtraInfo object to a list of key value pairs.
+   * @param extraInfo a LabHostExtraInfo
+   */
+  extraInfoToExtraInfoList(extraInfo: LabHostExtraInfo) {
+    return Object.entries(extraInfo).map(o => ({key: o[0], value: o[1]}));
   }
 }
