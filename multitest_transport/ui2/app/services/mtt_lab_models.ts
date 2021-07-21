@@ -62,16 +62,11 @@ export declare interface LabDeviceInfo extends tfcModels.DeviceInfo {
 // tslint:disable:enforce-name-casing
 /** Extra info from a device. */
 export declare interface LabDeviceExtraInfo {
-  battery_level: number;
-  build_id: string;
   device_note_id: number;
-  mac_address: string;
-  product_variant: string;
-  product: string;
+  build_id: string;
   sdk_version: string;
-  sim_operator: string;
-  sim_state: string;
-  utilization: number;
+  battery_level: number;
+  [key: string]: string | number;
 }
 
 /** Response for device history api call. */
@@ -511,26 +506,25 @@ export function convertToLabDeviceInfo(source: tfcModels.DeviceInfo):
  */
 export function convertToDeviceExtraInfo(source: KeyValuePair[]):
     LabDeviceExtraInfo {
-  return {
-    battery_level:
-        !Number.isNaN(Number(getKeyValue(source, 'battery_level')) / 100) ?
-        Number(getKeyValue(source, 'battery_level')) / 100 :
-        0,
-    build_id: getKeyValue(source, 'build_id'),
-    device_note_id:
-        !Number.isNaN(Number(getKeyValue(source, 'device_note_id'))) ?
-        Number(getKeyValue(source, 'device_note_id')) :
-        0,
-    mac_address: getKeyValue(source, 'mac_address'),
-    product_variant: getKeyValue(source, 'product_variant'),
-    product: getKeyValue(source, 'product'),
-    sdk_version: getKeyValue(source, 'sdk_version'),
-    sim_operator: getKeyValue(source, 'sim_operator'),
-    sim_state: getKeyValue(source, 'sim_state'),
-    utilization: !Number.isNaN(Number(getKeyValue(source, 'utilization'))) ?
-        Number(getKeyValue(source, 'utilization')) :
-        0,
+  const extraInfo: LabDeviceExtraInfo = {
+    device_note_id: -1,
+    build_id: "UNKNOWN",
+    sdk_version: "UNKNOWN",
+    battery_level: -1,
   };
+  for (const entity of source) {
+    if (['device_note_id', 'utilization'].includes(
+            entity.key)) {
+      extraInfo[entity.key] = !Number.isNaN(Number(entity.value))?
+          Number(entity.value): -1;
+    } else if (entity.key === 'battery_level') {
+      extraInfo[entity.key] = !Number.isNaN(Number(entity.value))?
+          Number(entity.value) / 100: -1;
+    } else {
+      extraInfo[entity.key] = entity.value;
+    }
+  }
+  return extraInfo;
 }
 
 /**

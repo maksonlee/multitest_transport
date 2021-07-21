@@ -1,12 +1,18 @@
 <div class=".device-details-extra-info-container">
-  <mat-table [dataSource]="extraInfos">
-    <!-- ExtraInfo -->
-    <ng-container matColumnDef="extraInfo">
-      <mat-header-cell *matHeaderCellDef fxFlex="500px"> Extra Info </mat-header-cell>
-      <mat-cell *matCellDef="let extraInfo" fxFlex="500px">
-        <ng-container *ngIf="extraInfo">
-          {{ extraInfo }}
-        </ng-container>
+  <mat-table [dataSource]="extraInfoList">
+    <!-- Key -->
+    <ng-container matColumnDef="key">
+      <mat-header-cell *matHeaderCellDef fxFlex="500px"> Key  </mat-header-cell>
+      <mat-cell *matCellDef="let entry" fxFlex="500px">
+          {{ entry.key }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Value -->
+    <ng-container matColumnDef="value">
+      <mat-header-cell *matHeaderCellDef fxFlex="500px"> Value </mat-header-cell>
+      <mat-cell *matCellDef="let entry" fxFlex="500px">
+          {{ entry.value }}
       </mat-cell>
     </ng-container>
 
@@ -14,7 +20,7 @@
     <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
   </mat-table>
 
-  <div class="empty" *ngIf="extraInfos?.length === 0">
-    No device extra infos found.
+  <div class="empty" *ngIf="extraInfoList?.length === 0">
+    No device extra info found.
   </div>
 </div>

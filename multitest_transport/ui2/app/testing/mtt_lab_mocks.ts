@@ -401,13 +401,15 @@ export function newMockDeviceInfo(
     hidden: boolean = HIDDEN, hostname: string = HOSTNAME,
     runTarget = RUN_TARGET, deviceType = tfcModels.DeviceType.PHYSICAL,
     timestamp: string = TIMESTAMP,
-    testHarness: string = TEST_HARNESS): tfcModels.DeviceInfo {
+    testHarness: string = TEST_HARNESS,
+    extraInfo: mttLabModels.KeyValuePair[] | null = null)
+    : tfcModels.DeviceInfo {
   return {
     battery_level: String(BATTERY_LEVEL),
     build_id: BUILD_ID,
     device_serial: deviceSerial,
     device_type: deviceType,
-    extra_info: newMockDeviceExtraInfo(deviceNoteId),
+    extra_info: extraInfo? extraInfo: newMockDeviceExtraInfo(deviceNoteId),
     flated_extra_info:
         ['battery_level:80', 'sdk_version:10', 'sim_state:ABSENT'],
     hidden,

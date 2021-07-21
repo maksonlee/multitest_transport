@@ -1,6 +1,6 @@
-import {DEVICE_COUNT_SUMMARIES, newMockHostInfo, newMockLabOfflineHostInfosByLabResponse, newMockUnconvertedHostInfo} from '../testing/mtt_lab_mocks';
+import {DEVICE_COUNT_SUMMARIES, newMockHostInfo, newMockLabOfflineHostInfosByLabResponse, newMockUnconvertedHostInfo, newMockDeviceInfo} from '../testing/mtt_lab_mocks';
 
-import {calculateTotalDeviceCountSummary, convertToLabHostInfo} from './mtt_lab_models';
+import {calculateTotalDeviceCountSummary, convertToLabHostInfo, convertToLabDeviceInfo} from './mtt_lab_models';
 import {HostState, TestHarness} from './tfc_models';
 
 describe('MttLabModels', () => {
@@ -51,4 +51,14 @@ describe('MttLabModels', () => {
     expect(totalDeviceCountSummary.allDevices).toEqual(274);
     expect(totalDeviceCountSummary.offlineDevices).toEqual(133);
   });
+
+  it('converts to DeviceInfo correctly', () => {
+    const source = newMockDeviceInfo();
+    source.extra_info.push({key: 'testkey', value: 'testvalue'});
+    const result = convertToLabDeviceInfo(source);
+
+    expect(result.device_serial).toEqual(source.device_serial);
+    expect(result.extraInfo['testkey']).toEqual('testvalue');
+  });
+
 });
