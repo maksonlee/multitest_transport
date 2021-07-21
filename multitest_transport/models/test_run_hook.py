@@ -80,6 +80,7 @@ def _ExecuteHook(action, hook_context):
     options = {
         k: string.Template(v).substitute(test_run_context)
         for k, v in options.items()
+        if v is not None
     }
     if action.credentials:
       options['_credentials'] = action.credentials
