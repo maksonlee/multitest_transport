@@ -18,43 +18,72 @@
   {{mode === BuildPickerMode.SELECT ? 'Select a file' : 'View Files'}}
 </h2>
 
-<mat-tab-group
-  (selectedTabChange)="onSelectedTabChange($event)"
-  [selectedIndex]="selectedTabIndex">
+<mat-dialog-content>
+  <mat-tab-group
+    (selectedTabChange)="onSelectedTabChange($event)"
+    [selectedIndex]="selectedTabIndex">
 
-  <!-- url tab -->
-  <mat-tab label="By Url" *ngIf="mode === BuildPickerMode.SELECT">
-    <div class="url-tab-content">
-      <mat-form-field appearance="outline" floatLabel="always"
-        fxLayout="column">
-        <mat-label> Enter the URL of the file </mat-label>
-        <input
-          matInput type="text" [(ngModel)]="searchBarUrlValue" name="url">
-      </mat-form-field>
-      <button mat-button color="accent" mat-dialog-close>
-        Cancel
-      </button>
-      <button
-        mat-flat-button
-        class="select-button"
-        color="accent"
-        (click)="selectAndClose()"
-        [attr.aria-disabled]="!searchBarUrlValue">
-        Select
-      </button>
-    </div>
-  </mat-tab>
-
-  <!-- local file tab -->
-  <mat-tab label="Local File">
-    <ng-template matTabContent>
-      <local-file-store [(url)]="searchBarUrlValue"></local-file-store>
-      <div class="button-group" *ngIf="mode === BuildPickerMode.SELECT">
+    <!-- url tab -->
+    <mat-tab label="By Url" *ngIf="mode === BuildPickerMode.SELECT">
+      <div class="url-tab-content">
+        <mat-form-field appearance="outline" floatLabel="always"
+          fxLayout="column">
+          <mat-label> Enter the URL of the file </mat-label>
+          <input
+            matInput type="text" [(ngModel)]="searchBarUrlValue" name="url">
+        </mat-form-field>
         <button mat-button color="accent" mat-dialog-close>
           Cancel
         </button>
-        <button mat-flat-button color="accent" (click)="selectAndClose()"
-                [attr.aria-disabled]="!searchBarUrlValue">
+        <button
+          mat-flat-button
+          class="select-button"
+          color="accent"
+          (click)="selectAndClose()"
+          [attr.aria-disabled]="!searchBarUrlValue">
+          Select
+        </button>
+      </div>
+    </mat-tab>
+
+    <!-- local file tab -->
+    <mat-tab label="Local File">
+      <ng-template matTabContent>
+        <local-file-store [(url)]="searchBarUrlValue"></local-file-store>
+        <div class="button-group" *ngIf="mode === BuildPickerMode.SELECT">
+          <button mat-button color="accent" mat-dialog-close>
+            Cancel
+          </button>
+          <button mat-flat-button color="accent" (click)="selectAndClose()"
+                  [attr.aria-disabled]="!searchBarUrlValue">
+            Select
+          </button>
+        </div>
+        <div *ngIf="mode === BuildPickerMode.VIEW">
+          <button mat-button color="accent" mat-dialog-close>
+            Close
+          </button>
+        </div>
+      </ng-template>
+    </mat-tab>
+
+    <mat-tab [label]="buildChannel.name" *ngFor="let buildChannel of buildChannels">
+      <ng-container
+          [ngTemplateOutlet]="isBuildChannelAvailable(buildChannel) ? channelTemplate : authTemplate"
+          [ngTemplateOutletContext]="{buildChannel: buildChannel}"
+      >
+      </ng-container>
+      <div *ngIf="mode === BuildPickerMode.SELECT && isBuildChannelAvailable(buildChannel)"
+           class="button-group">
+        <button mat-button color="accent" mat-dialog-close>
+          Cancel
+        </button>
+        <button
+            mat-flat-button
+            color="accent"
+            (click)="selectAndClose()"
+            [attr.aria-disabled]="!selection.selected.length && !searchBarFilenameValue"
+        >
           Select
         </button>
       </div>
@@ -63,184 +92,157 @@
           Close
         </button>
       </div>
-    </ng-template>
-  </mat-tab>
+    </mat-tab>
+  </mat-tab-group>
 
-  <mat-tab [label]="buildChannel.name" *ngFor="let buildChannel of buildChannels">
-    <ng-container
-        [ngTemplateOutlet]="isBuildChannelAvailable(buildChannel) ? channelTemplate : authTemplate"
-        [ngTemplateOutletContext]="{buildChannel: buildChannel}"
-    >
-    </ng-container>
-    <div *ngIf="mode === BuildPickerMode.SELECT && isBuildChannelAvailable(buildChannel)"
-         class="button-group">
-      <button mat-button color="accent" mat-dialog-close>
-        Cancel
-      </button>
-      <button
-          mat-flat-button
-          color="accent"
-          (click)="selectAndClose()"
-          [attr.aria-disabled]="!selection.selected.length && !searchBarFilenameValue"
-      >
-        Select
-      </button>
-    </div>
-    <div *ngIf="mode === BuildPickerMode.VIEW">
-      <button mat-button color="accent" mat-dialog-close>
-        Close
-      </button>
-    </div>
-  </mat-tab>
-</mat-tab-group>
-
-<ng-template #channelTemplate let-buildChannel='buildChannel'>
-  <mat-spinner
-    class="loading-spinner"
-    color="accent"
-    *ngIf="isLoadingBuildItems">
-  </mat-spinner>
-  <div [class.loading-mask]="isLoadingBuildItems">
-    <div class="stick-top">
-      <!-- Search bar -->
-      <div class="search-bar">
-        <mat-form-field appearance="outline" floatLabel="always"
-          fxLayout="column">
-          <mat-label>Directory</mat-label>
-          <input matInput type="text"
-            [(ngModel)]="searchBarUrlValue"
-            (input)="onSearchBarValueChange($event.target.value)"
-            name="searchBarUrlValue">
-        </mat-form-field>
-        <mat-form-field id="filename" appearance="outline" floatLabel="always"
-          fxLayout="column">
-          <mat-label>Filename (can support wildcards)</mat-label>
-          <input matInput type="text" [(ngModel)]="searchBarFilenameValue">
+  <ng-template #channelTemplate let-buildChannel='buildChannel'>
+    <mat-spinner
+      class="loading-spinner"
+      color="accent"
+      *ngIf="isLoadingBuildItems">
+    </mat-spinner>
+    <div [class.loading-mask]="isLoadingBuildItems">
+      <div class="stick-top">
+        <!-- Search bar -->
+        <div class="search-bar">
+          <mat-form-field appearance="outline" floatLabel="always"
+            fxLayout="column">
+            <mat-label>Directory</mat-label>
+            <input matInput type="text"
+              [(ngModel)]="searchBarUrlValue"
+              (input)="onSearchBarValueChange($event.target.value)"
+              name="searchBarUrlValue">
           </mat-form-field>
+          <mat-form-field id="filename" appearance="outline" floatLabel="always"
+            fxLayout="column">
+            <mat-label>Filename (can support wildcards)</mat-label>
+            <input matInput type="text" [(ngModel)]="searchBarFilenameValue">
+            </mat-form-field>
+        </div>
+
+        <!-- Breadcrumb -->
+        <breadcrumb
+          [prefix]="buildChannel.name"
+          [path]="searchBarUrlValue"
+          (pathChange)="onBreadCrumbPathChange($event)">
+        </breadcrumb>
       </div>
 
-      <!-- Breadcrumb -->
-      <breadcrumb
-        [prefix]="buildChannel.name"
-        [path]="searchBarUrlValue"
-        (pathChange)="onBreadCrumbPathChange($event)">
-      </breadcrumb>
-    </div>
+      <!-- Build item content -->
+      <!-- Table to display the content -->
+      <ng-container *ngIf="!isFnmatchPattern(searchBarFilenameValue); else fnmatchTemplate">
+        <mat-table
+          [dataSource]="buildItems"
+          *ngIf="buildItems && buildItems.length; else noContentTemplate"
+          mttInfiniteScroll
+          [enableInfiniteScroll]="nextPageToken.length > 0"
+          [scrollThreshold]="80"
+          (scrollLoad)="onScrollLoad($event)"
+          class="build-picker-table"
+          aria-label="Build picker">
+          <!-- Name and description -->
+          <ng-container matColumnDef="name">
+            <mat-header-cell *matHeaderCellDef [fxFlex]="60">
+              Name
+            </mat-header-cell>
+            <mat-cell class="name" *matCellDef="let item" [fxFlex]="60">
+              <span>{{item.name}}</span>
+              <span *ngIf="item.description" class="item-description">{{item.description}}</span>
+            </mat-cell>
+          </ng-container>
 
-    <!-- Build item content -->
-    <!-- Table to display the content -->
-    <ng-container *ngIf="!isFnmatchPattern(searchBarFilenameValue); else fnmatchTemplate">
-      <mat-table
-        [dataSource]="buildItems"
-        *ngIf="buildItems && buildItems.length; else noContentTemplate"
-        mttInfiniteScroll
-        [enableInfiniteScroll]="nextPageToken.length > 0"
-        [scrollThreshold]="80"
-        (scrollLoad)="onScrollLoad($event)"
-        class="build-picker-table"
-        aria-label="Build picker">
-        <!-- Name and description -->
-        <ng-container matColumnDef="name">
-          <mat-header-cell *matHeaderCellDef [fxFlex]="60">
-            Name
-          </mat-header-cell>
-          <mat-cell class="name" *matCellDef="let item" [fxFlex]="60">
-            <span>{{item.name}}</span>
-            <span *ngIf="item.description" class="item-description">{{item.description}}</span>
-          </mat-cell>
-        </ng-container>
+          <!-- Timestamp -->
+          <ng-container matColumnDef="timestamp">
+            <mat-header-cell *matHeaderCellDef [fxFlex]="25">
+              Timestamp
+            </mat-header-cell>
+            <mat-cell *matCellDef="let item" [fxFlex]="25">
+              {{ item.timestamp | utc | date:'MM/dd/yyyy h:mma' }}
+            </mat-cell>
+          </ng-container>
+          <!-- Size -->
+          <ng-container matColumnDef="size">
+            <mat-header-cell *matHeaderCellDef [fxFlex]="10">
+              Size
+            </mat-header-cell>
+            <mat-cell *matCellDef="let item" [fxFlex]="10">
+              {{item.is_file ? item.size : ''}}
+            </mat-cell>
+          </ng-container>
+          <!-- Folder navigation icon -->
+          <ng-container matColumnDef="navIcon">
+            <mat-header-cell *matHeaderCellDef [fxFlex]="5">
+            </mat-header-cell>
+            <mat-cell *matCellDef="let item" [fxFlex]="5">
+              <mat-icon *ngIf="!item.is_file">
+                navigate_next
+              </mat-icon>
+            </mat-cell>
+          </ng-container>
+          <mat-header-row *matHeaderRowDef="columnsToDisplay">
+          </mat-header-row>
+          <mat-row *matRowDef="let row; columns: columnsToDisplay;" tabindex="0"
+            (click)="selectFile(row)"
+            (dblclick)="openFolder(row)"
+            (keyup.enter)="row.is_file ? selectFile(row) : openFolder(row)"
+            [ngClass]="{ 'selected': selection.isSelected(row)}"
+          >
+          </mat-row>
+        </mat-table>
+      </ng-container>
 
-        <!-- Timestamp -->
-        <ng-container matColumnDef="timestamp">
-          <mat-header-cell *matHeaderCellDef [fxFlex]="25">
-            Timestamp
-          </mat-header-cell>
-          <mat-cell *matCellDef="let item" [fxFlex]="25">
-            {{ item.timestamp | utc | date:'MM/dd/yyyy h:mma' }}
-          </mat-cell>
-        </ng-container>
-        <!-- Size -->
-        <ng-container matColumnDef="size">
-          <mat-header-cell *matHeaderCellDef [fxFlex]="10">
-            Size
-          </mat-header-cell>
-          <mat-cell *matCellDef="let item" [fxFlex]="10">
-            {{item.is_file ? item.size : ''}}
-          </mat-cell>
-        </ng-container>
-        <!-- Folder navigation icon -->
-        <ng-container matColumnDef="navIcon">
-          <mat-header-cell *matHeaderCellDef [fxFlex]="5">
-          </mat-header-cell>
-          <mat-cell *matCellDef="let item" [fxFlex]="5">
-            <mat-icon *ngIf="!item.is_file">
-              navigate_next
-            </mat-icon>
-          </mat-cell>
-        </ng-container>
-        <mat-header-row *matHeaderRowDef="columnsToDisplay">
-        </mat-header-row>
-        <mat-row *matRowDef="let row; columns: columnsToDisplay;" tabindex="0"
-          (click)="selectFile(row)"
-          (dblclick)="openFolder(row)"
-          (keyup.enter)="row.is_file ? selectFile(row) : openFolder(row)"
-          [ngClass]="{ 'selected': selection.isSelected(row)}"
-        >
-        </mat-row>
-      </mat-table>
-    </ng-container>
-
-  </div> <!-- loading mask div -->
-</ng-template>
-
-<!-- Authentication template -->
-<ng-template #authTemplate let-buildChannel='buildChannel'>
-    <h3 class="auth-template">
-      You haven't setup this build channel
-      <br/>
-      <button class="auth-button" mat-stroked-button color="accent"
-              *ngIf="buildChannel.auth_methods.includes(AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE)"
-              (click)="authorize(buildChannel.id)">
-          Authorize
-      </button>
-      <input type="file" #keyfileInput
-             (change)="uploadKeyfile(buildChannel.id, $event.target.files[0]);
-                       keyfileInput.value = ''"/>
-      <button
-            class="keyfile-button"
-            mat-flat-button
-            aria-label="Upload Service Account Key"
-            color='accent'
-            *ngIf="buildChannel.auth_methods.includes(AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT)"
-            (click)="keyfileInput.click()">
-        Upload Service Account Key
-      </button>
-    </h3>
-</ng-template>
-
-<!-- No content found template -->
-<ng-template #noContentTemplate>
-  <h3 class="not-found"
-      *ngIf="!isMissingGcsBucket(); else missingGcsBucketTemplate">
-    No Content Found
-  </h3>
-
-  <ng-template #missingGcsBucketTemplate>
-    <h3 class="not-found">
-      Please enter the GCS bucket name into the search bar
-    </h3>
+    </div> <!-- loading mask div -->
   </ng-template>
-</ng-template>
 
-<!-- Fnmatch Pattern Template -->
-<ng-template #fnmatchTemplate>
-  <div class="fnmatch-template">
-    <mat-icon>info</mat-icon>
-    <div class="fnmatch-description">
-        Your filename contains wildcard characters. The first file which matches this pattern will be used.
-      <a target="_blank"
-         aria-label="Fnmatch documentation"
-         href="https://docs.python.org/2/library/fnmatch.html">Documentation</a>
+  <!-- Authentication template -->
+  <ng-template #authTemplate let-buildChannel='buildChannel'>
+      <h3 class="auth-template">
+        You haven't setup this build channel
+        <br/>
+        <button class="auth-button" mat-stroked-button color="accent"
+                *ngIf="buildChannel.auth_methods.includes(AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE)"
+                (click)="authorize(buildChannel.id)">
+            Authorize
+        </button>
+        <input type="file" #keyfileInput
+               (change)="uploadKeyfile(buildChannel.id, $event.target.files[0]);
+                         keyfileInput.value = ''"/>
+        <button
+              class="keyfile-button"
+              mat-flat-button
+              aria-label="Upload Service Account Key"
+              color='accent'
+              *ngIf="buildChannel.auth_methods.includes(AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT)"
+              (click)="keyfileInput.click()">
+          Upload Service Account Key
+        </button>
+      </h3>
+  </ng-template>
+
+  <!-- No content found template -->
+  <ng-template #noContentTemplate>
+    <h3 class="not-found"
+        *ngIf="!isMissingGcsBucket(); else missingGcsBucketTemplate">
+      No Content Found
+    </h3>
+
+    <ng-template #missingGcsBucketTemplate>
+      <h3 class="not-found">
+        Please enter the GCS bucket name into the search bar
+      </h3>
+    </ng-template>
+  </ng-template>
+
+  <!-- Fnmatch Pattern Template -->
+  <ng-template #fnmatchTemplate>
+    <div class="fnmatch-template">
+      <mat-icon>info</mat-icon>
+      <div class="fnmatch-description">
+          Your filename contains wildcard characters. The first file which matches this pattern will be used.
+        <a target="_blank"
+           aria-label="Fnmatch documentation"
+           href="https://docs.python.org/2/library/fnmatch.html">Documentation</a>
+      </div>
     </div>
-  </div>
-</ng-template>
+  </ng-template>
+</mat-dialog-content>

@@ -14,102 +14,105 @@
  limitations under the License.
 -->
 
-<h2>
+<h2 mat-dialog-title>
   Setup Wizard
 </h2>
-<div class="info-text">
-  There are a few optional steps that can be completed to make using this tool easier. Any
-  configurations set here can always be changed again later by going to the Settings page.
-</div>
 
-<mat-vertical-stepper #stepper>
-  <ng-template matStepperIcon="edit">
-    <mat-icon>check</mat-icon>
-  </ng-template>
+<mat-dialog-content>
+  <div class="info-text">
+    There are a few optional steps that can be completed to make using this tool easier. Any
+    configurations set here can always be changed again later by going to the Settings page.
+  </div>
 
-  <!-- TODO: re-enable this step once the OAuth issue is resolved. -->
-  <mat-step #buildChannelStep *ngIf="false">
-    <ng-template matStepLabel>
-      <h3>Login to Google services</h3>
+  <mat-vertical-stepper #stepper>
+    <ng-template matStepperIcon="edit">
+      <mat-icon>check</mat-icon>
     </ng-template>
 
-    <!-- Re-init when this step is selected. -->
-    <build-channel-setup *ngIf="!stepper.selected || stepper.selected == buildChannelStep">
-    </build-channel-setup>
+    <!-- TODO: re-enable this step once the OAuth issue is resolved. -->
+    <mat-step #buildChannelStep *ngIf="false">
+      <ng-template matStepLabel>
+        <h3>Login to Google services</h3>
+      </ng-template>
 
-    <div class="button-section">
-      <button mat-flat-button color="accent" class="horizontal-center"
-              matStepperNext>
-        Next Step
-      </button>
-    </div>
-  </mat-step>
+      <!-- Re-init when this step is selected. -->
+      <build-channel-setup *ngIf="!stepper.selected || stepper.selected == buildChannelStep">
+      </build-channel-setup>
 
-  <mat-step>
-    <ng-template matStepLabel>
-      <h3>
-        Upload a Backup Config
-      </h3>
-    </ng-template>
+      <div class="button-section">
+        <button mat-flat-button color="accent" class="horizontal-center"
+                matStepperNext>
+          Next Step
+        </button>
+      </div>
+    </mat-step>
 
-    <config-restore-step></config-restore-step>
+    <mat-step>
+      <ng-template matStepLabel>
+        <h3>
+          Upload a Backup Config
+        </h3>
+      </ng-template>
 
-    <div class="button-section">
-      <button mat-flat-button color="accent" class="horizontal-center"
-              matStepperNext>
-        Next Step
-      </button>
-    </div>
-  </mat-step>
+      <config-restore-step></config-restore-step>
 
-  <mat-step>
-    <ng-template matStepLabel>
-      <h3>
-        Set Service Account
-      </h3>
-    </ng-template>
+      <div class="button-section">
+        <button mat-flat-button color="accent" class="horizontal-center"
+                matStepperNext>
+          Next Step
+        </button>
+      </div>
+    </mat-step>
 
-    <default-auth-step></default-auth-step>
+    <mat-step>
+      <ng-template matStepLabel>
+        <h3>
+          Set Service Account
+        </h3>
+      </ng-template>
 
-    <div class="button-section">
-      <button mat-flat-button color="accent" class="horizontal-center"
-              matStepperNext>
-        Next Step
-      </button>
-    </div>
-  </mat-step>
+      <default-auth-step></default-auth-step>
 
-  <mat-step #configSetStep>
-    <ng-template matStepLabel>
-      <h3>Import Config Sets</h3>
-    </ng-template>
+      <div class="button-section">
+        <button mat-flat-button color="accent" class="horizontal-center"
+                matStepperNext>
+          Next Step
+        </button>
+      </div>
+    </mat-step>
 
-    <!-- Re-init when this step is selected. -->
-    <config-set-picker [isDialog]="true" *ngIf="stepper.selected == configSetStep">
-    </config-set-picker>
+    <mat-step #configSetStep>
+      <ng-template matStepLabel>
+        <h3>Import Config Sets</h3>
+      </ng-template>
 
-    <div class="button-section">
-      <button mat-flat-button color="accent" class="horizontal-center"
-              matStepperNext>
-        Next Step
-      </button>
-    </div>
-  </mat-step>
+      <!-- Re-init when this step is selected. -->
+      <config-set-picker [isDialog]="true" *ngIf="stepper.selected == configSetStep">
+      </config-set-picker>
 
-  <mat-step #wifiSetup>
-    <ng-template matStepLabel>
-      <h3>Edit WiFi settings</h3>
-    </ng-template>
+      <div class="button-section">
+        <button mat-flat-button color="accent" class="horizontal-center"
+                matStepperNext>
+          Next Step
+        </button>
+      </div>
+    </mat-step>
 
-    <!-- Using ngIf for lazy loading, since the config importing can change these values -->
-    <!-- TODO: Save data if the user jumps to a different step. -->
-    <wifi-setup *ngIf="stepper.selected == wifiSetup"></wifi-setup>
+    <mat-step #wifiSetup>
+      <ng-template matStepLabel>
+        <h3>Edit WiFi settings</h3>
+      </ng-template>
 
-    <div class="button-section">
-      <button mat-flat-button color="accent" class="horizontal-center"
-              mat-dialog-close (click)="submit()">
-        Submit
-      </button>
-    </div>
-  </mat-step>
-</mat-vertical-stepper>
+      <!-- Using ngIf for lazy loading, since the config importing can change these values -->
+      <!-- TODO: Save data if the user jumps to a different step. -->
+      <wifi-setup *ngIf="stepper.selected == wifiSetup"></wifi-setup>
+
+      <div class="button-section">
+        <button mat-flat-button color="accent" class="horizontal-center"
+                mat-dialog-close (click)="submit()">
+          Submit
+        </button>
+      </div>
+    </mat-step>
+  </mat-vertical-stepper>
+</mat-dialog-content>
