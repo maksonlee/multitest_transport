@@ -24,7 +24,6 @@ import pty
 import re
 import socket
 import subprocess
-import threading
 import time
 
 import six
@@ -354,7 +353,6 @@ class CommandContext(object):
 
   def Run(self,
           command,
-          sync=True,
           sudo=False,
           raise_on_failure=True,
           env=None,
@@ -363,7 +361,6 @@ class CommandContext(object):
 
     Args:
         command: the command to run, a list of string args.
-        sync: run the command sync or async
         sudo: run as sudo
         raise_on_failure: raise Exception on failure or not.
         env: additional environment variables.
@@ -377,9 +374,6 @@ class CommandContext(object):
       raise CommandContextClosedError('%s is already closed' % self.host)
     run_config = CommandRunConfig(
         sudo=sudo, raise_on_failure=raise_on_failure, env=env, timeout=timeout)
-    if not sync:
-      CommandThread(self, command, run_config).start()
-      return None
     if self._wrapped_context:
       return self._RunOnWrappedContext(command, run_config)
     return self._RunDirectly(command, run_config)
@@ -476,20 +470,6 @@ class CommandContext(object):
               proc.returncode, stdout, stderr))
     return common.CommandResult(
         return_code=proc.returncode, stdout=stdout, stderr=stderr)
-
-
-class CommandThread(threading.Thread):
-  """Command thread for async run."""
-
-  def __init__(self, command_context, command, run_config):
-    super(CommandThread, self).__init__()
-    self.command_context = command_context
-    self.command = command
-    self.run_config = run_config
-    self.daemon = True
-
-  def run(self):      self.command_context.Run(
-        self.command, sync=True, **self.run_config._asdict())
 
 
 class DockerContext(object):

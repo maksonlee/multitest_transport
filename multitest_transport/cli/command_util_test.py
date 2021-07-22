@@ -256,17 +256,6 @@ class CommandContextTest(absltest.TestCase):
         mock.call.run(
             'cmd', warn=True, out_stream=mock.ANY, err_stream=mock.ANY)])
 
-  @mock.patch.object(command_util, 'CommandThread')
-  def testRun_async(self, command_thread_class):
-    command_thread = mock.MagicMock()
-    command_thread_class.return_value = command_thread
-    self.remote_context.Run(['cmd'], sync=False)
-    run_config = command_util.CommandRunConfig(
-        sudo=False, env=None, raise_on_failure=True, timeout=None)
-    command_thread_class.assert_called_once_with(
-        self.remote_context, ['cmd'], run_config)
-    command_thread.start.assert_called_once_with()
-
   @mock.patch.object(os.path, 'exists')
   def testCopyFile(self, exists):
     exists.return_value = True
@@ -322,25 +311,6 @@ class CommandContextTest(absltest.TestCase):
     with self.assertRaises(command_util.CommandContextClosedError):
       context.Run(['command'])
     self.assertFalse(self.wrapped_context.close.called)
-
-
-class CommandThreadTest(absltest.TestCase):
-  """Unit test for CommandThread."""
-
-  def testRun(self):
-    context = mock.MagicMock()
-    run_config = command_util.CommandRunConfig(
-        sudo=False, env=None, raise_on_failure=True, timeout=None)
-    thread = command_util.CommandThread(context, ['cmd'], run_config)
-    thread.run()
-    context.assert_has_calls([
-        mock.call.Run(['cmd'],
-                      sync=True,
-                      sudo=False,
-                      env=None,
-                      raise_on_failure=True,
-                      timeout=None)
-    ])
 
 
 class LocalCommandContextTest(absltest.TestCase):
