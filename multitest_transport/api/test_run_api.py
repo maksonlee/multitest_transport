@@ -355,8 +355,7 @@ class TestRunApi(remote.Service):
         # remaining test run metadata is in the previous context
         context_file = test_run.GetRerunContextFile()
         if context_file:
-          context_stream = file_util.OpenFile(context_file.url)
-          test_runs.extend(self._LoadMetadataFromContextFile(context_stream))
+          test_runs.extend(self._LoadMetadataFromContextFile(context_file.url))
         break
       test_run = test_run.prev_test_run_key.get()
     return test_runs
@@ -374,17 +373,18 @@ class TestRunApi(remote.Service):
         test_run=mtt_messages.Convert(test_run, mtt_messages.TestRun),
         command_attempts=completed_attempts)
 
-  def _LoadMetadataFromContextFile(self, file_obj):
-    """Parse metadata from a context file-like object."""
+  def _LoadMetadataFromContextFile(self, context_file_url):
+    """Parse metadata from a context file."""
     try:
-      zf = zipfile.ZipFile(file_obj)
-      metadata_file = zf.NameToInfo.get(test_kicker.METADATA_FILE)
-      if not metadata_file:
-        logging.warning('Metadata file not found')
-        return []  # ignore file not found
-      metadata_list = protojson.decode_message(  # pytype: disable=module-attr
-          mtt_messages.TestRunMetadataList, zf.read(metadata_file))
-      # TODO: last command attempt is missing
-      return metadata_list.test_runs
+      with file_util.OpenFile(context_file_url) as context_stream:
+        zf = zipfile.ZipFile(context_stream)
+        metadata_file = zf.NameToInfo.get(test_kicker.METADATA_FILE)
+        if not metadata_file:
+          logging.warning('Metadata file not found')
+          return []  # ignore file not found
+        metadata_list = protojson.decode_message(  # pytype: disable=module-attr
+            mtt_messages.TestRunMetadataList, zf.read(metadata_file))
+        # TODO: last command attempt is missing
+        return metadata_list.test_runs
     except Exception:        logging.exception('Failed to read remote metadata')
       return []
