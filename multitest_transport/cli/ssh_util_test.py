@@ -98,6 +98,27 @@ class SshUtilTest(absltest.TestCase):
         mock.call.__bool__(),
         mock.call.close()])
 
+  def testRun_withSshKey(self):
+    """Test run with ssh args."""
+    c = ssh_util.Context(ssh_util.SshConfig(
+        user='auser', hostname='ahost',
+        ssh_args=('-o StrictHostKeyChecking=no '
+                  '-o UserKnownHostsFile=/dev/null'),
+        ssh_key='/path/to/key'))
+    res = c.run('/tmp/mtt start /tmp/lab.yaml')
+    self.mock_subprocess_pkg.Popen.assert_called_once_with(
+        ['ssh',
+         '-o', 'StrictHostKeyChecking=no',
+         '-o', 'UserKnownHostsFile=/dev/null',
+         '-i', '/path/to/key',
+         '-o', 'User=auser', 'ahost',
+         '/bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
+        stdin=self.mock_subprocess_pkg.DEVNULL,
+        stdout=self.mock_subprocess_pkg.PIPE,
+        stderr=self.mock_subprocess_pkg.PIPE,
+        universal_newlines=True)
+    self.assertEqual(0, res.return_code)
+
   def testSudo(self):
     """Test run."""
     c = ssh_util.Context(ssh_util.SshConfig(user='auser', hostname='ahost'))
@@ -153,6 +174,27 @@ class SshUtilTest(absltest.TestCase):
         mock.call.__bool__(),
         mock.call.close()])
 
+  def testSudo_withSshKey(self):
+    """Test run with ssh args."""
+    c = ssh_util.Context(ssh_util.SshConfig(
+        user='auser', hostname='ahost',
+        ssh_args=('-o StrictHostKeyChecking=no '
+                  '-o UserKnownHostsFile=/dev/null'),
+        ssh_key='/path/to/key'))
+    res = c.sudo('/tmp/mtt start /tmp/lab.yaml')
+    self.mock_subprocess_pkg.Popen.assert_called_once_with(
+        ['ssh',
+         '-o', 'StrictHostKeyChecking=no',
+         '-o', 'UserKnownHostsFile=/dev/null',
+         '-i', '/path/to/key',
+         '-o', 'User=auser', 'ahost',
+         'sudo /bin/sh -c \'/tmp/mtt start /tmp/lab.yaml\''],
+        stdin=self.mock_subprocess_pkg.DEVNULL,
+        stdout=self.mock_subprocess_pkg.PIPE,
+        stderr=self.mock_subprocess_pkg.PIPE,
+        universal_newlines=True)
+    self.assertEqual(0, res.return_code)
+
   def testPut(self):
     """Test put."""
     c = ssh_util.Context(ssh_util.SshConfig(user='auser', hostname='ahost'))
@@ -204,6 +246,41 @@ class SshUtilTest(absltest.TestCase):
         mock.call.flush(),
         mock.call.__bool__(),
         mock.call.close()])
+
+  def testPut_withSshKey(self):
+    """Test put with ssh args."""
+    c = ssh_util.Context(ssh_util.SshConfig(
+        user='auser', hostname='ahost',
+        ssh_key='/path/to/key'))
+    c.put('/path/to/local/file', '/path/to/remote/file')
+    self.mock_subprocess_pkg.Popen.assert_called_once_with(
+        ['rsync', '-e',
+         'ssh -i /path/to/key',
+         '/path/to/local/file', 'auser@ahost:/path/to/remote/file'],
+        stdin=self.mock_subprocess_pkg.DEVNULL,
+        stdout=self.mock_subprocess_pkg.PIPE,
+        stderr=self.mock_subprocess_pkg.PIPE,
+        universal_newlines=True)
+    self.assertTrue(self.mock_process.communicate.called)
+
+  def testPut_withSshKeyAndSshArgs(self):
+    """Test put with ssh args."""
+    c = ssh_util.Context(ssh_util.SshConfig(
+        user='auser', hostname='ahost',
+        ssh_args=('-o StrictHostKeyChecking=no '
+                  '-o UserKnownHostsFile=/dev/null'),
+        ssh_key='/path/to/key'))
+    c.put('/path/to/local/file', '/path/to/remote/file')
+    self.mock_subprocess_pkg.Popen.assert_called_once_with(
+        ['rsync', '-e',
+         ('ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+          ' -i /path/to/key'),
+         '/path/to/local/file', 'auser@ahost:/path/to/remote/file'],
+        stdin=self.mock_subprocess_pkg.DEVNULL,
+        stdout=self.mock_subprocess_pkg.PIPE,
+        stderr=self.mock_subprocess_pkg.PIPE,
+        universal_newlines=True)
+    self.assertTrue(self.mock_process.communicate.called)
 
   def testBuildRemoteSshStr(self):
     """Test _build_remote_ssh_str."""

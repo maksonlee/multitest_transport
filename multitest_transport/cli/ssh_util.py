@@ -21,6 +21,7 @@ def _tokenize_ssh_arg(ssh_arg):
 
   Args:
     ssh_arg: a list of ssh args, one ssh arg may contain multiple parts.
+
   Returns:
     tokenized ssh args.
   """
@@ -99,6 +100,7 @@ class Context(object):
     Args:
       command_str: a string to represent the command to run on remote host.
       **run_kwargs: args for the run.
+
     Returns:
       common.CommandResult.
     """
@@ -110,25 +112,26 @@ class Context(object):
     Args:
       command_str: a string to represent the command to run on remote host.
       **run_kwargs: args for the run.
+
     Returns:
       common.CommandResult.
     """
-    return self._run(_build_remote_ssh_str(command_str, sudo=True),
-                     **run_kwargs)
+    return self._run(
+        _build_remote_ssh_str(command_str, sudo=True), **run_kwargs)
 
   def _run(self, remote_cmd_str, **run_kwargs):
     """Run command on remote host."""
     # TOOD(xingdai): timeout, logging, environment, etc.
     password = self._password or run_kwargs.get('password')
     del run_kwargs
-    logger.debug(
-        'Run on %s@%s %s password: %s', self._user, self._hostname,
-        'with' if password else 'without', remote_cmd_str)
+    logger.debug('Run on %s@%s %s password: %s', self._user, self._hostname,
+                 'with' if password else 'without', remote_cmd_str)
     ssh_cmds = ['ssh']
     ssh_cmds.extend(self._ssh_config.ssh_args)
-    ssh_cmds.extend([
-        '-o', 'User=%s' % self._user, self._hostname,
-        remote_cmd_str])
+    if self._ssh_config.ssh_key:
+      ssh_cmds.extend(['-i', self._ssh_config.ssh_key])
+    ssh_cmds.extend(
+        ['-o', 'User=%s' % self._user, self._hostname, remote_cmd_str])
     password_file = None
     try:
       if password:
@@ -149,15 +152,14 @@ class Context(object):
       remote_file_path: remote file path.
     """
     password = self._password
-    logger.debug(
-        'Copy %s to %s %s password', local_file_path, remote_file_path,
-        'with' if password else 'without')
-    ssh_arg_str = ''
-    if self._ssh_config.ssh_args:
-      ssh_arg_str = ' '.join(['ssh'] + self._ssh_config.ssh_args)
+    logger.debug('Copy %s to %s %s password', local_file_path, remote_file_path,
+                 'with' if password else 'without')
+    ssh_args = self._ssh_config.ssh_args
+    if self._ssh_config.ssh_key:
+      ssh_args += ['-i', self._ssh_config.ssh_key]
     rsync_cmds = ['rsync']
-    if ssh_arg_str:
-      rsync_cmds.extend(['-e', ssh_arg_str])
+    if ssh_args:
+      rsync_cmds.extend(['-e', ' '.join(['ssh'] + ssh_args)])
     rsync_cmds.extend([
         local_file_path,
         '%s@%s:%s' % (self._user, self._hostname, remote_file_path)
@@ -184,6 +186,7 @@ class Context(object):
 
     Args:
       cmd: a list represents a command line.
+
     Returns:
       CommandResult.
     """
