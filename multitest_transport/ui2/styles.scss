@@ -507,3 +507,12 @@ mat-spinner.loading-spinner {
 ::-webkit-scrollbar-button {
   display: none;
 }
+
+// The MDC-based table has the style `white-space: nowrap` but the Angular
+// Material table will change this to `white-space: normal` so that cell
+// text can wrap. This style preserves the current look so that the change
+// has no impact on this project.
+.mat-mdc-table.mat-mdc-table {
+  white-space: nowrap;
+}
+
