@@ -41,7 +41,7 @@ from tradefed_cluster.configs import lab_config_pb2
 _MTT_CONTAINER_NAME = 'mtt'
 # The port must be consistent with those in init.sh and serve.sh.
 _MTT_CONTROL_SERVER_PORT = 8000
-_MTT_SERVER_WAIT_TIME_SECONDS = 120
+_MTT_SERVER_WAIT_TIME_SECONDS = 300  # 5min
 _MTT_SERVER_LOG_PATH = '/data/log/server/current'
 
 _MTT_LIB_DIR = '/var/lib/mtt'
