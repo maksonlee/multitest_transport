@@ -470,7 +470,10 @@ def _CreateTFCRequest(test_run_id):
             cluster=test_run.test_run_config.cluster,
             run_target=run_target,
             run_count=test_run.test_run_config.run_count,
-            shard_count=1))
+            shard_count=1,
+            # TODO: Add UI change to allow partial device match
+            allow_partial_device_match=False
+            ))
   elif sharding_mode == ndb_models.ShardingMode.MODULE:
     test_package_urls = [
         r.cache_url
@@ -489,7 +492,9 @@ def _CreateTFCRequest(test_run_id):
           cluster=test_run.test_run_config.cluster,
           run_target=run_target,
           run_count=test_run.test_run_config.run_count,
-          shard_count=1)
+          shard_count=1,
+          # TODO: Add UI change to allow partial device match
+          allow_partial_device_match=False)
       # Give a priority to CtsDeqpTestCases since it takes the longest time.
       if info.name == 'CtsDeqpTestCases':
         command_infos.insert(0, command_info)
