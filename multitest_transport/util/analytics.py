@@ -83,7 +83,7 @@ def _LogWorkerAndDeviceCount():
     for worker_id, device_count in worker_device_map.items():
       Log(DEVICE_COUNT_PER_WORKER_CATEGORY,
           HEARTBEAT_ACTION,
-          worker_id=worker_id,
+          worker_id=str(worker_id),
           device_count=device_count)
     worker_count = len(worker_device_map)
   operation_mode = env.OPERATION_MODE.value
