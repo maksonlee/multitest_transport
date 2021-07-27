@@ -171,7 +171,6 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy))
         .subscribe(
             (result) => {
-              this.selectedTargetVersion = '';
               this.labInfo = result;
               this.loadUpdateStateAndVersionCountTables();
             },
@@ -210,13 +209,20 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy))
         .subscribe(
             (result) => {
-              this.selectedTargetVersion = '';
               this.clusterInfo = result;
               this.loadUpdateStateAndVersionCountTables();
             },
             () => {
               this.notifier.showError('Failed to load host group info.');
             });
+  }
+
+  refreshSummaryTables() {
+    if (this.selectedHostGroup) {
+      this.initClusterInfo();
+    } else {
+      this.initLabInfo();
+    }
   }
 
   getTestHarnessImagesByTagPrefix() {
@@ -267,15 +273,14 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
   }
 
   private getHostUpdateStateSummaryForDisplay(
-      targetVersion: string,
       hostUpdateStateSummariesByVersion: HostUpdateStateSummary[]|undefined,
       fullHostUpdateStateSummary: HostUpdateStateSummary|
       null): HostUpdateStateSummary|null|undefined {
     let summary;
-    if (targetVersion && hostUpdateStateSummariesByVersion) {
+    if (this.selectedTargetVersion && hostUpdateStateSummariesByVersion) {
       let found = false;
       for (const summaryWithVersion of hostUpdateStateSummariesByVersion) {
-        if (summaryWithVersion.targetVersion === targetVersion) {
+        if (summaryWithVersion.targetVersion === this.selectedTargetVersion) {
           summary = summaryWithVersion;
           found = true;
           break;
@@ -283,12 +288,14 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
       }
       if (!found) {
         this.notifier.showError(`No host update summary is found for
-              selected version ${targetVersion}.
+              selected version ${this.selectedTargetVersion}.
               Displaying summary for all versions as a whole.`);
         summary = fullHostUpdateStateSummary;
+        this.selectedTargetVersion = '';
       }
     } else {
       summary = fullHostUpdateStateSummary;
+      this.selectedTargetVersion = '';
     }
     return summary;
   }
@@ -304,7 +311,6 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
           this.clusterInfo.hostUpdateStateSummariesByVersion);
 
       summary = this.getHostUpdateStateSummaryForDisplay(
-          this.selectedTargetVersion,
           this.clusterInfo.hostUpdateStateSummariesByVersion,
           this.clusterInfo.hostUpdateStateSummary);
       versionCount = this.clusterInfo.hostCountByHarnessVersion;
@@ -315,7 +321,6 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
       this.selectableTargetVersions = this.getSelectableTargetVersions(
           this.labInfo.hostUpdateStateSummariesByVersion);
       summary = this.getHostUpdateStateSummaryForDisplay(
-          this.selectedTargetVersion,
           this.labInfo.hostUpdateStateSummariesByVersion,
           this.labInfo.hostUpdateStateSummary);
       versionCount = this.labInfo.hostCountByHarnessVersion;

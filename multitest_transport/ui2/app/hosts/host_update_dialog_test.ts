@@ -501,6 +501,44 @@ describe('HostUpdateDialog', () => {
           ]);
     });
 
+    it('loads full lab update state summary if no valid version is selected',
+       () => {
+         hostUpdateDialog.labInfo = {
+           labName: 'lab1',
+           owners: ['user1'],
+           hostUpdateStateSummary:
+               convertToHostUpdateStateSummary(newMockHostUpdateStateSummary(
+                   '30', '5', '2', '10', '10', '1', '1', '1', '0')),
+           hostCountByHarnessVersion: [
+             {key: 'v1', value: '2'},
+             {key: 'v2', value: '2'},
+           ],
+           hostUpdateStateSummariesByVersion: [
+             convertToHostUpdateStateSummary(newMockHostUpdateStateSummary(
+                 '8', '1', '1', '1', '1', '1', '1', '1', '1', undefined, 'v1')),
+             convertToHostUpdateStateSummary(newMockHostUpdateStateSummary(
+                 '22', '3', '1', '9', '9', '0', '0', '0', '0', undefined,
+                 'v2')),
+           ],
+         };
+
+         hostUpdateDialog.selectedTargetVersion = 'v3';
+         hostUpdateDialog.loadUpdateStateAndVersionCountTables();
+
+         expect(hostUpdateDialog.hostUpdateStateSummaryTableDataSource.data)
+             .toEqual([
+               {state: HostUpdateState.PENDING, count: 5},
+               {state: HostUpdateState.SYNCING, count: 2},
+               {state: HostUpdateState.SHUTTING_DOWN, count: 10},
+               {state: HostUpdateState.RESTARTING, count: 10},
+               {state: HostUpdateState.SUCCEEDED, count: 1},
+               {state: HostUpdateState.TIMED_OUT, count: 1},
+               {state: HostUpdateState.ERRORED, count: 1},
+               {state: HostUpdateState.UNKNOWN, count: 0},
+             ]);
+         expect(hostUpdateDialog.selectedTargetVersion).toEqual('');
+       });
+
     it('loads host group update state summary for selected version', () => {
       hostUpdateDialog.selectedHostGroup = 'hostGroup1';
       hostUpdateDialog.clusterInfo = {
