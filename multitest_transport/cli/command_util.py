@@ -68,7 +68,7 @@ _DEFAULT_TF_CONSOLE_CMD_TIMEOUT_SEC = 2
 # docker command for attaching TF console: "docker attach mtt"
 _DOCKER_ATTACH_COMMAND = ['docker', 'attach', 'mtt']
 # dockerized TF command for checking TF version
-_TF_VERSION_COMMAND = b'\nversion\n'
+_TF_VERSION_COMMAND = b'\nhelp\n'
 
 # To exec command on a dead container, docker will output:
 # OCI runtime exec failed: exec failed: cannot exec a container that has

@@ -242,7 +242,7 @@ class CliTest(parameterized.TestCase):
         return_code=0, stdout='', stderr='')
     mock_time.side_effect = iter([0, cli._MTT_SERVER_WAIT_TIME_SECONDS + 1])
     with self.assertRaisesRegex(
-        RuntimeError, r'.*ATS server failed to start in*'):
+        RuntimeError, r'.*ATS replica failed to start in*'):
       cli._IsTfConsoleSuccessfullyStarted(self._CreateHost())
 
   def testStart(self):

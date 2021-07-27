@@ -83,7 +83,7 @@ _TEST_HARNESS_IMAGE_KEY = 'testHarnessImage'
 # Success indicator once tradefed console started, should match to the println
 # string in startConsole() method after console.start();
 # in tools/tradefederation/core/src/com/android/tradefed/command/Console.java
-_TF_CONSOLE_SUCCESS_INDICATOR = 'tf >'
+_TF_CONSOLE_SUCCESS_INDICATOR = 'help all'
 # command for check log: "docker logs mtt"
 _DOCKER_LOGS_MTT_COMMAND = ['logs', 'mtt']
 # interval in second for checking out the logs
@@ -334,7 +334,7 @@ def _IsTfConsoleSuccessfullyStarted(host):
     time.sleep(_LOG_INQUIRE_INTERVAL_SEC)
   # when timeout
   raise RuntimeError(
-      'ATS server failed to start in %ss' % _MTT_SERVER_WAIT_TIME_SECONDS)
+      'ATS replica failed to start in %ss' % _MTT_SERVER_WAIT_TIME_SECONDS)
 
 
 def Start(args, host=None):
