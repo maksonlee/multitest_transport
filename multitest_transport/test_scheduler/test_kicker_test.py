@@ -567,6 +567,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     test_run_id = self._CreateMockTestRun().key.id()
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     test_run.test_run_config.use_parallel_setup = True
+    test_run.test_run_config.allow_partial_device_match = True
     test_run.put()
     mock_download_resources.return_value = {
         r.url: 'cache_url' for r in test_run.test_resources
@@ -598,6 +599,8 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
+    self.assertTrue(test_run.test_run_config.allow_partial_device_match)
+
     # metrics tracked
     mock_track_test_run.assert_called_with(test_run)
 

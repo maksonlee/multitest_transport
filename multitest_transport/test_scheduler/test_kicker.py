@@ -162,6 +162,8 @@ def CreateTestRun(labels,
   # Set defaults for null test_run_config fields for backward compatibility.
   if test_run_config.use_parallel_setup is None:
     test_run_config.use_parallel_setup = True
+  if test_run_config.allow_partial_device_match is None:
+    test_run_config.allow_partial_device_match = False
 
   test = test_run_config.test_key.get()
   if not test:
@@ -471,8 +473,8 @@ def _CreateTFCRequest(test_run_id):
             run_target=run_target,
             run_count=test_run.test_run_config.run_count,
             shard_count=1,
-            # TODO: Add UI change to allow partial device match
-            allow_partial_device_match=False
+            allow_partial_device_match=(
+                test_run.test_run_config.allow_partial_device_match)
             ))
   elif sharding_mode == ndb_models.ShardingMode.MODULE:
     test_package_urls = [
@@ -493,8 +495,9 @@ def _CreateTFCRequest(test_run_id):
           run_target=run_target,
           run_count=test_run.test_run_config.run_count,
           shard_count=1,
-          # TODO: Add UI change to allow partial device match
-          allow_partial_device_match=False)
+          allow_partial_device_match=(
+              test_run.test_run_config.allow_partial_device_match)
+          )
       # Give a priority to CtsDeqpTestCases since it takes the longest time.
       if info.name == 'CtsDeqpTestCases':
         command_infos.insert(0, command_info)

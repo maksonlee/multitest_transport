@@ -655,6 +655,8 @@ export declare interface TestRunConfig {
   test_resource_objs?: TestResourceObj[];
   /** Whether to setup devices in parallel */
   use_parallel_setup?: boolean;
+  /** Whether to allow partial device match or not */
+  allow_partial_device_match?: boolean;
 }
 
 /** initialize a new test run config */
@@ -675,6 +677,7 @@ export function initTestRunConfig(test?: Test): Partial<TestRunConfig> {
     before_device_action_ids: [],
     test_resource_objs: [],
     use_parallel_setup: true,
+    allow_partial_device_match: false,
   };
 
   if (test) {

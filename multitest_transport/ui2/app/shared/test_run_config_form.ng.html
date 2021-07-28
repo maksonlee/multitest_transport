@@ -226,5 +226,12 @@
     <mat-checkbox [(ngModel)]="testRunConfig.use_parallel_setup">
       Use Parallel Setup
     </mat-checkbox>
+
+    <!-- TODO: Remove once matching logic is turned on in TFC -->
+    <!-- Allow partial device match -->
+    <mat-checkbox *ngIf="showDeviceMatchCheckBox"
+                  [(ngModel)]="testRunConfig.allow_partial_device_match">
+      Allow Partial Device Match
+    </mat-checkbox>
   </div>
 </div>

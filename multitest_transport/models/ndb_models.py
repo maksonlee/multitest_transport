@@ -407,6 +407,8 @@ class TestRunConfig(ndb.Model):
     test_run_action_refs: test run actions to execute during a test.
     test_resource_objs: path to the files to use for test resources.
     use_parallel_setup: a flag on whether to setup devices in parallel.
+    allow_partial_device_match: a flag on whether to allow partial device match
+        or not
   """
   test_key = ndb.KeyProperty(kind=Test, required=True)
   cluster = ndb.StringProperty(required=True)
@@ -433,6 +435,7 @@ class TestRunConfig(ndb.Model):
   test_resource_objs = ndb.LocalStructuredProperty(
       TestResourceObj, repeated=True)
   use_parallel_setup = ndb.BooleanProperty(default=True)
+  allow_partial_device_match = ndb.BooleanProperty(default=False)
 
 
 class TestResourcePipe(ndb.Model):
