@@ -232,10 +232,7 @@ class CommandContext(object):
     if self._wrapped_context:
       return
     if self._is_local:
-      if invoke:
-        # Use invoke context to running locally.
-        self._wrapped_context = invoke.Context()
-      # Else use _RunDirectly instead of using invoke.context.
+      # Use _RunDirectly.
       return
     if self._ssh_config.use_native_ssh or not fabric:
       if not self._ssh_config.use_native_ssh and not fabric:
@@ -443,13 +440,13 @@ class CommandContext(object):
       command = ['sudo'] + command
     logger.debug('Running command: %s', command)
     kwargs = {}
-    if not run_config.raise_on_failure:
-      kwargs['stdout'] = subprocess.PIPE
-      kwargs['stderr'] = subprocess.PIPE
     if run_config.env:
       kwargs['env'] = dict(os.environ, **run_config.env)
     start_time = time.time()
-    proc = subprocess.Popen(command, **kwargs)
+    proc = subprocess.Popen(
+        command, universal_newlines=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        **kwargs)
     try:
       stdout, stderr = proc.communicate(timeout=run_config.timeout)
     except subprocess.TimeoutExpired as e:
@@ -458,12 +455,17 @@ class CommandContext(object):
             'command %s with run config %s timed out after %s seconds' % (
                 command, run_config, run_config.timeout))
       return common.CommandResult(return_code=None, stdout=None, stderr=str(e))
-    stdout = six.ensure_str(stdout) if stdout else None
-    stderr = six.ensure_str(stderr) if stderr else None
+    stdout = six.ensure_str(stdout or '')
+    stderr = six.ensure_str(stderr or '')
+    if stdout:
+      for line in stdout.split('\n'):
+        logger.debug('stdout: %s', line)
+    if stderr:
+      for line in stderr.split('\n'):
+        logger.debug('stderr: %s', line)
     logger.debug(
-        'Finished running command (took %.1fs): '
-        'result=%s, stdout=%s, stderr=%s',
-        time.time() - start_time, proc.returncode, stdout, stderr)
+        'Finished running command (took %.1fs): result=%s',
+        time.time() - start_time, proc.returncode)
     if proc.returncode and run_config.raise_on_failure:
       raise RuntimeError(
           'command returned %s: stdout=%s, stderr=%s' % (

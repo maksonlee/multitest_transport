@@ -332,7 +332,9 @@ class LocalCommandContextTest(absltest.TestCase):
   def testRun(self):
     res = self.context.Run(['ls', '-al'])
     self.mock_subprocess_pkg.assert_has_calls([
-        mock.call.Popen(['ls', '-al'])])
+        mock.call.Popen(
+            ['ls', '-al'], stderr=mock.ANY, stdout=mock.ANY,
+            universal_newlines=True)])
     self.assertEqual(0, res.return_code)
     self.assertEqual('stdout', res.stdout)
     self.assertEqual('stderr', res.stderr)
@@ -341,7 +343,9 @@ class LocalCommandContextTest(absltest.TestCase):
     self.mock_process.communicate.return_value = (b'stdout', b'stderr')
     res = self.context.Run(['ls', '-al'])
     self.mock_subprocess_pkg.assert_has_calls([
-        mock.call.Popen(['ls', '-al'])])
+        mock.call.Popen(
+            ['ls', '-al'], stderr=mock.ANY, stdout=mock.ANY,
+            universal_newlines=True)])
     self.assertEqual(0, res.return_code)
     self.assertEqual('stdout', res.stdout)
     self.assertEqual('stderr', res.stderr)
@@ -351,16 +355,17 @@ class LocalCommandContextTest(absltest.TestCase):
     with self.assertRaises(RuntimeError):
       self.context.Run(['ls', '-al'])
     self.mock_subprocess_pkg.assert_has_calls([
-        mock.call.Popen(['ls', '-al'])])
+        mock.call.Popen(
+            ['ls', '-al'], stderr=mock.ANY, stdout=mock.ANY,
+            universal_newlines=True)])
 
   def testRun_notRaiseOnFailure(self):
     self.mock_process.returncode = 1
     res = self.context.Run(['ls', '-al'], raise_on_failure=False)
     self.mock_subprocess_pkg.assert_has_calls([
         mock.call.Popen(
-            ['ls', '-al'],
-            stdout=self.mock_subprocess_pkg.PIPE,
-            stderr=self.mock_subprocess_pkg.PIPE)])
+            ['ls', '-al'], stderr=mock.ANY, stdout=mock.ANY,
+            universal_newlines=True)])
     self.assertEqual(1, res.return_code)
     self.assertEqual('stdout', res.stdout)
     self.assertEqual('stderr', res.stderr)
@@ -370,7 +375,9 @@ class LocalCommandContextTest(absltest.TestCase):
     res = self.context.Run(['ls', '-al'], env={'KEY1': 'value1'})
     self.mock_subprocess_pkg.assert_has_calls([
         mock.call.Popen(
-            ['ls', '-al'], env={'KEY': 'value', 'KEY1': 'value1'})])
+            ['ls', '-al'], stderr=mock.ANY, stdout=mock.ANY,
+            universal_newlines=True,
+            env={'KEY': 'value', 'KEY1': 'value1'})])
     self.assertEqual(0, res.return_code)
     self.assertEqual('stdout', res.stdout)
     self.assertEqual('stderr', res.stderr)
@@ -378,7 +385,9 @@ class LocalCommandContextTest(absltest.TestCase):
   def testRun_sudo(self):
     res = self.context.Run(['ls', '-al'], sudo=True)
     self.mock_subprocess_pkg.assert_has_calls([
-        mock.call.Popen(['sudo', 'ls', '-al'])])
+        mock.call.Popen(
+            ['sudo', 'ls', '-al'], stderr=mock.ANY, stdout=mock.ANY,
+            universal_newlines=True)])
     self.assertEqual(0, res.return_code)
     self.assertEqual('stdout', res.stdout)
     self.assertEqual('stderr', res.stderr)
@@ -389,9 +398,13 @@ class LocalCommandContextTest(absltest.TestCase):
     self.context.CopyFile('/local/file', '/remote/file')
     exists.assert_called_once_with('/local/file')
     self.mock_subprocess_pkg.assert_has_calls([
-        mock.call.Popen(['mkdir', '-p', '/remote']),
+        mock.call.Popen(['mkdir', '-p', '/remote'],
+                        stderr=mock.ANY, stdout=mock.ANY,
+                        universal_newlines=True),
         mock.call.Popen().communicate(timeout=None),
-        mock.call.Popen(['cp', '-rf', '/local/file', '/remote/file']),
+        mock.call.Popen(['cp', '-rf', '/local/file', '/remote/file'],
+                        stderr=mock.ANY, stdout=mock.ANY,
+                        universal_newlines=True),
         mock.call.Popen().communicate(timeout=None)])
 
 
