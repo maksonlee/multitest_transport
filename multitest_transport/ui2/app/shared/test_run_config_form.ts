@@ -73,8 +73,6 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
   uploadProgress = 0;
   /** Show advanced settings. */
   showAdvancedSettings = false;
-  /** TODO: Remove once matching logic is turned on in TFC */
-  showDeviceMatchCheckBox = false;
 
   constructor(
       private readonly fs: FileService,
