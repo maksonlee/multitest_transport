@@ -56,7 +56,7 @@ _PACKAGE_MAP = {
     "angular2:router": "@angular/router",
     "angular2:router_testing": "@angular/router",
     "angular2/testing:browser_dynamic_testing": "@angular",
-    "angular2_material:theming": "@angular/material",
+    "angular2:material_sass": "@angular/material",
     "jasmine": "jasmine",
     "moment": "moment",
     "moment:moment_minified": "moment",

@@ -13,25 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// Angular Material styles
-@import 'third_party/javascript/angular2_material/src/lib/core/theming/theming';
-@import 'third_party/javascript/angular2_material/src/lib/core/theming/palette';
-@import 'third_party/javascript/angular2_material/src/lib/core/theming/all-theme';
-@import 'third_party/javascript/angular2_material/src/lib/mdc-button/button-theme';
-@import 'third_party/javascript/angular2_material/src/lib/mdc-dialog/dialog-theme';
-@import 'third_party/javascript/angular2_material/src/lib/mdc-progress-spinner/progress-spinner-theme';
-@import 'third_party/javascript/angular2_material/src/lib/mdc-progress-bar/progress-bar-theme';
-@import 'third_party/javascript/angular2_material/src/lib/mdc-snack-bar/snack-bar-theme';
-@import 'third_party/javascript/angular2_material/src/lib/mdc-table/table-theme';
-@import 'third_party/javascript/angular2_material/src/lib/mdc-tooltip/tooltip-theme';
+@use 'third_party/javascript/angular2/material' as mat;
 
 // Core material styles
-@include mat-core();
+@include mat.core();
 
 // Application theme
-$primary: mat-palette($mat-grey);
-$accent: mat-palette($mat-blue);
-$theme: mat-light-theme(
+$primary: mat.define-palette(mat.$grey-palette);
+$accent: mat.define-palette(mat.$blue-palette);
+$theme: mat.define-light-theme(
   (
     color: (
       primary: $primary,
@@ -39,30 +29,30 @@ $theme: mat-light-theme(
     ),
   )
 );
-$typography: mat-typography-config();
+$typography: mat.define-typography-config();
 
-@include angular-material-theme($theme);
-@include mat-mdc-dialog-theme($theme);
-@include mat-mdc-tooltip-theme($theme);
-@include mat-mdc-button-theme($theme);
-@include mat-mdc-snack-bar-theme($theme);
-@include mat-mdc-table-theme($theme);
-@include mat-mdc-progress-spinner-theme($theme);
-@include mat-mdc-progress-bar-theme($theme);
+@include mat.all-component-themes($theme);
+@include mat.mdc-dialog-theme($theme);
+@include mat.mdc-tooltip-theme($theme);
+@include mat.mdc-button-theme($theme);
+@include mat.mdc-snack-bar-theme($theme);
+@include mat.mdc-table-theme($theme);
+@include mat.mdc-progress-spinner-theme($theme);
+@include mat.mdc-progress-bar-theme($theme);
 
-@include mat-mdc-dialog-typography($typography);
-@include mat-mdc-tooltip-typography($typography);
-@include mat-mdc-button-typography($typography);
-@include mat-mdc-snack-bar-typography($typography);
-@include mat-mdc-table-typography($typography);
-@include mat-mdc-progress-spinner-typography($typography);
-@include mat-mdc-progress-bar-typography($typography);
+@include mat.mdc-dialog-typography($typography);
+@include mat.mdc-tooltip-typography($typography);
+@include mat.mdc-button-typography($typography);
+@include mat.mdc-snack-bar-typography($typography);
+@include mat.mdc-table-typography($typography);
+@include mat.mdc-progress-spinner-typography($typography);
+@include mat.mdc-progress-bar-typography($typography);
 
 // Button theme
-$button-primary: mat-palette($mat-grey);
-$button-accent: mat-palette($mat-blue, 700);
-$button-theme: mat-light-theme($button-primary, $button-accent);
-@include mat-button-theme($button-theme);
+$button-primary: mat.define-palette(mat.$grey-palette);
+$button-accent: mat.define-palette(mat.$blue-palette, 700);
+$button-theme: mat.define-light-theme($button-primary, $button-accent);
+@include mat.button-theme($button-theme);
 
 // General styles
 * {

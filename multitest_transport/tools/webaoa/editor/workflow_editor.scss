@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import 'third_party/javascript/angular2_material/src/lib/core/style/elevation';
+@use 'third_party/javascript/angular2/material' as mat;
 
 :host {
   display: flex;
@@ -122,7 +122,7 @@ mat-list-item.action {
   }
 
   &.cdk-drag-preview {
-    @include mat-elevation(2);
+    @include mat.elevation(2);
     background-color: #fff;
     box-sizing: border-box;
   }
@@ -136,7 +136,7 @@ mat-list-item.action {
   }
 
   &:hover {
-    @include mat-elevation(2);
+    @include mat.elevation(2);
 
     [cdkDragHandle] {
       visibility: initial;

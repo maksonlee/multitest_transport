@@ -112,7 +112,9 @@ sass_binary(
     name = "styles",
     src = "styles.scss",
     strict_deps = False,
-    deps = [third_party_js("angular2_material:theming")],
+    deps = [
+        third_party_js("angular2:material_sass"),
+    ],
 )
 
 # Production binary

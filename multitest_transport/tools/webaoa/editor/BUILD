@@ -8,7 +8,9 @@ package(default_visibility = ["//multitest_transport/tools/webaoa:__subpackages_
 per_file_sass_binaries(
     name = "styles",
     srcs = glob(["*.scss"]),
-    deps = [third_party_js("angular2_material:theming")],
+    deps = [
+        third_party_js("angular2:material_sass"),
+    ],
 )
 
 ng_module(
