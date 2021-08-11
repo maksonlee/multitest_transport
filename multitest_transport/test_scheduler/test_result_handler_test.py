@@ -17,6 +17,7 @@ from absl.testing import absltest
 import mock
 from tradefed_cluster import api_messages
 from tradefed_cluster import testbed_dependent_test
+from tradefed_cluster.services import task_scheduler
 
 from multitest_transport.models import ndb_models
 from multitest_transport.models import sql_models
@@ -33,45 +34,63 @@ class TestResultHandlerTest(testbed_dependent_test.TestbedDependentTest):
         id='test_run_id', request_id='request_id')
     self.test_run.put()
 
-  @mock.patch.object(tfc_client, 'GetLatestFinishedAttempts')
-  @mock.patch.object(sql_models, 'GetTestModuleResults')
+  @mock.patch.object(task_scheduler, 'AddCallableTask')
   @mock.patch.object(sql_models, 'InsertTestResults')
   @mock.patch.object(xts_result, 'TestResults')
-  def testStoreTestResults(
-      self, mock_results_ctor, mock_insert, mock_get, mock_get_attempts):
+  def testStoreTestResults(self, mock_results_ctor, mock_insert, mock_add_task):
     test_results = mock.MagicMock(
         summary=xts_result.Summary(
             passed=12, failed=34, modules_done=56, modules_total=78))
     mock_results_ctor.return_value = test_results
+
+    test_result_handler.StoreTestResults('test_run_id', 'attempt_id',
+                                         'test_results_url')
+
+    # Results inserted into DB and task enqueued to update test run summary.
+    mock_insert.assert_called_with('test_run_id', 'attempt_id', test_results)
+    mock_add_task.assert_called_with(test_result_handler.UpdateTestRunSummary,
+                                     'test_run_id')
+
+  @mock.patch.object(sql_models, 'GetTestModuleResults')
+  @mock.patch.object(tfc_client, 'GetLatestFinishedAttempts')
+  def testUpdateTestRunSummary(self, mock_get_attempts, mock_get_results):
     mock_get_attempts.return_value = [
         api_messages.CommandAttemptMessage(attempt_id='attempt_id')
     ]
-    mock_get.return_value = [
-        sql_models.TestModuleResult(              id='%d' % i,
+    mock_get_results.return_value = [
+        sql_models.TestModuleResult(
+            id='module_1',
             test_run_id='test_run_id',
             attempt_id='attempt_id',
-            name='module %d' % i,
+            name='module_1',
             complete=True,
             duration_ms=0,
             passed_tests=1,
             failed_tests=2,
-            total_tests=3,
-            error_message=None if i < 50 else 'error_message')
-        for i in range(100)
+            total_tests=3),
+        sql_models.TestModuleResult(
+            id='module_2',
+            test_run_id='test_run_id',
+            attempt_id='attempt_id',
+            name='module_2',
+            complete=True,
+            duration_ms=0,
+            passed_tests=2,
+            failed_tests=3,
+            total_tests=5,
+            error_message='error_message'),
     ]
 
-    test_result_handler.StoreTestResults(
-        'test_run_id', 'attempt_id', 'test_results_url')
+    test_result_handler.UpdateTestRunSummary('test_run_id')
 
-    # Results inserted into DB
-    mock_insert.assert_called_with('test_run_id', 'attempt_id', test_results)
+    # Test run summary was updated.
     mock_get_attempts.assert_called_with('request_id')
-    mock_get.assert_called_with(['attempt_id'])
-    # Test run summary updated
+    mock_get_results.assert_called_with(['attempt_id'])
     self.test_run = self.test_run.key.get()
-    self.assertEqual(300, self.test_run.total_test_count)
-    self.assertEqual(200, self.test_run.failed_test_count)
-    self.assertEqual(50, self.test_run.failed_test_run_count)
+    self.assertEqual(8, self.test_run.total_test_count)
+    self.assertEqual(5, self.test_run.failed_test_count)
+    self.assertEqual(1, self.test_run.failed_test_run_count)
+
 
 if __name__ == '__main__':
   absltest.main()

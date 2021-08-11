@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """SQL-based model classes (for the test results DB)."""
+import logging
 from typing import Iterable, List, Optional
 import uuid
 
@@ -100,6 +101,11 @@ def InsertTestResults(test_run_id: str,
     test_results: xts_result.TestResults
     batch_size: number of test cases to insert at a time
   """
+  with db.Session() as session:
+    if session.query(TestModuleResult).filter_by(attempt_id=attempt_id).first():
+      logging.warning('Found test results for %s; skipping insertion')
+      return
+
   with db.Session() as session:
     test_case_data = []
     # Iterate over modules, convert to entities with pre-populated IDs

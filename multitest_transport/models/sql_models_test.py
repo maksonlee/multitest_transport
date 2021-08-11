@@ -91,7 +91,7 @@ class SqlModelsTest(parameterized.TestCase):
     self.assertEqual('hello world', sql_models._Truncate('hello world', 11))
     self.assertEqual('hello w...', sql_models._Truncate('hello world', 10))
 
-  @parameterized.parameters((100, 2), (2, 4))
+  @parameterized.parameters((100, 3), (2, 5))
   def testInsertTestResults(self, batch_size, num_statements):
     """Tests that *TS test results can be inserted efficiently."""
     sql_models.InsertTestResults('test_run_id', 'attempt_id', [
@@ -123,7 +123,8 @@ class SqlModelsTest(parameterized.TestCase):
     ], batch_size=batch_size)
 
     with sql_models.db.Session() as session:
-      # At most 3 statements per batch (1-2 for modules and 1 for test cases)
+      # 1 initial existence check and 2-3 statements per batch (insert and
+      # optional update for modules and insert for test cases)
       self.assertLen(self.statements, num_statements)
       # All modules (and non-PASS test cases) inserted
       self.assertEqual(session.query(sql_models.TestModuleResult).count(), 2)
@@ -137,6 +138,16 @@ class SqlModelsTest(parameterized.TestCase):
       self.assertLen(modules[1].test_cases, 3)
       self.assertEqual(modules[1].passed_tests, 0)
       self.assertEqual(modules[1].failed_tests, 1)
+
+  def testInsertTestResults_alreadyInserted(self):
+    """Tests that *TS test results insertion is skipped if results found."""
+    module = xts_result.Module(
+        name='module_1', complete=True, duration_ms=123, test_cases=[])
+    sql_models.InsertTestResults('test_run_id', 'attempt_id', [module])
+    sql_models.InsertTestResults('test_run_id', 'attempt_id', [module])
+    # Re-inserting the module has no effect (only 1 inserted).
+    with sql_models.db.Session() as session:
+      self.assertEqual(session.query(sql_models.TestModuleResult).count(), 1)
 
   def testGetTestModuleResults(self):
     attempt_ids = ['attempt_id_%s' % i for i in range(3)]

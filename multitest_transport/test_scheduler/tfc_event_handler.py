@@ -48,6 +48,7 @@ LOCAL_ID_TAG = 'custom'
 APP = flask.Flask(__name__)
 
 
+@ndb.transactional()
 def _AfterTestRunHandler(test_run):
   """Performs after test run tasks.
 

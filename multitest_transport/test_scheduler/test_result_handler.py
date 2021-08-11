@@ -16,6 +16,7 @@
 import logging
 import time
 
+from tradefed_cluster.services import task_scheduler
 from tradefed_cluster.util import ndb_shim as ndb
 
 from multitest_transport.models import ndb_models
@@ -38,7 +39,7 @@ def StoreTestResults(test_run_id, attempt_id, test_results_url):
                    attempt_id, time.time() - start_time)
   except FileNotFoundError:
     logging.warning('Test result file not found: %s', test_results_url)
-  UpdateTestRunSummary(test_run_id)
+  task_scheduler.AddCallableTask(UpdateTestRunSummary, test_run_id)
 
 
 @ndb.transactional()

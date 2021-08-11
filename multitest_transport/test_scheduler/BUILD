@@ -141,6 +141,7 @@ pytype_strict_library(
     deps = [
         "//multitest_transport/models",
         "//multitest_transport/util",
+        "@tradefed_cluster//tradefed_cluster/services:task_scheduler_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
     ],
 )
@@ -155,6 +156,7 @@ py_test(
     deps = [
         ":test_result_handler_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
+        "@tradefed_cluster//tradefed_cluster/services:task_scheduler_lib",
         third_party("mock"),
     ],
 )
