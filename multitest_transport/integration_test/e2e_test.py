@@ -173,6 +173,9 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
             'url': 'file:///data/cvd.tar.gz',
             'decompress': True,
             'decompress_dir': 'lvd-tools',
+        }, {
+            'name': 'acloud',
+            'url': 'file:///bin/acloud_prebuilt',
         }],
     )['id']
     self.container.WaitForState(test_run_id, 'COMPLETED', timeout=12 * 60)
