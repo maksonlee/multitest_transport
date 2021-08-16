@@ -48,6 +48,8 @@ class CredentialsProperty(ndb.BlobProperty):
       # Patch missing fields from older credentials objects (b/176850961)
       if not hasattr(credentials, '_quota_project_id'):
         setattr(credentials, '_quota_project_id', None)
+      if not hasattr(credentials, '_always_use_jwt_access'):
+        setattr(credentials, '_always_use_jwt_access', None)
       return credentials
     except (KeyError, pickle.PickleError, UnicodeDecodeError):
       logging.warning('Unpickling credentials failed, reverting to JSON')
