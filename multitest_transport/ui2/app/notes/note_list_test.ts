@@ -16,9 +16,10 @@
 
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
-import {MatDialog} from '@angular/material/mdc-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute, Router} from '@angular/router';
+import {Router} from '@angular/router';
+import {ActivatedRoute} from '@angular/router';
 import {RouterTestingModule} from '@angular/router/testing';
 import {DEFAULT_PAGE_SIZE} from 'google3/third_party/py/multitest_transport/ui2/app/shared/paginator';
 import {getEl} from 'google3/third_party/py/multitest_transport/ui2/app/testing/jasmine_util';

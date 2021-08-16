@@ -16,14 +16,15 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, Inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
-import {MAT_DIALOG_DATA} from '@angular/material/mdc-dialog';
+import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {MatTabChangeEvent} from '@angular/material/tabs';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
 import {FeedbackService} from '../services/feedback_service';
-import {LabDeviceInfo, NoteType, SurveyTrigger} from '../services/mtt_lab_models';
+import {SurveyTrigger} from '../services/mtt_lab_models';
+import {LabDeviceInfo, NoteType} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
 import {StorageService} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';

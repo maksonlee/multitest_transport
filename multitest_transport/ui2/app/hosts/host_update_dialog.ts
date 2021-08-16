@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import {Component, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/mdc-dialog';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {MatTableDataSource} from '@angular/material/mdc-table';
 import {MatPaginator} from '@angular/material/paginator';
 import {MatRadioChange} from '@angular/material/radio';

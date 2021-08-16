@@ -22,15 +22,15 @@ import {NgModule} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCardModule} from '@angular/material/card';
+import {MatDialogModule} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatListModule} from '@angular/material/list';
-import {MatDialogModule} from '@angular/material/mdc-dialog';
 import {MatProgressBarModule} from '@angular/material/mdc-progress-bar';
 import {MatSnackBarModule} from '@angular/material/mdc-snack-bar';
-import {MatTooltipModule} from '@angular/material/mdc-tooltip';
 import {MatSelectModule} from '@angular/material/select';
+import {MatTooltipModule} from '@angular/material/mdc-tooltip';
 
 import {AoaActionEditor} from './action_editor';
 import {TouchScreen} from './touch_screen';

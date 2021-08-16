@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, EventEmitter, Inject, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
-import {MatDialog} from '@angular/material/mdc-dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {MatTable, MatTableDataSource} from '@angular/material/mdc-table';
 import {MatSort, Sort} from '@angular/material/sort';
 import {Router} from '@angular/router';

@@ -15,7 +15,7 @@
  */
 
 import {Component} from '@angular/core';
-import {MatDialog, MatDialogRef} from '@angular/material/mdc-dialog';
+import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {first, mergeMap} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';

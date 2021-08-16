@@ -30,7 +30,6 @@ ng_module(
         third_party_js("angular2:material_dialog"),
         third_party_js("angular2:material_icon"),
         third_party_js("angular2:material_list"),
-        third_party_js("angular2:material_mdc_dialog"),
         third_party_js("typings/w3c_web_usb"),
         third_party_js("rxjs"),
     ],

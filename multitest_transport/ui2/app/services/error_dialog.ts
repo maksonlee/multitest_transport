@@ -15,7 +15,7 @@
  */
 
 import {Component, Inject} from '@angular/core';
-import {MAT_DIALOG_DATA} from '@angular/material/mdc-dialog';
+import {MAT_DIALOG_DATA} from '@angular/material/dialog';
 
 /** Detailed error object */
 export interface EndpointDetailedError {
