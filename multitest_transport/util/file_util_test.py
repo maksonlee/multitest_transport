@@ -223,6 +223,38 @@ class LocalFileHandleTest(absltest.TestCase):
     file_util.LocalFileHandle('file:///FILES').Delete()
     self.assertFalse(os.path.exists(os.path.join(self.tmp_root, 'FILES')))
 
+  def testArchive_file(self):
+    """Tests that local files can be archived and removed."""
+    file_util.LocalFileHandle('file:///FILES').Archive()
+
+    self.assertFalse(os.path.exists(os.path.join(self.tmp_root, 'FILES')))
+    self.assertTrue(os.path.exists(os.path.join(self.tmp_root, 'FILES.zip')))
+
+  def testArchive_file_notRemoved(self):
+    """Tests that local files can be archived."""
+    file_util.LocalFileHandle('file:///FILES').Archive(remove_file=False)
+
+    self.assertTrue(os.path.exists(os.path.join(self.tmp_root, 'FILES')))
+    self.assertTrue(os.path.exists(os.path.join(self.tmp_root, 'FILES.zip')))
+
+  def testArchive_dir(self):
+    """Tests that local directories can be archived and removed."""
+    os.mkdir(os.path.join(self.tmp_root, 'test_dir'))
+
+    file_util.LocalFileHandle('file:///test_dir').Archive()
+
+    self.assertFalse(os.path.exists(os.path.join(self.tmp_root, 'test_dir')))
+    self.assertTrue(os.path.exists(os.path.join(self.tmp_root, 'test_dir.zip')))
+
+  def testArchive_dir_notRemoved(self):
+    """Tests that local directories can be archived."""
+    os.mkdir(os.path.join(self.tmp_root, 'test_dir'))
+
+    file_util.LocalFileHandle('file:///test_dir').Archive(remove_file=False)
+
+    self.assertTrue(os.path.exists(os.path.join(self.tmp_root, 'test_dir')))
+    self.assertTrue(os.path.exists(os.path.join(self.tmp_root, 'test_dir.zip')))
+
 
 class HttpFileHandleTest(absltest.TestCase):
   """Tests HttpFileHandle functionality."""
@@ -291,10 +323,7 @@ class HttpFileHandleTest(absltest.TestCase):
     """Tests that range errors are handled when reading content."""
     mock_response = mock.MagicMock()
     mock_response.read.return_value = b'foo'
-    mock_urlopen.side_effect = [
-        socket.timeout(),
-        mock_response
-    ]
+    mock_urlopen.side_effect = [socket.timeout(), mock_response]
     handle = file_util.HttpFileHandle(self.MOCK_URL)
     stream = handle.Open().detach()  # Detach to test underlying stream
 

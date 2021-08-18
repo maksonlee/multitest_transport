@@ -280,6 +280,14 @@ class FileHandle(object):
     """Deletes this directory if it exists and all files contained."""
     raise NotImplementedError
 
+  def Archive(self, remove_file: bool = True):
+    """Archives this file.
+
+    Args:
+      remove_file: if true, remove the file after archiving
+    """
+    raise NotImplementedError
+
 
 class LocalFileHandle(FileHandle):
   """Reads file metadata and content from the file system."""
@@ -333,6 +341,17 @@ class LocalFileHandle(FileHandle):
   def DeleteDir(self):
     if os.path.isdir(self.path):
       shutil.rmtree(self.path)
+
+  def Archive(self, remove_file: bool = True):
+    if os.path.isdir(self.path):
+      shutil.make_archive(self.path, 'zip', self.path)
+      if remove_file:
+        shutil.rmtree(self.path)
+    else:
+      with zipfile.ZipFile(self.path + '.zip', 'w') as f:
+        f.write(self.path)
+      if remove_file:
+        os.remove(self.path)
 
 
 class HttpReadStream(BaseReadStream):
