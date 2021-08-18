@@ -1,7 +1,7 @@
-import {DEVICE_COUNT_SUMMARIES, newMockHostInfo, newMockLabOfflineHostInfosByLabResponse, newMockUnconvertedHostInfo, newMockDeviceInfo} from '../testing/mtt_lab_mocks';
+import {DEVICE_COUNT_SUMMARIES, newMockHostInfo, newMockLabOfflineHostInfosByLabResponse, newMockUnconvertedHostInfo, newMockDeviceInfo, newMockHostResource} from '../testing/mtt_lab_mocks';
 
-import {calculateTotalDeviceCountSummary, convertToLabHostInfo, convertToLabDeviceInfo} from './mtt_lab_models';
-import {HostState, TestHarness} from './tfc_models';
+import {calculateTotalDeviceCountSummary, convertToLabHostInfo, convertToLabDeviceInfo, convertToLabHostResource} from './mtt_lab_models';
+import {HostState, TestHarness, HostResource} from './tfc_models';
 
 describe('MttLabModels', () => {
   it('converts to HostInfo correctly when required key is not found', () => {
@@ -61,4 +61,26 @@ describe('MttLabModels', () => {
     expect(result.extraInfo['testkey']).toEqual('testvalue');
   });
 
+  it('converts to LabHostResource correctly', () => {
+    const source = newMockHostResource('host01');
+    const result = convertToLabHostResource(source);
+
+    expect(result?.hostname).toEqual(source.hostname);
+    expect(result?.update_timestamp).toEqual(source.update_timestamp);
+    expect(result?.event_timestamp).toEqual(source.event_timestamp);
+    expect(result?.resource?.identifier).toEqual({'hostname': 'host01'});
+    expect(result?.resource?.attribute).toEqual(
+        [{'name': 'harness_version', 'value': 'aversion'}]);
+    expect(result?.resource?.resource[0].resource_name).toEqual('disk_util');
+    expect(result?.resource?.resource[1].resource_name).toEqual('memory');
+  });
+
+  it('converts to LabHostResource with empty resource correctly', () => {
+    const source: HostResource = {
+      hostname: 'ahost'
+    };
+    const result = convertToLabHostResource(source);
+
+    expect(result).toBeNull();
+  });
 });

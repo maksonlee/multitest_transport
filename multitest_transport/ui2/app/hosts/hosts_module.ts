@@ -33,6 +33,7 @@ import {HostDetailsDeviceCountSummaries} from './host_details_device_count_summa
 import {HostDetailsDeviceList} from './host_details_device_list';
 import {HostDetailsExtraInfos} from './host_details_extra_infos';
 import {HostDetailsHistory} from './host_details_history';
+import {HostDetailsHostResource} from './host_details_host_resource';
 import {HostDetailsPage} from './host_details_page';
 import {HostDetailsSummary} from './host_details_summary';
 import {HostList} from './host_list';
@@ -57,6 +58,7 @@ const COMPONENTS = [
   HostDetailsDeviceList,
   HostDetailsExtraInfos,
   HostDetailsHistory,
+  HostDetailsHostResource,
   HostDetailsPage,
   HostDetailsSummary,
   HostList,

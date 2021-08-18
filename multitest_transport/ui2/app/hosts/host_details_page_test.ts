@@ -50,12 +50,14 @@ describe('HostDetailsPage', () => {
     routerSpy = jasmine.createSpyObj(
         'Router', ['navigateByUrl', 'navigate', 'createUrlTree']);
     tfcClient = jasmine.createSpyObj('tfcClient', [
-      'getHostInfo', 'getDeviceInfosFromHost', 'getHostHistory', 'getHostNotes'
+      'getHostInfo', 'getDeviceInfosFromHost', 'getHostHistory', 'getHostNotes',
+      'getHostResource',
     ]);
     tfcClient.getHostInfo.and.returnValue(observableOf(mockHostInfo));
     tfcClient.getDeviceInfosFromHost.and.returnValue(observableOf({}));
     tfcClient.getHostHistory.and.returnValue(observableOf({}));
     tfcClient.getHostNotes.and.returnValue(observableOf({}));
+    tfcClient.getHostResource.and.returnValue(observableOf(null));
     routerSpy.createUrlTree.and.returnValue({});
 
     TestBed.configureTestingModule({

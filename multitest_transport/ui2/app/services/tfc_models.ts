@@ -443,6 +443,14 @@ export declare interface HostUpdateStateSummary {
   target_version?: string|null;
 }
 
+/** Host resource. */
+export declare interface HostResource {
+  readonly hostname: string;
+  readonly update_timestamp?: string;
+  readonly event_timestamp?: string;
+  readonly resource?: string;
+}
+
 /** Info of a single lab. */
 export declare interface LabInfo {
   /** Unique lab name. */

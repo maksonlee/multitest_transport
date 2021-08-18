@@ -62,6 +62,7 @@ describe('HostDetails', () => {
       getHostHistory: observableOf({}),
       getHostInfo: observableOf(newMockLabHostInfo(hostname)),
       getHostNotes: observableOf({}),
+      getHostResource: observableOf(null),
       removeHost: observableOf({}),
     });
 

@@ -1072,6 +1072,28 @@ describe('TfcClient', () => {
     });
   });
 
+  describe('getHostResource by hostname', () => {
+    const mockHostResource = mocks.newMockHostResource(hostname);
+
+    beforeEach(() => {
+      httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
+      tfcClient = new TfcClient(appData, httpClientSpy);
+      httpClientSpy.get.and.returnValue(observableOf(mockHostResource));
+    });
+
+    it('calls API correctly', () => {
+      const observable = tfcClient.getHostResource(hostname);
+      expect(httpClientSpy.get)
+          .toHaveBeenCalledWith(
+              `${tfcClient.tfcApiUrl}/hosts/${hostname}/resource`);
+      expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
+      observable.subscribe((response) => {
+        expect(response).toEqual(
+            mttLabModels.convertToLabHostResource(mockHostResource));
+      });
+    });
+  });
+
   describe('getTestHarnessImages', () => {
     const mockTestHarnessImageList = mocks.newMockTestHarnessImageList();
 

@@ -166,7 +166,6 @@ export declare interface LabHostExtraInfo {
   [key: string]: string | number;
 }
 
-
 /** Response for host history api call. */
 export declare interface LabHostInfoHistoryList {
   /** history: a list of HostInfo. */
@@ -199,6 +198,65 @@ export declare interface HostUpdateStateSummary {
   readonly updateTimestamp: string;
   /** The test harness version which the hosts update to. */
   readonly targetVersion: string|null;
+}
+
+/** Lab resource identifier type. */
+declare interface LabResourceIdentifier {
+  [key: string]: string;
+}
+
+/** Lab resource attribute type. */
+declare interface LabResourceAttribute {
+  readonly name: string;
+  readonly value: string;
+}
+
+/** Lab resource metric type. */
+declare interface LabResourceMetric  {
+  readonly tag: string;
+  readonly value: string;
+}
+
+/** A single lab resource resource type. */
+declare interface LabResource {
+  readonly resource_name: string;
+  readonly resource_instance?: string|null;
+  readonly metric: LabResourceMetric[];
+  readonly timestamp: string;
+}
+
+/** Lab resources for an entity resource type. */
+declare interface LabResources {
+  readonly identifier: LabResourceIdentifier;
+  readonly attribute: LabResourceAttribute[];
+  readonly resource: LabResource[];
+}
+
+/** Host resource. */
+export declare interface LabHostResource {
+  readonly hostname: string;
+  readonly update_timestamp: string|null;
+  readonly event_timestamp: string|null;
+  readonly resource: LabResources;
+}
+
+/**
+ * Converts the value of tfc_models.HostResource into LabHostResource object.
+ */
+export function convertToLabHostResource(source: tfcModels.HostResource):
+    LabHostResource|null {
+
+  if (! source.resource) {
+    return null;
+  }
+  const target: LabHostResource = {
+    hostname: source.hostname,
+    update_timestamp: source.update_timestamp || null,
+    event_timestamp: source.event_timestamp || null,
+    resource: JSON.parse(source.resource) as LabResources,
+  };
+
+  return target;
 }
 
 /** Info of a single lab. */

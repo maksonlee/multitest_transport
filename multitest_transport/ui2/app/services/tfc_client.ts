@@ -359,6 +359,20 @@ export class TfcClient {
         `${this.tfcApiUrl}/hosts/configs`, {params});
   }
 
+
+  /**
+   * Get host resource for a host from TFC service.
+   * @param id the hostname.
+   * @return Observable of tfcModels.HostResource or null.
+   */
+  getHostResource(id: string): Observable<mttLabModels.LabHostResource|null> {
+    return this.http
+        .get<tfcModels.HostResource>(
+            `${this.tfcApiUrl}/hosts/${id}/resource`)
+        .pipe(map(
+            result => mttLabModels.convertToLabHostResource(result)));
+  }
+
   /**
    * Get TestHarnessImages from TFC service.
    * The request only executes when the Observable is subscribed.

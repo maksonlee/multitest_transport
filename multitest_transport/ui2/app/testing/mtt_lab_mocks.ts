@@ -795,6 +795,45 @@ export function newMockHostNote(
   };
 }
 
+/** Create a new mock HostResource. */
+export function newMockHostResource(hostname: string = HOSTNAME):
+    tfcModels.HostResource {
+  return {
+    hostname,
+    resource: JSON.stringify({
+      'identifier': {'hostname': hostname},
+      'attribute': [{'name': 'harness_version', 'value': 'aversion'}],
+      'resource': [
+        {
+          'resource_name': 'disk_util',
+          'resource_instance': '/tmp',
+          'metric': [
+            {'tag': 'used', 'value': '10%'},
+            {'tag': 'free', 'value': '20%'},
+          ],
+          'timestamp': TIMESTAMP,
+        },
+        {
+          'resource_name': 'memory',
+          'metric': [
+            {'tag': 'used', 'value': '10%'},
+            {'tag': 'free', 'value': '20%'},
+          ],
+          'timestamp': TIMESTAMP,
+        }
+      ]
+    }),
+    update_timestamp: TIMESTAMP,
+    event_timestamp: TIMESTAMP,
+  };
+}
+
+/** Create mock mttLabModesl.LabHostResource */
+export function newMockLabHostResource(hostname: string = HOSTNAME):
+    mttLabModels.LabHostResource|null {
+  return mttLabModels.convertToLabHostResource(newMockHostResource(hostname));
+}
+
 /** Create a new mock HostNoteList. */
 export function newMockHostNoteList(
     hostname: string, hostNoteIds: number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
