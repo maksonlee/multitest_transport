@@ -33,6 +33,7 @@ describe('TfcClient', () => {
   const appData = mocks.newMockAppData();
   const serial = 'device1';
   const hostname = 'host01';
+  const harnemssImage = 'repo/image:tag';
   const maxResults = 10;
   const pageToken = '';
   const backwards = false;
@@ -1625,7 +1626,7 @@ describe('TfcClient', () => {
 
     it('updates metadata correctly', () => {
       const requestBody = mocks.newMockBatchUpdateHostMetadataRequest(
-          undefined, undefined, appData.userNickname);
+          [hostname], harnemssImage, appData.userNickname);
       tfcClient.batchUpdateHostMetadata(requestBody);
 
       const params = new AnalyticsParams('hosts', 'batchUpdateHostMetadata');
@@ -1635,6 +1636,22 @@ describe('TfcClient', () => {
               `${tfcClient.tfcApiUrl}/hosts/hostMetadata:batchUpdate`,
               requestBody, {params});
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
+    });
+
+    it('updates metadata in splices correctly', () => {
+      const requestBody = mocks.newMockBatchUpdateHostMetadataRequest(
+          ['h1', 'h2', 'h3'], harnemssImage, appData.userNickname);
+      const requestBodySlice0 = mocks.newMockBatchUpdateHostMetadataRequest(
+          ['h1', 'h2'], harnemssImage, appData.userNickname);
+      const requestBodySlice1 = mocks.newMockBatchUpdateHostMetadataRequest(
+          ['h3'], harnemssImage, appData.userNickname);
+      tfcClient.batchUpdateHostMetadata(requestBody, 2);
+
+      expect(httpClientSpy.post).toHaveBeenCalledTimes(2);
+      expect(httpClientSpy.post.calls.all()[0].args[1])
+          .toEqual(requestBodySlice0);
+      expect(httpClientSpy.post.calls.all()[1].args[1])
+          .toEqual(requestBodySlice1);
     });
   });
 

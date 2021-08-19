@@ -583,14 +583,22 @@ export class TfcClient {
   }
 
   batchUpdateHostMetadata(
-      requestBody: tfcModels.BatchUpdateHostMetadataRequest): Observable<void> {
+      requestBody: tfcModels.BatchUpdateHostMetadataRequest,
+      spliceNumber = 50): Observable<void> {
     const params = new AnalyticsParams('hosts', 'batchUpdateHostMetadata');
     if (requestBody.user === undefined) {
       requestBody.user = this.appData.userNickname;
     }
-    return this.http.post<void>(
-        `${this.tfcApiUrl}/hosts/hostMetadata:batchUpdate`, requestBody,
-        {params});
+    const hostnames = [...requestBody.hostnames];
+    const batchUpdates = [];
+    while (hostnames.length) {
+      const requestBodySliced = {...requestBody};
+      requestBodySliced.hostnames = hostnames.splice(0, spliceNumber);
+      batchUpdates.push(this.http.post<void>(
+          `${this.tfcApiUrl}/hosts/hostMetadata:batchUpdate`, requestBodySliced,
+          {params}));
+    }
+    return merge(...batchUpdates);
   }
 
   /** Removes a device from host. */
