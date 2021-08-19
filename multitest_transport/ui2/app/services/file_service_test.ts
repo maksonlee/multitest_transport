@@ -314,7 +314,7 @@ function bufferOf(expected: string): jasmine.AsymmetricMatcher<ArrayBuffer> {
 
 /** File reader which will always have an error. */
 class FailingFileReader extends FileReader {
-  get error() {
+  override get error() {
     return new DOMException();
   }
 }

@@ -35,7 +35,7 @@ export class TargetPreparerForm extends FormChangeTracker implements OnInit {
   @Input() canEdit = true;
   @Output() addTargetPreparer = new EventEmitter();
   @Output() deleteTargetPreparer = new EventEmitter<number>();
-  @ViewChildren(FormChangeTracker) trackers!: QueryList<FormChangeTracker>;
+  @ViewChildren(FormChangeTracker) override trackers!: QueryList<FormChangeTracker>;
 
   ngOnInit() {
     assertRequiredInput(
@@ -80,7 +80,7 @@ export class TargetPreparerForm extends FormChangeTracker implements OnInit {
    * to allow childs invalidInputs can be propagated to parent
    * page
    */
-  getInvalidInputs(): ElementRef[] {
+  override getInvalidInputs(): ElementRef[] {
     this.invalidInputs = super.getInvalidInputs();
     this.trackers.forEach((tracker) => {
       this.invalidInputs.push(...tracker.getInvalidInputs());

@@ -37,7 +37,7 @@ import {buildApiErrorMessage} from '../shared/util';
 export class TestEditPage extends FormChangeTracker implements OnInit,
                                                                AfterViewInit {
   @ViewChild('backButton', {static: false}) backButton?: MatButton;
-  @ViewChildren(FormChangeTracker) trackers!: QueryList<FormChangeTracker>;
+  @ViewChildren(FormChangeTracker) override trackers!: QueryList<FormChangeTracker>;
 
   data: Partial<Test> = initTest();
   outputFilePatterns: Partial<string[]> = [];

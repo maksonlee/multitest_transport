@@ -65,8 +65,8 @@ export class OfflineHostAssignmentsPage extends BaseOfflineHostList implements
   readonly allOptionsValue = ALL_OPTIONS_VALUE;
   baseUrl = 'offline_host_assignments';
   listHeaderRowTop = '35px';
-  totalOfflineDevicesHighlightRatio = 0.4;
-  totalDeviceCountSummary: TotalDeviceCountSummary = {
+  override totalOfflineDevicesHighlightRatio = 0.4;
+  override totalDeviceCountSummary: TotalDeviceCountSummary = {
     offlineDevices: 0,
     allDevices: 0,
   };

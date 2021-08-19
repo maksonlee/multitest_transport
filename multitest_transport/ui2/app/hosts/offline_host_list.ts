@@ -51,7 +51,7 @@ export class OfflineHostList extends BaseOfflineHostList implements OnInit,
   hostListDataSource: LabHostInfo[] = [];
 
   /** Whether the data is loading. */
-  set isLoading(value: boolean) {
+  override set isLoading(value: boolean) {
     this.isLoadingInternal = value;
     this.hostList.isLoading = value;
   }

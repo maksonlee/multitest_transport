@@ -26,13 +26,13 @@ import {SharedModule} from './shared_module';
 import {SharedModuleNgSummary} from './shared_module.ngsummary';
 
 class FalseTracker extends FormChangeTracker {
-  isFormDirty() {
+  override isFormDirty() {
     return false;
   }
 }
 
 class TrueTracker extends FormChangeTracker {
-  isFormDirty() {
+  override isFormDirty() {
     return true;
   }
 }

@@ -42,7 +42,7 @@ export class DeviceActionEditPage extends FormChangeTracker implements
   readonly FormMode = FormMode;
 
   @ViewChild('backButton', {static: false}) backButton?: MatButton;
-  @ViewChildren(FormChangeTracker) trackers!: QueryList<FormChangeTracker>;
+  @ViewChildren(FormChangeTracker) override trackers!: QueryList<FormChangeTracker>;
 
   constructor(
       private readonly mttClient: MttClient,

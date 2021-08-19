@@ -55,7 +55,7 @@ export class TestResourceForm extends FormChangeTracker implements OnInit {
 
   // Whenever an event fired such as add or remove, it will set this value to
   // true
-  hasContentChanged = false;
+  override hasContentChanged = false;
   buildItemByUrl: { [url: string]: Observable<BuildItem|null> } = {};
   arrayToString = arrayToString;
 
@@ -143,11 +143,11 @@ export class TestResourceForm extends FormChangeTracker implements OnInit {
     return this.buildItemByUrl[url];
   }
 
-  isFormDirty(): boolean {
+  override isFormDirty(): boolean {
     return super.isFormDirty() || this.hasContentChanged;
   }
 
-  resetForm() {
+  override resetForm() {
     super.resetForm();
     this.hasContentChanged = false;
   }
