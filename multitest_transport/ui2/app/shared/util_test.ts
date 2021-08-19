@@ -46,8 +46,8 @@ describe('isFnmatchPattern', () => {
     expect(isFnmatchPattern('folder/folder/[123]img')).toBe(true);
     expect(isFnmatchPattern('folder/folder/[img')).toBe(false);
     expect(isFnmatchPattern('folder/folder/img]')).toBe(false);
-    expect(isFnmatchPattern('folder/folder/\img]')).toBe(false);
-    expect(isFnmatchPattern('folder/folder/\\\\\img]')).toBe(false);
+    expect(isFnmatchPattern('folder/folder/img]')).toBe(false);
+    expect(isFnmatchPattern('folder/folder/\\\\img]')).toBe(false);
     expect(isFnmatchPattern('folder/folder/[*]')).toBe(true);
   });
 });
