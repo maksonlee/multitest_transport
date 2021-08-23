@@ -73,7 +73,10 @@ class AndroidBuildProvider(base.BuildProvider):
     http = oauth2_util.AuthorizeHttp(
         http, self.GetCredentials(), scopes=OAUTH2_SCOPES)
     self._client = apiclient.discovery.build(
-        ANDROID_BUILD_API_NAME, ANDROID_BUILD_API_VERSION, http=http)
+        ANDROID_BUILD_API_NAME,
+        ANDROID_BUILD_API_VERSION,
+        http=http,
+        static_discovery=False)
     return self._client
 
   def ListBuildItems(self, path=None, page_token=None, item_type=None):

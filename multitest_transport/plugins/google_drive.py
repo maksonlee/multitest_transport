@@ -136,7 +136,8 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     self._client = apiclient.discovery.build(
         _GOOGLE_DRIVE_BUILD_API_NAME,
         _GOOGLE_DRIVE_BUILD_API_VERSION,
-        http=http)
+        http=http,
+        static_discovery=False)
     return self._client
 
   def _GetFileIds(self, param):

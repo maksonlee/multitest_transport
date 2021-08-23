@@ -43,7 +43,8 @@ def GetClient(credentials, scopes):
   """Constructs a client to access the Google Cloud Storage API."""
   http = httplib2.Http(timeout=constant.HTTP_TIMEOUT_SECONDS)
   http = oauth2_util.AuthorizeHttp(http, credentials, scopes=scopes)
-  return apiclient.discovery.build(_GCS_API_NAME, _GCS_API_VERSION, http=http)
+  return apiclient.discovery.build(
+      _GCS_API_NAME, _GCS_API_VERSION, http=http, static_discovery=False)
 
 
 def _ParsePath(path):
