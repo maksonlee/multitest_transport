@@ -36,7 +36,6 @@ import logging
 import os
 
 import apiclient
-import httplib2
 
 from multitest_transport.plugins import base
 from multitest_transport.plugins import constant
@@ -130,7 +129,8 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     """
     if self._client:
       return self._client
-    http = httplib2.Http(timeout=constant.HTTP_TIMEOUT_SECONDS)
+    http = apiclient.http.build_http()
+    http.timeout = constant.HTTP_TIMEOUT_SECONDS
     http = oauth2_util.AuthorizeHttp(
         http, self.GetCredentials(), scopes=_GOOGLE_DRIVE_OAUTH2_SCOPES)
     self._client = apiclient.discovery.build(

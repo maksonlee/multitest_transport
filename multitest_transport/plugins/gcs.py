@@ -18,7 +18,6 @@ import io
 import logging
 
 import apiclient
-import httplib2
 
 from multitest_transport.models import event_log
 from multitest_transport.plugins import base
@@ -41,7 +40,8 @@ RW_SCOPES = ['https://www.googleapis.com/auth/devstorage.read_write']
 
 def GetClient(credentials, scopes):
   """Constructs a client to access the Google Cloud Storage API."""
-  http = httplib2.Http(timeout=constant.HTTP_TIMEOUT_SECONDS)
+  http = apiclient.http.build_http()
+  http.timeout = constant.HTTP_TIMEOUT_SECONDS
   http = oauth2_util.AuthorizeHttp(http, credentials, scopes=scopes)
   return apiclient.discovery.build(
       _GCS_API_NAME, _GCS_API_VERSION, http=http, static_discovery=False)
