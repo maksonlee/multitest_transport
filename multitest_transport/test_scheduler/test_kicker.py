@@ -57,6 +57,7 @@ DEFAULT_TF_CONFIG_OBJECTS = [
                 key='post-cleanup', values=['SCREEN_OFF'])
         ])
 ]
+TF_DEVICE_COUNT_ENV_VAR = '${TF_DEVICE_COUNT}'
 
 APP = flask.Flask(__name__)
 
@@ -460,8 +461,15 @@ def _CreateTFCRequest(test_run_id):
     if (test_run.test_run_config.shard_count > 1 and
         test_run.test.runner_sharding_args):
       tmpl = string.Template(test_run.test.runner_sharding_args)
+      if test_run.test_run_config.allow_partial_device_match:
+        logging.warning(
+            'Allow partial device matching require shard_count to be dynamic; '
+            'ignoring shard count')
       sharding_args = tmpl.safe_substitute({
-          'TF_SHARD_COUNT': str(test_run.test_run_config.shard_count)
+          'TF_SHARD_COUNT':
+              TF_DEVICE_COUNT_ENV_VAR
+              if test_run.test_run_config.allow_partial_device_match else str(
+                  test_run.test_run_config.shard_count)
       })
       command_line = ' '.join([command_line, sharding_args])
       if retry_command_line:
