@@ -44,3 +44,26 @@ py_test(
         third_party("pyfakefs:fake_filesystem_unittest"),
     ],
 )
+
+pytype_strict_library(
+    name = "policy_lib",
+    srcs = ["policy.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":criterion_lib",
+        ":operation_lib",
+    ],
+)
+
+py_test(
+    name = "policy_test",
+    srcs = ["policy_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":policy_lib",
+        "//multitest_transport/util:env_lib",
+        third_party("absl/testing:absltest"),
+        third_party("pyfakefs:fake_filesystem_unittest"),
+    ],
+)
