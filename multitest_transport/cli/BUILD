@@ -162,6 +162,7 @@ py_library(
         ":google_auth_util_lib",
         third_party("apiclient"),
         third_party("google_auth_httplib2"),
+        third_party("pytz"),
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
     ],
 )

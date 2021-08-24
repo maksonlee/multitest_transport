@@ -357,6 +357,29 @@ def _ShouldRenewServiceAccountKey(sa_key_dict):
   return False
 
 
+def _WarnIfDev():
+  """Warn before proceed with dev-built binary.
+
+  This method aims to reduce the risk of copying dev binaries to remote hosts.
+  The dev version hosts does not auto-update itself, and may lead to unexpected
+  behavior on remote hosts.
+  """
+  _, build_environment = cli_util.GetVersion()
+  if build_environment != 'dev':
+    return
+  print(f'{cli_util.OUTPUT_RED}'
+        'MTT Lab CLI was built in dev environment, '
+        'and will copy dev version MTT CLI to remote hosts. '
+        'Would you like to continue(Y/n):'
+        f'{cli_util.OUTPUT_NOCOLOR}')
+  answer = input()
+  if answer == 'Y':
+    return
+  if answer == 'n':
+    sys.exit(0)
+  raise ValueError('Please enter Y or n.')
+
+
 def Main():
   """The entry point function for lab CLI."""
   parser = CreateParser()
@@ -379,6 +402,8 @@ def Main():
   if args.action == 'version':
     cli_util.PrintVersion()
     return
+
+  _WarnIfDev()
 
   lab_config_pool = host_util.BuildLabConfigPool(args.lab_config_path)
   lab_config = lab_config_pool.GetLabConfig()

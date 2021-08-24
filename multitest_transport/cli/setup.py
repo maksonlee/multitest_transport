@@ -48,9 +48,10 @@ setuptools.setup(
         'grpcio',
         'packaging',
         'python-dateutil',
+        'pytz',
         'requests',
         'SecretStorage',
-        'six',
+        'six == 1.15.0',
         'strictyaml',
     ]
 )

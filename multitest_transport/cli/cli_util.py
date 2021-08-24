@@ -47,6 +47,8 @@ _CLI_DOWNLOAD_CHUNK_SIZE_IN_BYTES = 1024 * 1024
 _MTT_PROJECT = 'android-mtt'
 _STACKDRIVER_CLOUD_PROJECT = 'tradefed-satellite-lab'
 _GCLOUD_LOGGING_WRITE_SCOPE = 'https://www.googleapis.com/auth/logging.write'
+OUTPUT_RED = '\033[0;31m'
+OUTPUT_NOCOLOR = '\033[0m'
 
 
 def PrintVersion():
