@@ -389,6 +389,7 @@ export function newMockTestRunConfig(
     output_idle_timeout_seconds: 3600,
     queue_timeout_seconds: 100,
     before_device_action_ids: [],
+    allow_partial_device_match: false,
   };
 }
 

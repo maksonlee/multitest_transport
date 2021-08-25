@@ -46,3 +46,11 @@
     Enable Manual Editing
   </mat-checkbox>
 </div>
+<div fxLayoutGap="20px" class="inputRow allowPartialDeviceMatchCheckBox">
+  <!-- Allow partial device match -->
+  <mat-checkbox [(ngModel)]="allowPartialDeviceMatch"
+                (change)="allowPartialDeviceMatchChange.emit(allowPartialDeviceMatch)"
+                fxFlex="350px">
+    Dynamically Adjust Shard Count
+  </mat-checkbox>
+</div>
