@@ -51,6 +51,7 @@ describe('TfcClient', () => {
       const observable = tfcClient.getDeviceInfos();
       const params = new HttpParams().appendAll({
         'device_states': ONLINE_DEVICE_STATES,
+        'count': 1000,
       });
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/devices`, {params});

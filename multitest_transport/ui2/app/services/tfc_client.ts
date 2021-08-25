@@ -57,8 +57,10 @@ export class TfcClient {
   }
 
   getDeviceInfos(): Observable<DeviceInfosResponse> {
-    const params =
-        new HttpParams().appendAll({'device_states': ONLINE_DEVICE_STATES});
+    // TODO: Revert 'count' parameter after adding pagination.
+    const params = new HttpParams()
+                       .appendAll({'device_states': ONLINE_DEVICE_STATES})
+                       .append('count', 1000);
     return this.http.get<DeviceInfosResponse>(
         `${this.tfcApiUrl}/devices`, {params});
   }
