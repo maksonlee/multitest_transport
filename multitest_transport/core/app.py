@@ -15,6 +15,7 @@
 """A module to handle app lifecycle events."""
 import logging
 import os
+import pathlib
 
 import flask
 
@@ -29,7 +30,22 @@ from multitest_transport.util import env
 from multitest_transport.util import tfc_client
 from tradefed_cluster import common
 
+
 APP = flask.Flask(__name__)
+
+_CRASH_REPORT_FILE = '.crash_report_file'
+
+
+def CheckPreviousCrash():
+  """The crash file should be deleted during a normal shutdown, so its presence on startup indicates a crash."""
+  filepath = os.path.join(env.STORAGE_PATH, _CRASH_REPORT_FILE)
+  crash_report_file = pathlib.Path(filepath)
+  if crash_report_file.is_file():
+    logging.info('Uploading ATS crash status to Google Analytics')
+    # TODO: Upload to analytics
+  else:
+    # On ATS start, create a file to track ATS crashing status
+    crash_report_file.touch()
 
 
 @APP.route('/init')
@@ -39,6 +55,8 @@ def AppStartHandler():
       'Server is starting... (%s, cli_version=%s)',
       env.VERSION, env.CLI_VERSION)
   logging.info('os.environ=%s', os.environ)
+
+  CheckPreviousCrash()
 
   service_checker.Check()
   config_loader.Load()
