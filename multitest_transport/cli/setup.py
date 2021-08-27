@@ -36,6 +36,7 @@ setuptools.setup(
         'console_scripts': ['mtt=multitest_transport.cli.cli:Main'],
     },
     install_requires=[
+        'ansible-base',
         'attrs',
         'fabric',
         'google-api-core',

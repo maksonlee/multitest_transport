@@ -1,5 +1,6 @@
 # Install required packages into a virtualenv.
 # "pip freeze > requirements.txt" to generate the requirements.
+ansible-base==2.10.13
 google-api-core==1.23.0
 google-api-python-client==1.12.6
 google-auth==1.23.0

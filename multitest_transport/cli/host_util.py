@@ -455,9 +455,15 @@ def BuildLabConfigPool(lab_config_path, key_path=None):
             gcs_client, lab_config_path, lab_config.IsYaml))
   else:
     logger.debug('Use lab config path %s.', lab_config_path)
-    lab_config_pool = lab_config.LabConfigPool(
-        lab_config.LocalFileEnumerator(
-            lab_config_path, lab_config.IsYaml))
+    if lab_config.IsYaml(lab_config_path):
+      lab_config_pool = lab_config.LabConfigPool(
+          lab_config.LocalFileEnumerator(
+              lab_config_path, lab_config.IsYaml))
+    elif lab_config.IsUnifiedLabConfig(lab_config_path):
+      lab_config_pool = lab_config.UnifiedLabConfigPool(lab_config_path)
+    else:
+      raise lab_config.ConfigError(
+          '%s is neither yaml lab config nor unified lab config.')
   lab_config_pool.LoadConfigs()
   return lab_config_pool
 

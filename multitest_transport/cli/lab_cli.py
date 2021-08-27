@@ -370,14 +370,14 @@ def _WarnIfDev():
   print(f'{cli_util.OUTPUT_RED}'
         'MTT Lab CLI was built in dev environment, '
         'and will copy dev version MTT CLI to remote hosts. '
-        'Would you like to continue(Y/n):'
+        'Would you like to continue(Y/N):'
         f'{cli_util.OUTPUT_NOCOLOR}')
   answer = input()
-  if answer == 'Y':
+  if answer.lower() == 'y':
     return
-  if answer == 'n':
+  if answer.lower() == 'n':
     sys.exit(0)
-  raise ValueError('Please enter Y or n.')
+  raise ValueError('Please enter Y or N.')
 
 
 def Main():

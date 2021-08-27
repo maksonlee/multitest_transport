@@ -54,6 +54,7 @@ sed -i "s/VERSION =.*/VERSION = \"${RELEASE}\"/" src/setup.py
 
 cat << EOF > Dockerfile
 FROM ubuntu:18.04
+ENV LANG=C.UTF-8
 
 # Ubuntu 18.04's python3-distutils is 3.6.9-1, which support python >= 3.6.7-1
 # to << 3.9. Later if we want to support new version of python, we need to
@@ -78,7 +79,7 @@ RUN mkdir -p /protoc && \
 EOF
 
 docker pull gcr.io/android-mtt/pex:latest
-docker build -t docker_pex . --cache-from gcr.io/android-mtt/pex:latest > /dev/null
+docker build -t docker_pex . --cache-from gcr.io/android-mtt/pex:latest
 
 cat << EOF > inside_docker_build.sh
 # Build python file from proto

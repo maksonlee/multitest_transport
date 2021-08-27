@@ -431,6 +431,15 @@ class HostUtilTest(parameterized.TestCase):
     self.assertTrue(mock_create_gcs_client.called)
     self.assertTrue(mock_get_cred.called)
 
+  @mock.patch.object(host_util.lab_config, 'UnifiedLabConfigPool')
+  def testBuildLabConfigPool_unifiedLabConfigPool(
+      self, mock_create_lab_config_pool):
+    mock_create_lab_config_pool.return_value = self.mock_lab_config_pool
+
+    host_util.BuildLabConfigPool(lab_config_path='path/to/hosts')
+
+    self.mock_lab_config_pool.LoadConfigs.assert_called_once_with()
+
   def testHostContext(self):
     """Test Host.context."""
     host = host_util.Host(self.host_config1, self.ssh_config1)
