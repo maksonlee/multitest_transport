@@ -171,7 +171,8 @@ class ModuleApplication(gunicorn.app.base.BaseApplication):
     self.cfg.set('post_worker_init', lambda _: self.post_worker_init())
     self.cfg.set('reload', self.live_reload)
     self.cfg.set('threads', 10)  # Default max_concurrent_requests value
-    self.cfg.set('timeout', 60)
+    # Increase worker timeout as errors may cause test runs to fail
+    self.cfg.set('timeout', 5 * 60)
     self.cfg.set('worker_class', 'gthread')
     self.cfg.set('workers', 2)  # Have two workers to ensure availability
 

@@ -27,6 +27,7 @@ import datetime
 import functools
 import json
 import logging
+import socket
 import threading
 import time
 
@@ -149,7 +150,7 @@ class MessagePuller(threading.Thread):
           data=payload)
       res = urllib.request.urlopen(req, timeout=INVOKE_TIMEOUT_SECONDS)
       self._logger.debug('Response: %s', res.read())
-    except urllib.error.URLError as e:
+    except (urllib.error.URLError, socket.timeout) as e:
       properties.headers['x-retry-count'] = retry_count + 1
       backoff_seconds = MIN_BACKOFF_SECONDS * (2 ** retry_count)
       if retry_count < MAX_RETRY_COUNT:
