@@ -124,7 +124,8 @@ function start_datastore_emulator {
   export CLOUDSDK_PYTHON="${MTT_PYTHON}"
   GCLOUD_SDK_ROOT=$(gcloud info --format="value(installation.sdk_root)")
   DATASTORE_EMULATOR="${GCLOUD_SDK_ROOT}/platform/cloud-datastore-emulator/cloud_datastore_emulator"
-  "${DATASTORE_EMULATOR}" start \
+  # Allocate at least 512MB of RAM to prevent OOM errors and data corruption
+  JAVA="${JAVA:="java"} -Xms512m" "${DATASTORE_EMULATOR}" start \
       --host=localhost \
       --port="${DATASTORE_EMULATOR_PORT}" \
       --index_file="index.yaml" \
@@ -147,11 +148,12 @@ function start_mysql_database {
   # Ensure DB directory is created and initialized
   mkdir -p "${datadir}"
   chown mysql:mysql "${datadir}"
-  mysql_install_db --datadir="${datadir}"
-  # Start DB with specific socket/pid to prevent clashes
+  # Start DB with specific socket/pid to prevent clashes. Does not check access
+  # (system/grant tables don't need to exist), but network access is disabled.
   mysqld_safe \
     --socket="${socket}" \
     --pid-file="${pidfile}" \
+    --skip-grant-tables \
     --skip-networking \
     --datadir="${datadir}" \
     &
