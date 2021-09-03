@@ -128,8 +128,19 @@ class ConfigSetHelperTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual('BAR_URL', infos[1].url)
     self.assertIsNotNone(infos[1].hash)
 
+  @mock.patch.object(config_set_helper, '_GetAuthorizedBuildChannel')
+  def testGetRemoteConfigSetInfos_buildChannelNotAuthorized(
+      self, mock_get_authorized_build_channel):
+    mock_build_channel = mock.MagicMock()
+    mock_build_channel.auth_state = ndb_models.AuthorizationState.UNAUTHORIZED
+    mock_get_authorized_build_channel.return_value = (mock_build_channel, None)
+    # Return an empty list if the build channel is not authorized
+    infos = config_set_helper.GetRemoteConfigSetInfos()
+    self.assertEmpty(infos)
+
   @mock.patch.object(build, 'GetBuildChannel')
-  def testGetRemoteConfigSetInfos_permissionError(self, mock_get_build_channel):
+  def testGetRemoteConfigSetInfos_noPermissionForBuildChannel(
+      self, mock_get_build_channel):
     error = errors.FilePermissionError('test error')
     mock_build_channel = mock.MagicMock()
     mock_build_channel.ListBuildItems.side_effect = error

@@ -50,12 +50,12 @@ def _GetAuthorizedBuildChannel():
   """
   locator = build.BuildLocator.ParseUrl(CONFIG_SET_URL)
   if not locator:
-    raise ValueError('Invalid URL: %s' % CONFIG_SET_URL)
+    raise ValueError('Invalid config set URL: %s' % CONFIG_SET_URL)
+
   build_channel = build.GetBuildChannel(locator.build_channel_id)
-  if (not build_channel) or (build_channel.auth_state ==
-                             ndb_models.AuthorizationState.UNAUTHORIZED):
-    raise ValueError('Build channel %s not authorized' %
-                     locator.build_channel_id)
+  if not build_channel:
+    raise ValueError('Config set build channel not found: %s' % CONFIG_SET_URL)
+
   return build_channel, locator
 
 
@@ -132,6 +132,9 @@ def GetRemoteConfigSetInfo(url):
   """Reads a remote config set from the given url and parses the info."""
   # Get the build item
   build_channel, locator = _GetAuthorizedBuildChannel()
+  if build_channel.auth_state == ndb_models.AuthorizationState.UNAUTHORIZED:
+    return None
+
   try:
     channel_path = locator.path
     path = channel_path + url.split(channel_path)[1]
@@ -154,6 +157,9 @@ def GetRemoteConfigSetInfos():
   # TODO: Allow for multiple config set sources
   # Get build items from MTT GCS bucket
   build_channel, locator = _GetAuthorizedBuildChannel()
+  if build_channel.auth_state == ndb_models.AuthorizationState.UNAUTHORIZED:
+    return []
+
   try:
     build_items, _ = build_channel.ListBuildItems(path=locator.path)
   except errors.FilePermissionError as err:
