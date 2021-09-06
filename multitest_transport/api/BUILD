@@ -248,6 +248,7 @@ pytype_strict_library(
         ":build_channel_provider_api_lib",
         ":config_set_api_lib",
         ":device_action_api_lib",
+        ":file_cleaner_api_lib",
         ":node_config_api_lib",
         ":openapi_lib",
         ":private_node_config_api_lib",
@@ -426,5 +427,31 @@ py_test(
         ":test_run_api_lib",
         third_party("mock"),
         "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
+    ],
+)
+
+pytype_strict_library(
+    name = "file_cleaner_api_lib",
+    srcs = [
+        "file_cleaner_api.py",
+    ],
+    srcs_version = "PY3",
+    deps = [
+        ":base_lib",
+        "//multitest_transport/models",
+        third_party("protorpc"),
+    ],
+)
+
+py_test(
+    name = "file_cleaner_api_test",
+    srcs = [
+        "file_cleaner_api_test.py",
+    ],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":api_test_util_lib",
+        ":file_cleaner_api_lib",
     ],
 )

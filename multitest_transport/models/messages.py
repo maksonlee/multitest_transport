@@ -1307,3 +1307,121 @@ def _PrivateNodeConfigMessageConverter(msg):
   private_node_config.gms_client_id = msg.gms_client_id
   private_node_config.setup_wizard_completed = msg.setup_wizard_completed
   return private_node_config
+
+
+class FileCleanerOperation(messages.Message):
+  """File cleaner operation."""
+  type = messages.EnumField(
+      ndb_models.FileCleanerOperationType, 1, required=True)
+  params = messages.MessageField(NameValuePair, 2, repeated=True)
+
+
+@Converter(ndb_models.FileCleanerOperation, FileCleanerOperation)
+def _FileCleanerOperationConverter(obj):
+  return FileCleanerOperation(
+      type=obj.type, params=ConvertNameValuePairs(obj.params, NameValuePair))
+
+
+@Converter(FileCleanerOperation, ndb_models.FileCleanerOperation)
+def _FileCleanerOperationMessageConverter(msg):
+  """Converts a FileCleanerOperation message into an object."""
+  return ndb_models.FileCleanerOperation(
+      type=msg.type,
+      params=ConvertNameValuePairs(msg.params, ndb_models.NameValuePair))
+
+
+class FileCleanerCriterion(messages.Message):
+  """File cleaner criterion."""
+  type = messages.EnumField(
+      ndb_models.FileCleanerCriterionType, 1, required=True)
+  params = messages.MessageField(NameValuePair, 2, repeated=True)
+
+
+@Converter(ndb_models.FileCleanerCriterion, FileCleanerCriterion)
+def _FileCleanerCriterionConverter(obj):
+  return FileCleanerCriterion(
+      type=obj.type, params=ConvertNameValuePairs(obj.params, NameValuePair))
+
+
+@Converter(FileCleanerCriterion, ndb_models.FileCleanerCriterion)
+def _FileCleanerCriterionMessageConverter(msg):
+  """Converts a FileCleanerCriterion message into an object."""
+  return ndb_models.FileCleanerCriterion(
+      type=msg.type,
+      params=ConvertNameValuePairs(msg.params, ndb_models.NameValuePair))
+
+
+class FileCleanerPolicy(messages.Message):
+  """File cleaner policy."""
+  name = messages.StringField(1, required=True)
+  target = messages.EnumField(ndb_models.FileCleanerTargetType, 2)
+  operation = messages.MessageField(FileCleanerOperation, 3, required=True)
+  criteria = messages.MessageField(FileCleanerCriterion, 4, repeated=True)
+
+
+@Converter(ndb_models.FileCleanerPolicy, FileCleanerPolicy)
+def _FileCleanerPolicyConverter(obj):
+  return FileCleanerPolicy(
+      name=obj.name,
+      target=obj.target,
+      operation=Convert(obj.operation, FileCleanerOperation),
+      criteria=ConvertList(obj.criteria, FileCleanerCriterion))
+
+
+@Converter(FileCleanerPolicy, ndb_models.FileCleanerPolicy)
+def _FileCleanerPolicyMessageConverter(msg):
+  """Converts a FileCleanerPolicy message into an object."""
+  return ndb_models.FileCleanerPolicy(
+      name=msg.name,
+      target=msg.target,
+      operation=Convert(msg.operation, ndb_models.FileCleanerOperation),
+      criteria=ConvertList(msg.criteria, ndb_models.FileCleanerCriterion))
+
+
+class FileCleanerConfig(messages.Message):
+  """File cleaner config."""
+  name = messages.StringField(1, required=True)
+  description = messages.StringField(2)
+  directories = messages.StringField(3, repeated=True)
+  policy_names = messages.StringField(4, repeated=True)
+
+
+@Converter(ndb_models.FileCleanerConfig, FileCleanerConfig)
+def _FileCleanerConfigConverter(obj):
+  return FileCleanerConfig(
+      name=obj.name,
+      description=obj.description,
+      directories=obj.directories,
+      policy_names=obj.policy_names)
+
+
+@Converter(FileCleanerConfig, ndb_models.FileCleanerConfig)
+def _FileCleanerConfigMessageConverter(msg):
+  """Converts a FileCleanerConfig message into an object."""
+  return ndb_models.FileCleanerConfig(
+      name=msg.name,
+      description=msg.description,
+      directories=msg.directories,
+      policy_names=msg.policy_names)
+
+
+class FileCleanerSettings(messages.Message):
+  """File cleaner settings, which combine cleanup policies and configs."""
+  policies = messages.MessageField(FileCleanerPolicy, 1, repeated=True)
+  configs = messages.MessageField(FileCleanerConfig, 2, repeated=True)
+
+
+@Converter(ndb_models.FileCleanerSettings, FileCleanerSettings)
+def _FileCleanerSettingsConverter(obj):
+  return FileCleanerSettings(
+      policies=ConvertList(obj.policies, FileCleanerPolicy),
+      configs=ConvertList(obj.configs, FileCleanerConfig))
+
+
+@Converter(FileCleanerSettings, ndb_models.FileCleanerSettings)
+def _FileCleanerSettingsMessageConverter(msg):
+  """Converts a FileCleanerSettings message into an object."""
+  return ndb_models.FileCleanerSettings(
+      id=ndb_models.FILE_CLEANER_SETTINGS_ID,
+      policies=ConvertList(msg.policies, ndb_models.FileCleanerPolicy),
+      configs=ConvertList(msg.configs, ndb_models.FileCleanerConfig))

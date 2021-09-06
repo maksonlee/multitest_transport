@@ -73,9 +73,12 @@ def Load(config_set):
   """
   if config_set.node_config:
     _Load(config_set.node_config)
+  if config_set.file_cleaner:
+    _Load(config_set.file_cleaner)
 
-  objs = (config_set.build_channels + config_set.device_actions +
-          config_set.test_run_actions + config_set.tests)
+  objs = (
+      config_set.build_channels + config_set.device_actions +
+      config_set.test_run_actions + config_set.tests)
   for obj in objs:
     _Load(obj)
 
@@ -110,14 +113,21 @@ yaml.add_representer(six.text_type, _RepresentUnicode)
 class ConfigSet(object):
   """MTT configuration set object."""
 
-  def __init__(self, node_config=None, build_channels=None, device_actions=None,
-               test_run_actions=None, tests=None, info=None):
+  def __init__(self,
+               node_config=None,
+               build_channels=None,
+               device_actions=None,
+               test_run_actions=None,
+               tests=None,
+               info=None,
+               file_cleaner=None):
     self.node_config = node_config
     self.build_channels = build_channels or []
     self.device_actions = device_actions or []
     self.test_run_actions = test_run_actions or []
     self.tests = tests or []
     self.info = info
+    self.file_cleaner = file_cleaner
     # TODO: add support for test plans
 
   def __eq__(self, other):
@@ -126,8 +136,8 @@ class ConfigSet(object):
             self.build_channels == other.build_channels and
             self.device_actions == other.device_actions and
             self.test_run_actions == other.test_run_actions and
-            self.tests == other.tests and
-            self.info == other.info)
+            self.tests == other.tests and self.info == other.info and
+            self.file_cleaner == other.file_cleaner)
 
   def __ne__(self, other):
     return not self.__eq__(other)
@@ -141,31 +151,36 @@ class _ConfigSetMessage(Message):
   test_run_actions = MessageField(messages.TestRunAction, 4, repeated=True)
   tests = MessageField(messages.Test, 5, repeated=True)
   info = MessageField(messages.ConfigSetInfo, 6)
+  file_cleaner = MessageField(messages.FileCleanerSettings, 7)
 
 
 @messages.Converter(ConfigSet, _ConfigSetMessage)
 def _ConfigSetConverter(obj):
   return _ConfigSetMessage(
       node_config=messages.Convert(obj.node_config, messages.NodeConfig),
-      build_channels=messages.ConvertList(
-          obj.build_channels, messages.BuildChannelConfig),
-      device_actions=messages.ConvertList(
-          obj.device_actions, messages.DeviceAction),
-      test_run_actions=messages.ConvertList(
-          obj.test_run_actions, messages.TestRunAction),
+      build_channels=messages.ConvertList(obj.build_channels,
+                                          messages.BuildChannelConfig),
+      device_actions=messages.ConvertList(obj.device_actions,
+                                          messages.DeviceAction),
+      test_run_actions=messages.ConvertList(obj.test_run_actions,
+                                            messages.TestRunAction),
       tests=messages.ConvertList(obj.tests, messages.Test),
-      info=messages.Convert(obj.info, messages.ConfigSetInfo))
+      info=messages.Convert(obj.info, messages.ConfigSetInfo),
+      file_cleaner=messages.Convert(obj.file_cleaner,
+                                    messages.FileCleanerSettings))
 
 
 @messages.Converter(_ConfigSetMessage, ConfigSet)
 def _ConfigSetMessageConverter(msg):
   return ConfigSet(
       node_config=messages.Convert(msg.node_config, ndb_models.NodeConfig),
-      build_channels=messages.ConvertList(
-          msg.build_channels, ndb_models.BuildChannelConfig),
-      device_actions=messages.ConvertList(
-          msg.device_actions, ndb_models.DeviceAction),
-      test_run_actions=messages.ConvertList(
-          msg.test_run_actions, ndb_models.TestRunAction),
+      build_channels=messages.ConvertList(msg.build_channels,
+                                          ndb_models.BuildChannelConfig),
+      device_actions=messages.ConvertList(msg.device_actions,
+                                          ndb_models.DeviceAction),
+      test_run_actions=messages.ConvertList(msg.test_run_actions,
+                                            ndb_models.TestRunAction),
       tests=messages.ConvertList(msg.tests, ndb_models.Test),
-      info=messages.Convert(msg.info, ndb_models.ConfigSetInfo))
+      info=messages.Convert(msg.info, ndb_models.ConfigSetInfo),
+      file_cleaner=messages.Convert(msg.file_cleaner,
+                                    ndb_models.FileCleanerSettings))

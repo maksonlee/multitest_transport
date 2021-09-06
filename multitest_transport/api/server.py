@@ -22,6 +22,7 @@ from multitest_transport.api import build_channel_api
 from multitest_transport.api import build_channel_provider_api
 from multitest_transport.api import config_set_api
 from multitest_transport.api import device_action_api
+from multitest_transport.api import file_cleaner_api
 from multitest_transport.api import node_config_api
 from multitest_transport.api import openapi
 from multitest_transport.api import private_node_config_api
@@ -38,6 +39,7 @@ API_HANDLERS = [
     build_channel_provider_api.BuildChannelProviderApi,
     config_set_api.ConfigSetApi,
     device_action_api.DeviceActionApi,
+    file_cleaner_api.FileCleanerApi,
     node_config_api.NodeConfigApi,
     private_node_config_api.PrivateNodeConfigApi,
     test_api.TestApi,

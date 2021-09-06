@@ -29,6 +29,7 @@ from multitest_transport.util import env
 from multitest_transport.util import oauth2_util
 
 NODE_CONFIG_ID = 1
+FILE_CLEANER_SETTINGS_ID = 1
 
 
 class NameValuePair(ndb.Model):
@@ -868,3 +869,94 @@ def IsLocalId(model_id):
   except ValueError:
     return False
   return True
+
+
+class FileCleanerOperationType(messages.Enum):
+  ARCHIVE = 0
+  DELETE = 1
+
+
+class FileCleanerCriterionType(messages.Enum):
+  LAST_MODIFIED_DAYS = 0
+  NAME_MATCH = 1
+
+
+class FileCleanerTargetType(messages.Enum):
+  FILE = 0
+  DIRECTORY = 1
+
+
+class FileCleanerOperation(ndb.Model):
+  """File cleaner operation.
+
+  Attributes:
+    type: operation type.
+    params: operation parameters.
+  """
+  type = ndb.EnumProperty(FileCleanerOperationType, required=True)
+  params = ndb.LocalStructuredProperty(NameValuePair, repeated=True)
+
+
+class FileCleanerCriterion(ndb.Model):
+  """File cleaner criterion.
+
+  Attributes:
+    type: criterion type.
+    params: criterion parameters.
+  """
+  type = ndb.EnumProperty(FileCleanerCriterionType, required=True)
+  params = ndb.LocalStructuredProperty(NameValuePair, repeated=True)
+
+
+class FileCleanerPolicy(ndb.Model):
+  """File cleaner policy, which combines one operation and several criteria.
+
+  Attributes:
+    name: policy name, should be unique.
+    target: policy target.
+    operation: the operation to apply to targets.
+    criteria: a list of criteria to select targets.
+  """
+  name = ndb.StringProperty(required=True)
+  target = ndb.EnumProperty(FileCleanerTargetType)
+  operation = ndb.LocalStructuredProperty(FileCleanerOperation, required=True)
+  criteria = ndb.LocalStructuredProperty(FileCleanerCriterion, repeated=True)
+
+
+class FileCleanerConfig(ndb.Model):
+  """File cleaner config.
+
+  Attributes:
+    name: config name.
+    description: describes the config.
+    directories: directories to apply the policies to.
+    policy_names: name of policies to be used.
+  """
+  name = ndb.StringProperty(required=True)
+  description = ndb.StringProperty()
+  directories = ndb.StringProperty(repeated=True)
+  policy_names = ndb.StringProperty(repeated=True)
+
+
+class FileCleanerSettings(ndb.Model):
+  """File cleaner settings, with combines policies and configs.
+
+  Attributes:
+    policies: file cleaner policies.
+    configs: file cleaner configs.
+  """
+  policies = ndb.LocalStructuredProperty(FileCleanerPolicy, repeated=True)
+  configs = ndb.LocalStructuredProperty(FileCleanerConfig, repeated=True)
+
+
+def GetFileCleanerSettings():
+  """Returns a file cleaner settings object.
+
+  Returns:
+    a FileCleanerSettings object.
+  """
+  obj = ndb.Key(FileCleanerSettings, FILE_CLEANER_SETTINGS_ID).get()
+  if not obj:
+    obj = FileCleanerSettings(id=FILE_CLEANER_SETTINGS_ID)
+    obj.put()
+  return obj

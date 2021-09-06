@@ -427,3 +427,40 @@ tests:
   - max_retry_on_test_failures: 3
   module_config_pattern: 'android-cts/testcases/.*\.config'
   module_execution_args: '-m ${MODULE_NAME}'
+
+file_cleaner:
+  policies:
+  - name: Archive directories not modified
+    target: DIRECTORY
+    operation:
+      type: ARCHIVE
+    criteria:
+    - type: LAST_MODIFIED_DAYS
+      params:
+      - name: ttl_days
+        value: '7'
+
+  - name: Delete files not modified
+    target: FILE
+    operation:
+      type: DELETE
+    criteria:
+    - type: LAST_MODIFIED_DAYS
+      params:
+      - name: ttl_days
+        value: '7'
+
+  configs:
+  - name: Clean up test results
+    description: Clean up test results
+    directories:
+    - '/data/app_default_bucket/test_runs'
+    policy_names:
+    - Archive directories not modified
+
+  - name: Clean up test work files
+    description: Clean up test work files
+    directories:
+    - '/data/tmp'
+    policy_names:
+    - Delete files not modified
