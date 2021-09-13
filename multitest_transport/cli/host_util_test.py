@@ -58,7 +58,8 @@ class HostUtilTest(parameterized.TestCase):
         'ask_login_password': False,
         'ask_sudo_password': False,
         'sudo_user': None,
-        'use_native_ssh': False,
+        'use_native_ssh': True,
+        'no_use_native_ssh': False,
         'ssh_arg': None,
     }
 
@@ -199,6 +200,35 @@ class HostUtilTest(parameterized.TestCase):
                       use_native_ssh=True),
                   sudo_ssh_config=None)])
     self.assertSameElements(['host1'], self.mock_func_calls.keys())
+
+  @mock.patch.object(host_util, 'BuildLabConfigPool')
+  def testExecute_noNativeSsh(self, mock_build_lab_config_pool):
+    """Test execute."""
+    mock_build_lab_config_pool.return_value = self.mock_lab_config_pool
+    self.mock_lab_config_pool.GetHostConfigs.side_effect = [[
+        self.host_config1, self.host_config2]]
+    args_dict = self.default_args.copy()
+    args_dict.update(
+        no_use_native_ssh=True,
+        service_account_json_key_path='path/to/key',
+        )
+    args = mock.MagicMock(**args_dict)
+
+    host_util.Execute(args)
+
+    self.mock_lab_config_pool.GetHostConfigs.assert_called_once_with()
+    self.mock_create_context.assert_has_calls([
+        mock.call('host1', 'user1',
+                  ssh_config=ssh_util.SshConfig(
+                      user='user1', hostname='host1',
+                      use_native_ssh=False),
+                  sudo_ssh_config=None),
+        mock.call('host2', 'user1',
+                  ssh_config=ssh_util.SshConfig(
+                      user='user1', hostname='host2',
+                      use_native_ssh=False),
+                  sudo_ssh_config=None)])
+    self.assertSameElements(['host1', 'host2'], self.mock_func_calls.keys())
 
   def testSequentialExecute_exitOnError(self):
     """Test _SequentialExecute multiple hosts sequentially and failed."""

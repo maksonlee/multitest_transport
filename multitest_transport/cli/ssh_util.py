@@ -61,7 +61,7 @@ class SshConfig(object):
   # ssh key.
   ssh_key = attr.ib(type=str, default=None)
   # Use native ssh or fabric ssh.
-  use_native_ssh = attr.ib(type=bool, default=False)
+  use_native_ssh = attr.ib(type=bool, default=True)
 
 
 class Context(object):

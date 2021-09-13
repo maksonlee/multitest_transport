@@ -75,28 +75,28 @@ class CommandContextTest(absltest.TestCase):
     self.assertFalse(self.mock_fabric_pkg.Connection.called)
     self.assertFalse(self.mock_ssh_context_creator.called)
 
+  def testCreateCommandContext_withFabric(self):
+    context = command_util.CommandContext(
+        host='host1', user='user1', ssh_config=ssh_util.SshConfig(
+            hostname='host1', user='user1', use_native_ssh=False))
+    self.assertFalse(context.IsLocal())
+    self.assertEqual('host1', context.host)
+    self.assertEqual('user1', context.user)
+    self.assertFalse(self.mock_ssh_context_creator.called)
+    self.mock_fabric_pkg.Connection.assert_called_once_with(
+        host='host1', user='user1', config=mock.ANY)
+
   def testCreateCommandContext_remote(self):
     context = command_util.CommandContext('remotehost', 'remoteuser')
     self.assertFalse(context.IsLocal())
     self.assertEqual('remotehost', context.host)
     self.assertEqual('remoteuser', context.user)
-    self.assertFalse(self.mock_ssh_context_creator.called)
-    self.mock_fabric_pkg.Connection.assert_called_once_with(
-        host='remotehost', user='remoteuser', config=mock.ANY)
+    self.assertFalse(self.mock_fabric_pkg.Connection.called)
+    self.mock_ssh_context_creator.assert_called_once_with(
+        ssh_util.SshConfig(user='remoteuser', hostname='remotehost'))
 
   def testCreateCommandContext_withSshConfig(self):
-    context = command_util.CommandContext(
-        host='host1', user='user1', ssh_config=ssh_util.SshConfig(
-            hostname='host1', user='user1'))
-    self.assertIsNotNone(context)
-    self.assertFalse(context.IsLocal())
-    self.assertFalse(self.mock_ssh_context_creator.called)
-    self.mock_fabric_pkg.Connection.assert_called_once_with(
-        host='host1', user='user1', config=mock.ANY)
-
-  def testCreateCommandContext_useNativeSsh(self):
-    ssh_config = ssh_util.SshConfig(
-        hostname='host1', user='user1', use_native_ssh=True)
+    ssh_config = ssh_util.SshConfig(hostname='host1', user='user1')
     context = command_util.CommandContext(
         host='host1', user='user1', ssh_config=ssh_config)
     self.assertIsNotNone(context)
@@ -104,11 +104,13 @@ class CommandContextTest(absltest.TestCase):
     self.mock_ssh_context_creator.assert_called_once_with(ssh_config)
     self.assertFalse(self.mock_fabric_pkg.Connection.called)
 
-  def testCreateCommandContext_withSudo(self):
+  def testCreateCommandContext_fabricWithSudo(self):
     ssh_config = ssh_util.SshConfig(
-        hostname='host1', user='user1', password='login_pwd')
+        hostname='host1', user='user1', password='login_pwd',
+        use_native_ssh=False)
     sudo_ssh_config = ssh_util.SshConfig(
-        hostname='host1', user='sudo_user1', password='sudo_pwd')
+        hostname='host1', user='sudo_user1', password='sudo_pwd',
+        use_native_ssh=False)
 
     context = command_util.CommandContext(
         host='host1', user='user1',

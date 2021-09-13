@@ -516,10 +516,13 @@ def Execute(args, lab_config_pool=None):
   sudo_password = None
   if args.ask_sudo_password:
     sudo_password = getpass.getpass('Enter the sudo password:')
-  if args.use_native_ssh:
-    logger.debug('Using native ssh instead of fabric.')
-  if args.ssh_arg:
-    logger.debug('Use ssh arg: %s', args.ssh_arg)
+  if not args.no_use_native_ssh:
+    if args.use_native_ssh:
+      logger.debug('Using native ssh instead of fabric.')
+    if args.ssh_arg:
+      logger.debug('Use ssh arg: %s', args.ssh_arg)
+  else:
+    logger.warning('Using fabric is deprecated, please use native ssh.')
   host_configs.sort(key=lambda host_config: host_config.hostname)
   hosts = []
   for host_config in host_configs:
@@ -528,8 +531,11 @@ def Execute(args, lab_config_pool=None):
       host_config = host_config.SetServiceAccountJsonKeyPath(
           args.service_account_json_key_path)
     ssh_args = args.ssh_arg or host_config.ssh_arg
-    # only native ssh support ssh_args
-    use_native_ssh = bool(args.use_native_ssh or ssh_args)
+    if args.no_use_native_ssh:
+      use_native_ssh = False
+    else:
+      # only native ssh support ssh_args
+      use_native_ssh = bool(args.use_native_ssh or ssh_args)
     ssh_config = ssh_util.SshConfig(
         hostname=host_config.hostname,
         user=host_config.host_login_name,

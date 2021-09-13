@@ -178,9 +178,13 @@ def CreateSSHArgParser():
       '--sudo_user', dest='sudo_user',
       help='Sudo user to use on the host.')
   parser.add_argument(
-      '--use_native_ssh', default=False,
+      '--use_native_ssh', default=True,
       action='store_true', dest='use_native_ssh',
       help='Use native ssh instead of fabric.')
+  parser.add_argument(
+      '--no_use_native_ssh', default=False,
+      action='store_true', dest='no_use_native_ssh',
+      help='Use fabric instead of native ssh.')
   parser.add_argument(
       '--ssh_arg', help='ssh arg passed to native ssh and rsync.')
   return parser
