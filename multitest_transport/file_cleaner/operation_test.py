@@ -15,9 +15,12 @@
 import os
 
 from absl.testing import absltest
-from multitest_transport.file_cleaner import operation
-from multitest_transport.util import env
 from pyfakefs import fake_filesystem_unittest
+
+from multitest_transport.file_cleaner import operation
+from multitest_transport.models import messages
+from multitest_transport.models import ndb_models
+from multitest_transport.util import env
 
 
 class OperationTest(fake_filesystem_unittest.TestCase):
@@ -32,7 +35,9 @@ class OperationTest(fake_filesystem_unittest.TestCase):
     """Tests files can be archived and removed."""
     self.fs.create_file('/test/file')
 
-    archive = operation.BuildOperation({'type': 'ARCHIVE'})
+    archive = operation.BuildOperation(
+        messages.FileCleanerOperation(
+            type=ndb_models.FileCleanerOperationType.ARCHIVE))
     archive.Apply('/test/file')
 
     self.assertTrue(os.path.exists('/test/file.zip'))
@@ -42,12 +47,11 @@ class OperationTest(fake_filesystem_unittest.TestCase):
     """Tests files can be archived and not removed."""
     self.fs.create_file('/test/file')
 
-    archive = operation.BuildOperation({
-        'type': 'ARCHIVE',
-        'params': {
-            'remove_file': False
-        }
-    })
+    archive = operation.BuildOperation(
+        messages.FileCleanerOperation(
+            type=ndb_models.FileCleanerOperationType.ARCHIVE,
+            params=[messages.NameValuePair(name='remove_file', value='False')]))
+
     archive.Apply('/test/file')
 
     self.assertTrue(os.path.exists('/test/file.zip'))
@@ -57,7 +61,9 @@ class OperationTest(fake_filesystem_unittest.TestCase):
     """Tests files can be deleted."""
     self.fs.create_file('/test/file')
 
-    delete = operation.BuildOperation({'type': 'DELETE'})
+    delete = operation.BuildOperation(
+        messages.FileCleanerOperation(
+            type=ndb_models.FileCleanerOperationType.DELETE))
     delete.Apply('/test/file')
 
     self.assertFalse(os.path.exists('/test/file'))
@@ -66,7 +72,9 @@ class OperationTest(fake_filesystem_unittest.TestCase):
     """Tests directories can be deleted."""
     self.fs.create_dir('/test/dir')
 
-    delete = operation.BuildOperation({'type': 'DELETE'})
+    delete = operation.BuildOperation(
+        messages.FileCleanerOperation(
+            type=ndb_models.FileCleanerOperationType.DELETE))
     delete.Apply('/test/dir')
 
     self.assertFalse(os.path.exists('/test/dir'))

@@ -15,9 +15,12 @@
 import os
 
 from absl.testing import absltest
-from multitest_transport.file_cleaner import policy
-from multitest_transport.util import env
 from pyfakefs import fake_filesystem_unittest
+
+from multitest_transport.file_cleaner import policy
+from multitest_transport.models import messages
+from multitest_transport.models import ndb_models
+from multitest_transport.util import env
 
 
 class PolicyTest(fake_filesystem_unittest.TestCase):
@@ -36,26 +39,24 @@ class PolicyTest(fake_filesystem_unittest.TestCase):
     self.fs.create_file('/test/path/dir/output.zip')
     self.fs.create_file('/test/path/file.zip')
 
-    policy.Policy({
-        'name':
-            'name',
-        'target':
-            'FILE',
-        'operation': {
-            'type': 'DELETE'
-        },
-        'criteria': [{
-            'type': 'NAME_MATCH',
-            'params': {
-                'pattern': 'file'
-            }
-        }, {
-            'type': 'NAME_MATCH',
-            'params': {
-                'pattern': 'zip'
-            }
-        }]
-    }).Apply('/test/path')
+    policy.Policy(
+        messages.FileCleanerPolicy(
+            name='name',
+            target=ndb_models.FileCleanerTargetType.FILE,
+            operation=messages.FileCleanerOperation(
+                type=ndb_models.FileCleanerOperationType.DELETE),
+            criteria=[
+                messages.FileCleanerCriterion(
+                    type=ndb_models.FileCleanerCriterionType.NAME_MATCH,
+                    params=[
+                        messages.NameValuePair(name='pattern', value='zip')
+                    ]),
+                messages.FileCleanerCriterion(
+                    type=ndb_models.FileCleanerCriterionType.NAME_MATCH,
+                    params=[
+                        messages.NameValuePair(name='pattern', value='file')
+                    ])
+            ])).Apply('/test/path')
 
     self.assertTrue(os.path.exists('/test/path/dir'))
     self.assertFalse(os.path.exists('/test/path/dir/file1.zip'))
@@ -71,19 +72,19 @@ class PolicyTest(fake_filesystem_unittest.TestCase):
     self.fs.create_dir('/test/path/dir_2/subdir_match')
     self.fs.create_file('/test/path/file_match')
 
-    policy.Policy({
-        'name': 'name',
-        'target': 'DIRECTORY',
-        'operation': {
-            'type': 'ARCHIVE'
-        },
-        'criteria': [{
-            'type': 'NAME_MATCH',
-            'params': {
-                'pattern': 'match'
-            }
-        }]
-    }).Apply('/test/path')
+    policy.Policy(
+        messages.FileCleanerPolicy(
+            name='name',
+            target=ndb_models.FileCleanerTargetType.DIRECTORY,
+            operation=messages.FileCleanerOperation(
+                type=ndb_models.FileCleanerOperationType.ARCHIVE),
+            criteria=[
+                messages.FileCleanerCriterion(
+                    type=ndb_models.FileCleanerCriterionType.NAME_MATCH,
+                    params=[
+                        messages.NameValuePair(name='pattern', value='match')
+                    ])
+            ])).Apply('/test/path')
 
     self.assertFalse(os.path.exists('/test/path/dir_match_1'))
     self.assertFalse(os.path.exists('/test/path/dir_match_1/subdir'))
@@ -100,13 +101,13 @@ class PolicyTest(fake_filesystem_unittest.TestCase):
     self.fs.create_file('/test/path/dir/output.zip')
     self.fs.create_file('/test/path/file.zip')
 
-    policy.Policy({
-        'name': 'name',
-        'target': 'FILE',
-        'operation': {
-            'type': 'DELETE'
-        }
-    }).Apply('/test/path')
+    policy.Policy(
+        messages.FileCleanerPolicy(
+            name='name',
+            target=ndb_models.FileCleanerTargetType.FILE,
+            operation=messages.FileCleanerOperation(
+                type=ndb_models.FileCleanerOperationType.DELETE))).Apply(
+                    '/test/path')
 
     self.assertFalse(os.path.exists('/test/path/dir/file1.zip'))
     self.assertFalse(os.path.exists('/test/path/dir/file2'))

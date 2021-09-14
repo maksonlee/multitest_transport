@@ -18,19 +18,22 @@ YAML config example:
   criteria:
   - type: LAST_MODIFIED_DAYS  # required
     params:  # optional
-      ttl_days: 7
+    - name: ttl_days
+      value: '7'
   - type: NAME_MATCH
     params:
-      pattern: 'zip'
+    - name: pattern
+      value: 'zip'
 """
 import os
 import re
 import time
 
-from typing import Any, Dict
+from multitest_transport.models import messages
+from multitest_transport.models import ndb_models
 
 DAY_IN_SECS = 24 * 60 * 60
-DEFAULT_TTL_DAYS = 7
+DEFAULT_TTL_DAYS = '7'
 DEFAULT_NAME_PATTERN = '.^'  # does not match anything
 
 
@@ -52,9 +55,9 @@ class Criterion(object):
 class LastModifiedDays(Criterion):
   """Whether the file exists more than ttl days."""
 
-  def __init__(self, ttl_days: int = DEFAULT_TTL_DAYS):
+  def __init__(self, ttl_days: str = DEFAULT_TTL_DAYS):
     super().__init__()
-    self.ttl_seconds = ttl_days * DAY_IN_SECS
+    self.ttl_seconds = int(ttl_days) * DAY_IN_SECS
 
   def Apply(self, path: str) -> bool:
     return time.time() - os.path.getmtime(path) > self.ttl_seconds
@@ -71,10 +74,13 @@ class NameMatch(Criterion):
     return bool(self.pattern.search(path))
 
 
-Criteria = {'LAST_MODIFIED_DAYS': LastModifiedDays, 'NAME_MATCH': NameMatch}
+Criteria = {
+    ndb_models.FileCleanerCriterionType.LAST_MODIFIED_DAYS: LastModifiedDays,
+    ndb_models.FileCleanerCriterionType.NAME_MATCH: NameMatch
+}
 
 
-def BuildCriterion(config: Dict[str, Any]) -> 'Criterion':
+def BuildCriterion(config: messages.FileCleanerCriterion) -> 'Criterion':
   """Factory function to build the Criterion according to the config.
 
   Args:
@@ -83,5 +89,5 @@ def BuildCriterion(config: Dict[str, Any]) -> 'Criterion':
   Returns:
     Criterion
   """
-  assert config['type'] in Criteria.keys()
-  return Criteria[config['type']](**config.get('params', {}))
+  return Criteria[config.type](
+      **messages.ConvertNameValuePairsToDict(config.params))

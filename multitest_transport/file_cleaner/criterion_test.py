@@ -15,8 +15,11 @@
 import time
 
 from absl.testing import absltest
-from multitest_transport.file_cleaner import criterion
 from pyfakefs import fake_filesystem_unittest
+
+from multitest_transport.file_cleaner import criterion
+from multitest_transport.models import ndb_models
+from multitest_transport.models import messages
 
 
 class CriterionTest(fake_filesystem_unittest.TestCase):
@@ -36,31 +39,29 @@ class CriterionTest(fake_filesystem_unittest.TestCase):
     self._createFileWithMtime('/test/file_1', 8)
     self._createFileWithMtime('/test/file_2', 10)
 
-    last_modified_days = criterion.BuildCriterion({
-        'type': 'LAST_MODIFIED_DAYS',
-        'params': {
-            'ttl_days': 9
-        }
-    })
+    last_modified_days = criterion.BuildCriterion(
+        messages.FileCleanerCriterion(
+            type=ndb_models.FileCleanerCriterionType.LAST_MODIFIED_DAYS,
+            params=[messages.NameValuePair(name='ttl_days', value='9')]))
 
     self.assertFalse(last_modified_days.Apply('/test/file_1'))
     self.assertTrue(last_modified_days.Apply('/test/file_2'))
 
   def testNameMatch(self):
     """Tests names can match given pattern."""
-    name_match = criterion.BuildCriterion({
-        'type': 'NAME_MATCH',
-        'params': {
-            'pattern': 'zip'
-        }
-    })
+    name_match = criterion.BuildCriterion(
+        messages.FileCleanerCriterion(
+            type=ndb_models.FileCleanerCriterionType.NAME_MATCH,
+            params=[messages.NameValuePair(name='pattern', value='zip')]))
     self.assertTrue(name_match.Apply('/test/path/file.zip'))
     self.assertFalse(name_match.Apply('/test/path/file.txt'))
     self.assertFalse(name_match.Apply(''))
 
   def testNameMatch_defaultPattern(self):
     """Tests no name can match default pattern."""
-    name_match = criterion.BuildCriterion({'type': 'NAME_MATCH'})
+    name_match = criterion.BuildCriterion(
+        messages.FileCleanerCriterion(
+            type=ndb_models.FileCleanerCriterionType.NAME_MATCH))
     self.assertFalse(name_match.Apply('file.txt'))
     self.assertFalse(name_match.Apply(''))
 

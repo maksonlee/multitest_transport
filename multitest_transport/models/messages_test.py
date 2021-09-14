@@ -156,6 +156,15 @@ class MessagesTest(testbed_dependent_test.TestbedDependentTest):
                                                    cache_url='cache')])
     self.assertIsNone(messages._GetTestRunStateInfo(obj))
 
+  def testConvertNameValuePairsToDict(self):
+    pairs = [
+        messages.NameValuePair(name='foo', value='FOO'),
+        messages.NameValuePair(name='bar', value='BAR')
+    ]
+    expected = {'foo': 'FOO', 'bar': 'BAR'}
+
+    self.assertEqual(expected, messages.ConvertNameValuePairsToDict(pairs))
+
 
 if __name__ == '__main__':
   absltest.main()

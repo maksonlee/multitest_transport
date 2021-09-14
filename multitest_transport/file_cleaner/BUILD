@@ -9,6 +9,10 @@ pytype_strict_library(
     name = "criterion_lib",
     srcs = ["criterion.py"],
     srcs_version = "PY3",
+    deps = [
+        "//multitest_transport/models:messages_lib",
+        "//multitest_transport/models:ndb_models_lib",
+    ],
 )
 
 py_test(
@@ -28,6 +32,8 @@ pytype_strict_library(
     srcs = ["operation.py"],
     srcs_version = "PY3",
     deps = [
+        "//multitest_transport/models:messages_lib",
+        "//multitest_transport/models:ndb_models_lib",
         "//multitest_transport/util:file_util_lib",
     ],
 )
@@ -52,6 +58,8 @@ pytype_strict_library(
     deps = [
         ":criterion_lib",
         ":operation_lib",
+        "//multitest_transport/models:messages_lib",
+        "//multitest_transport/models:ndb_models_lib",
     ],
 )
 

@@ -205,6 +205,14 @@ def ConvertNameValuePairs(pairs, to_cls):
   return list(d.values())
 
 
+def ConvertNameValuePairsToDict(pairs):
+  """Convert message or NDB model name-value(s) pairs to dict."""
+  d = collections.OrderedDict()
+  for pair in pairs:
+    d[pair.name] = pair.value
+  return d
+
+
 class FileSegment(messages.Message):
   """Partial file content."""
   offset = messages.IntegerField(1)

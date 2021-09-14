@@ -25,23 +25,24 @@ YAML config example:
     - ...
 """
 import os
-from typing import Any, Dict
 
 from multitest_transport.file_cleaner import criterion
 from multitest_transport.file_cleaner import operation
+from multitest_transport.models import messages
+from multitest_transport.models import ndb_models
 
 
 class Policy(object):
   """Cleanup policies."""
 
-  def __init__(self, config: Dict[str, Any]):
-    self.name = config['name']
-    self.target = config.get('target')
+  def __init__(self, config: messages.FileCleanerPolicy):
+    self.name = config.name
+    self.target = config.target
     self.criteria = [
         criterion.BuildCriterion(criterion_config)
-        for criterion_config in config.get('criteria', [])
+        for criterion_config in config.criteria
     ]
-    self.operation = operation.BuildOperation(config['operation'])
+    self.operation = operation.BuildOperation(config.operation)
 
   def _ApplyToTarget(self, path: str):
     if all([item.Apply(path) for item in self.criteria]):
@@ -57,9 +58,10 @@ class Policy(object):
       return
 
     for root, dirs, files in os.walk(path):
-      targets = dirs if self.target == 'DIRECTORY' else files
+      targets = dirs if (
+          self.target == ndb_models.FileCleanerTargetType.DIRECTORY) else files
       for name in targets:
         target_path = os.path.join(root, name)
         self._ApplyToTarget(target_path)
-      if self.target == 'DIRECTORY':
+      if self.target == ndb_models.FileCleanerTargetType.DIRECTORY:
         break

@@ -18,14 +18,17 @@ YAML config example:
   operation:
     type: ARCHIVE  # required
     params:  # optional
-      remove_file: True
+      name: remove_file
+      value: True
 
   operation:
     type: DELETE
 """
+import distutils.util
 import pathlib
-from typing import Any, Dict
 
+from multitest_transport.models import messages
+from multitest_transport.models import ndb_models
 from multitest_transport.util import file_util
 
 
@@ -44,9 +47,9 @@ class Operation(object):
 class Archive(Operation):
   """Archive operation."""
 
-  def __init__(self, remove_file: bool = True):
+  def __init__(self, remove_file: str = 'True'):
     super().__init__()
-    self.remove_file = remove_file
+    self.remove_file = distutils.util.strtobool(remove_file)
 
   def Apply(self, path: str):
     file_handle = file_util.FileHandle.Get(pathlib.Path(path).as_uri())
@@ -66,10 +69,13 @@ class Delete(Operation):
         file_handle.DeleteDir()
 
 
-Operations = {'ARCHIVE': Archive, 'DELETE': Delete}
+Operations = {
+    ndb_models.FileCleanerOperationType.ARCHIVE: Archive,
+    ndb_models.FileCleanerOperationType.DELETE: Delete
+}
 
 
-def BuildOperation(config: Dict[str, Any]) -> 'Operation':
+def BuildOperation(config: messages.FileCleanerOperation) -> 'Operation':
   """Factory function to build the Operation according to the config.
 
   Args:
@@ -78,5 +84,5 @@ def BuildOperation(config: Dict[str, Any]) -> 'Operation':
   Returns:
     Operation
   """
-  assert config['type'] in Operations.keys()
-  return Operations[config['type']](**config.get('params', {}))
+  return Operations[config.type](
+      **messages.ConvertNameValuePairsToDict(config.params))
