@@ -398,7 +398,7 @@ tests:
     test_resource_type: TEST_PACKAGE
     decompress: true
     mount_zip: true
-  command: cts --enable-token-sharding
+  command: cts --enable-token-sharding --max-testcase-run-count 2 --retry-strategy RETRY_ANY_FAILURE
   env_vars:
   - name: JAVA_HOME
     value: ${TF_WORK_DIR}/android-cts/jdk
