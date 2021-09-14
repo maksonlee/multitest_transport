@@ -25,6 +25,7 @@ py_library(
     deps = [
         ":cli_util_lib",
         ":command_util_lib",
+        ":google_auth_util_lib",
         ":host_util_lib",
         third_party("packaging"),
         third_party("six"),
@@ -212,6 +213,7 @@ py_test(
         ":cli_util_lib",
         ":command_util_lib",
         ":common",
+        ":google_auth_util_lib",
         ":unittest_util_lib",
         "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",

@@ -27,6 +27,7 @@ from multitest_transport.cli import command_util
 from multitest_transport.cli import common
 from multitest_transport.cli import cli
 from multitest_transport.cli import cli_util
+from multitest_transport.cli import google_auth_util
 from multitest_transport.cli import unittest_util
 
 _DOCKER_VERSION_STRING = 'Docker version 18.06.1-ce'
@@ -108,6 +109,7 @@ class CliTest(parameterized.TestCase):
     except RuntimeError:
       # ignore if mock_tf_console_started_patcher already stoped in the test
       pass
+    shutil.rmtree(self.tmp_root)
     super(CliTest, self).tearDown()
 
   def testGetDockerImageName(self):
@@ -150,6 +152,8 @@ class CliTest(parameterized.TestCase):
                   enable_ui_update=False,
                   operation_mode=None,
                   max_local_virtual_devices=None,
+                  secret_project_id=None,
+                  service_account_key_secret_id=None,
                   ):
 
     host = cli.host_util.Host(
@@ -169,7 +173,9 @@ class CliTest(parameterized.TestCase):
             service_account_json_key_path=service_account_json_key_path,
             extra_docker_args=list(extra_docker_args),
             operation_mode=operation_mode,
-            max_local_virtual_devices=max_local_virtual_devices))
+            max_local_virtual_devices=max_local_virtual_devices,
+            secret_project_id=secret_project_id,
+            service_account_key_secret_id=service_account_key_secret_id))
     host.context = self.mock_context
     return host
 
@@ -1828,6 +1834,92 @@ class CliTest(parameterized.TestCase):
     cli._RunDaemonIteration(args, host)
     mtt_update.assert_not_called()
 
+  @mock.patch.object(cli, '_UpdateMttNode')
+  @mock.patch.object(google_auth_util, 'CreateCredentialFromServiceAccount')
+  @mock.patch.object(google_auth_util, 'GetSecret')
+  def testRunDaemonIteration_withServiceAccountSecret(
+      self, get_secret, create_credential, mtt_update):
+    mock_cred = mock.MagicMock()
+    create_credential.return_value = mock_cred
+    get_secret.return_value = b'{"private_key_id": "id2"}'
+    local_key_path = os.path.join(self.tmp_root, 'key.json')
+    with open(local_key_path, 'w') as f:
+      f.write('{"private_key_id": "id1"}')
+
+    args = self.arg_parser.parse_args(['daemon'])
+    host = self._CreateHost(
+        secret_project_id='aproject',
+        service_account_key_secret_id='asecret',
+        service_account_json_key_path=local_key_path)
+    cli._RunDaemonIteration(args, host)
+    mtt_update.assert_not_called()
+    create_credential.assert_called_once_with(
+        local_key_path, [google_auth_util.AUTH_SCOPE])
+    get_secret.assert_called_once_with(
+        'aproject', 'asecret', credentials=mock_cred)
+    with open(local_key_path) as f:
+      new_key = f.read()
+    self.assertEqual('{"private_key_id": "id2"}', new_key)
+
+  @mock.patch.object(google_auth_util, 'CreateCredentialFromServiceAccount')
+  @mock.patch.object(google_auth_util, 'GetSecret')
+  def testUpdateServiceAccountKeyFile(self, get_secret, create_credential):
+    mock_cred = mock.MagicMock()
+    create_credential.return_value = mock_cred
+    get_secret.return_value = b'{"private_key_id": "id2"}'
+    local_key_path = os.path.join(self.tmp_root, 'key.json')
+    with open(local_key_path, 'w') as f:
+      f.write('{"private_key_id": "id1"}')
+
+    cli._UpdateServiceAccountKeyFile('aproject', 'asecret', local_key_path)
+    create_credential.assert_called_once_with(
+        local_key_path, [google_auth_util.AUTH_SCOPE])
+    get_secret.assert_called_once_with(
+        'aproject', 'asecret', credentials=mock_cred)
+    with open(local_key_path) as f:
+      new_key = f.read()
+    self.assertEqual('{"private_key_id": "id2"}', new_key)
+
+  @mock.patch.object(google_auth_util, 'CreateCredentialFromServiceAccount')
+  @mock.patch.object(google_auth_util, 'GetSecret')
+  def testUpdateServiceAccountKeyFile_localSameAsRemote(
+      self, get_secret, create_credential):
+    mock_cred = mock.MagicMock()
+    create_credential.return_value = mock_cred
+    get_secret.return_value = b'{"private_key_id": "id1"}'
+    local_key_path = os.path.join(self.tmp_root, 'key.json')
+    with open(local_key_path, 'w') as f:
+      f.write('{"private_key_id": "id1"}')
+
+    cli._UpdateServiceAccountKeyFile('aproject', 'asecret', local_key_path)
+    create_credential.assert_called_once_with(
+        local_key_path, [google_auth_util.AUTH_SCOPE])
+    get_secret.assert_called_once_with(
+        'aproject', 'asecret', credentials=mock_cred)
+    with open(local_key_path) as f:
+      new_key = f.read()
+    self.assertEqual('{"private_key_id": "id1"}', new_key)
+
+  @mock.patch.object(google_auth_util, 'CreateCredentialFromServiceAccount')
+  @mock.patch.object(google_auth_util, 'GetSecret')
+  def testUpdateServiceAccountKeyFile_exception(
+      self, get_secret, create_credential):
+    mock_cred = mock.MagicMock()
+    create_credential.return_value = mock_cred
+    get_secret.side_effect = [Exception('fail to get secret')]
+    local_key_path = os.path.join(self.tmp_root, 'key.json')
+    with open(local_key_path, 'w') as f:
+      f.write('{"private_key_id": "id1"}')
+
+    cli._UpdateServiceAccountKeyFile('aproject', 'asecret', local_key_path)
+    create_credential.assert_called_once_with(
+        local_key_path, [google_auth_util.AUTH_SCOPE])
+    get_secret.assert_called_once_with(
+        'aproject', 'asecret', credentials=mock_cred)
+    with open(local_key_path) as f:
+      new_key = f.read()
+    self.assertEqual('{"private_key_id": "id1"}', new_key)
+
 
 _ALL_START_OPTIONS = (
     ('force_update', True),
@@ -1854,7 +1946,7 @@ class CliParserTest(parameterized.TestCase):
   """Unit tests for cli."""
 
   def setUp(self):
-    super(CliParserTest, self).setUp()
+    super().setUp()
     self.arg_parser = cli.CreateParser()
 
   def _CreateCommandLine(self, prefix_args, options, suffix_args):

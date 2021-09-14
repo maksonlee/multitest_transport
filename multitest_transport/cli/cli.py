@@ -18,6 +18,7 @@ This tool is supposed to be bootstrapped by 'mtt' script and expects the current
 working directory to be the root of MTT package.
 """
 import argparse
+import json
 import logging
 import os
 import os.path
@@ -35,6 +36,7 @@ import six
 
 from multitest_transport.cli import cli_util
 from multitest_transport.cli import command_util
+from multitest_transport.cli import google_auth_util
 from multitest_transport.cli import host_util
 from tradefed_cluster.configs import lab_config_pb2
 
@@ -88,6 +90,8 @@ _TF_CONSOLE_SUCCESS_INDICATOR = 'help all'
 _DOCKER_LOGS_MTT_COMMAND = ['logs', 'mtt']
 # interval in second for checking out the logs
 _LOG_INQUIRE_INTERVAL_SEC = 5
+
+_PRIVATE_KEY_ID_KEY = 'private_key_id'
 
 PACKAGE_LOGGER_NAME = 'multitest_transport.cli'
 logger = logging.getLogger(__name__)
@@ -922,6 +926,13 @@ def _RunDaemonIteration(args, host=None):
         os.execv(new_path, [new_path] + sys.argv[1:])
     except Exception as e:        logger.warning('Failed to check/update tool: %s', e)
   host = host or host_util.CreateHost(args)
+  if (host.config.secret_project_id and
+      host.config.service_account_key_secret_id and
+      host.config.service_account_json_key_path):
+    _UpdateServiceAccountKeyFile(
+        host.config.secret_project_id,
+        host.config.service_account_key_secret_id,
+        host.config.service_account_json_key_path)
   if host.config.enable_autoupdate:
     logger.debug('Auto-update enabled.')
     _UpdateMttNode(args, host)
@@ -1047,6 +1058,37 @@ def _CreateLabConfigArgParser():
       'lab_config_path', metavar='lab_config_path', type=str, nargs='?',
       help='Lab config path to use.')
   return parser
+
+
+def _UpdateServiceAccountKeyFile(
+    secret_project_id, secret_id, local_service_account_key_path):
+  """Update local service account key path."""
+  try:
+    with open(local_service_account_key_path) as f:
+      local_service_account_key = f.read()
+    local_sa_key_dict = json.loads(local_service_account_key)
+    # Only read secret when local is old.
+    credentials = google_auth_util.CreateCredentialFromServiceAccount(
+        local_service_account_key_path, [google_auth_util.AUTH_SCOPE])
+    service_account_key = google_auth_util.GetSecret(
+        secret_project_id, secret_id, credentials=credentials)
+    sa_key_dict = json.loads(service_account_key)
+    if (local_sa_key_dict.get(_PRIVATE_KEY_ID_KEY) ==
+        sa_key_dict.get(_PRIVATE_KEY_ID_KEY)):
+      logger.debug('Local service account key is the same as remote.')
+      return False
+    logger.debug(
+        'Local service account key %s is different from remote %s. Updating %s',
+        local_sa_key_dict.get(_PRIVATE_KEY_ID_KEY),
+        sa_key_dict.get(_PRIVATE_KEY_ID_KEY),
+        local_service_account_key_path)
+    with open(local_service_account_key_path, 'w') as f:
+      f.write(service_account_key.decode())
+    return True
+  except Exception:      logger.exception(
+        'Fail to update service account key %s.',
+        local_service_account_key_path)
+    return False
 
 
 def CreateParser():
