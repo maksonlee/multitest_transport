@@ -25,6 +25,7 @@ flags.DEFINE_string('mtt_path', None, 'Path of MTT CLI binary.')
 flags.mark_flag_as_required('mtt_path')
 flags.DEFINE_string('docker_image', None, 'MTT docker image to use.')
 flags.mark_flag_as_required('docker_image')
+flags.DEFINE_string('mtt_lab_path', None, 'Path of MTT Lab CLI binary.')
 
 RUNNING = 'running'
 PROD_DOCKER_IMAGE = 'gcr.io/android-mtt/mtt:prod'
@@ -125,6 +126,15 @@ class CliIntegrationTest(absltest.TestCase):
     self._Update(image=PROD_DOCKER_IMAGE)
     self.assertEqual(RUNNING, self._GetStatus())
     self.assertEqual(container_id, self._GetContainerId())
+
+  def testVersion_labCli(self):
+    if not FLAGS.mtt_lab_path:
+      logging.debug('No mtt lab cli path setup.')
+      return
+    cmd = [FLAGS.mtt_lab_path, '--no_check_update', 'version']
+    outs, _ = _RunCmd(cmd)
+    six.assertRegex(self, outs, r'Version: .*')
+
 
 if __name__ == '__main__':
   logging.basicConfig(level=logging.DEBUG)
