@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """A test kicker module."""
+import collections
 import json
 import logging
 import os
@@ -446,18 +447,14 @@ def _CreateTFCRequest(test_run_id):
          'retry_extra_args: %s'),
         test_run_id, retry_command_line)
 
-  # Prepare TFC request parameters
-  run_target = test_run.test_run_config.run_target
-  if test_run.test_run_config.device_specs:
-    run_target = _DeviceSpecsToTFCRunTarget(
-        test_run.test_run_config.device_specs)
-
   # Buid command infos
   command_infos = []
   max_concurrent_tasks = None
   sharding_mode = (
       test_run.test_run_config.sharding_mode or ndb_models.ShardingMode.RUNNER)
   if sharding_mode == ndb_models.ShardingMode.RUNNER:
+    test_bench = _DeviceSpecsToTFCTestBench(
+        test_run.test_run_config.cluster, test_run.test_run_config.device_specs)
     if (test_run.test_run_config.shard_count > 1 and
         test_run.test.runner_sharding_args):
       tmpl = string.Template(test_run.test.runner_sharding_args)
@@ -477,14 +474,19 @@ def _CreateTFCRequest(test_run_id):
     command_infos.append(
         api_messages.CommandInfo(
             command_line=command_line,
-            cluster=test_run.test_run_config.cluster,
-            run_target=run_target,
+            test_bench=test_bench,
             run_count=test_run.test_run_config.run_count,
             shard_count=1,
             allow_partial_device_match=(
-                test_run.test_run_config.allow_partial_device_match)
-            ))
+                test_run.test_run_config.allow_partial_device_match)))
   elif sharding_mode == ndb_models.ShardingMode.MODULE:
+    # Each command in MODULE sharding mode should target one device.
+    # Combine if there are multiple device specs e.g.
+    # ['device_serial:A', 'device_serial:B']
+    #     -> ['device_serial:A device_serial:B']
+    device_specs = [' '.join(test_run.test_run_config.device_specs)]
+    test_bench = _DeviceSpecsToTFCTestBench(
+        test_run.test_run_config.cluster, device_specs)
     test_package_urls = [
         r.cache_url
         for r in test_run.test_resources
@@ -499,13 +501,11 @@ def _CreateTFCRequest(test_run_id):
       command_info = api_messages.CommandInfo(
           name=info.name,
           command_line=' '.join([command_line, module_args]),
-          cluster=test_run.test_run_config.cluster,
-          run_target=run_target,
+          test_bench=test_bench,
           run_count=test_run.test_run_config.run_count,
           shard_count=1,
           allow_partial_device_match=(
-              test_run.test_run_config.allow_partial_device_match)
-          )
+              test_run.test_run_config.allow_partial_device_match))
       # Give a priority to CtsDeqpTestCases since it takes the longest time.
       if info.name == 'CtsDeqpTestCases':
         command_infos.insert(0, command_info)
@@ -602,18 +602,33 @@ def _CreateTFCRequest(test_run_id):
   test_run.put()
 
 
-def _DeviceSpecsToTFCRunTarget(device_specs):
-  """Convert device specs to TFC run target format."""
-  groups = []
+def _DeviceSpecsToTFCTestBench(
+    cluster, device_specs) -> api_messages.TestBenchRequirement:
+  """Convert device specs to TFC test bench."""
+  run_targets = []
   for spec in device_specs:
-    attrs = []
+    attr_map = collections.defaultdict(list)
     for match in re.finditer(r'([^\s:]+):(\S+)', spec):
       key = match.group(1)
       value = match.group(2)
-      attrs.append({'name': key, 'value': value})
-    groups.append({'run_targets': [{'name': '*', 'device_attributes': attrs}]})
-  obj = {'host': {'groups': groups}}
-  return json.dumps(obj)
+      attr_map[key].append(value)
+    attrs = []
+    for name, values in attr_map.items():
+      if len(values) == 1:
+        attr = api_messages.DeviceAttributeRequirement(
+            name=name, value=values[0])
+      else:
+        attr = api_messages.DeviceAttributeRequirement(
+            name=name, value=','.join(values), operator='IN')
+      attrs.append(attr)
+    run_targets.append(
+        api_messages.RunTargetRequirement(name='*', device_attributes=attrs))
+  groups = [
+      api_messages.GroupRequirement(run_targets=[run_target])
+      for run_target in run_targets
+  ]
+  return api_messages.TestBenchRequirement(
+      cluster=cluster, host=api_messages.HostRequirement(groups=groups))
 
 
 def _GetTradefedConfigObjects(test_run):

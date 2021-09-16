@@ -138,6 +138,7 @@ def _ProcessRequestEvent(test_run_id, message):
     return
 
   # Update test run information
+  test_run.last_tfc_event_time = message.event_time
   test_run.update_time = message.event_time
   if not test_run.IsFinal():
     test_run.state = TEST_RUN_STATE_MAP.get(
@@ -173,6 +174,7 @@ def _ProcessCommandAttemptEvent(test_run_id, message):
 
   # Update test run information
   attempt = message.attempt
+  test_run.last_tfc_event_time = message.event_time
   test_run.update_time = message.event_time
   test_run.test_devices = _GetTestDeviceInfos(attempt.device_serials)
   test_run.put()
@@ -352,7 +354,8 @@ def _GetTestRunToUpdate(request_id, message):
     return None
 
   test_run = test_run_key.get(use_cache=False, use_memcache=False)
-  if message.event_time < test_run.update_time:
+  if (test_run.last_tfc_event_time and
+      message.event_time < test_run.last_tfc_event_time):
     logging.warning(
         'Event timestamp too old (%s < %s); skipping message: %s',
         message.event_time, test_run.update_time, message)

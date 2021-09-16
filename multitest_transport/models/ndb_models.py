@@ -596,6 +596,7 @@ class TestRun(ndb.Model):
     hook_data: additional data used by hooks
     cancel_reason: cancellation reason
     error_reason: error reason
+    last_tfc_event_time: the last received TFC event time.
   """
   prev_test_run_key = ndb.KeyProperty(kind='TestRun')
   user = ndb.StringProperty()
@@ -630,6 +631,7 @@ class TestRun(ndb.Model):
 
   cancel_reason = ndb.EnumProperty(common.CancelReason)
   error_reason = ndb.StringProperty()
+  last_tfc_event_time = ndb.DateTimeProperty()
 
   @classmethod
   def get_by_id(cls, id_, **kwargs):

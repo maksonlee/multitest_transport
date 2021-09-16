@@ -62,7 +62,8 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
       command='command',
       retry_command_line=None,
       runner_sharding_args=None,
-      run_target='run_target',
+      cluster='cluster',
+      device_specs=None,
       shard_count=1,
       sharding_mode=ndb_models.ShardingMode.RUNNER,
       edited_command=None,
@@ -79,7 +80,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
         module_execution_args=module_execution_args)
     test.put()
     test_run_config = ndb_models.TestRunConfig(
-        test_key=test.key, cluster='cluster', run_target=run_target,
+        test_key=test.key, cluster=cluster, device_specs=device_specs or [],
         shard_count=shard_count, sharding_mode=sharding_mode,
         command=edited_command,
         allow_partial_device_match=allow_partial_device_match)
@@ -141,66 +142,68 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
             ])
     ])
 
-  def testDeviceSpecsToTFCRunTarget(self):
+  def testDeviceSpecsToTFCTestBench(self):
     self.assertEqual(
-        test_kicker._DeviceSpecsToTFCRunTarget(['product:taimen']),
-        json.dumps(
-            {
-                'host': {
-                    'groups': [
-                        {
-                            'run_targets': [
-                                {
-                                    'name': '*',
-                                    'device_attributes': [
-                                        {
-                                            'name': 'product',
-                                            'value': 'taimen'
-                                        },
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                }
-            }))
-
+        test_kicker._DeviceSpecsToTFCTestBench('cluster', ['product:taimen']),
+        api_messages.TestBenchRequirement(
+            cluster='cluster',
+            host=api_messages.HostRequirement(
+                groups=[
+                    api_messages.GroupRequirement(
+                        run_targets=[
+                            api_messages.RunTargetRequirement(
+                                name='*',
+                                device_attributes=[
+                                    api_messages.DeviceAttributeRequirement(
+                                        name='product', value='taimen')
+                                ])
+                        ])
+                ])))
     self.assertEqual(
-        test_kicker._DeviceSpecsToTFCRunTarget(
-            ['device_serial:A', 'device_serial:B']),
-        json.dumps(
-            {
-                'host': {
-                    'groups': [
-                        {
-                            'run_targets': [
-                                {
-                                    'name': '*',
-                                    'device_attributes': [
-                                        {
-                                            'name': 'device_serial',
-                                            'value': 'A'
-                                        },
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            'run_targets': [
-                                {
-                                    'name': '*',
-                                    'device_attributes': [
-                                        {
-                                            'name': 'device_serial',
-                                            'value': 'B'
-                                        },
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                }
-            }))
+        test_kicker._DeviceSpecsToTFCTestBench(
+            'cluster', ['device_serial:A', 'device_serial:B']),
+        api_messages.TestBenchRequirement(
+            cluster='cluster',
+            host=api_messages.HostRequirement(
+                groups=[
+                    api_messages.GroupRequirement(
+                        run_targets=[
+                            api_messages.RunTargetRequirement(
+                                name='*',
+                                device_attributes=[
+                                    api_messages.DeviceAttributeRequirement(
+                                        name='device_serial', value='A')
+                                ])
+                        ]),
+                    api_messages.GroupRequirement(
+                        run_targets=[
+                            api_messages.RunTargetRequirement(
+                                name='*',
+                                device_attributes=[
+                                    api_messages.DeviceAttributeRequirement(
+                                        name='device_serial', value='B')
+                                ])
+                        ])
+                ])))
+    self.assertEqual(
+        test_kicker._DeviceSpecsToTFCTestBench(
+            'cluster', ['device_serial:A device_serial:B']),
+        api_messages.TestBenchRequirement(
+            cluster='cluster',
+            host=api_messages.HostRequirement(
+                groups=[
+                    api_messages.GroupRequirement(
+                        run_targets=[
+                            api_messages.RunTargetRequirement(
+                                name='*',
+                                device_attributes=[
+                                    api_messages.DeviceAttributeRequirement(
+                                        name='device_serial',
+                                        value='A,B',
+                                        operator='IN')
+                                ])
+                        ]),
+                ])))
 
   @mock.patch.object(build, 'FindTestResources', autospec=True)
   def testCreateTestRun(self, mock_find_resources):
@@ -500,7 +503,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                               test_resource_urls,
                               command_lines,
                               retry_command_line=None,
-                              run_target=None,
+                              test_bench=None,
                               shard_count=None,
                               max_concurrent_tasks=None):
     """Compare a new request message to its associated test run."""
@@ -508,18 +511,10 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     test_run_config = test_run.test_run_config
     # compare general options
     self.assertEqual(api_messages.RequestType.MANAGED, msg.type)
-    expected_run_target = run_target
-    if not expected_run_target:
-      if test_run_config.device_specs:
-        expected_run_target = test_kicker._DeviceSpecsToTFCRunTarget(
-            test_run_config.device_specs)
-      else:
-        expected_run_target = test_run_config.run_target
     expected_shard_count = shard_count or test_run_config.shard_count
     for command_line, info in zip(command_lines, msg.command_infos):
       self.assertEqual(command_line, info.command_line)
-      self.assertEqual(test_run_config.cluster, info.cluster)
-      self.assertEqual(expected_run_target, info.run_target)
+      self.assertEqual(test_bench, info.test_bench)
       self.assertEqual(test_run_config.run_count, info.run_count)
       self.assertEqual(expected_shard_count, info.shard_count)
     self.assertEqual(
@@ -597,7 +592,9 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                 'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
         },
-        command_lines=['command --invocation-data mtt=1'])
+        command_lines=['command --invocation-data mtt=1'],
+        test_bench=api_messages.TestBenchRequirement(
+            cluster='cluster', host=api_messages.HostRequirement()))
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
@@ -613,7 +610,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     test_run_id = self._CreateMockTestRun(
         command='command',
         runner_sharding_args='--shard-count ${TF_SHARD_COUNT}',
-        run_target='run_target;run_target',
+        device_specs=['name:value'],
         shard_count=2,
         sharding_mode=ndb_models.ShardingMode.RUNNER).key.id()
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
@@ -644,7 +641,9 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                 .format(test_run_id)
         },
         command_lines=['command --shard-count 2 --invocation-data mtt=1'],
-        run_target='run_target;run_target',
+        test_bench=test_kicker._DeviceSpecsToTFCTestBench(
+            test_run.test_run_config.cluster,
+            test_run.test_run_config.device_specs),
         shard_count=1)
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
@@ -662,7 +661,8 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
       mock_new_request):
     test_run = self._CreateMockTestRun(
         command='command',
-        run_target='run_target',
+        cluster='cluster',
+        device_specs=['name:value1', 'name:value2'],
         shard_count=6,
         sharding_mode=ndb_models.ShardingMode.MODULE,
         module_config_pattern='path/to/.*\\.config',
@@ -713,7 +713,8 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
             'command -m CtsBarTestCases --invocation-data mtt=1',
             'command -m CtsFooTestCases --invocation-data mtt=1',
         ],
-        run_target='run_target',
+        test_bench=test_kicker._DeviceSpecsToTFCTestBench(
+            test_run.test_run_config.cluster, ['name:value1 name:value2']),
         shard_count=1,
         max_concurrent_tasks=6)
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
@@ -727,7 +728,8 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     test_run_id = self._CreateMockTestRun(
         command='command',
         runner_sharding_args='--shard-count ${TF_SHARD_COUNT}',
-        run_target='run_target;run_target',
+        cluster='cluster',
+        device_specs=['name:value'],
         shard_count=2,
         sharding_mode=ndb_models.ShardingMode.RUNNER,
         allow_partial_device_match=True).key.id()
@@ -760,7 +762,9 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
         },
         command_lines=[
             'command --shard-count ${TF_DEVICE_COUNT} --invocation-data mtt=1'],
-        run_target='run_target;run_target',
+        test_bench=test_kicker._DeviceSpecsToTFCTestBench(
+            test_run.test_run_config.cluster,
+            test_run.test_run_config.device_specs),
         shard_count=1)
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
@@ -800,6 +804,9 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                 .format(test_run_id)
         },
         command_lines=['edited command --invocation-data mtt=1'],
+        test_bench=test_kicker._DeviceSpecsToTFCTestBench(
+            test_run.test_run_config.cluster,
+            test_run.test_run_config.device_specs),
         shard_count=1)
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
@@ -850,6 +857,9 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
         command_lines=['command --shard-count 6 --invocation-data mtt=1'],
         retry_command_line=(
             'retry_command_line --shard-count 6 --invocation-data mtt=1'),
+        test_bench=test_kicker._DeviceSpecsToTFCTestBench(
+            test_run.test_run_config.cluster,
+            test_run.test_run_config.device_specs),
         shard_count=1)
     # prev_test_context's command_line should be replaced.
     self.assertEqual(
@@ -913,7 +923,10 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                 'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
         },
-        command_lines=['command --invocation-data mtt=1'])
+        command_lines=['command --invocation-data mtt=1'],
+        test_bench=test_kicker._DeviceSpecsToTFCTestBench(
+            test_run.test_run_config.cluster,
+            test_run.test_run_config.device_specs))
 
     # TFC request has two TF result reporters with right class names and options
     tradefed_config_objects = msg.test_environment.tradefed_config_objects
@@ -980,7 +993,10 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
                 'http://test.hostname.com:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
         },
-        command_lines=['command --invocation-data mtt=1'])
+        command_lines=['command --invocation-data mtt=1'],
+        test_bench=test_kicker._DeviceSpecsToTFCTestBench(
+            test_run.test_run_config.cluster,
+            test_run.test_run_config.device_specs))
     self.assertEqual([
         api_messages.TestResource(
             name='bar', url='http://test.hostname.com:8006/file/root/path')

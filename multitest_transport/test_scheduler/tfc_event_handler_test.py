@@ -89,6 +89,8 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
   def testProcessRequestEvent_skipOldEvent(self, mock_after_test):
     # state changed one hour BEFORE last update
+    self.mock_test_run.last_tfc_event_time = datetime.datetime.utcnow()
+    self.mock_test_run.put()
     mock_event = self.CreateMockRequestEvent(
         datetime.timedelta(hours=-1), state=api_messages.RequestState.RUNNING)
 
@@ -162,6 +164,8 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
   @mock.patch.object(tfc_client, 'GetDeviceInfo')
   def testProcessCommandAttemptEvent_skipOldEvent(self, mock_get_device):
     # attempt changed one hour BEFORE last update
+    self.mock_test_run.last_tfc_event_time = datetime.datetime.utcnow()
+    self.mock_test_run.put()
     mock_event = self.CreateMockCommandAttemptEvent(
         datetime.timedelta(hours=-1), serials=['SERIAL'])
 
