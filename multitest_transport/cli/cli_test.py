@@ -154,6 +154,7 @@ class CliTest(parameterized.TestCase):
                   max_local_virtual_devices=None,
                   secret_project_id=None,
                   service_account_key_secret_id=None,
+                  max_concurrent_update_percentage=None,
                   ):
 
     host = cli.host_util.Host(
@@ -175,7 +176,8 @@ class CliTest(parameterized.TestCase):
             operation_mode=operation_mode,
             max_local_virtual_devices=max_local_virtual_devices,
             secret_project_id=secret_project_id,
-            service_account_key_secret_id=service_account_key_secret_id))
+            service_account_key_secret_id=service_account_key_secret_id,
+            max_concurrent_update_percentage=max_concurrent_update_percentage))
     host.context = self.mock_context
     return host
 
@@ -1605,6 +1607,47 @@ class CliTest(parameterized.TestCase):
     update_mtt.assert_not_called()
     (self.mock_control_server_client.PatchTestHarnessImageToHostMetadata
      .assert_called_with(host.config.hostname, host.config.docker_image))
+
+  @mock.patch.object(cli, '_StartMttNode')
+  @mock.patch.object(cli, '_StopMttNode')
+  @mock.patch.object(cli, '_PullUpdate')
+  def testUpdateMttNode_blockedByClusterConcurrencyLimit(
+      self, mock_pull_update, mock_stop, mock_start):
+    """Test Update MTT Node but temporarily blocked by concurrency limit."""
+    args = self.arg_parser.parse_args(['update'])
+    host = self._CreateHost(
+        enable_ui_update=True, max_concurrent_update_percentage=10)
+    host.metadata = {
+        cli._TEST_HARNESS_IMAGE_KEY: 'repo/image_1:tag_1',
+        cli._ALLOW_TO_UPDATE_KEY: False,
+    }
+
+    cli._UpdateMttNode(args, host)
+
+    mock_pull_update.assert_not_called()
+    mock_stop.assert_not_called()
+    mock_start.assert_not_called()
+
+  @mock.patch.object(cli, '_StartMttNode')
+  @mock.patch.object(cli, '_StopMttNode')
+  @mock.patch.object(cli, '_PullUpdate')
+  def testUpdateMttNode_allowedByClusterConcurrencyLimit(
+      self, mock_pull_update, mock_stop, mock_start):
+    """Test Update MTT Node and allowed by concurrency limit."""
+    mock_pull_update.return_value = True
+    args = self.arg_parser.parse_args(['update'])
+    host = self._CreateHost(
+        enable_autoupdate=True, max_concurrent_update_percentage=10)
+    host.metadata = {
+        cli._TEST_HARNESS_IMAGE_KEY: 'repo/image_1:tag_1',
+        cli._ALLOW_TO_UPDATE_KEY: True,
+    }
+
+    cli._UpdateMttNode(args, host)
+
+    mock_pull_update.assert_called_once()
+    mock_stop.assert_called_once()
+    mock_start.assert_called_once()
 
   def testPullUpdate_forceUpdate(self):
     """Test PullUpdate with force_update."""

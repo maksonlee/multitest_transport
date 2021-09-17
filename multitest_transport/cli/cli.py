@@ -81,6 +81,8 @@ _SHORT_CONTAINER_SHUTDOWN_TIMEOUT_SEC = 10 * 60
 _DETECT_INTERVAL_SEC = 30
 # The dict key name of test harness image from host metadata
 _TEST_HARNESS_IMAGE_KEY = 'testHarnessImage'
+# The dict key name of "allow_to_update" from host metadata
+_ALLOW_TO_UPDATE_KEY = 'allowToUpdate'
 
 # Success indicator once tradefed console started, should match to the println
 # string in startConsole() method after console.start();
@@ -859,6 +861,15 @@ def _UpdateMttNode(args, host):
     args: a parsed argparse.Namespace object.
     host: an instance of host_util.Host.
   """
+  if host.config.enable_ui_update or host.config.enable_autoupdate:
+    if (host.config.max_concurrent_update_percentage and
+        not host.metadata.get(_ALLOW_TO_UPDATE_KEY, False)):
+      logger.info(
+          'Pending to start update until getting sign-off from control server, '
+          'because max_concurrent_update_percentage was '
+          'limited to %d%% in the physical cluster.',
+          host.config.max_concurrent_update_percentage)
+      return
   if not _PullUpdate(args, host):
     return
   logger.info('Restarting %s.', args.name)
@@ -939,10 +950,10 @@ def _RunDaemonIteration(args, host=None):
     return
   if host.config.enable_ui_update:
     logger.debug('Update from UI enabled.')
-    metadata = host.control_server_client.GetHostMetadata(
+    host.metadata = host.control_server_client.GetHostMetadata(
         host.config.hostname)
-    test_harness_image = metadata.get(_TEST_HARNESS_IMAGE_KEY)
-    logger.debug('Found metadata: %s.', metadata)
+    test_harness_image = host.metadata.get(_TEST_HARNESS_IMAGE_KEY)
+    logger.debug('Refreshed host metadata: %s.', host.metadata)
     if test_harness_image:
       logger.debug('Pinned to image: %s.', test_harness_image)
       host.config = host.config.SetDockerImage(test_harness_image)

@@ -80,7 +80,8 @@ class Host(object):
       host_config,
       ssh_config=None,
       sudo_ssh_config=None,
-      context=None):
+      context=None,
+      metadata=None):
     self._config = host_config
     self._context = context
     self._ssh_config = ssh_config
@@ -91,6 +92,7 @@ class Host(object):
     self._execution_end_time = None
     self._error = None
     self._control_server_client = None
+    self._metadata = metadata or {}
 
   def StartExecutionTimer(self):
     self._execution_start_time = _GetCurrentTime()
@@ -132,6 +134,14 @@ class Host(object):
   @context.setter
   def context(self, context):
     self._context = context
+
+  @property
+  def metadata(self):
+    return self._metadata
+
+  @metadata.setter
+  def metadata(self, metadata):
+    self._metadata = metadata or {}
 
   @property
   def error(self):
