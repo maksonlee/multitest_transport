@@ -17,10 +17,10 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {ReplaySubject} from 'rxjs';
-import {finalize, takeUntil} from 'rxjs/operators';
+import {delay, finalize, takeUntil} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
-import {ConfigSetInfo, getNamespaceFromId, Test} from '../services/mtt_models';
+import {ConfigSetInfo, ConfigSetStatus, getNamespaceFromId, Test} from '../services/mtt_models';
 import {MttObjectMapService} from '../services/mtt_object_map';
 import {Notifier} from '../services/notifier';
 import {buildApiErrorMessage} from '../shared/util';
@@ -36,7 +36,7 @@ export class TestList implements OnInit, OnDestroy {
 
   isLoading = false;
   testsByNamespaceMap: {[namespace: string]: Test[]} = {};
-  configSetInfoMap: {[id: string]: ConfigSetInfo} = {};
+  configSetInfoMap: {[url: string]: ConfigSetInfo} = {};
 
   private readonly destroy = new ReplaySubject<void>();
 
@@ -80,6 +80,8 @@ export class TestList implements OnInit, OnDestroy {
                 this.testsByNamespaceMap[namespace].push(test);
               }
 
+              this.getLatestConfigSetInfos();
+
               this.liveAnnouncer.announce('Tests loaded', 'assertive');
             },
             error => {
@@ -122,6 +124,47 @@ export class TestList implements OnInit, OnDestroy {
                     buildApiErrorMessage(error));
               });
         });
+  }
+
+  getLatestConfigSetInfos() {
+    // Checks if any config sets can be updated and updates the status in map
+    for (const [url, info] of Object.entries(this.configSetInfoMap)) {
+      this.mttClient.configSets.getLatestVersion(info).subscribe(
+          infoRes => {
+            this.configSetInfoMap[url] = infoRes;
+          },
+          error => {
+            console.log(
+                `Failed to check updates for config set ${url}: ${error}`);
+          });
+    }
+  }
+
+  isConfigSetUpdatable(namespace: string) {
+    const info = this.configSetInfoMap[namespace];
+    return info && info.status === ConfigSetStatus.UPDATABLE;
+  }
+
+  updateConfigSet(namespace: string) {
+    this.isLoading = true;
+    this.liveAnnouncer.announce('Updating config set', 'assertive');
+
+    this.mttClient.importConfigSet(namespace)
+        .pipe(delay(100))  // Wait for updates before reloading
+        .pipe(finalize(() => {
+          this.isLoading = false;
+          this.liveAnnouncer.announce('Config set updated');
+          this.load();
+        }))
+        .subscribe(
+            result => {
+              this.notifier.showMessage(`Config set ${namespace} updated`);
+            },
+            error => {
+              this.notifier.showError(
+                  'Failed to update config set ${namespace}',
+                  buildApiErrorMessage(error));
+            });
   }
 
   confirmDeleteConfigSet(namespace: string) {

@@ -21,7 +21,8 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
-import {MttClient} from '../services/mtt_client';
+import {ConfigSetClient, MttClient} from '../services/mtt_client';
+import * as mttModels from '../services/mtt_models';
 import {MttObjectMap, MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
 import {Notifier} from '../services/notifier';
 import {getEl, getTextContent} from '../testing/jasmine_util';
@@ -39,6 +40,7 @@ describe('TestList', () => {
 
   let testList: TestList;
   let testListFixture: ComponentFixture<TestList>;
+  let configSetClient: jasmine.SpyObj<ConfigSetClient>;
   let mttClient: jasmine.SpyObj<MttClient>;
   let mttObjectMapService: jasmine.SpyObj<MttObjectMapService>;
   let mttObjectMap: MttObjectMap;
@@ -51,8 +53,14 @@ describe('TestList', () => {
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
     notifier = jasmine.createSpyObj(['confirm', 'showError']);
 
-    mttClient =
-        jasmine.createSpyObj('mttClient', ['deleteTest', 'deleteConfigSet']);
+    configSetClient =
+        jasmine.createSpyObj('configSetClient', ['getLatestVersion']);
+    configSetClient.getLatestVersion.and.returnValue(observableOf());
+
+    mttClient = {
+      ...jasmine.createSpyObj('mttClient', ['deleteTest', 'deleteConfigSet']),
+      configSets: configSetClient,
+    };
     mttClient.deleteTest.and.returnValue(observableOf(null));
     mttClient.deleteConfigSet.and.returnValue(observableOf(null));
 
@@ -122,9 +130,9 @@ describe('TestList', () => {
          id2: {id: 'id2', name: 'No namespace'},
          id3: {id: 'ns2::id3', name: 'Unmatched namepsace'},
        };
-       const CONFIG_SET_MAP = {
-         ns1: mttMocks.newMockConfigSetInfo('ns1', 'Namespace 1'),
-       };
+       const configSet1 = mttMocks.newMockConfigSetInfo('ns1', 'Namespace 1');
+       configSet1.status = mttModels.ConfigSetStatus.UPDATABLE;
+       const CONFIG_SET_MAP = {ns1: configSet1};
 
        mttObjectMap = newMttObjectMap();
        mttObjectMap.testMap = NAMESPACED_TEST_MAP;
@@ -138,6 +146,7 @@ describe('TestList', () => {
        expect(textContent).toContain('Default/Custom Test Suites');
        expect(textContent).toContain('Namespace 1');
        expect(textContent).toContain('Unknown Config Set (ns2)');
+       expect(textContent).toContain('Updatable');
      });
 
   it('deletes a test correctly', () => {

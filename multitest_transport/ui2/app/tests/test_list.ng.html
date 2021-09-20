@@ -40,8 +40,9 @@
         <h2 fxFlex>
           {{getNamespaceTitle(testList.key)}}
         </h2>
-        <!-- TODO: Add update/remove buttons -->
-        <div>
+        <div class="config-set-actions">
+          <status-button class="config-set" [state]="configSetInfoMap[testList.key].status"
+                         *ngIf="configSetInfoMap[testList.key]"></status-button>
           <button *ngIf="!isNamespaceSectionEditable(testList.key)"
             id="configSetMenuButton"
             aria-label="More actions"
@@ -51,6 +52,11 @@
             <mat-icon>more_vert</mat-icon>
           </button>
           <mat-menu #configSetMenu="matMenu">
+            <button id="configSetUpdateButton"
+                    *ngIf="isConfigSetUpdatable(testList.key)"
+                    mat-menu-item (click)="updateConfigSet(testList.key)">
+              Update
+            </button>
             <button id="configSetDeleteButton"
                     mat-menu-item (click)="confirmDeleteConfigSet(testList.key)">
               Delete
