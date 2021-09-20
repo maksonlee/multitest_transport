@@ -24,17 +24,15 @@ import {of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services';
 import {FeedbackService} from '../services/feedback_service';
-import {SurveyTrigger} from '../services/mtt_lab_models';
-import {DEVICE_SERIAL, DeviceSearchCriteria, HOSTNAME, LabDeviceInfosResponse} from '../services/mtt_lab_models';
+import {DEVICE_SERIAL, DeviceSearchCriteria, HOSTNAME, LabDeviceInfosResponse, SurveyTrigger} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
 import {DEVICE_LIST_KEY} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
 import {DeviceRecoveryStateRequest, FilterHintType, NoteList, RecoveryState} from '../services/tfc_models';
 import {LAB_APPLICATION_NAME} from '../shared/shared_module';
 import {ActivatedRouteStub} from '../testing/activated_route_stub';
-import {getEl, getEls} from '../testing/jasmine_util';
-import {newMockFilterHintList} from '../testing/mtt_lab_mocks';
-import {newMockAppData, newMockDeviceNote, newMockLabDeviceInfo, newMockLabDeviceInfosResponse} from '../testing/mtt_lab_mocks';
+import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
+import {newMockAppData, newMockDeviceNote, newMockFilterHintList, newMockLabDeviceInfo, newMockLabDeviceInfosResponse} from '../testing/mtt_lab_mocks';
 
 import {DeviceList} from './device_list';
 import {DevicesModule} from './devices_module';
@@ -787,6 +785,7 @@ describe('DeviceList in ATS instance', () => {
   let feedbackService: jasmine.SpyObj<FeedbackService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let tfcClient: jasmine.SpyObj<TfcClient>;
+  let el: DebugElement;
   const pageSize = 10000;
   const activatedRouteSpy =
       new ActivatedRouteStub({deviceListPageSize: pageSize});
@@ -832,6 +831,7 @@ describe('DeviceList in ATS instance', () => {
     deviceListFixture = TestBed.createComponent(DeviceList);
     deviceListFixture.detectChanges();
     deviceList = deviceListFixture.componentInstance;
+    el = deviceListFixture.debugElement;
   });
 
   it('displays the 11 columns correctly', () => {
@@ -891,5 +891,13 @@ describe('DeviceList in ATS instance', () => {
     const deviceSerials = JSON.parse(data!) as string[];
     expect(deviceSerials.length)
         .toEqual(deviceList.dataSource.map(x => x.device_serial).length);
+  });
+
+  it('should be able to hide the notes button', () => {
+    expect(getTextContent(el)).toContain('Add notes');
+    deviceList.notesEnabled = false;
+    deviceListFixture.detectChanges();
+    el = deviceListFixture.debugElement;
+    expect(getTextContent(el)).not.toContain('Add notes');
   });
 });

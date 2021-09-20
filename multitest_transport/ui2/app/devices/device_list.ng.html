@@ -155,7 +155,7 @@
   </form>
 </div>
 
-<div class="action-row" fxLayout="row wrap" fxLayoutAlign="start center">
+<div class="action-row" fxLayout="row wrap" fxLayoutAlign="start center" *ngIf="notesEnabled">
   <add-notes-button
     buttonStyle="Stroked"
     [labName]="selectedLab"
@@ -175,20 +175,23 @@
     [class.scrolled]="isTableScrolled"
     aria-label="Device list"
     tableRowsSelectManager
+    [(initialSelection)]="selectedSerials"
+    (selectionChange)="updateSelectedDeviceSerials($event)"
   >
     <!-- Checkbox Column -->
     <ng-container matColumnDef="select">
-      <mat-header-cell *matHeaderCellDef fxFlex="60px">
+      <mat-header-cell *matHeaderCellDef fxFlex="100px">
         <mat-checkbox
           aria-label="Select all devices"
           tableRowsSelectCheckbox
           #tableRowsSelectCheckbox="tableRowsSelectCheckbox"
           [checked]="tableRowsSelectCheckbox.isAllRowsSelected"
           [indeterminate]="tableRowsSelectCheckbox.isPartialRowsSelected"
-        >
+          [disabled]="!selectEnabled"
+        >({{selectedSerials.length}}/{{dataSource.length}})
         </mat-checkbox>
       </mat-header-cell>
-      <mat-cell *matCellDef="let row; let rowIndex = index" fxFlex="60px">
+      <mat-cell *matCellDef="let row; let rowIndex = index" fxFlex="100px">
         <mat-checkbox
           [aria-label]="'Device' + row.device_serial"
           tableRowSelectCheckbox
@@ -196,6 +199,7 @@
           [rowIdFieldValue]="row.device_serial"
           [rowIndex]="rowIndex"
           [checked]="tableRowSelectCheckbox.isSelected"
+          [disabled]="!selectEnabled"
         >
         </mat-checkbox>
       </mat-cell>
@@ -373,7 +377,7 @@
     </ng-container>
 
     <!-- Actions: Mark as fixed, Remove for a single device -->
-    <ng-container matColumnDef="actions" stickyEnd>
+    <ng-container matColumnDef="actions" stickyEnd *ngIf="notesEnabled">
       <mat-header-cell *matHeaderCellDef fxFlex="130px"></mat-header-cell>
       <mat-cell *matCellDef="let device" fxFlex="130px" fxLayout="row" fxFlexAlign="start center">
         <button

@@ -21,6 +21,7 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
+import {APP_DATA} from '../services/app_data';
 import {DeviceInfoService} from '../services/device_info_service';
 import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
@@ -75,6 +76,7 @@ describe('NewTestRunPage', () => {
       imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
       aotSummaries: TestRunsModuleNgSummary,
       providers: [
+        {provide: APP_DATA, useValue: {}},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: FileService, useValue: {}},
         {provide: MttClient, useValue: mttClient},

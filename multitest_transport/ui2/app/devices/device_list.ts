@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
-import {Component, ElementRef, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Inject, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatAutocomplete, MatAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatTable} from '@angular/material/mdc-table';
@@ -49,7 +49,14 @@ import {getFilterDefaultSingleValue} from '../shared/util';
   styleUrls: ['device_list.css'],
   templateUrl: './device_list.ng.html',
 })
-export class DeviceList implements OnDestroy, OnInit {
+export class DeviceList implements OnChanges, OnDestroy, OnInit {
+  @Input() autoUpdate = false;
+  @Input() initialSelection: string[] = [];
+  @Input() selectEnabled = true;
+  @Input() notesEnabled = true;
+  @Output() selectedSerialsChange = new EventEmitter<string[]>();
+
+  selectedSerials: string[] = [];
   isLoading = false;
   private readonly destroy = new ReplaySubject<void>();
   dataSource: LabDeviceInfo[] = [];
@@ -136,7 +143,6 @@ export class DeviceList implements OnDestroy, OnInit {
       show: true
     },
     {fieldName: 'note', displayName: 'Note', removable: true, show: true},
-    {fieldName: 'actions', displayName: 'Actions', removable: true, show: true},
   ];
   readonly columnDisplayStorageKey = 'DEVICE_LIST_COLUMN_DISPLAY';
 
@@ -198,7 +204,6 @@ export class DeviceList implements OnDestroy, OnInit {
   ];
   private readonly urlQueryParamObservable: Observable<ParamMap> =
       this.route.queryParamMap.pipe(take(1));
-  private autoUpdate = false;
   private readonly autoUpdateInterval = 30_000;
   userInputValue = '';
 
@@ -279,6 +284,15 @@ export class DeviceList implements OnDestroy, OnInit {
     assertRequiredInput(
         this.tableRowsSelectManager, 'tableRowsSelectManager', 'device-list');
 
+    if (this.notesEnabled) {
+      this.columns.push({
+        fieldName: 'actions',
+        displayName: 'Actions',
+        removable: true,
+        show: true
+      });
+    }
+
     // TODO: Add a utility method to help with set up current
     // page's title with ease.
     this.title.setTitle(`${
@@ -295,12 +309,20 @@ export class DeviceList implements OnDestroy, OnInit {
               this.lookupColumnValue, this.filterBarUtility.selectedColumn);
         });
     this.clearInput();
+    this.tableRowsSelectManager.selectSelection([...this.initialSelection]);
     if (this.autoUpdate) {
       interval(this.autoUpdateInterval)
           .pipe(takeUntil(this.destroy))
           .subscribe(() => {
             this.load(0, true);
           });
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['initialSelection']) {
+      this.tableRowsSelectManager.clearSelection();
+      this.tableRowsSelectManager.selectSelection([...this.initialSelection]);
     }
   }
 
@@ -1148,5 +1170,10 @@ export class DeviceList implements OnDestroy, OnInit {
 
   storeDeviceSerialsInLocalStorage() {
     this.storageService.saveDeviceListInLocalStorage(this.deviceSerials);
+  }
+
+  updateSelectedDeviceSerials(selectedSerials: string[]) {
+    this.selectedSerials = selectedSerials;
+    this.selectedSerialsChange.emit(this.selectedSerials);
   }
 }

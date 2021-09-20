@@ -20,15 +20,18 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {By} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
-import {DevicePicker} from '../devices/device_picker';
+import {DeviceList} from '../devices/device_list';
 import {APP_DATA} from '../services/app_data';
 import {DeviceInfoService} from '../services/device_info_service';
 import {MttClient} from '../services/mtt_client';
-import {MttObjectMap, MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
-import {DeviceInfo} from '../services/tfc_models';
-import {newMockDeviceInfo} from '../testing/mtt_lab_mocks';
+import {LabDeviceInfo} from '../services/mtt_lab_models';
+import {MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
+import {Notifier} from '../services/notifier';
+import {TfcClient} from '../services/tfc_client';
+import {newMockLabDeviceInfo} from '../testing/mtt_lab_mocks';
 import {newMockDeviceAction, newMockTest, newMockTestRunConfig} from '../testing/mtt_mocks';
 
 import {TestRunConfigEditor} from './test_run_config_editor';
@@ -38,19 +41,24 @@ import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 describe('TestRunConfigEditor', () => {
   let testRunConfigEditor: TestRunConfigEditor;
   let testRunConfigEditorFixture: ComponentFixture<TestRunConfigEditor>;
-  let devicePicker: DevicePicker;
+  let deviceList: DeviceList;
   let deviceInfoService: jasmine.SpyObj<DeviceInfoService>;
   let el: DebugElement;
   let mttClient: jasmine.SpyObj<MttClient>;
   let mttObjectMapService: jasmine.SpyObj<MttObjectMapService>;
-  let device1: DeviceInfo;
-  let device2: DeviceInfo;
+  let device1: LabDeviceInfo;
+  let device2: LabDeviceInfo;
+  let tfcClient: jasmine.SpyObj<TfcClient>;
+  let notifierSpy: jasmine.SpyObj<Notifier>;
 
   const test = newMockTest('test_id_1', 'test_name_1');
   const dialogRefSpy =
       jasmine.createSpyObj('MatDialogRef', ['close', 'backdropClick']);
 
   beforeEach(() => {
+    device1 = newMockLabDeviceInfo('device1Id');
+    device2 = newMockLabDeviceInfo('device2Id');
+
     mttClient = jasmine.createSpyObj('mttClient', ['getTest']);
     mttClient.getTest.and.returnValue(observableOf(test));
     mttObjectMapService = jasmine.createSpyObj(['getMttObjectMap']);
@@ -63,23 +71,40 @@ describe('TestRunConfigEditor', () => {
       deviceSpecsToDeviceTypes: new Set<string>(),
     });
 
+    tfcClient = jasmine.createSpyObj('tfcClient', {
+      batchGetDevicesLatestNotes: observableOf({}),
+      getFilterHintList: observableOf({filter_hints: []}),
+      queryDeviceInfos: observableOf({deviceInfos: [device1, device2]}),
+    });
+
+    notifierSpy = jasmine.createSpyObj('notifier', {
+      confirm: observableOf(true),  // mock confirm click in dialog.
+      showMessage: observableOf({}),
+      showError: observableOf({}),
+    });
+
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, NoopAnimationsModule, TestRunsModule],
+      imports: [
+        HttpClientTestingModule, NoopAnimationsModule, RouterTestingModule,
+        TestRunsModule
+      ],
       aotSummaries: TestRunsModuleNgSummary,
       providers: [
-        {provide: APP_DATA, useValue: {}},
-        {provide: MatDialogRef, useValue: dialogRefSpy},
+        {provide: APP_DATA, useValue: {isAtsLabInstance: false}},
+        {provide: DeviceInfoService, useValue: deviceInfoService},
+        {provide: MttClient, useValue: mttClient},
         {
           provide: MAT_DIALOG_DATA,
           useFactory: () => ({
             editMode: false,
             testRunConfig:
-                newMockTestRunConfig(test.id, 'command', 'retry_command', '')
+                newMockTestRunConfig(test.id, 'command', 'retry_command', '', 0)
           })
         },
-        {provide: MttClient, useValue: mttClient},
-        {provide: DeviceInfoService, useValue: deviceInfoService},
+        {provide: MatDialogRef, useValue: dialogRefSpy},
         {provide: MttObjectMapService, useValue: mttObjectMapService},
+        {provide: Notifier, useValue: notifierSpy},
+        {provide: TfcClient, useValue: tfcClient},
       ],
     });
 
@@ -87,16 +112,13 @@ describe('TestRunConfigEditor', () => {
     el = testRunConfigEditorFixture.debugElement;
     testRunConfigEditor = testRunConfigEditorFixture.componentInstance;
     testRunConfigEditorFixture.detectChanges();
-
-    device1 = newMockDeviceInfo('device1Id');
-    device2 = newMockDeviceInfo('device2Id');
-    devicePicker = el.query(By.directive(DevicePicker)).componentInstance;
-    devicePicker.deviceInfos = [];
+    deviceList = el.query(By.directive(DeviceList)).componentInstance;
+    deviceList.dataSource = [];
   });
 
-  function reload(objectMap: MttObjectMap) {
+  function reload(objectMap = newMttObjectMap()) {
     mttObjectMapService.getMttObjectMap.and.returnValue(
-        observableOf(newMttObjectMap()));
+        observableOf(objectMap));
     testRunConfigEditor.load();
     testRunConfigEditorFixture.detectChanges();
   }
@@ -107,15 +129,16 @@ describe('TestRunConfigEditor', () => {
 
   it('should return device specs correctly', () => {
     const testedDevices = [device1, device2];
-    devicePicker.deviceInfos = testedDevices;
     expect(testRunConfigEditor.data.testRunConfig.device_specs).toEqual([]);
-    devicePicker.toggleSelection();
+
+    deviceList.updateSelectedDeviceSerials(
+        testedDevices.map((device) => device.device_serial));
     expect(testRunConfigEditor.data.testRunConfig.device_specs)
         .toEqual(testedDevices.map(
             (device) => `device_serial:${device.device_serial}`));
-    devicePicker.toggleSelection();
+
+    deviceList.updateSelectedDeviceSerials([]);
     expect(testRunConfigEditor.data.testRunConfig.device_specs).toEqual([]);
-    devicePicker.toggleSelection();
   });
 
   it('should create new test run config correctly on submit', () => {
@@ -145,9 +168,9 @@ describe('TestRunConfigEditor', () => {
   it('should update test run config correctly on submit', () => {
     testRunConfigEditor.data.editMode = true;
     const testedDevices =
-        [newMockDeviceInfo('device1Id'), newMockDeviceInfo('device2Id')];
-    devicePicker.deviceInfos = testedDevices;
-    devicePicker.toggleSelection();
+        [newMockLabDeviceInfo('device1Id'), newMockLabDeviceInfo('device2Id')];
+    deviceList.updateSelectedDeviceSerials(
+        testedDevices.map((device) => device.device_serial));
     testRunConfigEditor.submit();
     expect(testRunConfigEditor.data.testRunConfig.device_specs)
         .toEqual(testedDevices.map(

@@ -180,7 +180,7 @@ export class TableRowsSelectManager implements OnInit, AfterContentInit {
   /** The index of a row that was clicked last time. */
   prevClickedRowIndex = -1;
 
-  selection = new SelectionModel<string>(true, []);
+  selection = new SelectionModel<string>(/* allow multi select */ true, []);
 
   @ContentChildren(TableRowSelect) tableRowSelects!: QueryList<TableRowSelect>;
 
@@ -210,6 +210,11 @@ export class TableRowsSelectManager implements OnInit, AfterContentInit {
    */
   select(rowIndex: number) {
     this.tableRowSelects.find(x => x.rowIndex === rowIndex)!.select();
+  }
+
+  /** Sets the selected list to empty */
+  clearSelection() {
+    this.selection.clear();
   }
 
   /**

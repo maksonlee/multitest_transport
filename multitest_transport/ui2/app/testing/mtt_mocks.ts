@@ -374,7 +374,7 @@ export function newMockTestRun(
 /** Creates a new Test Run Config given a testid */
 export function newMockTestRunConfig(
     testId: string, command = TEST_COMMAND, retryCommand = TEST_RETRY_COMMAND,
-    runTarget = RUN_TARGET_STRING) {
+    runTarget = RUN_TARGET_STRING, shardCount = 1) {
   return {
     test_id: testId,
     cluster: CLUSTER,
@@ -383,7 +383,7 @@ export function newMockTestRunConfig(
     device_specs: [],
     run_target: runTarget,
     run_count: 1,
-    shard_count: 1,
+    shard_count: shardCount,
     sharding_mode: mttModels.ShardingMode.RUNNER,
     max_retry_on_test_failures: 1,
     output_idle_timeout_seconds: 3600,

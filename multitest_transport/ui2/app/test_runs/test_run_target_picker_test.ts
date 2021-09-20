@@ -16,9 +16,12 @@
 
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
+import {APP_DATA} from '../services';
 import {TfcClient} from '../services/tfc_client';
+import {newMockAppData} from '../testing/mtt_lab_mocks';
 
 import {TestRunTargetPicker} from './test_run_target_picker';
 import {TestRunsModule} from './test_runs_module';
@@ -28,15 +31,19 @@ describe('TestRunTargetPicker', () => {
   let testRunTargetPicker: TestRunTargetPicker;
   let testRunTargetPickerFixture: ComponentFixture<TestRunTargetPicker>;
   let tfcClient: jasmine.SpyObj<TfcClient>;
+  const appData = newMockAppData();
 
   beforeEach(() => {
-    tfcClient = jasmine.createSpyObj('tfcClient', ['getDeviceInfos']);
+    tfcClient = jasmine.createSpyObj(
+        'tfcClient', ['getDeviceInfos', 'getFilterHintList']);
     tfcClient.getDeviceInfos.and.returnValue(observableOf({device_infos: []}));
+    tfcClient.getFilterHintList.and.returnValue(observableOf([]));
 
     TestBed.configureTestingModule({
-      imports: [NoopAnimationsModule, TestRunsModule],
+      imports: [NoopAnimationsModule, RouterTestingModule, TestRunsModule],
       aotSummaries: TestRunsModuleNgSummary,
       providers: [
+        {provide: APP_DATA, useValue: appData},
         {provide: TfcClient, useValue: tfcClient},
       ],
     });

@@ -19,6 +19,7 @@ import {DebugElement} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {MatDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services/app_data';
@@ -57,8 +58,12 @@ describe('TestRunConfigList', () => {
     mttData.testMap = testMap;
     mttObjectMapService = jasmine.createSpyObj(['getMttObjectMap']);
     mttObjectMapService.getMttObjectMap.and.returnValue(observableOf(mttData));
+
     TestBed.configureTestingModule({
-      imports: [NoopAnimationsModule, TestRunsModule, HttpClientTestingModule],
+      imports: [
+        HttpClientTestingModule, NoopAnimationsModule, RouterTestingModule,
+        TestRunsModule
+      ],
       providers: [
         {provide: APP_DATA, useValue: {}},
         {provide: MttObjectMapService, useValue: mttObjectMapService},

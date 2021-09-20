@@ -15,14 +15,15 @@
 -->
 
 
-<!-- device picker -->
-<device-picker
+<!-- device list -->
+<device-list
   [autoUpdate]="autoUpdate"
-  [selectedSerials]="getDeviceSerials()"
-  [selectable]="true"
-  [selectDisabled]="manualDeviceSpecs"
-  (selectionChange)="onDeviceListSelectionChange($event); hasContentChanged = true">
-</device-picker>
+  [notesEnabled]="false"
+  [selectEnabled]="!manualDeviceSpecs"
+  [initialSelection]="getDeviceSerials()"
+  (selectedSerialsChange)="onDeviceListSelectionChange($event); hasContentChanged = true">
+</device-list>
+
 <div fxLayoutGap="20px" class="inputRow">
   <!-- shard count -->
   <mat-form-field appearance="outline" floatLabel="always" fxFlex="120px">
