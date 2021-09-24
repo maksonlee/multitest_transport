@@ -6,6 +6,7 @@ licenses(["notice"])
 
 py_library(
     name = "integration_util",
+    testonly = True,
     srcs = [
         "integration_util.py",
     ],
