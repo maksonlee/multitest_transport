@@ -22,7 +22,7 @@ import {OverflowListType} from 'google3/third_party/py/multitest_transport/ui2/a
 import {assertRequiredInput} from 'google3/third_party/py/multitest_transport/ui2/app/shared/util';
 import * as moment from 'moment';
 import {forkJoin, Observable, of as observableOf, ReplaySubject} from 'rxjs';
-import {catchError, finalize, map, startWith, takeUntil} from 'rxjs/operators';
+import {catchError, filter, finalize, map, startWith, takeUntil} from 'rxjs/operators';
 
 import {FeedbackService} from '../services/feedback_service';
 import {BatchCreateOrUpdateNotesInfo, NoteType, SurveyTrigger} from '../services/mtt_lab_models';
@@ -303,18 +303,59 @@ export class NotesEditor implements OnDestroy, OnInit {
   saveNotes() {
     if (!this.forms.errors) {
       this.isLoading = true;
-      if (this.params.noteType === NoteType.DEVICE) {
-        this.batchCreateOrUpdateDevicesNotes(this.params.ids);
+      const notesInfo: BatchCreateOrUpdateNotesInfo =
+          this.params.noteType === NoteType.DEVICE ?
+          this.getBatchCreateOrUpdateNotesInfo(
+              this.params.ids, NoteType.DEVICE) :
+          this.getBatchCreateOrUpdateNotesInfo(this.params.ids, NoteType.HOST);
+
+      const nonExistingPredefinedMessage =
+          this.checkAnyNonExistingPredefinedMessage(notesInfo);
+      if (nonExistingPredefinedMessage) {
+        const message = 'A new predefined message ' +
+            `[${nonExistingPredefinedMessage}] is ` +
+            'going to be created with notes.\n' +
+            'Are you sure to continue?';
+        this.notifier
+            .confirm(
+                message, 'Creating new PredefinedMessage?', 'Continue', 'Abort')
+            .pipe(
+                filter(isConfirmed => isConfirmed !== false),
+                takeUntil(this.destroy),
+                finalize(() => {
+                  this.isLoading = false;
+                }),
+                )
+            .subscribe(() => {
+              if (this.params.noteType === NoteType.DEVICE) {
+                this.batchCreateOrUpdateDevicesNotes(notesInfo);
+              } else {
+                this.batchCreateOrUpdateHostsNotes(notesInfo);
+              }
+            });
       } else {
-        this.batchCreateOrUpdateHostsNotes(this.params.ids);
+        if (this.params.noteType === NoteType.DEVICE) {
+          this.batchCreateOrUpdateDevicesNotes(notesInfo);
+        } else {
+          this.batchCreateOrUpdateHostsNotes(notesInfo);
+        }
       }
     }
     this.startSurvey();
   }
 
-  batchCreateOrUpdateDevicesNotes(deviceSerials: string[]) {
-    const notesInfo =
-        this.getBatchCreateOrUpdateNotesInfo(deviceSerials, NoteType.DEVICE);
+  checkAnyNonExistingPredefinedMessage(noteInfo: BatchCreateOrUpdateNotesInfo):
+      string {
+    if (!noteInfo.offline_reason_id && noteInfo.offline_reason) {
+      return noteInfo.offline_reason;
+    }
+    if (!noteInfo.recovery_action_id && noteInfo.recovery_action) {
+      return noteInfo.recovery_action;
+    }
+    return '';
+  }
+
+  batchCreateOrUpdateDevicesNotes(notesInfo: BatchCreateOrUpdateNotesInfo) {
     this.tfcClient
         .batchCreateOrUpdateDevicesNotesWithPredefinedMessage(notesInfo)
         .pipe(
@@ -336,15 +377,14 @@ export class NotesEditor implements OnDestroy, OnInit {
               // Error message to display all failed ids.
               this.notifier.showError(`Failed to ${
                   this.action.toLowerCase()} notes for ${
-                  NoteType.DEVICE.toLowerCase()} ${deviceSerials.join(', ')}`);
+                  NoteType.DEVICE.toLowerCase()} ${
+                  notesInfo.notes.map(note => note.device_serial).join(', ')}`);
               this.saved.emit(false);
             },
         );
   }
 
-  batchCreateOrUpdateHostsNotes(hostnames: string[]) {
-    const notesInfo =
-        this.getBatchCreateOrUpdateNotesInfo(hostnames, NoteType.HOST);
+  batchCreateOrUpdateHostsNotes(notesInfo: BatchCreateOrUpdateNotesInfo) {
     this.tfcClient.batchCreateOrUpdateHostsNotesWithPredefinedMessage(notesInfo)
         .pipe(
             takeUntil(this.destroy),
@@ -363,9 +403,10 @@ export class NotesEditor implements OnDestroy, OnInit {
             },
             () => {
               // Error message to display all failed ids.
-              this.notifier.showError(
-                  `Failed to ${this.action.toLowerCase()} notes for ${
-                      NoteType.HOST.toLowerCase()} ${hostnames.join(', ')}`);
+              this.notifier.showError(`Failed to ${
+                  this.action.toLowerCase()} notes for ${
+                  NoteType.HOST.toLowerCase()} ${
+                  notesInfo.notes.map(note => note.hostname).join(', ')}`);
               this.saved.emit(false);
             },
         );

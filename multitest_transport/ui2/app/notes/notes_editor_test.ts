@@ -15,16 +15,15 @@
  */
 
 import {DebugElement} from '@angular/core';
-import {ComponentFixture, fakeAsync, TestBed} from '@angular/core/testing';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {getEl} from 'google3/third_party/py/multitest_transport/ui2/app/testing/jasmine_util';
 import {of as observableOf} from 'rxjs';
 
 import {FeedbackService} from '../services/feedback_service';
 import {NoteType, SurveyTrigger} from '../services/mtt_lab_models';
 import {TfcClient} from '../services/tfc_client';
 import {PredefinedMessagesResponse, PredefinedMessageType} from '../services/tfc_models';
-import {newMockDeviceNote, newMockHostNote, newMockPredefinedMessagesResponse} from '../testing/mtt_lab_mocks';
+import {newMockDeviceNote, newMockHostNote, newMockPredefinedMessage, newMockPredefinedMessagesResponse} from '../testing/mtt_lab_mocks';
 
 import {NoteDialogParams, NoteDialogState} from './notes_dialog';
 import {NotesEditor} from './notes_editor';
@@ -60,7 +59,7 @@ describe('NotesEditor', () => {
       providers: [
         {provide: FeedbackService, useValue: feedbackService},
         {provide: TfcClient, useValue: tfcClient},
-      ]
+      ],
     });
   });
 
@@ -114,20 +113,6 @@ describe('NotesEditor', () => {
       expect(notesInfo.message).toBe(messageValue);
     });
 
-    it('should save note correctly', fakeAsync(() => {
-         spyOn(notesEditor, 'batchCreateOrUpdateDevicesNotes');
-         notesEditor.params.noteType = NoteType.DEVICE;
-         notesEditor.saveNotes();
-         expect(notesEditor.batchCreateOrUpdateDevicesNotes)
-             .toHaveBeenCalledTimes(1);
-
-         spyOn(notesEditor, 'batchCreateOrUpdateHostsNotes');
-         notesEditor.params.noteType = NoteType.HOST;
-         notesEditor.saveNotes();
-         expect(notesEditor.batchCreateOrUpdateHostsNotes)
-             .toHaveBeenCalledTimes(1);
-       }));
-
     it('should loads existed host note correctly', () => {
       const noteId = 123;
       notesEditor.params.noteType = NoteType.HOST;
@@ -168,15 +153,43 @@ describe('NotesEditor', () => {
           .toEqual(hostNote.message);
     });
 
-    it('should call batch create or update device/host notes correctly', () => {
-      notesEditor.batchCreateOrUpdateDevicesNotes(['device1']);
-      expect(tfcClient.batchCreateOrUpdateDevicesNotesWithPredefinedMessage)
-          .toHaveBeenCalledTimes(1);
+    it('should save device/host notes correctly when predefinedMessage exists',
+       () => {
+         notesEditor.forms.setValue({
+           offlineReasonFormControl: offlineReasonValue,
+           recoveryActionFormControl: recoveryActionValue,
+           messageFormControl: messageValue,
+         });
+         notesEditor.offlineReasons = [
+           newMockPredefinedMessage(
+               1, undefined, PredefinedMessageType.DEVICE_OFFLINE_REASON,
+               offlineReasonValue, undefined, undefined),
+         ];
+         notesEditor.recoveryActions = [
+           newMockPredefinedMessage(
+               2, undefined, PredefinedMessageType.DEVICE_RECOVERY_ACTION,
+               recoveryActionValue, undefined, undefined),
+         ];
+         notesEditor.params.noteType = NoteType.DEVICE;
+         notesEditor.saveNotes();
+         expect(tfcClient.batchCreateOrUpdateDevicesNotesWithPredefinedMessage)
+             .toHaveBeenCalledTimes(1);
 
-      notesEditor.batchCreateOrUpdateHostsNotes(['host1']);
-      expect(tfcClient.batchCreateOrUpdateHostsNotesWithPredefinedMessage)
-          .toHaveBeenCalledTimes(1);
-    });
+         notesEditor.offlineReasons = [
+           newMockPredefinedMessage(
+               1, undefined, PredefinedMessageType.HOST_OFFLINE_REASON,
+               offlineReasonValue, undefined, undefined),
+         ];
+         notesEditor.recoveryActions = [
+           newMockPredefinedMessage(
+               2, undefined, PredefinedMessageType.HOST_RECOVERY_ACTION,
+               recoveryActionValue, undefined, undefined),
+         ];
+         notesEditor.params.noteType = NoteType.HOST;
+         notesEditor.saveNotes();
+         expect(tfcClient.batchCreateOrUpdateHostsNotesWithPredefinedMessage)
+             .toHaveBeenCalledTimes(1);
+       });
 
     it('should loads offline reasons correctly', () => {
       const messageType = PredefinedMessageType.HOST_OFFLINE_REASON;
