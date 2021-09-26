@@ -76,13 +76,6 @@ cd /mtt
 
 if [[ -z "${MTT_CONTROL_SERVER_URL}" ]] || [[ "${OPERATION_MODE}"=="on_premise" ]]
 then
-  # Export environment variables for cron jobs
-  printenv | sed "s/^\(.*\)$/export \1/g" > /root/env.sh
-
-  # Start cron
-  crontab /mtt/scripts/crontab
-  cron
-
   # Start RabbitMQ server
   service rabbitmq-server start || (cat /var/log/rabbitmq/startup_*; false)
 
@@ -116,6 +109,7 @@ then
       --log_level "${MTT_SERVER_LOG_LEVEL}" \
       --file_service_only "${FILE_SERVICE_ONLY}" \
       --sql_database_uri "" \
+      --control_server_url "${MTT_CONTROL_SERVER_URL}" \
       2>&1 | multilog s10485760 n10 "${MTT_CONTROL_SERVER_LOG_DIR}" &
 fi
 

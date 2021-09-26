@@ -1,2 +1,0 @@
-# A crontab file for Docker container.
-0 * * * * /mtt/scripts/file_cleaner.sh >> /data/log/file_cleaner.log

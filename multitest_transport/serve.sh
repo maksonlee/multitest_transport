@@ -38,6 +38,7 @@ MTT_CONTROL_SERVER_PORT=8000
 STORAGE_PATH="/tmp/mtt"
 FILE_SERVICE_ONLY="false"
 SQL_DATABASE_URI="mysql+pymysql://root@/ats_db"
+MTT_CONTROL_SERVER_URL="http://localhost:8000"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --bind_address) MTT_HOST="$2";;
@@ -49,6 +50,7 @@ while [[ $# -gt 0 ]]; do
     --log_level) LOG_LEVEL="$2";;
     --dev_mode) DEV_MODE="$2";;
     --sql_database_uri) SQL_DATABASE_URI="$2";;
+    --control_server_url) MTT_CONTROL_SERVER_URL="$2";;
     *) echo "Unknown argument $1"; exit 1; # fail-fast on unknown key
   esac
   shift # skip key
@@ -196,6 +198,16 @@ function start_main_server {
       &
 }
 
+function start_file_cleaner {
+  # Start file cleaner
+  echo "Starting file cleaner..."
+  PYTHONPATH="${MTT_PYTHON_PATH}" \
+  MTT_STORAGE_PATH="$STORAGE_PATH" \
+  "${MTT_PYTHON}" -m multitest_transport.file_cleaner.file_cleaner \
+      --control_server_url="${MTT_CONTROL_SERVER_URL}" \
+      &
+}
+
 if [ $FILE_SERVICE_ONLY == "false" ]
 then
   start_browsepy
@@ -204,8 +216,10 @@ then
   start_mysql_database
   start_rabbitmq_puller
   start_main_server
+  start_file_cleaner
 else
   start_browsepy
   start_local_file_server
+  start_file_cleaner
 fi
 wait

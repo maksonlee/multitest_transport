@@ -2,6 +2,8 @@
 load("//tools/build_defs/testing:bzl_library.bzl", "bzl_library")
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_appengine_binary", "pytype_strict_library", "third_party")
 
+package(default_visibility = [":multitest_transport"])
+
 licenses(["notice"])
 
 exports_files(["LICENSE"])
@@ -44,6 +46,7 @@ py_appengine_binary(
         ":prebuilts",
         ":serve.sh",
         "//multitest_transport/file_server:file_server_lib",
+        "//multitest_transport/file_cleaner:file_cleaner_lib",
         "//multitest_transport/scripts:scripts",
     ],
     python_version = "PY3",
