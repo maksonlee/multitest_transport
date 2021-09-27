@@ -879,8 +879,9 @@ class FileCleanerOperationType(messages.Enum):
 
 
 class FileCleanerCriterionType(messages.Enum):
-  LAST_MODIFIED_TIME = 0
-  NAME_MATCH = 1
+  LAST_ACCESS_TIME = 0
+  LAST_MODIFIED_TIME = 1
+  NAME_MATCH = 2
 
 
 class FileCleanerTargetType(messages.Enum):

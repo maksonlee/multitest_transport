@@ -53,6 +53,17 @@ class Criterion(object):
     raise NotImplementedError
 
 
+class LastAccessTime(Criterion):
+  """Whether the file is expired according to last access time."""
+
+  def __init__(self, ttl: str = DEFAULT_TTL):
+    super().__init__()
+    self.ttl_seconds = timeparse.timeparse(ttl)
+
+  def Apply(self, path: str) -> bool:
+    return time.time() - os.path.getatime(path) > self.ttl_seconds
+
+
 class LastModifiedTime(Criterion):
   """Whether the file is expired according to last modified time."""
 
@@ -76,6 +87,7 @@ class NameMatch(Criterion):
 
 
 Criteria = {
+    ndb_models.FileCleanerCriterionType.LAST_ACCESS_TIME: LastAccessTime,
     ndb_models.FileCleanerCriterionType.LAST_MODIFIED_TIME: LastModifiedTime,
     ndb_models.FileCleanerCriterionType.NAME_MATCH: NameMatch
 }

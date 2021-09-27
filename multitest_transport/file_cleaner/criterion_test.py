@@ -29,11 +29,30 @@ class CriterionTest(fake_filesystem_unittest.TestCase):
     super(CriterionTest, self).setUp()
     self.setUpPyfakefs()
 
+  def _createFileWithAtime(self, file_name, days):
+    self.fs.create_file(file_name)
+    now = time.time()
+    timestamp = now - days * 24 * 60 * 60
+    self.fs.utime(file_name, times=(timestamp, now))
+
   def _createFileWithMtime(self, file_name, days):
     self.fs.create_file(file_name)
     now = time.time()
     timestamp = now - days * 24 * 60 * 60
     self.fs.utime(file_name, times=(now, timestamp))
+
+  def testLastAccessTime(self):
+    """Tests last access time can be checked."""
+    self._createFileWithAtime('/test/file_1', 8)
+    self._createFileWithAtime('/test/file_2', 10)
+
+    last_access_time = criterion.BuildCriterion(
+        messages.FileCleanerCriterion(
+            type=ndb_models.FileCleanerCriterionType.LAST_ACCESS_TIME,
+            params=[messages.NameValuePair(name='ttl', value='9 days')]))
+
+    self.assertFalse(last_access_time.Apply('/test/file_1'))
+    self.assertTrue(last_access_time.Apply('/test/file_2'))
 
   def testLastModifiedTime(self):
     """Tests last modified time can be checked."""
@@ -65,6 +84,7 @@ class CriterionTest(fake_filesystem_unittest.TestCase):
             type=ndb_models.FileCleanerCriterionType.NAME_MATCH))
     self.assertFalse(name_match.Apply('file.txt'))
     self.assertFalse(name_match.Apply(''))
+
 
 if __name__ == '__main__':
   absltest.main()
