@@ -16,10 +16,10 @@
 YAML config example:
 
   criteria:
-  - type: LAST_MODIFIED_DAYS  # required
+  - type: LAST_MODIFIED_TIME  # required
     params:  # optional
-    - name: ttl_days
-      value: '7'
+    - name: ttl
+      value: '7 days'
   - type: NAME_MATCH
     params:
     - name: pattern
@@ -29,11 +29,12 @@ import os
 import re
 import time
 
+from pytimeparse import timeparse
+
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 
-DAY_IN_SECS = 24 * 60 * 60
-DEFAULT_TTL_DAYS = '7'
+DEFAULT_TTL = '7 days'
 DEFAULT_NAME_PATTERN = '.^'  # does not match anything
 
 
@@ -52,12 +53,12 @@ class Criterion(object):
     raise NotImplementedError
 
 
-class LastModifiedDays(Criterion):
-  """Whether the file exists more than ttl days."""
+class LastModifiedTime(Criterion):
+  """Whether the file is expired according to last modified time."""
 
-  def __init__(self, ttl_days: str = DEFAULT_TTL_DAYS):
+  def __init__(self, ttl: str = DEFAULT_TTL):
     super().__init__()
-    self.ttl_seconds = int(ttl_days) * DAY_IN_SECS
+    self.ttl_seconds = timeparse.timeparse(ttl)
 
   def Apply(self, path: str) -> bool:
     return time.time() - os.path.getmtime(path) > self.ttl_seconds
@@ -75,7 +76,7 @@ class NameMatch(Criterion):
 
 
 Criteria = {
-    ndb_models.FileCleanerCriterionType.LAST_MODIFIED_DAYS: LastModifiedDays,
+    ndb_models.FileCleanerCriterionType.LAST_MODIFIED_TIME: LastModifiedTime,
     ndb_models.FileCleanerCriterionType.NAME_MATCH: NameMatch
 }
 

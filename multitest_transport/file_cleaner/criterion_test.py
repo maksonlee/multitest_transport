@@ -31,21 +31,22 @@ class CriterionTest(fake_filesystem_unittest.TestCase):
 
   def _createFileWithMtime(self, file_name, days):
     self.fs.create_file(file_name)
-    timestamp = time.time() - days * 24 * 60 * 60
-    self.fs.utime(file_name, times=(timestamp, timestamp))
+    now = time.time()
+    timestamp = now - days * 24 * 60 * 60
+    self.fs.utime(file_name, times=(now, timestamp))
 
-  def testLastModifiedDays(self):
-    """Tests last modified days can be checked."""
+  def testLastModifiedTime(self):
+    """Tests last modified time can be checked."""
     self._createFileWithMtime('/test/file_1', 8)
     self._createFileWithMtime('/test/file_2', 10)
 
-    last_modified_days = criterion.BuildCriterion(
+    last_modified_time = criterion.BuildCriterion(
         messages.FileCleanerCriterion(
-            type=ndb_models.FileCleanerCriterionType.LAST_MODIFIED_DAYS,
-            params=[messages.NameValuePair(name='ttl_days', value='9')]))
+            type=ndb_models.FileCleanerCriterionType.LAST_MODIFIED_TIME,
+            params=[messages.NameValuePair(name='ttl', value='9 days')]))
 
-    self.assertFalse(last_modified_days.Apply('/test/file_1'))
-    self.assertTrue(last_modified_days.Apply('/test/file_2'))
+    self.assertFalse(last_modified_time.Apply('/test/file_1'))
+    self.assertTrue(last_modified_time.Apply('/test/file_2'))
 
   def testNameMatch(self):
     """Tests names can match given pattern."""

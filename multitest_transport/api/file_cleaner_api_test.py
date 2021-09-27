@@ -60,7 +60,7 @@ class FileCleanerApiTest(api_test_util.TestCase):
     data = {
         'policies': [{
             'criteria': [{
-                'type': 'LAST_MODIFIED_DAYS'
+                'type': 'LAST_MODIFIED_TIME'
             }],
             'name': 'policy name',
             'operation': {

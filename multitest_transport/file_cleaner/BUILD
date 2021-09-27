@@ -12,6 +12,7 @@ pytype_strict_library(
     deps = [
         "//multitest_transport/models:messages_lib",
         "//multitest_transport/models:ndb_models_lib",
+        third_party("pytimeparse"),
     ],
 )
 

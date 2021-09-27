@@ -879,7 +879,7 @@ class FileCleanerOperationType(messages.Enum):
 
 
 class FileCleanerCriterionType(messages.Enum):
-  LAST_MODIFIED_DAYS = 0
+  LAST_MODIFIED_TIME = 0
   NAME_MATCH = 1
 
 
