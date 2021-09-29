@@ -85,6 +85,37 @@ class CriterionTest(fake_filesystem_unittest.TestCase):
     self.assertFalse(name_match.Apply('file.txt'))
     self.assertFalse(name_match.Apply(''))
 
+  def testSystemAvailableSpace(self):
+    self.fs.add_mount_point('/disk_1', total_size=300 << 30)
+    self.fs.add_mount_point('/disk_2', total_size=100 << 30)
+
+    system_available_space = criterion.BuildCriterion(
+        messages.FileCleanerCriterion(
+            type=ndb_models.FileCleanerCriterionType.SYSTEM_AVAILABLE_SPACE,
+            params=[messages.NameValuePair(name='threshold', value='200GB')]))
+
+    self.assertFalse(system_available_space.Apply('/disk_1'))
+    self.assertTrue(system_available_space.Apply('/disk_2'))
+
+  def testSystemAvailableSpace_noUnit(self):
+    self.fs.add_mount_point('/disk_1', total_size=200)
+    self.fs.add_mount_point('/disk_2', total_size=100)
+
+    system_available_space = criterion.BuildCriterion(
+        messages.FileCleanerCriterion(
+            type=ndb_models.FileCleanerCriterionType.SYSTEM_AVAILABLE_SPACE,
+            params=[messages.NameValuePair(name='threshold', value='200')]))
+
+    self.assertFalse(system_available_space.Apply('/disk_1'))
+    self.assertTrue(system_available_space.Apply('/disk_2'))
+
+  def testSystemAvailableSpace_invalidDiskSpace(self):
+    with self.assertRaises(ValueError):
+      criterion.BuildCriterion(
+          messages.FileCleanerCriterion(
+              type=ndb_models.FileCleanerCriterionType.SYSTEM_AVAILABLE_SPACE,
+              params=[messages.NameValuePair(name='threshold', value='200dB')]))
+
 
 if __name__ == '__main__':
   absltest.main()

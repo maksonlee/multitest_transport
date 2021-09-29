@@ -882,6 +882,7 @@ class FileCleanerCriterionType(messages.Enum):
   LAST_ACCESS_TIME = 0
   LAST_MODIFIED_TIME = 1
   NAME_MATCH = 2
+  SYSTEM_AVAILABLE_SPACE = 3
 
 
 class FileCleanerTargetType(messages.Enum):
