@@ -226,6 +226,7 @@ def set_env_config(modules):
       use_google_api=False,
       should_sync_lab_config=False,
       should_sync_harness_image=False,
+      should_manage_harness_update=False,
       event_queue_name='tfc-event-queue',
       object_event_filter=[
           common.ObjectEventType.REQUEST_STATE_CHANGED,
