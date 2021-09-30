@@ -78,18 +78,18 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
 # Pin the virtualenv version to use a one with a proven compatibility with VTS.
 RUN pip install virtualenv==20.0.31
 
-# Install JDK9 from AOSP (https://android.googlesource.com/platform/prebuilts/jdk/jdk9.git/+/375786699dcb340ab2d08de7f5d13dba6637f221)
-RUN mkdir -p /jdk/jdk9 && \
-    cd /jdk/jdk9 && \
+# Install JDK11 from AOSP (https://android.googlesource.com/platform/prebuilts/jdk/jdk11.git/+/4b776e23b6964354047211b1e343dc3ca14ce60a)
+RUN mkdir -p /jdk/jdk11 && \
+    cd /jdk/jdk11 && \
     git init && \
-    git remote add origin https://android.googlesource.com/platform/prebuilts/jdk/jdk9.git && \
+    git remote add origin https://android.googlesource.com/platform/prebuilts/jdk/jdk11.git && \
     git config core.sparseCheckout true && \
     echo "linux-x86/" >> .git/info/sparse-checkout && \
-    git fetch origin 375786699dcb340ab2d08de7f5d13dba6637f221 --depth 1 && \
-    git checkout 375786699dcb340ab2d08de7f5d13dba6637f221 && \
+    git fetch origin 4b776e23b6964354047211b1e343dc3ca14ce60a --depth 1 && \
+    git checkout 4b776e23b6964354047211b1e343dc3ca14ce60a && \
     rm -rf .git/ && \
     cd -
-ENV JAVA_HOME /jdk/jdk9/linux-x86
+ENV JAVA_HOME /jdk/jdk11/linux-x86
 ENV PATH ${JAVA_HOME}/bin:${PATH}
 
 # Install SDK tools (aapt, adb, fastboot, mke2fs)
