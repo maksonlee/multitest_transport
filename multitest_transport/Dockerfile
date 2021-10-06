@@ -15,6 +15,9 @@
 FROM ubuntu:20.04
 MAINTAINER Moon Kim <moonk@google.com>
 
+ENV LC_ALL en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US.UTF-8
 ENV PATH /tmp/custom_sdk_tools:${PATH}
 
 # Make sure apt-get retries on failures
@@ -30,6 +33,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         git \
         iputils-ping \
         libc++-dev \
+        locales \
+        locales-all \
         lsof \
         ndppd \
         python \
