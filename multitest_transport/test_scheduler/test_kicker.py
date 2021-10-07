@@ -595,7 +595,7 @@ def _CreateTFCRequest(test_run_id):
       prev_test_context=prev_test_context,
       max_concurrent_tasks=max_concurrent_tasks,
       affinity_tag=str(test_run.key.id()))
-  logging.info('new_request_msg=%s', new_request_msg)
+  logging.debug('new_request_msg=%s', new_request_msg)
   request = tfc_client.NewRequest(new_request_msg)
   logging.info('TFC request %s is created', request.id)
   test_run.request_id = request.id
