@@ -28,7 +28,7 @@ import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/servi
 import {DEFAULT_PAGE_SIZE, Paginator} from 'google3/third_party/py/multitest_transport/ui2/app/shared/paginator';
 import {TableRowsSelectManager} from 'google3/third_party/py/multitest_transport/ui2/app/shared/table_rows_select';
 import {assertRequiredInput} from 'google3/third_party/py/multitest_transport/ui2/app/shared/util';
-import {forkJoin, interval, Observable, of as observableOf, ReplaySubject, throwError} from 'rxjs';
+import {forkJoin, Observable, of as observableOf, ReplaySubject, throwError, timer} from 'rxjs';
 import {catchError, concatMap, delay, filter, map, mergeMap, retryWhen, switchMap, take, takeUntil} from 'rxjs/operators';
 
 import {APP_DATA, AppData} from '../services';
@@ -311,7 +311,7 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
     this.clearInput();
     this.tableRowsSelectManager.selectSelection([...this.initialSelection]);
     if (this.autoUpdate) {
-      interval(this.autoUpdateInterval)
+      timer(0, this.autoUpdateInterval)
           .pipe(takeUntil(this.destroy))
           .subscribe(() => {
             this.load(0, true);

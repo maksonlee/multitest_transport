@@ -85,7 +85,7 @@
 
     <test-run-target-picker [(deviceSpecs)]="testRunConfig.device_specs"
                             [(shardCount)]="testRunConfig.shard_count"
-                            [autoUpdate]="stepper.selectedIndex === 1"
+                            [autoUpdate]="true"
                             (deviceSpecsChange)="updateSelectedDeviceActions()"
                             [(allowPartialDeviceMatch)]="testRunConfig.allow_partial_device_match">
     </test-run-target-picker>
