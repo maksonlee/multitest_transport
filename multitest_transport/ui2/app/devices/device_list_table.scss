@@ -34,11 +34,6 @@ mat-table {
   overflow-x: auto;
   width: 100%;
 
-  mat-cell,
-  mat-header-cell {
-    margin-right: 10px;
-  }
-
   mat-header-row {
     position: sticky;
     z-index: 100;

@@ -23,10 +23,6 @@
 mat-table {
   overflow-x: auto;
 
-  mat-cell, mat-header-cell {
-    margin-right: 10px;
-  }
-
   mat-header-row, mat-row {
     align-items: stretch;
     height: auto;
