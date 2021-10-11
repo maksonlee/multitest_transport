@@ -20,7 +20,6 @@ import {Component, ElementRef, EventEmitter, Inject, Input, OnChanges, OnDestroy
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatAutocomplete, MatAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatTable} from '@angular/material/mdc-table';
-import {Title} from '@angular/platform-browser';
 import {ActivatedRoute, convertToParamMap, ParamMap, Router} from '@angular/router';
 import {SurveyTrigger} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_lab_models';
 import {TableColumn} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_models';
@@ -40,7 +39,6 @@ import {DeviceRecoveryStateRequest, FilterHintList, FilterHintType, NoteList, Re
 import {UserService} from '../services/user_service';
 import {FilterBarUtility} from '../shared/filterbar_util';
 import {OverflowListType} from '../shared/overflow_list';
-import {APPLICATION_NAME, LAB_APPLICATION_NAME} from '../shared/shared_module';
 import {getFilterDefaultSingleValue} from '../shared/util';
 
 /** Displaying a list of devices. */
@@ -154,7 +152,6 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
   readonly deviceListPageToken = 'deviceListPageToken';
   readonly allSize = 10000;
   readonly pageSizeOptions = [10, 20, 50, this.allSize];
-  headerTitle = 'Devices';
 
   labs: string[] = [];
   selectedLab = '';
@@ -258,7 +255,6 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
       private readonly route: ActivatedRoute,
       private readonly storageService: StorageService,
       private readonly tfcClient: TfcClient,
-      private readonly title: Title,
       readonly userService: UserService,
       @Inject(APP_DATA) readonly appData: AppData,
   ) {
@@ -292,13 +288,6 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
         show: true
       });
     }
-
-    // TODO: Add a utility method to help with set up current
-    // page's title with ease.
-    this.title.setTitle(`${
-        this.appData.isAtsLabInstance ?
-            LAB_APPLICATION_NAME :
-            APPLICATION_NAME} - ${this.headerTitle}`);
     this.setFilterBarParameters();
     this.initFilterBarThenLoad();
     this.loadDisplayColumnFromLocalStorage();

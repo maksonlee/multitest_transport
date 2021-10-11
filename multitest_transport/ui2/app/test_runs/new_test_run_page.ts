@@ -20,6 +20,7 @@ import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
 import {MatButton} from '@angular/material/button';
 import {MatChipInputEvent} from '@angular/material/chips';
 import {MatStepper} from '@angular/material/stepper';
+import {Title} from '@angular/platform-browser';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 import {forkJoin, of as observableOf} from 'rxjs';
 import {finalize, first} from 'rxjs/operators';
@@ -32,6 +33,7 @@ import {RerunContext, testResourceDefToObj} from '../services/mtt_models';
 import {MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
 import {Notifier} from '../services/notifier';
 import {FormChangeTracker} from '../shared/can_deactivate';
+import {APPLICATION_NAME} from '../shared/shared_module';
 import {TestRunConfigForm} from '../shared/test_run_config_form';
 import {buildApiErrorMessage, resetStepCompletion} from '../shared/util';
 
@@ -99,11 +101,14 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
       private readonly mttObjectMapService: MttObjectMapService,
       private readonly notifier: Notifier,
       private readonly deviceInfoService: DeviceInfoService,
+      private readonly title: Title,
   ) {
     super();
   }
 
   ngOnInit() {
+    this.title.setTitle(`${APPLICATION_NAME} - New Test Run`);
+
     this.route.queryParams.pipe(first()).subscribe((params: Params) => {
       this.prevTestRunId = params['prevTestRunId'];
       this.testRunConfig.test_id = params['testId'];

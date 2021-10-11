@@ -32,6 +32,7 @@ import {DeviceDetailsHistory} from './device_details_history';
 import {DeviceDetailsPage} from './device_details_page';
 import {DeviceDetailsSummary} from './device_details_summary';
 import {DeviceList} from './device_list';
+import {DeviceListPage} from './device_list_page';
 import {DeviceListTable} from './device_list_table';
 import {DevicePicker} from './device_picker';
 
@@ -43,6 +44,7 @@ const COMPONENTS = [
   DeviceDetailsSummary,
   DeviceListTable,
   DeviceList,
+  DeviceListPage,
   DevicePicker,
 ];
 

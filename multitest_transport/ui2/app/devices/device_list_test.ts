@@ -17,7 +17,6 @@
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {DebugElement, LOCALE_ID} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
-import {Title} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, convertToParamMap, Router} from '@angular/router';
 import {of as observableOf} from 'rxjs';
@@ -29,7 +28,6 @@ import {Notifier} from '../services/notifier';
 import {DEVICE_LIST_KEY} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
 import {DeviceRecoveryStateRequest, FilterHintType, NoteList, RecoveryState} from '../services/tfc_models';
-import {LAB_APPLICATION_NAME} from '../shared/shared_module';
 import {ActivatedRouteStub} from '../testing/activated_route_stub';
 import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
 import {newMockAppData, newMockDeviceNote, newMockFilterHintList, newMockLabDeviceInfo, newMockLabDeviceInfosResponse} from '../testing/mtt_lab_mocks';
@@ -104,12 +102,6 @@ describe('DeviceList', () => {
 
   it('should gets initialized correctly', () => {
     expect(deviceList).toBeTruthy();
-  });
-
-  it('initializes correctly and has a correct page title', () => {
-    expect(deviceList).toBeTruthy();
-    expect(el.injector.get(Title).getTitle())
-        .toEqual(`${LAB_APPLICATION_NAME} - Devices`);
   });
 
   it('should call the tfc client api methods correctly', async () => {

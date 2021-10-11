@@ -16,15 +16,13 @@
 
 import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
 import {Component, Inject, NgModule, OnDestroy} from '@angular/core';
-import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {MatTooltipModule} from '@angular/material/mdc-tooltip';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {NavigationEnd, Router, RouterModule, Routes} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
-import {first} from 'rxjs/operators';
-import {takeUntil} from 'rxjs/operators';
+import {first, takeUntil} from 'rxjs/operators';
 
 import {AuthModule} from './auth/auth_module';
 import {AuthReturnPage} from './auth/auth_return_page';
@@ -36,7 +34,7 @@ import {ConfigSetPicker} from './config_sets/config_set_picker';
 import {DeviceActionEditPage} from './device_actions/device_action_edit_page';
 import {DeviceActionList} from './device_actions/device_action_list';
 import {DeviceDetailsPage} from './devices/device_details_page';
-import {DeviceList} from './devices/device_list';
+import {DeviceListPage} from './devices/device_list_page';
 import {HostDetailsPage} from './hosts/host_details_page';
 import {HostListPage} from './hosts/host_list_page';
 import {NotesModule} from './notes/notes_module';
@@ -101,7 +99,7 @@ export const routes: Routes = [
     component: DeviceActionEditPage,
     canDeactivate: [UnsavedChangeGuard]
   },
-  {path: 'devices', component: DeviceList},
+  {path: 'devices', component: DeviceListPage},
   {path: 'devices/:id', component: DeviceDetailsPage},
   {path: 'hosts', component: HostListPage},
   {path: 'hosts/:id', component: HostDetailsPage},

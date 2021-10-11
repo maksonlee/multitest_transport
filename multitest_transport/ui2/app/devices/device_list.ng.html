@@ -18,7 +18,7 @@
 
 <mat-toolbar class="device-list-toolbar">
   <mat-toolbar-row fxLayoutAlign="space-between center">
-    <h1>{{ headerTitle }}</h1>
+    <h1>Devices</h1>
     <mat-form-field appearance="outline" class="mat-select-filter" fxFlex="300px">
       <mat-select [(ngModel)]="selectedLab" (selectionChange)="load()">
         <mat-select-trigger> Lab: {{ selectedLab }} </mat-select-trigger>
