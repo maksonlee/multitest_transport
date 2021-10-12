@@ -103,6 +103,7 @@ ng_module(
         third_party_js("angular2:common_http_testing"),
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),
+        third_party_js("angular2:material_chips"),
         third_party_js("angular2:material_dialog"),
         third_party_js("angular2:platform_browser"),
         third_party_js("angular2:platform_browser_animations"),

@@ -57,6 +57,7 @@ ng_module(
     deps = [
         ":test_plans",
         third_party_js("angular2:cdk_a11y"),
+        third_party_js("angular2:material_chips"),
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),
         third_party_js("angular2:platform_browser_animations"),
