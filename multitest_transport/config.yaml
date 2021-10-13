@@ -428,39 +428,3 @@ tests:
   module_config_pattern: 'android-cts/testcases/.*\.config'
   module_execution_args: '-m ${MODULE_NAME}'
 
-file_cleaner:
-  policies:
-  - name: Archive directories not modified
-    target: DIRECTORY
-    operation:
-      type: ARCHIVE
-    criteria:
-    - type: LAST_MODIFIED_TIME
-      params:
-      - name: ttl
-        value: 7 days
-
-  - name: Delete files not modified
-    target: FILE
-    operation:
-      type: DELETE
-    criteria:
-    - type: LAST_MODIFIED_TIME
-      params:
-      - name: ttl
-        value: 7 days
-
-  configs:
-  - name: Clean up test results
-    description: Clean up test results
-    directories:
-    - '/data/app_default_bucket/test_runs'
-    policy_names:
-    - Archive directories not modified
-
-  - name: Clean up test work files
-    description: Clean up test work files
-    directories:
-    - '/data/tmp'
-    policy_names:
-    - Delete files not modified

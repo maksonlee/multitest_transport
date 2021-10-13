@@ -953,6 +953,41 @@ class FileCleanerSettings(ndb.Model):
   configs = ndb.LocalStructuredProperty(FileCleanerConfig, repeated=True)
 
 
+DEFAULT_FILE_CLEANER_SETTINGS = FileCleanerSettings(
+    policies=[
+        FileCleanerPolicy(
+            name='Archive directories not modified',
+            target=FileCleanerTargetType.DIRECTORY,
+            operation=FileCleanerOperation(
+                type=FileCleanerOperationType.ARCHIVE),
+            criteria=[FileCleanerCriterion(
+                type=FileCleanerCriterionType.LAST_MODIFIED_TIME,
+                params=[NameValuePair(name='ttl', value='7 days')])]),
+        FileCleanerPolicy(
+            name='Delete files not modified',
+            target=FileCleanerTargetType.FILE,
+            operation=FileCleanerOperation(
+                type=FileCleanerOperationType.DELETE),
+            criteria=[FileCleanerCriterion(
+                type=FileCleanerCriterionType.LAST_MODIFIED_TIME,
+                params=[NameValuePair(name='ttl', value='7 days')])])
+    ],
+    configs=[
+        FileCleanerConfig(
+            name='Clean up test results',
+            description='Clean up test results',
+            directories=[
+                '{}/{}/test_runs'.format(env.STORAGE_PATH, env.GCS_BUCKET_NAME)
+            ],
+            policy_names=['Archive directories not modified']),
+        FileCleanerConfig(
+            name='Clean up test work files',
+            description='Clean up test work files',
+            directories=['{}/tmp'.format(env.STORAGE_PATH)],
+            policy_names=['Delete files not modified'])
+    ])
+
+
 def GetFileCleanerSettings():
   """Returns a file cleaner settings object.
 
@@ -960,7 +995,4 @@ def GetFileCleanerSettings():
     a FileCleanerSettings object.
   """
   obj = ndb.Key(FileCleanerSettings, FILE_CLEANER_SETTINGS_ID).get()
-  if not obj:
-    obj = FileCleanerSettings(id=FILE_CLEANER_SETTINGS_ID)
-    obj.put()
-  return obj
+  return obj or DEFAULT_FILE_CLEANER_SETTINGS

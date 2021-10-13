@@ -59,7 +59,8 @@ class NodeConfigApi(remote.Service):
         build_channels=ndb_models.BuildChannelConfig.query().fetch(),
         device_actions=ndb_models.DeviceAction.query().fetch(),
         test_run_actions=ndb_models.TestRunAction.query().fetch(),
-        tests=ndb_models.Test.query().fetch())
+        tests=ndb_models.Test.query().fetch(),
+        file_cleaner=ndb_models.GetFileCleanerSettings())
     header = '# MTT Configuration - %s - %s\n' % (
         env.HOSTNAME, datetime.datetime.now())
     data = config_encoder.Encode(config_set)
