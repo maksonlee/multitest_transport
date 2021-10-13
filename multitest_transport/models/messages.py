@@ -22,7 +22,6 @@ from protorpc import messages
 import pytz
 import six
 from tradefed_cluster import api_messages
-from tradefed_cluster import common
 from tradefed_cluster.util import ndb_shim as ndb
 
 from google.oauth2 import credentials
@@ -39,14 +38,6 @@ from multitest_transport.util import xts_result
 
 _DEFAULT_CLUSTER = 'default'
 _OAUTH2_CREDENTIALS_USERNAME = 'User Account'
-_TEST_RUN_CANCEL_REASON_MAP = {
-    common.CancelReason.QUEUE_TIMEOUT: 'Queue timeout',
-    common.CancelReason.REQUEST_API: 'User requested',
-    common.CancelReason.COMMAND_ALREADY_CANCELED: 'Command already canceled',
-    common.CancelReason.REQUEST_ALREADY_CANCELED: 'Request already canceled',
-    common.CancelReason.COMMAND_NOT_EXECUTABLE: 'Invalid command',
-    common.CancelReason.INVALID_REQUEST: 'Invalid request',
-}
 
 _convert_func_map = {}
 
@@ -1136,15 +1127,14 @@ def _TestRunConverter(obj):
   )
 
 
-def _GetTestRunStateInfo(obj):
+def _GetTestRunStateInfo(test_run: ndb_models.TestRun):
   """Determine an ndb_models.TestRun's relevant state information."""
-  if obj.state == ndb_models.TestRunState.ERROR:
-    return obj.error_reason
-  if obj.state == ndb_models.TestRunState.CANCELED:
-    return _TEST_RUN_CANCEL_REASON_MAP.get(obj.cancel_reason)
-  if obj.state == ndb_models.TestRunState.PENDING:
+  error_info = test_run.GetErrorInfo()
+  if error_info:
+    return error_info
+  if test_run.state == ndb_models.TestRunState.PENDING:
     # TODO: consider adding a download progress endpoint instead
-    for resource in obj.test_resources:
+    for resource in test_run.test_resources:
       if resource.cache_url:
         continue  # already downloaded
       tracker = ndb_models.TestResourceTracker.get_by_id(resource.url)

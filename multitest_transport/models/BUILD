@@ -137,7 +137,6 @@ pytype_strict_library(
         "//multitest_transport/plugins:plugin_base",
         "//multitest_transport/util",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
-        "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("google/oauth2:credentials"),
         third_party("google/oauth2:service_account"),

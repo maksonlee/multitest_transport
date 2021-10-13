@@ -134,7 +134,7 @@ class MessagesTest(testbed_dependent_test.TestbedDependentTest):
     obj = ndb_models.TestRun(
         state=ndb_models.TestRunState.CANCELED,
         cancel_reason=common.CancelReason.INVALID_REQUEST)
-    expected = messages._TEST_RUN_CANCEL_REASON_MAP[
+    expected = ndb_models._TEST_RUN_CANCEL_REASON_MAP[
         common.CancelReason.INVALID_REQUEST]
     self.assertEqual(expected, messages._GetTestRunStateInfo(obj))
 

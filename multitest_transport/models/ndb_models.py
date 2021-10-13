@@ -17,6 +17,7 @@
 import collections
 import datetime
 import re
+from typing import Optional
 import uuid
 
 from protorpc import messages
@@ -30,6 +31,16 @@ from multitest_transport.util import oauth2_util
 
 NODE_CONFIG_ID = 1
 FILE_CLEANER_SETTINGS_ID = 1
+
+# Maps cancellation reasons into human-readable strings.
+_TEST_RUN_CANCEL_REASON_MAP = {
+    common.CancelReason.QUEUE_TIMEOUT: 'Queue timeout',
+    common.CancelReason.REQUEST_API: 'User requested',
+    common.CancelReason.COMMAND_ALREADY_CANCELED: 'Command already canceled',
+    common.CancelReason.REQUEST_ALREADY_CANCELED: 'Request already canceled',
+    common.CancelReason.COMMAND_NOT_EXECUTABLE: 'Invalid command',
+    common.CancelReason.INVALID_REQUEST: 'Invalid request',
+}
 
 
 class NameValuePair(ndb.Model):
@@ -730,6 +741,13 @@ class TestRun(ndb.Model):
       ctx['MTT_%s_BUILD_ID' % t.name] = build_id or ''
       ctx['MTT_%s_TARGET' % t.name] = target or ''
     return ctx
+
+  def GetErrorInfo(self) -> Optional[str]:
+    """Returns additional information if run was cancelled or errored out."""
+    if self.state == TestRunState.ERROR:
+      return self.error_reason
+    if self.state == TestRunState.CANCELED:
+      return _TEST_RUN_CANCEL_REASON_MAP.get(self.cancel_reason)
 
 
 class TestRunSummary(ndb.Model):
