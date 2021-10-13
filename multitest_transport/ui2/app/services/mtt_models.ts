@@ -615,8 +615,8 @@ export enum TestResourceType {
 
 /** Sharding Mode */
 export enum ShardingMode {
-  RUNNER = "RUNNER",
-  MODULE = "MODULE",
+  RUNNER = 'RUNNER',
+  MODULE = 'MODULE',
 }
 
 /**
@@ -919,4 +919,78 @@ export interface TableColumn {
   displayName: string;
   removable: boolean;
   show: boolean;
+}
+
+/** File cleaner operation types. */
+export enum FileCleanerOperationType {
+  ARCHIVE = 'ARCHIVE',
+  DELETE = 'DELETE',
+}
+
+/** File cleaner criterion types. */
+export enum FileCleanerCriterionType {
+  LAST_ACCESS_TIME = 'LAST_ACCESS_TIME',
+  LAST_MODIFIED_TIME = 'LAST_MODIFIED_TIME',
+  NAME_MATCH = 'NAME_MATCH',
+  SYSTEM_AVAILABLE_SPACE = 'SYSTEM_AVAILABLE_SPACE',
+}
+
+/** File cleaner target types. */
+export enum FileCleanerTargetType {
+  FILE = 'FILE',
+  DIRECTORY = 'DIRECTORY',
+}
+
+/** File cleaner operation. */
+export interface FileCleanerOperation {
+  type: FileCleanerOperationType;
+  params?: NameValuePair[];
+}
+
+/** File cleaner criterion. */
+export interface FileCleanerCriterion {
+  type: FileCleanerCriterionType;
+  params?: NameValuePair[];
+}
+
+/** File cleaner policy. */
+export interface FileCleanerPolicy {
+  name: string;
+  target?: FileCleanerTargetType;
+  operation: FileCleanerOperation;
+  criteria?: FileCleanerCriterion[];
+}
+
+/** Initializes a file cleaner policy. */
+export function initFileCleanerPolicy(): Partial<FileCleanerPolicy> {
+  return {
+    target: FileCleanerTargetType.FILE,
+    operation: {
+      type: FileCleanerOperationType.DELETE,
+      params: [],
+    },
+    criteria: [],
+  };
+}
+
+/** File cleaner config. */
+export interface FileCleanerConfig {
+  name: string;
+  description?: string;
+  directories?: string[];
+  policy_names?: string[];
+}
+
+/** Initializes a file cleaner config. */
+export function initFileCleanerConfig(): Partial<FileCleanerConfig> {
+  return {
+    directories: [],
+    policy_names: [],
+  };
+}
+
+/** File cleaner settings. Combines policies and configs. */
+export interface FileCleanerSettings {
+  policies?: FileCleanerPolicy[];
+  configs?: FileCleanerConfig[];
 }

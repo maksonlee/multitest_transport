@@ -25,6 +25,7 @@ import {ConfigSetsModule} from '../config_sets/config_sets_module';
 import {DeviceActionsModule} from '../device_actions/device_actions_module';
 import {SharedModule} from '../shared/shared_module';
 import {TestRunActionsModule} from '../test_run_actions/test_run_actions_module';
+import {FileCleanerModule} from '../file_cleaner/file_cleaner_module';
 
 import {SettingForm} from './setting_form';
 import {SettingPage} from './setting_page';
@@ -40,6 +41,7 @@ const COMPONENTS = [SettingPage, SettingForm];
     ConfigSetsModule,
     DeviceActionsModule,
     TestRunActionsModule,
+    FileCleanerModule,
   ],
   exports: COMPONENTS,
 })

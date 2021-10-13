@@ -35,6 +35,7 @@ import {DeviceActionEditPage} from './device_actions/device_action_edit_page';
 import {DeviceActionList} from './device_actions/device_action_list';
 import {DeviceDetailsPage} from './devices/device_details_page';
 import {DeviceListPage} from './devices/device_list_page';
+import {FileCleanerSettingList} from './file_cleaner/file_cleaner_setting_list';
 import {HostDetailsPage} from './hosts/host_details_page';
 import {HostListPage} from './hosts/host_list_page';
 import {NotesModule} from './notes/notes_module';
@@ -116,6 +117,7 @@ export const routes: Routes = [
         component: SettingForm,
         canDeactivate: [UnsavedChangeGuard]
       },
+      {path: 'file_cleaner', component: FileCleanerSettingList},
       {path: '**', redirectTo: '/settings/general', pathMatch: 'full'},
     ]
   },

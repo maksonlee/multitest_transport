@@ -1,0 +1,98 @@
+<!--
+ Copyright 2021 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+
+<div [class.loading-mask]="isLoading" class="page">
+  <div class="header-section">
+    <span class="description">
+      File cleaner will periodically clean up unused files in hosts.
+    </span>
+  </div>
+
+  <div class="header-section">
+    <h2>Policies</h2>
+    <!-- TODO: Add policy edit page. -->
+    <button aria-label="Add a new file cleaner policy" color="accent" disabled mat-flat-button>
+      + New Policy
+    </button>
+  </div>
+
+  <ng-container *ngIf="settings.policies">
+    <mat-card class="hover-mat-card" *ngFor="let policy of settings.policies; let i = index">
+      <h3>
+        <span>{{ policy.name }}</span>
+        <div class="button-group">
+          <!-- TODO: Add policy edit page. -->
+          <button aria-label="Edit" class="edit-button" disabled mat-icon-button matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button
+            aria-label="Delete"
+            class="delete-button"
+            mat-icon-button
+            matTooltip="Delete"
+            (click)="deletePolicy(policy, i)"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </h3>
+    </mat-card>
+  </ng-container>
+
+  <div class="policy-list-empty" *ngIf="!settings.policies || !settings.policies.length">
+    No file cleaner policies found.
+  </div>
+
+  <div class="header-section">
+    <h2>Configs</h2>
+    <!-- TODO: Add config edit page. -->
+    <button aria-label="Add a new file cleaner config" color="accent" disabled mat-flat-button>
+      + New Config
+    </button>
+  </div>
+
+  <ng-container *ngIf="settings.configs">
+    <mat-card class="hover-mat-card" *ngFor="let config of settings.configs; let i = index">
+      <h3>
+        <span>{{ config.name }}</span>
+        <div class="button-group">
+          <!-- TODO: Add config edit page. -->
+          <button aria-label="Edit" class="edit-button" disabled mat-icon-button matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button
+            aria-label="Delete"
+            class="delete-button"
+            mat-icon-button
+            matTooltip="Delete"
+            (click)="deleteConfig(config, i)"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </h3>
+      <mat-card-content>
+        <div>{{ config.description }}</div>
+      </mat-card-content>
+    </mat-card>
+  </ng-container>
+
+  <div class="config-list-empty" *ngIf="!settings.configs || !settings.configs.length">
+    No file cleaner configs found.
+  </div>
+</div>

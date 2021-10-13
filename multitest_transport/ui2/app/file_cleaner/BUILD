@@ -5,36 +5,28 @@ licenses(["notice"])
 per_file_sass_binaries(
     name = "styles",
     srcs = glob(["*.scss"]),
+    visibility = ["//visibility:private"],
     deps = ["//multitest_transport/ui2:constants"],
 )
 
 ng_module(
-    name = "settings",
+    name = "file_cleaner",
     srcs = [
-        "setting_form.ts",
-        "setting_page.ts",
-        "settings_module.ts",
+        "file_cleaner_module.ts",
+        "file_cleaner_setting_list.ts",
     ],
     assets = [
         ":styles",
-        "setting_form.ng.html",
-        "setting_page.ng.html",
+        "file_cleaner_setting_list.ng.html",
     ],
     visibility = ["//multitest_transport"],
     deps = [
-        third_party_js("angular2:cdk_a11y"),
-        third_party_js("angular2:cdk_collections"),
         third_party_js("angular2:core"),
-        third_party_js("angular2:platform_browser"),
+        third_party_js("angular2:cdk_a11y"),
         third_party_js("angular2:router"),
         third_party_js("rxjs"),
-        "//multitest_transport/ui2/app/build_channels",
-        "//multitest_transport/ui2/app/config_sets",
-        "//multitest_transport/ui2/app/device_actions",
-        "//multitest_transport/ui2/app/file_cleaner",
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/app/shared",
-        "//multitest_transport/ui2/app/test_run_actions",
     ],
 )
 
@@ -42,18 +34,15 @@ ng_module(
     name = "tests",
     testonly = True,
     srcs = [
-        "setting_form_test.ts",
-        "setting_page_test.ts",
+        "file_cleaner_setting_list_test.ts",
     ],
     visibility = ["//multitest_transport"],
     deps = [
-        ":settings",
+        ":file_cleaner",
         third_party_js("angular2:cdk_a11y"),
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),
-        third_party_js("angular2:platform_browser"),
         third_party_js("angular2:platform_browser_animations"),
-        third_party_js("angular2:router_testing"),
         third_party_js("rxjs"),
         third_party_js("typings/jasmine"),
         "//multitest_transport/ui2/app/services",

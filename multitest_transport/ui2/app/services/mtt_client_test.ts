@@ -507,8 +507,7 @@ describe('MttClient', () => {
       const observable = mttClient.deleteTestPlan(TEST_PLAN.id);
       expect(httpClientSpy.delete)
           .toHaveBeenCalledWith(
-              `${MTT_API_URL}/test_plans/${TEST_PLAN.id}`,
-              jasmine.any(Object));
+              `${MTT_API_URL}/test_plans/${TEST_PLAN.id}`, jasmine.any(Object));
       expect(httpClientSpy.delete).toHaveBeenCalledTimes(1);
       observable.subscribe((response) => {
         expect(response).toBeNull();
@@ -617,6 +616,49 @@ describe('MttClient', () => {
       });
     });
   });
+
+  describe('getFileCleanerSettings', () => {
+    const FILE_CLEANER_SETTINGS = {
+      policies: [testUtil.newMockFileCleanerPolicy()],
+      configs: [testUtil.newMockFileCleanerConfig()],
+    };
+
+    beforeEach(() => {
+      httpClientSpy.get.and.returnValue(observableOf(FILE_CLEANER_SETTINGS));
+    });
+
+    it('calls API and parses response correctly', () => {
+      const observable = mttClient.getFileCleanerSettings();
+      expect(httpClientSpy.get)
+          .toHaveBeenCalledOnceWith(`${MTT_API_URL}/file_cleaner/settings`);
+      observable.subscribe((response) => {
+        expect(response).toEqual(FILE_CLEANER_SETTINGS);
+      });
+    });
+  });
+
+  describe('updateFileCleanerSettings', () => {
+    const FILE_CLEANER_SETTINGS = {
+      policies: [testUtil.newMockFileCleanerPolicy()],
+      configs: [testUtil.newMockFileCleanerConfig()],
+    };
+
+    beforeEach(() => {
+      httpClientSpy.put.and.returnValue(observableOf(FILE_CLEANER_SETTINGS));
+    });
+
+    it('calls API and parses response correctly', () => {
+      const observable =
+          mttClient.updateFileCleanerSettings(FILE_CLEANER_SETTINGS);
+      expect(httpClientSpy.put)
+          .toHaveBeenCalledOnceWith(
+              `${MTT_API_URL}/file_cleaner/settings`, FILE_CLEANER_SETTINGS,
+              jasmine.any(Object));
+      observable.subscribe((response) => {
+        expect(response).toEqual(FILE_CLEANER_SETTINGS);
+      });
+    });
+  });
 });
 
 describe('TestRunActionClient', () => {
@@ -624,8 +666,8 @@ describe('TestRunActionClient', () => {
   let auth: jasmine.SpyObj<AuthService>;
   let client: TestRunActionClient;
 
-  const action: TestRunAction =
-      {id: 'id', name: 'name', hook_class_name: 'class_name'};
+  const action:
+      TestRunAction = {id: 'id', name: 'name', hook_class_name: 'class_name'};
 
   beforeEach(() => {
     http = jasmine.createSpyObj<HttpClient>(

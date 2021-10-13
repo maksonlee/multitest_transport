@@ -468,6 +468,41 @@ export function newMockTestCaseResult(
   } as mttModels.TestCaseResult;
 }
 
+/** Creates a new mock FileCleanerOperation object */
+export function newMockFileCleanerOperation(
+    type = mttModels.FileCleanerOperationType.ARCHIVE,
+    params?: mttModels.NameValuePair[]) {
+  return {
+    type,
+    params,
+  } as mttModels.FileCleanerOperation;
+}
+
+/** Creates a new mock FileCleanerPolicy object */
+export function newMockFileCleanerPolicy(
+    name = 'policyName', target = mttModels.FileCleanerTargetType.FILE,
+    operation?: mttModels.FileCleanerOperation,
+    criteria?: mttModels.FileCleanerCriterion[]) {
+  return {
+    name,
+    target,
+    operation: operation || newMockFileCleanerOperation(),
+    criteria,
+  } as mttModels.FileCleanerPolicy;
+}
+
+/** Creates a new mock FileCleanerConfig object */
+export function newMockFileCleanerConfig(
+    name = 'configName', description?: string, directories: string[] = [],
+    policyNames: string[] = []) {
+  return {
+    name,
+    description,
+    directories,
+    policy_names: policyNames,
+  } as mttModels.FileCleanerConfig;
+}
+
 /*******************************************
  * Functions to create mock TFC API objects
  *******************************************/

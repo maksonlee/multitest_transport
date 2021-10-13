@@ -100,8 +100,7 @@ export class MttClient {
         {params});
   }
 
-  lookupBuildItem(url: string):
-      Observable<model.BuildItem> {
+  lookupBuildItem(url: string): Observable<model.BuildItem> {
     const params = new HttpParams().set('url', url);
     return this.http.get<model.BuildItem>(
         `${MTT_API_URL}/build_channels/build_item_lookup`, {params});
@@ -120,7 +119,7 @@ export class MttClient {
 
   deleteBuildItem(id: string, path: string) {
     const params = new AnalyticsParams('build_channels', 'delete_build_item')
-        .set('path', path);
+                       .set('path', path);
     return this.http.delete(
         `${MTT_API_URL}/build_channels/${encodeURIComponent(id)}/build_items`,
         {params});
@@ -398,6 +397,17 @@ export class MttClient {
     return this.http.get<model.TestRunOutput>(
         `${MTT_API_URL}/test_runs/${encodeURIComponent(testRunId)}/output`,
         {params});
+  }
+
+  getFileCleanerSettings() {
+    return this.http.get<model.FileCleanerSettings>(
+        `${MTT_API_URL}/file_cleaner/settings`);
+  }
+
+  updateFileCleanerSettings(settings: model.FileCleanerSettings) {
+    const params = new AnalyticsParams('file_cleaner', 'update');
+    return this.http.put(
+        `${MTT_API_URL}/file_cleaner/settings`, settings, {params});
   }
 }
 

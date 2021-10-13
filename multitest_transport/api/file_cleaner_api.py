@@ -36,3 +36,20 @@ class FileCleanerApi(remote.Service):
     """Fetches the server's file cleaner settings."""
     settings = ndb_models.GetFileCleanerSettings()
     return messages.Convert(settings, messages.FileCleanerSettings)
+
+  @base.ApiMethod(
+      messages.FileCleanerSettings,
+      messages.FileCleanerSettings,
+      http_method='PUT',
+      path='/file_cleaner/settings',
+      name='update')
+  def Update(self, request):
+    """Updates the server's file cleaner settings.
+
+    Body:
+      File cleaner settings data
+    """
+    settings = messages.Convert(request, ndb_models.FileCleanerSettings,
+                                messages.FileCleanerSettings)
+    settings.put()
+    return messages.Convert(settings, messages.FileCleanerSettings)

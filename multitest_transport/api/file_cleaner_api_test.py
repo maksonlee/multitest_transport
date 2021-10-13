@@ -81,6 +81,30 @@ class FileCleanerApiTest(api_test_util.TestCase):
     msg = json.loads(res.body)
     self.assertEqual(data, msg)
 
+  def testUpdate(self):
+    data = {
+        'policies': [{
+            'criteria': [{
+                'type': 'LAST_MODIFIED_TIME'
+            }],
+            'name': 'policy name',
+            'operation': {
+                'type': 'DELETE'
+            }
+        }],
+        'configs': [{
+            'directories': ['/test/path'],
+            'name': 'config name',
+            'policy_names': ['policy name']
+        }]
+    }
+
+    self.app.put_json('/_ah/api/mtt/v1/file_cleaner/settings', data)
+
+    self.assertEqual(
+        self._CreateFileCleanerSettings(data),
+        ndb_models.GetFileCleanerSettings())
+
 
 if __name__ == '__main__':
   absltest.main()
