@@ -4,7 +4,7 @@ Description=MTT Daemon
 [Service]
 Type=simple
 ExecStart=/var/lib/mtt/mtt --log_file=/var/log/mtt/mtt.log -v daemon /var/lib/mtt/mtt_host_config.yaml
-Restart=on-failure
+Restart=always
 RestartSec=5s
 
 [Install]
