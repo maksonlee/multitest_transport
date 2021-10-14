@@ -274,14 +274,6 @@
       </mat-cell>
     </ng-container>
 
-    <!-- Battery -->
-    <ng-container matColumnDef="battery_level">
-      <mat-header-cell *matHeaderCellDef fxFlex="150px"> Battery </mat-header-cell>
-      <mat-cell *matCellDef="let device" fxFlex="150px">
-        {{ device.extraInfo.battery_level | percent: "1.0" }}
-      </mat-cell>
-    </ng-container>
-
     <!-- Product -->
     <ng-container matColumnDef="product">
       <mat-header-cell *matHeaderCellDef fxFlex="180px"> Product </mat-header-cell>
@@ -312,6 +304,14 @@
     <ng-container matColumnDef="sim_state">
       <mat-header-cell *matHeaderCellDef fxFlex="180px"> SIM State </mat-header-cell>
       <mat-cell *matCellDef="let device" fxFlex="180px"> {{ device.sim_state }} </mat-cell>
+    </ng-container>
+
+    <!-- Battery -->
+    <ng-container matColumnDef="battery_level">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px"> Battery </mat-header-cell>
+      <mat-cell *matCellDef="let device" fxFlex="150px">
+        {{ device.extraInfo.battery_level | percent: "1.0" }}
+      </mat-cell>
     </ng-container>
 
     <!-- Test Harness -->

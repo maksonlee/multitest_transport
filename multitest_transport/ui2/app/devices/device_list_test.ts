@@ -826,8 +826,8 @@ describe('DeviceList in ATS instance', () => {
     el = deviceListFixture.debugElement;
   });
 
-  it('displays the 11 columns correctly', () => {
-    expect(deviceList.columns.length).toEqual(11);
+  it('displays the 9 columns correctly', () => {
+    expect(deviceList.columns.length).toEqual(9);
   });
 
   it('should call the queryDeviceInfos api with includeOfflineDevices=false',
@@ -885,11 +885,11 @@ describe('DeviceList in ATS instance', () => {
         .toEqual(deviceList.dataSource.map(x => x.device_serial).length);
   });
 
-  it('should be able to hide the notes button', () => {
-    expect(getTextContent(el)).toContain('Add notes');
-    deviceList.notesEnabled = false;
+  it('should be able to show the notes button', () => {
+    expect(getTextContent(el)).not.toContain('Add notes');
+    deviceList.notesEnabled = true;
     deviceListFixture.detectChanges();
     el = deviceListFixture.debugElement;
-    expect(getTextContent(el)).not.toContain('Add notes');
+    expect(getTextContent(el)).toContain('Add notes');
   });
 });

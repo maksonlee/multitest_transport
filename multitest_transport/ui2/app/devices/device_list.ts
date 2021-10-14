@@ -90,12 +90,6 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
     },
     {fieldName: 'pools', displayName: 'Pools', removable: true, show: true},
     {fieldName: 'state', displayName: 'State', removable: true, show: true},
-    {
-      fieldName: 'battery_level',
-      displayName: 'Battery',
-      removable: true,
-      show: true
-    },
     {fieldName: 'product', displayName: 'Product', removable: true, show: true},
     {fieldName: 'variant', displayName: 'Variant', removable: true, show: true},
     {
@@ -113,6 +107,12 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
     {
       fieldName: 'sim_state',
       displayName: 'SIM State',
+      removable: true,
+      show: true
+    },
+    {
+      fieldName: 'battery_level',
+      displayName: 'Battery',
       removable: true,
       show: true
     },
@@ -198,6 +198,7 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
     'offline_reason',
     'recovery_action',
     'note',
+    'run_target',
   ];
   private readonly urlQueryParamObservable: Observable<ParamMap> =
       this.route.queryParamMap.pipe(take(1));
@@ -262,6 +263,8 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
       // Hide unnecessary fieldes in the ATS instance.
       this.columns = this.columns.filter(
           x => this.atsHiddenColumns.includes(x.fieldName) === false);
+      // Hide notes button and action column in ATS instance.
+      this.notesEnabled = false;
       this.autoUpdate = true;
     } else {
       // ATS lab
