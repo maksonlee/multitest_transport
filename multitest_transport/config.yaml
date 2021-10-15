@@ -394,7 +394,8 @@ tests:
   name: CTS 12.0 (ARM)
   description: Compatibility Test Suite 12.0 (ARM)
   test_resource_defs:
-  - name: android-cts.zip
+  - default_download_url: https://dl.google.com/dl/android/cts/android-cts-12_r1-linux_x86-arm.zip
+    name: android-cts.zip
     test_resource_type: TEST_PACKAGE
     decompress: true
     mount_zip: true
