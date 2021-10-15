@@ -380,7 +380,8 @@ class TestRunApiTest(api_test_util.TestCase):
 
   @mock.patch.object(test_run_manager, 'SetTestRunState', autospec=True)
   def testCancel(self, mock_set_test_run_state):
-    test_run = self._createMockTestRuns()[0]
+    test = self._createMockTest()
+    test_run = self._createMockTestRuns(test)[0]
 
     res = self.app.post_json(
         '/_ah/api/mtt/v1/test_runs/%s/cancel' % test_run.key.id())
@@ -396,12 +397,13 @@ class TestRunApiTest(api_test_util.TestCase):
     mock_file_handle = mock.MagicMock()
     mock_file_handle_get.return_value = mock_file_handle
 
+    test = self._createMockTest()
     completed_run = self._createMockTestRuns(
-        state=ndb_models.TestRunState.COMPLETED, count=1)[0]
+        test, state=ndb_models.TestRunState.COMPLETED, count=1)[0]
     canceled_run = self._createMockTestRuns(
-        state=ndb_models.TestRunState.CANCELED, count=1)[0]
+        test, state=ndb_models.TestRunState.CANCELED, count=1)[0]
     error_run = self._createMockTestRuns(
-        state=ndb_models.TestRunState.ERROR, count=1)[0]
+        test, state=ndb_models.TestRunState.ERROR, count=1)[0]
 
     self.app.delete(
         '/_ah/api/mtt/v1/test_runs',
@@ -419,14 +421,15 @@ class TestRunApiTest(api_test_util.TestCase):
     mock_file_handle = mock.MagicMock()
     mock_file_handle_get.return_value = mock_file_handle
 
+    test = self._createMockTest()
     completed_run = self._createMockTestRuns(
-        state=ndb_models.TestRunState.COMPLETED, count=1)[0]
+        test, state=ndb_models.TestRunState.COMPLETED, count=1)[0]
     canceled_run = self._createMockTestRuns(
-        state=ndb_models.TestRunState.CANCELED, count=1)[0]
+        test, state=ndb_models.TestRunState.CANCELED, count=1)[0]
     queued_run = self._createMockTestRuns(
-        state=ndb_models.TestRunState.QUEUED, count=1)[0]
+        test, state=ndb_models.TestRunState.QUEUED, count=1)[0]
     running_run = self._createMockTestRuns(
-        state=ndb_models.TestRunState.RUNNING, count=1)[0]
+        test, state=ndb_models.TestRunState.RUNNING, count=1)[0]
 
     res = self.app.delete(
         '/_ah/api/mtt/v1/test_runs',
@@ -455,7 +458,8 @@ class TestRunApiTest(api_test_util.TestCase):
     # fails to find latest command attempt
     mock_attempt.return_value = None
 
-    test_run = self._createMockTestRuns()[0]
+    test = self._createMockTest()
+    test_run = self._createMockTestRuns(test)[0]
     res = self.app.get(
         '/_ah/api/mtt/v1/test_runs/%s/output' % test_run.key.id(),
         params={'attempt_id': 'attempt', 'path': 'path'},
@@ -470,7 +474,8 @@ class TestRunApiTest(api_test_util.TestCase):
     mock_attempt.return_value = self._createAttempt(CommandState.RUNNING)
     mock_tail.return_value = None
 
-    test_run = self._createMockTestRuns()[0]
+    test = self._createMockTest()
+    test_run = self._createMockTestRuns(test)[0]
     res = self.app.get(
         '/_ah/api/mtt/v1/test_runs/%s/output' % test_run.key.id(),
         params={'attempt_id': 'attempt', 'path': 'path'},
@@ -486,7 +491,8 @@ class TestRunApiTest(api_test_util.TestCase):
     mock_attempt.return_value = self._createAttempt(CommandState.RUNNING)
     mock_tail.return_value = file_util.FileSegment(123, ['hello', 'world'])
 
-    test_run = self._createMockTestRuns()[0]
+    test = self._createMockTest()
+    test_run = self._createMockTestRuns(test)[0]
     res = self.app.get(
         '/_ah/api/mtt/v1/test_runs/%s/output' % test_run.key.id(),
         params={'attempt_id': 'attempt', 'path': 'path'})
@@ -509,7 +515,8 @@ class TestRunApiTest(api_test_util.TestCase):
     mock_attempt.return_value = self._createAttempt(CommandState.RUNNING)
     mock_read.return_value = file_util.FileSegment(123, ['hello', 'world'])
 
-    test_run = self._createMockTestRuns()[0]
+    test = self._createMockTest()
+    test_run = self._createMockTestRuns(test)[0]
     res = self.app.get(
         '/_ah/api/mtt/v1/test_runs/%s/output' % test_run.key.id(),
         params={'attempt_id': 'attempt', 'path': 'path', 'offset': 123})

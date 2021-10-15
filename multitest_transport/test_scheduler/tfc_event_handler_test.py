@@ -46,6 +46,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
         test_run_config=ndb_models.TestRunConfig(
             test_key=self.mock_test.key,
             run_target='run_target',
+            cluster='cluster',
             command='mock test run command',
             retry_command='mock test run retry command'),
         test=self.mock_test,
@@ -376,7 +377,8 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     # create previous test runs
     first_test_run = ndb_models.TestRun(
         test_run_config=ndb_models.TestRunConfig(
-            test_key=self.mock_test.key, run_target='run_target'),
+            test_key=self.mock_test.key, run_target='run_target',
+            cluster='cluster'),
         test=self.mock_test,
         request_id='request_id1',
         state=ndb_models.TestRunState.UNKNOWN,
@@ -388,7 +390,8 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     first_test_run.put()
     second_test_run = ndb_models.TestRun(
         test_run_config=ndb_models.TestRunConfig(
-            test_key=self.mock_test.key, run_target='run_target'),
+            test_key=self.mock_test.key, run_target='run_target',
+            cluster='cluster'),
         test=self.mock_test,
         request_id='request_id2',
         state=ndb_models.TestRunState.UNKNOWN,

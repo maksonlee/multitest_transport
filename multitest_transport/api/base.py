@@ -21,7 +21,7 @@ import traceback
 import endpoints
 import six
 from six.moves import http_client as httplib
-from tradefed_cluster import api_common
+from tradefed_cluster.util import ndb_shim as ndb
 
 from multitest_transport.api import openapi
 
@@ -40,7 +40,7 @@ def ApiMethod(request_type, response_type, **kwargs):
   endpoints_wrapper = endpoints.method(request_type, response_type, **kwargs)
   def _Decorator(method):
     # Wraps execution in an NDB context
-    api_method = api_common.with_ndb_context(method)
+    api_method = ndb.with_ndb_context(method)
     # Configures endpoint
     api_method = endpoints_wrapper(api_method)
     # Add method summary and description

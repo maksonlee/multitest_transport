@@ -35,7 +35,7 @@ pytype_strict_library(
     deps = [
         ":openapi_lib",
         "//multitest_transport/models",
-        "@tradefed_cluster//tradefed_cluster:api_common_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("google-endpoints"),
         third_party("six"),
     ],

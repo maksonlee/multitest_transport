@@ -148,7 +148,8 @@ class TestRunHookTest(testbed_dependent_test.TestbedDependentTest):
     test.put()
     test_run = ndb_models.TestRun(
         test=test,
-        test_run_config=ndb_models.TestRunConfig(test_key=test.key),
+        test_run_config=ndb_models.TestRunConfig(
+            test_key=test.key, cluster='cluster'),
         test_resources=[
             ndb_models.TestResourceObj(
                 name='device_image',

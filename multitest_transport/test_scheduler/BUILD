@@ -16,7 +16,6 @@ pytype_strict_library(
         "//multitest_transport/models:event_log_lib",
         "//multitest_transport/models:ndb_models_lib",
         "//multitest_transport/util:file_util_lib",
-        "@tradefed_cluster//tradefed_cluster:api_common_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("concurrent:futures"),
@@ -35,6 +34,7 @@ py_test(
         ":download_util_lib",
         "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
+        "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("mock"),
     ],
 )

@@ -17,8 +17,8 @@ import datetime
 
 from absl.testing import absltest
 import mock
-from tradefed_cluster import api_common
 from tradefed_cluster import testbed_dependent_test
+from tradefed_cluster.util import ndb_shim as ndb
 
 from multitest_transport.models import build
 from multitest_transport.models import ndb_models
@@ -42,7 +42,7 @@ class DownloadUtilTest(testbed_dependent_test.TestbedDependentTest):
     return tracker
 
   @mock.patch.object(download_util, 'DownloadResource')
-  @mock.patch.object(api_common, 'with_ndb_context')
+  @mock.patch.object(ndb, 'with_ndb_context')
   def testDownloadResources(self, mock_ndb_wrapper, mock_download):
     """Tests that multiple resources can be downloaded in parallel."""
     def _MockDownload(url, **_):
@@ -60,7 +60,7 @@ class DownloadUtilTest(testbed_dependent_test.TestbedDependentTest):
     ], any_order=True)
 
   @mock.patch.object(download_util, 'DownloadResource')
-  @mock.patch.object(api_common, 'with_ndb_context')
+  @mock.patch.object(ndb, 'with_ndb_context')
   def testDownloadResources_error(self, mock_ndb_wrapper, mock_download):
     """Tests that errors are handled when downloading multiple resources."""
     def _MockDownload(url, **_):

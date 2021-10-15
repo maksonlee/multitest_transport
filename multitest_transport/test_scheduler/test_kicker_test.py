@@ -66,7 +66,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
       device_specs=None,
       shard_count=1,
       sharding_mode=ndb_models.ShardingMode.RUNNER,
-      edited_command=None,
+      edited_command='command',
       module_config_pattern=None,
       module_execution_args=None,
       extra_test_resources=None,
@@ -343,6 +343,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     # Create action ref with overridden and added options
     test_run_config = ndb_models.TestRunConfig(
         test_key=test.key,
+        cluster='cluster',
         test_run_action_refs=[
             ndb_models.TestRunActionRef(
                 action_key=action.key,

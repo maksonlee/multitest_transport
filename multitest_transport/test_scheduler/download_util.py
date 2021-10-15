@@ -21,7 +21,6 @@ import time
 
 import six
 
-from tradefed_cluster import api_common
 from tradefed_cluster import common
 from tradefed_cluster.util import ndb_shim as ndb
 
@@ -82,7 +81,7 @@ def DownloadResources(urls, test_run=None):
 
 def _DownloadResourceInWorker(url, test_run=None):
   """Download resource in a worker thread after wrapping in an NDB context."""
-  return api_common.with_ndb_context(DownloadResource)(url, test_run=test_run)
+  return ndb.with_ndb_context(DownloadResource)(url, test_run=test_run)
 
 
 def DownloadResource(url, test_run=None):
