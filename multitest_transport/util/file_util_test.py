@@ -526,7 +526,8 @@ class FileUtilTest(parameterized.TestCase):
       (env.OperationMode.ON_PREMISE, 'http://other.hostname.com:8000/xx',
        'http://other.hostname.com:8000/xx'),
       (env.OperationMode.ON_PREMISE, 'file:///root/path',
-       'http://test.hostname.com:8006/file/path'))
+       'http://test.hostname.com:8006/file/path'),
+      (env.OperationMode.ON_PREMISE, 'file:///xx', 'file:///xx'))
   def testGetWorkerAccessibleUrl(self, operation_mode, original_url,
                                  expected_url):
     env.OPERATION_MODE = operation_mode

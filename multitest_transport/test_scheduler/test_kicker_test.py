@@ -963,7 +963,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
         command_line='prev_command_line',
         env_vars=[],
         test_resources=[
-            ndb_models.TestResourceObj(name='bar', url='file:///root/path')
+            ndb_models.TestResourceObj(name='bar', url='file:///data/root/path')
         ])
     test_run.put()
     test_run_id = test_run.key.id()

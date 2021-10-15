@@ -578,7 +578,9 @@ def GetWorkerAccessibleUrl(url: str) -> str:
     return url
   u = urllib.parse.urlparse(url)
   hostname = env.HOSTNAME
-  if u.scheme == 'file':
+  # If the URL is under file server root directory, translate it to http.
+  # Otherwise, it refers to a local file on worker.
+  if u.scheme == 'file' and (u.hostname or u.path.startswith(env.STORAGE_PATH)):
     u = urllib.parse.urlparse(RemoteFileHandle(url).file_url)
   if (u.scheme == 'http' or
       u.scheme == 'https') and u.hostname in LOCAL_HOSTNAME:
