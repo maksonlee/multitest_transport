@@ -94,13 +94,10 @@ then
     FILE_SERVICE_ONLY="true"
   fi
 
-  if [[ -n "${IPV6_BRIDGE_NETWORK}" ]]
-  then
-    # This includes all IPv4 addresses if sysctl net.ipv6.bindv6only = 0.
-    BIND_ADDRESS="::"
-  else
-    BIND_ADDRESS="0.0.0.0"
-  fi
+  # Bind to IPv4 only because endpoints service cannot convert IPv6 addresses to
+  # URLs correctly.
+  BIND_ADDRESS="0.0.0.0"
+
   # Start the ATS server and pass empty sql_database_uri to launch DB server.
   /mtt/serve.sh \
       --storage_path "${MTT_STORAGE_PATH}" \

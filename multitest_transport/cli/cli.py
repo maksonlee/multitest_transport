@@ -429,7 +429,8 @@ def _StartMttNode(args, host):
       == lab_config_pb2.OperationMode.ON_PREMISE) or not control_server_url:
     if network == _DOCKER_BRIDGE_NETWORK:
       for host_port, docker_port in _GetMttServerPublicPorts(args.port):
-        docker_helper.AddPort(host_port, docker_port)
+        # The server binds to IPv4 addresses only.
+        docker_helper.AddPort('0.0.0.0:%d' % host_port, docker_port)
     else:
       docker_helper.AddEnv('MTT_CONTROL_SERVER_PORT', args.port)
   if host.config.lab_name:
