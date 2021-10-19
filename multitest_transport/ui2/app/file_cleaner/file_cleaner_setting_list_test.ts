@@ -18,6 +18,7 @@ import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf, throwError} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
@@ -50,7 +51,7 @@ describe('FileCleanerSettingList', () => {
         observableOf(EMPTY_SETTINGS));
 
     TestBed.configureTestingModule({
-      imports: [FileCleanerModule, NoopAnimationsModule],
+      imports: [FileCleanerModule, NoopAnimationsModule, RouterTestingModule],
       providers: [
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: MttClient, useValue: client},

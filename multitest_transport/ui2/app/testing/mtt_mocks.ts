@@ -478,6 +478,16 @@ export function newMockFileCleanerOperation(
   } as mttModels.FileCleanerOperation;
 }
 
+/** Creates a new mock FileCleanerCriterion object */
+export function newMockFileCleanerCriterion(
+    type = mttModels.FileCleanerCriterionType.LAST_ACCESS_TIME,
+    params?: mttModels.NameValuePair[]) {
+  return {
+    type,
+    params,
+  } as mttModels.FileCleanerCriterion;
+}
+
 /** Creates a new mock FileCleanerPolicy object */
 export function newMockFileCleanerPolicy(
     name = 'policyName', target = mttModels.FileCleanerTargetType.FILE,

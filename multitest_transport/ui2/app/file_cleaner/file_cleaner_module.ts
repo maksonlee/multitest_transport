@@ -16,17 +16,26 @@
 
 /** Module for file cleaner components. */
 import {NgModule} from '@angular/core';
+import {RouterModule} from '@angular/router';
 
 import {SharedModule} from '../shared/shared_module';
 
+import {FileCleanerCriterionForm} from './file_cleaner_criterion_form';
+import {FileCleanerOperationForm} from './file_cleaner_operation_form';
+import {FileCleanerPolicyEditPage} from './file_cleaner_policy_edit_page';
 import {FileCleanerSettingList} from './file_cleaner_setting_list';
 
-const COMPONENTS = [FileCleanerSettingList];
-
+const COMPONENTS = [
+  FileCleanerCriterionForm,
+  FileCleanerOperationForm,
+  FileCleanerPolicyEditPage,
+  FileCleanerSettingList,
+];
 
 @NgModule({
   declarations: COMPONENTS,
   imports: [
+    RouterModule,
     SharedModule,
   ],
   exports: COMPONENTS,

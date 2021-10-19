@@ -1,0 +1,81 @@
+<!--
+ Copyright 2021 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<!-- TODO: Add scuba tests. -->
+<div class="header">
+  <div class="back-button-label">File Cleaner</div>
+  <h1 class="subtitle">
+    <button
+      aria-label="Return to settings page"
+      id="back-button"
+      mat-icon-button
+      matTooltip="Return to settings page"
+      (click)="back()"
+      #backButton
+    >
+      <mat-icon class="back-button-icon">arrow_back</mat-icon>
+    </button>
+    {{ editMode ? "Edit file cleaner policy" : "Add a new file cleaner policy" }}
+  </h1>
+</div>
+
+<div class="page">
+  <!-- Policy Information -->
+  <h2>Policy Information</h2>
+
+  <!-- Name Field -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label>Name</mat-label>
+    <input matInput name="name" required type="text" [(ngModel)]="data.name" #name="ngModel" />
+    <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
+  </mat-form-field>
+
+  <!-- Target Type Field -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label>Target Type</mat-label>
+    <mat-select required [(ngModel)]="data.target" (selectionChange)="hasContentChanged = true">
+      <mat-option matInput *ngFor="let type of TARGET_TYPES" [value]="type">
+        {{ type }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-divider></mat-divider>
+
+  <!-- Operation Field -->
+  <h2>File Cleaner Operation</h2>
+  <file-cleaner-operation-form [operation]="data.operation"></file-cleaner-operation-form>
+
+  <mat-divider></mat-divider>
+
+  <!-- Criterion Field -->
+  <h2>File Cleaner Criteria</h2>
+  <file-cleaner-criterion-form
+    [criteria]="data.criteria"
+    (addCriterion)="onAddCriterion()"
+    (deleteCriterion)="onDeleteCriterion($event)"
+  ></file-cleaner-criterion-form>
+
+  <!-- Update/Create Button and Cancel Button-->
+  <div>
+    <button color="accent" mat-flat-button type="button" (click)="onSubmit()">
+      {{ editMode ? "Update" : "Create" }}
+    </button>
+    <button color="accent" mat-button type="button" (click)="back()">Cancel</button>
+    <!-- Error messages after validation -->
+    <form-error-info [invalidInputs]="invalidInputs"></form-error-info>
+  </div>
+</div>

@@ -25,8 +25,12 @@
 
   <div class="header-section">
     <h2>Policies</h2>
-    <!-- TODO: Add policy edit page. -->
-    <button aria-label="Add a new file cleaner policy" color="accent" disabled mat-flat-button>
+    <button
+      aria-label="Add a new file cleaner policy"
+      color="accent"
+      mat-flat-button
+      routerLink="/file_cleaner/policy/new"
+    >
       + New Policy
     </button>
   </div>
@@ -36,8 +40,13 @@
       <h3>
         <span>{{ policy.name }}</span>
         <div class="button-group">
-          <!-- TODO: Add policy edit page. -->
-          <button aria-label="Edit" class="edit-button" disabled mat-icon-button matTooltip="Edit">
+          <button
+            aria-label="Edit"
+            class="edit-button"
+            mat-icon-button
+            matTooltip="Edit"
+            [routerLink]="['/file_cleaner/policy', i]"
+          >
             <mat-icon>edit</mat-icon>
           </button>
           <button

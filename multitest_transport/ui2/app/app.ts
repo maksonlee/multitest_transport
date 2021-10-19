@@ -35,6 +35,7 @@ import {DeviceActionEditPage} from './device_actions/device_action_edit_page';
 import {DeviceActionList} from './device_actions/device_action_list';
 import {DeviceDetailsPage} from './devices/device_details_page';
 import {DeviceListPage} from './devices/device_list_page';
+import {FileCleanerPolicyEditPage} from './file_cleaner/file_cleaner_policy_edit_page';
 import {FileCleanerSettingList} from './file_cleaner/file_cleaner_setting_list';
 import {HostDetailsPage} from './hosts/host_details_page';
 import {HostListPage} from './hosts/host_list_page';
@@ -156,6 +157,16 @@ export const routes: Routes = [
   },
   {path: 'test_runs/:id', component: TestRunDetailPage},
   {path: 'auth_return', component: AuthReturnPage},
+  {
+    path: 'file_cleaner/policy/new',
+    component: FileCleanerPolicyEditPage,
+    canDeactivate: [UnsavedChangeGuard]
+  },
+  {
+    path: 'file_cleaner/policy/:index',
+    component: FileCleanerPolicyEditPage,
+    canDeactivate: [UnsavedChangeGuard]
+  },
   {path: '**', redirectTo: '/test_runs', pathMatch: 'full'},
 ];
 
