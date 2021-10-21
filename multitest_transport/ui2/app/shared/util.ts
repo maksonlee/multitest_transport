@@ -149,6 +149,17 @@ export function distinctArray<T>(source: T[]): T[] {
   return [...new Set(source)];
 }
 
+/** Removes the first instance of an element from an array. */
+export function removeFirst<T>(array: T[], element: T): boolean {
+  const index = array.indexOf(element);
+  if (index > -1) {
+    array.splice(index, 1);
+    return true;
+  }
+  return false;
+}
+
+
 /**
  * Return the messages contained in HttpErrorResponse if there's any
  */

@@ -39,7 +39,7 @@ import {DeviceRecoveryStateRequest, FilterHintList, FilterHintType, NoteList, Re
 import {UserService} from '../services/user_service';
 import {FilterBarUtility} from '../shared/filterbar_util';
 import {OverflowListType} from '../shared/overflow_list';
-import {getFilterDefaultSingleValue} from '../shared/util';
+import {areArraysEqual, getFilterDefaultSingleValue, removeFirst} from '../shared/util';
 
 /** Displaying a list of devices. */
 @Component({
@@ -48,10 +48,15 @@ import {getFilterDefaultSingleValue} from '../shared/util';
   templateUrl: './device_list.ng.html',
 })
 export class DeviceList implements OnChanges, OnDestroy, OnInit {
+  /** Periodically updates the device list. */
   @Input() autoUpdate = false;
-  @Input() initialSelection: string[] = [];
+  /** Enables the selection column. */
   @Input() selectEnabled = true;
+  /** Enables the notes button and action column. */
   @Input() notesEnabled = true;
+  /** Validates the initially selected devices. */
+  @Input() validationEnabled = false;
+  @Input() initialSelection: string[] = [];
   @Output() selectedSerialsChange = new EventEmitter<string[]>();
 
   selectedSerials: string[] = [];
@@ -312,10 +317,56 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['initialSelection']) {
+    // Only process changes if initialSelection (input selection set) differs
+    // from selectedSerials (internal selection set). This indicates that the
+    // selection was modified outside of this component.
+    if (changes['initialSelection'] &&
+        !areArraysEqual(this.initialSelection, this.selectedSerials)) {
       this.tableRowsSelectManager.clearSelection();
-      this.tableRowsSelectManager.selectSelection([...this.initialSelection]);
+      this.tableRowsSelectManager.selectSelection(this.initialSelection);
+      if (this.validationEnabled) {
+        this.validateSelection();
+      }
     }
+    // Validate selection if validation becomes enabled.
+    if (changes['validationEnabled'] &&
+        !changes['validationEnabled'].isFirstChange() &&
+        this.validationEnabled) {
+      this.validateSelection();
+    }
+  }
+
+  /** Validate the selected devices by querying the server for them. */
+  private validateSelection() {
+    const initialSerials = this.selectedSerials.slice();
+    if (!initialSerials.length) {
+      return;
+    }
+    const query: DeviceSearchCriteria = {deviceSerial: initialSerials};
+    this.tfcClient.queryDeviceInfos(query, initialSerials.length)
+        .pipe(takeUntil(this.destroy))
+        .subscribe(
+            response => {
+              // Unselect devices that were not found by the server. Ignore
+              // devices selected during validation by iterating over a copy of
+              // the initial selection.
+              let selectionChanged = false;
+              const actualSerials =
+                  (response.deviceInfos || []).map(di => di.device_serial);
+              for (const serial of initialSerials) {
+                if (!actualSerials.includes(serial)) {
+                  selectionChanged = removeFirst(this.selectedSerials, serial);
+                }
+              }
+              if (selectionChanged) {
+                this.tableRowsSelectManager.clearSelection();
+                this.tableRowsSelectManager.selectSelection(
+                    this.selectedSerials);
+              }
+            },
+            error => {
+              console.warn('Failed to validate selected devices:', error);
+            });
   }
 
   setFilterBarParameters() {
@@ -591,7 +642,8 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
     this.filterBarUtility.filterChanged = false;
     this.refreshPaginator();
     this.tableRowsSelectManager.rowIdFieldAllValues = this.deviceSerials;
-    this.tableRowsSelectManager.selection.clear();
+    this.tableRowsSelectManager.clearSelection();
+    this.tableRowsSelectManager.selectSelection(this.selectedSerials);
     this.tableRowsSelectManager.resetPrevClickedRowIndex();
     this.deviceHostMap = this.dataSource.map(
         info => [info.device_serial || '', info.hostname || '']);
@@ -641,10 +693,16 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
       searchCriteria.runTargets =
           this.getSelectedOptions(FilterHintType.RUN_TARGET);
     }
-    searchCriteria.deviceSerial =
-        [this.filterBarUtility.getInputFilterOption(this.deviceSerialDisplay)];
-    searchCriteria.extraInfo =
-        [this.filterBarUtility.getInputFilterOption(this.extraInfoDisplay)];
+    const deviceSerial =
+        this.filterBarUtility.getInputFilterOption(this.deviceSerialDisplay);
+    if (deviceSerial) {
+      searchCriteria.deviceSerial = [deviceSerial];
+    }
+    const extraInfo =
+        this.filterBarUtility.getInputFilterOption(this.extraInfoDisplay);
+    if (extraInfo) {
+      searchCriteria.extraInfo = [extraInfo];
+    }
     searchCriteria.includeOfflineDevices =
         this.appData.isAtsLabInstance ?? true;
     return searchCriteria;

@@ -16,7 +16,7 @@
 
 import 'jasmine';
 
-import {areArraysEqual, getFilterDefaultSingleValue, isFnmatchPattern} from './util';
+import {areArraysEqual, getFilterDefaultSingleValue, isFnmatchPattern, removeFirst} from './util';
 
 describe('areArraysEqual', () => {
   const obj1 = {};
@@ -29,6 +29,21 @@ describe('areArraysEqual', () => {
     expect(areArraysEqual([obj1], [obj2])).toBe(false);
   });
 });
+
+describe('removeFirst', () => {
+  it('removes first instance of an element from an array', () => {
+    const array = [1, 2, 3, 4, 3];
+    // Removes first instance only if multiple are present.
+    expect(removeFirst(array, 3)).toBeTrue();
+    expect(array).toEqual([1, 2, 4, 3]);
+    expect(removeFirst(array, 3)).toBeTrue();
+    expect(array).toEqual([1, 2, 4]);
+    // No-op if element is not present in the array.
+    expect(removeFirst(array, 3)).toBeFalse();
+    expect(array).toEqual([1, 2, 4]);
+  });
+});
+
 
 describe('isFnmatchPattern', () => {
   it('should behave correctly on valid input', () => {

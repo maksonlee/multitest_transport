@@ -20,6 +20,7 @@
   [autoUpdate]="autoUpdate"
   [notesEnabled]="false"
   [selectEnabled]="!manualDeviceSpecs"
+  [validationEnabled]="!manualDeviceSpecs"
   [initialSelection]="getDeviceSerials()"
   (selectedSerialsChange)="onDeviceListSelectionChange($event); hasContentChanged = true">
 </device-list>

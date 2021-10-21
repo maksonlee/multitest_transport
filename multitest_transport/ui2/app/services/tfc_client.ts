@@ -146,9 +146,8 @@ export class TfcClient {
         params = params.append('run_targets', runTarget);
       }
     }
-    if (searchCriteria && searchCriteria.deviceSerial &&
-        searchCriteria.deviceSerial.length === 1) {
-      params = params.append('device_serial', searchCriteria.deviceSerial[0]);
+    if (searchCriteria && searchCriteria.deviceSerial) {
+      params = params.appendAll({'device_serial': searchCriteria.deviceSerial});
     }
     if (searchCriteria && searchCriteria.extraInfo &&
         searchCriteria.extraInfo.length === 1) {

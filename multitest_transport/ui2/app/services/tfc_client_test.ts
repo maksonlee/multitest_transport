@@ -662,7 +662,7 @@ describe('TfcClient', () => {
     });
 
     it('calls API with deviceSerial correctly', () => {
-      const deviceSerial = ['serial-1'];
+      const deviceSerial = ['serial-1', 'serial-2'];
       const searchCriteria = {
         lab: '',
         hostnames: [],
@@ -683,7 +683,8 @@ describe('TfcClient', () => {
           'backwards': String(backwards),
         }
       });
-      params = params.append('device_serial', deviceSerial[0]);
+      params = params.append('device_serial', 'serial-1')
+          .append('device_serial', 'serial-2');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/devices`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);

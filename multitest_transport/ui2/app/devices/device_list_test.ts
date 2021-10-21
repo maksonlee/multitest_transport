@@ -15,7 +15,7 @@
  */
 
 import {HttpClientTestingModule} from '@angular/common/http/testing';
-import {DebugElement, LOCALE_ID} from '@angular/core';
+import {DebugElement, LOCALE_ID, SimpleChange} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, convertToParamMap, Router} from '@angular/router';
@@ -769,6 +769,20 @@ describe('DeviceList', () => {
        deviceList.urlParams = convertToParamMap({});
        expect(deviceList.hasQueryStringParams()).toBeFalse();
      });
+
+  it('validates input devices if validation is enabled', async () => {
+    deviceList.validationEnabled = true;
+    // Two devices are initially selected, but only device-2 is valid.
+    deviceList.initialSelection = ['device-1', 'device-2'];
+    tfcClient.queryDeviceInfos.and.returnValue(
+        observableOf({deviceInfos: [{device_serial: 'device-2'}]}));
+    deviceList.ngOnChanges({'initialSelection': {} as SimpleChange});
+    await deviceListFixture.whenStable();
+    // Device validity was checked and device-1 was automatically unselected.
+    expect(tfcClient.queryDeviceInfos)
+        .toHaveBeenCalledWith({deviceSerial: ['device-1', 'device-2']}, 2);
+    expect(deviceList.selectedSerials).toEqual(['device-2']);
+  });
 });
 
 describe('DeviceList in ATS instance', () => {
