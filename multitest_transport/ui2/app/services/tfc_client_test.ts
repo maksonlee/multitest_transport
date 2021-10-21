@@ -112,22 +112,23 @@ describe('TfcClient', () => {
   describe('getHostInfos', () => {
     const rawHostInfos = mocks.newMockHostInfosResponse();
     const hostInfos = mocks.newMockLabHostInfosResponse();
+    let params: HttpParams;
 
     beforeEach(() => {
       httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
       tfcClient = new TfcClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(rawHostInfos));
-    });
-
-    it('should calls API response correctly', () => {
-      const observable = tfcClient.getHostInfos(undefined);
-      const params = new HttpParams({
+      params = new HttpParams({
         fromObject: {
           'count': String(maxResults),
           'cursor': pageToken,
           'backwards': String(backwards),
         }
       });
+    });
+
+    it('calls API and parses response correctly', () => {
+      const observable = tfcClient.getHostInfos(undefined);
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/hosts`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
@@ -137,289 +138,99 @@ describe('TfcClient', () => {
     });
 
     it('calls API with lab name "All" correctly', () => {
-      const labName = mttLabModels.ALL_OPTIONS_VALUE;
-      const searchCriteria = {
-        lab: labName,
-        hostnames: [],
-        hostGroups: [],
-        testHarness: [],
-        testHarnessVersions: [],
-        pools: [],
-        hostStates: [],
-        hostUpdateStates: [],
-        extraInfo: [],
-      };
+      const searchCriteria = {lab: mttLabModels.ALL_OPTIONS_VALUE};
       tfcClient.getHostInfos(searchCriteria);
-      const params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/hosts`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with lab name correctly', () => {
-      const labName = 'lab-1';
-      const searchCriteria = {
-        lab: labName,
-        hostnames: [],
-        hostGroups: [],
-        testHarness: [],
-        testHarnessVersions: [],
-        pools: [],
-        hostStates: [],
-        hostUpdateStates: [],
-        extraInfo: [],
-      };
+      const searchCriteria = {lab: 'lab-1'};
       tfcClient.getHostInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      params = params.append('lab_name', labName);
+      params = params.append('lab_name', 'lab-1');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/hosts`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with hostnames correctly', () => {
-      const hostnames = ['host-1', 'host-2'];
-      const searchCriteria = {
-        lab: undefined,
-        hostnames,
-        hostGroups: [],
-        testHarness: [],
-        testHarnessVersions: [],
-        pools: [],
-        hostStates: [],
-        hostUpdateStates: [],
-        extraInfo: [],
-      };
+      const searchCriteria = {hostnames: ['host-1', 'host-2']};
       tfcClient.getHostInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      for (const hostname of hostnames) {
-        params = params.append('hostnames', hostname);
-      }
-
+      params =
+          params.append('hostnames', 'host-1').append('hostnames', 'host-2');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/hosts`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with hostGroups correctly', () => {
-      const hostGroups = ['group-1', 'group-2'];
-      const searchCriteria = {
-        lab: undefined,
-        hostnames: [],
-        hostGroups,
-        testHarness: [],
-        testHarnessVersions: [],
-        pools: [],
-        hostStates: [],
-        hostUpdateStates: [],
-        extraInfo: [],
-      };
+      const searchCriteria = {hostGroups: ['group-1', 'group-2']};
       tfcClient.getHostInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      for (const hostGroup of hostGroups) {
-        params = params.append('host_groups', hostGroup);
-      }
-
+      params = params.append('host_groups', 'group-1')
+                   .append('host_groups', 'group-2');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/hosts`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with testHarness correctly', () => {
-      const testHarness = ['tf'];
-      const searchCriteria = {
-        lab: undefined,
-        hostnames: [],
-        hostGroups: [],
-        testHarness,
-        testHarnessVersions: [],
-        pools: [],
-        hostStates: [],
-        hostUpdateStates: [],
-        extraInfo: [],
-      };
+      const searchCriteria = {testHarness: ['tf']};
       tfcClient.getHostInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      for (const harness of testHarness) {
-        params = params.append('test_harnesses', harness);
-      }
-
+      params = params.append('test_harnesses', 'tf');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/hosts`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with testHarnessVersions correctly', () => {
-      const testHarnessVersions = ['1.0'];
-      const searchCriteria = {
-        lab: undefined,
-        hostnames: [],
-        hostGroups: [],
-        testHarness: [],
-        testHarnessVersions,
-        pools: [],
-        hostStates: [],
-        hostUpdateStates: [],
-        extraInfo: [],
-      };
+      const searchCriteria = {testHarnessVersions: ['1.0']};
       tfcClient.getHostInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      for (const testHarnessVersion of testHarnessVersions) {
-        params = params.append('test_harness_versions', testHarnessVersion);
-      }
-
+      params = params.append('test_harness_versions', '1.0');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/hosts`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with pools correctly', () => {
-      const pools = ['pool-1'];
-      const searchCriteria = {
-        lab: undefined,
-        hostnames: [],
-        hostGroups: [],
-        testHarness: [],
-        testHarnessVersions: [],
-        pools,
-        hostStates: [],
-        hostUpdateStates: [],
-        extraInfo: [],
-      };
+      const searchCriteria = {pools: ['pool-1']};
       tfcClient.getHostInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      for (const pool of pools) {
-        params = params.append('pools', pool);
-      }
+      params = params.append('pools', 'pool-1');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/hosts`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with hostStates correctly', () => {
-      const hostStates =
-          [tfcModels.HostState.RUNNING, tfcModels.HostState.KILLING];
       const searchCriteria = {
-        lab: undefined,
-        hostnames: [],
-        hostGroups: [],
-        testHarness: [],
-        testHarnessVersions: [],
-        pools: [],
-        hostStates,
-        extraInfo: [],
+        hostStates: [tfcModels.HostState.RUNNING, tfcModels.HostState.KILLING],
       };
       tfcClient.getHostInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      for (const hostState of hostStates) {
-        params = params.append('host_states', hostState);
-      }
+      params = params.append('host_states', tfcModels.HostState.RUNNING)
+                   .append('host_states', tfcModels.HostState.KILLING);
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/hosts`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with recoveryStates correctly', () => {
-      const recoveryStates =
-          [tfcModels.RecoveryState.ASSIGNED, tfcModels.RecoveryState.FIXED];
       const searchCriteria = {
-        lab: undefined,
-        hostnames: [],
-        hostGroups: [],
-        testHarness: [],
-        testHarnessVersions: [],
-        pools: [],
-        hostStates: [],
-        hostUpdateStates: [],
-        recoveryStates,
-        extraInfo: [],
+        recoveryStates:
+            [tfcModels.RecoveryState.ASSIGNED, tfcModels.RecoveryState.FIXED],
       };
       tfcClient.getHostInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      for (const recoveryState of recoveryStates) {
-        params = params.append('recovery_states', recoveryState);
-      }
+      params =
+          params.append('recovery_states', tfcModels.RecoveryState.ASSIGNED)
+              .append('recovery_states', tfcModels.RecoveryState.FIXED);
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/hosts`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with extraInfo correctly', () => {
-      const extraInfo = ['key:value'];
-      const searchCriteria = {
-        lab: undefined,
-        hostnames: [],
-        hostGroups: [],
-        testHarness: [],
-        testHarnessVersions: [],
-        pools: [],
-        hostStates: [],
-        hostUpdateStates: [],
-        extraInfo,
-      };
+      const searchCriteria = {extraInfo: ['key:value']};
       tfcClient.getHostInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      params = params.append('flated_extra_info', extraInfo[0]);
+      params = params.append('flated_extra_info', 'key:value');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/hosts`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
@@ -429,22 +240,23 @@ describe('TfcClient', () => {
   describe('queryDeviceInfos', () => {
     const deviceInfos = mocks.newMockDeviceInfosResponse(hostname);
     const labDeviceInfos = mocks.newMockLabDeviceInfosResponse(hostname);
+    let params: HttpParams;
 
     beforeEach(() => {
       httpClientSpy = jasmine.createSpyObj('HttpClient', ['get']);
       tfcClient = new TfcClient(appData, httpClientSpy);
       httpClientSpy.get.and.returnValue(observableOf(deviceInfos));
-    });
-
-    it('should calls API response correctly', () => {
-      const observable = tfcClient.queryDeviceInfos();
-      const params = new HttpParams({
+      params = new HttpParams({
         fromObject: {
           'count': String(maxResults),
           'cursor': pageToken,
           'backwards': String(backwards),
         }
       });
+    });
+
+    it('calls API and parses response correctly', () => {
+      const observable = tfcClient.queryDeviceInfos();
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/devices`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
@@ -454,235 +266,71 @@ describe('TfcClient', () => {
     });
 
     it('calls API with lab name correctly', () => {
-      const labName = 'lab-1';
-      const searchCriteria = {
-        lab: labName,
-        hostnames: [],
-        hostGroups: [],
-        testHarness: [],
-        pools: [],
-        deviceStates: [],
-        runTargets: [],
-        deviceSerial: [],
-        extraInfo: [],
-        includeOfflineDevices: true,
-      };
+      const searchCriteria = {lab: 'lab-1'};
       tfcClient.queryDeviceInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      params = params.append('lab_name', labName);
+      params = params.append('lab_name', 'lab-1');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/devices`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with hostnames correctly', () => {
-      const hostnames = ['host-1', 'host-2'];
-      const searchCriteria = {
-        lab: '',
-        hostnames,
-        hostGroups: [],
-        testHarness: [],
-        pools: [],
-        deviceStates: [],
-        runTargets: [],
-        deviceSerial: [],
-        extraInfo: [],
-        includeOfflineDevices: true,
-      };
+      const searchCriteria = {hostnames: ['host-1', 'host-2']};
       tfcClient.queryDeviceInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      for (const hostname of hostnames) {
-        params = params.append('hostnames', hostname);
-      }
+      params = params.append('hostnames', 'host-1').append('hostnames', 'host-2');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/devices`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with hostGroups correctly', () => {
-      const hostGroups = ['group-1', 'group-2'];
-      const searchCriteria = {
-        lab: '',
-        hostnames: [],
-        hostGroups,
-        testHarness: [],
-        pools: [],
-        deviceStates: [],
-        runTargets: [],
-        deviceSerial: [],
-        extraInfo: [],
-        includeOfflineDevices: true,
-      };
+      const searchCriteria = {hostGroups: ['group-1', 'group-2']};
       tfcClient.queryDeviceInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      for (const hostGroup of hostGroups) {
-        params = params.append('host_groups', hostGroup);
-      }
+      params = params.append('host_groups', 'group-1').append('host_groups', 'group-2');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/devices`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with testHarness correctly', () => {
-      const testHarness = ['tf'];
-      const searchCriteria = {
-        lab: '',
-        hostnames: [],
-        hostGroups: [],
-        testHarness,
-        pools: [],
-        deviceStates: [],
-        runTargets: [],
-        deviceSerial: [],
-        extraInfo: [],
-        includeOfflineDevices: true,
-      };
+      const searchCriteria = {testHarness: ['tf']};
       tfcClient.queryDeviceInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      for (const harness of testHarness) {
-        params = params.append('test_harnesses', harness);
-      }
+      params = params.append('test_harnesses', 'tf');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/devices`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with pools correctly', () => {
-      const pools = ['pool-1'];
-      const searchCriteria = {
-        lab: '',
-        hostnames: [],
-        hostGroups: [],
-        testHarness: [],
-        pools,
-        deviceStates: [],
-        runTargets: [],
-        deviceSerial: [],
-        extraInfo: [],
-        includeOfflineDevices: true,
-      };
+      const searchCriteria = {pools: ['pool-1']};
       tfcClient.queryDeviceInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      for (const pool of pools) {
-        params = params.append('pools', pool);
-      }
+      params = params.append('pools', 'pool-1');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/devices`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with deviceStates correctly', () => {
-      const deviceStates = [tfcModels.DeviceState.AVAILABLE];
-      const searchCriteria = {
-        lab: '',
-        hostnames: [],
-        hostGroups: [],
-        testHarness: [],
-        pools: [],
-        deviceStates,
-        runTargets: [],
-        deviceSerial: [],
-        extraInfo: [],
-        includeOfflineDevices: true,
-      };
+      const searchCriteria = {deviceStates: [tfcModels.DeviceState.AVAILABLE]};
       tfcClient.queryDeviceInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      for (const deviceState of deviceStates) {
-        params = params.append('device_states', deviceState);
-      }
+      params = params.append('device_states', tfcModels.DeviceState.AVAILABLE);
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/devices`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with runTargets correctly', () => {
-      const runTargets = ['runTarget-1', 'runTarget-2'];
-      const searchCriteria = {
-        lab: '',
-        hostnames: [],
-        hostGroups: [],
-        testHarness: [],
-        pools: [],
-        deviceStates: [],
-        runTargets,
-        deviceSerial: [],
-        extraInfo: [],
-        includeOfflineDevices: true,
-      };
+      const searchCriteria = {runTargets: ['runTarget-1', 'runTarget-2']};
       tfcClient.queryDeviceInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      for (const runTarget of runTargets) {
-        params = params.append('run_targets', runTarget);
-      }
+      params = params.append('run_targets', 'runTarget-1').append('run_targets', 'runTarget-2');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/devices`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with deviceSerial correctly', () => {
-      const deviceSerial = ['serial-1', 'serial-2'];
-      const searchCriteria = {
-        lab: '',
-        hostnames: [],
-        hostGroups: [],
-        testHarness: [],
-        pools: [],
-        deviceStates: [],
-        runTargets: [],
-        deviceSerial,
-        extraInfo: [],
-        includeOfflineDevices: true,
-      };
+      const searchCriteria = {deviceSerial: ['serial-1', 'serial-2']};
       tfcClient.queryDeviceInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
       params = params.append('device_serial', 'serial-1')
           .append('device_serial', 'serial-2');
       expect(httpClientSpy.get)
@@ -691,56 +339,18 @@ describe('TfcClient', () => {
     });
 
     it('calls API with extraInfo correctly', () => {
-      const extraInfo = ['key:value'];
-      const searchCriteria = {
-        lab: '',
-        hostnames: [],
-        hostGroups: [],
-        testHarness: [],
-        pools: [],
-        deviceStates: [],
-        runTargets: [],
-        deviceSerial: [],
-        extraInfo,
-        includeOfflineDevices: true,
-      };
+      const searchCriteria = {extraInfo: ['key:value']};
       tfcClient.queryDeviceInfos(searchCriteria);
-      let params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      });
-      params = params.append('flated_extra_info', extraInfo[0]);
+      params = params.append('flated_extra_info', 'key:value');
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/devices`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     });
 
     it('calls API with includeOfflineDevices correctly', () => {
-      const searchCriteria = {
-        lab: '',
-        hostnames: [],
-        hostGroups: [],
-        testHarness: [],
-        pools: [],
-        deviceStates: [],
-        runTargets: [],
-        deviceSerial: [],
-        extraInfo: [],
-        includeOfflineDevices: false,
-      };
+      const searchCriteria = {includeOfflineDevices: false};
       tfcClient.queryDeviceInfos(searchCriteria);
-      const params = new HttpParams({
-        fromObject: {
-          'count': String(maxResults),
-          'cursor': pageToken,
-          'backwards': String(backwards),
-        }
-      }).appendAll({
-        'device_states': ONLINE_DEVICE_STATES,
-      });
+      params = params.appendAll({'device_states': ONLINE_DEVICE_STATES});
       expect(httpClientSpy.get)
           .toHaveBeenCalledWith(`${tfcClient.tfcApiUrl}/devices`, {params});
       expect(httpClientSpy.get).toHaveBeenCalledTimes(1);

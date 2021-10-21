@@ -188,24 +188,6 @@ function formatStackTrace(stackTraces: string[][]) {
   }, `Traceback (most recent call last):\n`);
 }
 
-// TODO: Remove getKeyValue and KeyValuePair after ATS Lab move
-// within ATS.
-/**
- * Gets the value by key in a key value object({key:key,value:value}) array.
- */
-export function getKeyValue(source: KeyValuePair[], key: string): string {
-  const keyValue = source.find((x: KeyValuePair) => x.key === key);
-  return keyValue ? keyValue.value : '';
-}
-
-/**
- * An interface that includes key and value properties.
- */
-export declare interface KeyValuePair {
-  readonly key: string;
-  readonly value: string;
-}
-
 /**
  * Gets the default value for a single value filter. The value could be
  * specified from url,last selected value stored in local storage or the first

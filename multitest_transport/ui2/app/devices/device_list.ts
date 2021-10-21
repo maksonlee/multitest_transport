@@ -21,25 +21,23 @@ import {FormControl, FormGroup} from '@angular/forms';
 import {MatAutocomplete, MatAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatTable} from '@angular/material/mdc-table';
 import {ActivatedRoute, convertToParamMap, ParamMap, Router} from '@angular/router';
-import {SurveyTrigger} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_lab_models';
-import {TableColumn} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_models';
-import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
-import {DEFAULT_PAGE_SIZE, Paginator} from 'google3/third_party/py/multitest_transport/ui2/app/shared/paginator';
-import {TableRowsSelectManager} from 'google3/third_party/py/multitest_transport/ui2/app/shared/table_rows_select';
-import {assertRequiredInput} from 'google3/third_party/py/multitest_transport/ui2/app/shared/util';
 import {forkJoin, Observable, of as observableOf, ReplaySubject, throwError, timer} from 'rxjs';
 import {catchError, concatMap, delay, filter, map, mergeMap, retryWhen, switchMap, take, takeUntil} from 'rxjs/operators';
 
 import {APP_DATA, AppData} from '../services';
 import {FeedbackService} from '../services/feedback_service';
-import {ALL_OPTIONS_VALUE, DEVICE_SERIAL, DeviceQueryParams, DeviceSearchCriteria, FilterOption, HOSTNAME, LAB_STORAGE_KEY, LabDeviceInfo, LabDeviceInfosResponse, REMOVE_DEVICE_MESSAGE} from '../services/mtt_lab_models';
+import {ALL_OPTIONS_VALUE, DEVICE_SERIAL, DeviceQueryParams, DeviceSearchCriteria, FilterOption, HOSTNAME, LAB_STORAGE_KEY, LabDeviceInfo, LabDeviceInfosResponse, REMOVE_DEVICE_MESSAGE, SurveyTrigger} from '../services/mtt_lab_models';
+import {TableColumn} from '../services/mtt_models';
+import {Notifier} from '../services/notifier';
 import {StorageService} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
 import {DeviceRecoveryStateRequest, FilterHintList, FilterHintType, NoteList, RecoveryState, TestHarness} from '../services/tfc_models';
 import {UserService} from '../services/user_service';
 import {FilterBarUtility} from '../shared/filterbar_util';
 import {OverflowListType} from '../shared/overflow_list';
-import {areArraysEqual, getFilterDefaultSingleValue, removeFirst} from '../shared/util';
+import {DEFAULT_PAGE_SIZE, Paginator} from '../shared/paginator';
+import {TableRowsSelectManager} from '../shared/table_rows_select';
+import {areArraysEqual, assertRequiredInput, getFilterDefaultSingleValue, removeFirst} from '../shared/util';
 
 /** Displaying a list of devices. */
 @Component({
@@ -208,7 +206,6 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
   private readonly urlQueryParamObservable: Observable<ParamMap> =
       this.route.queryParamMap.pipe(take(1));
   private readonly autoUpdateInterval = 30_000;
-  userInputValue = '';
 
   get inputValue(): string {
     return this.valueControl.value || '';
@@ -265,9 +262,9 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
       @Inject(APP_DATA) readonly appData: AppData,
   ) {
     if (!this.appData.isAtsLabInstance) {
-      // Hide unnecessary fieldes in the ATS instance.
+      // Hide unnecessary fields in the ATS instance.
       this.columns = this.columns.filter(
-          x => this.atsHiddenColumns.includes(x.fieldName) === false);
+          x => !this.atsHiddenColumns.includes(x.fieldName));
       // Hide notes button and action column in ATS instance.
       this.notesEnabled = false;
       this.autoUpdate = true;

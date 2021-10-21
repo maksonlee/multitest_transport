@@ -117,34 +117,22 @@ export class TfcClient {
       params = params.append('lab_name', searchCriteria.lab);
     }
     if (searchCriteria && searchCriteria.hostnames) {
-      for (const hostname of searchCriteria.hostnames) {
-        params = params.append('hostnames', hostname);
-      }
+      params = params.appendAll({'hostnames': searchCriteria.hostnames});
     }
     if (searchCriteria && searchCriteria.hostGroups) {
-      for (const hostGroup of searchCriteria.hostGroups) {
-        params = params.append('host_groups', hostGroup);
-      }
+      params = params.appendAll({'host_groups': searchCriteria.hostGroups});
     }
     if (searchCriteria && searchCriteria.testHarness) {
-      for (const harness of searchCriteria.testHarness) {
-        params = params.append('test_harnesses', harness);
-      }
+      params = params.appendAll({'test_harnesses': searchCriteria.testHarness});
     }
     if (searchCriteria && searchCriteria.pools) {
-      for (const pool of searchCriteria.pools) {
-        params = params.append('pools', pool);
-      }
+      params = params.appendAll({'pools': searchCriteria.pools});
     }
     if (searchCriteria && searchCriteria.deviceStates) {
-      for (const deviceState of searchCriteria.deviceStates) {
-        params = params.append('device_states', deviceState);
-      }
+      params = params.appendAll({'device_states': searchCriteria.deviceStates});
     }
     if (searchCriteria && searchCriteria.runTargets) {
-      for (const runTarget of searchCriteria.runTargets) {
-        params = params.append('run_targets', runTarget);
-      }
+      params = params.appendAll({'run_targets': searchCriteria.runTargets});
     }
     if (searchCriteria && searchCriteria.deviceSerial) {
       params = params.appendAll({'device_serial': searchCriteria.deviceSerial});
@@ -203,44 +191,31 @@ export class TfcClient {
       params = params.append('is_bad', searchCriteria.isBad.toString());
     }
     if (searchCriteria && searchCriteria.hostnames) {
-      for (const hostname of searchCriteria.hostnames) {
-        params = params.append('hostnames', hostname);
-      }
+      params = params.appendAll({'hostnames': searchCriteria.hostnames});
     }
     if (searchCriteria && searchCriteria.hostGroups) {
-      for (const hostGroup of searchCriteria.hostGroups) {
-        params = params.append('host_groups', hostGroup);
-      }
+      params = params.appendAll({'host_groups': searchCriteria.hostGroups});
     }
     if (searchCriteria && searchCriteria.testHarness) {
-      for (const harness of searchCriteria.testHarness) {
-        params = params.append('test_harnesses', harness);
-      }
+      params = params.appendAll({'test_harnesses': searchCriteria.testHarness});
     }
     if (searchCriteria && searchCriteria.testHarnessVersions) {
-      for (const testHarnessVersion of searchCriteria.testHarnessVersions) {
-        params = params.append('test_harness_versions', testHarnessVersion);
-      }
+      params = params.appendAll(
+          {'test_harness_versions': searchCriteria.testHarnessVersions});
     }
     if (searchCriteria && searchCriteria.pools) {
-      for (const pool of searchCriteria.pools) {
-        params = params.append('pools', pool);
-      }
+      params = params.appendAll({'pools': searchCriteria.pools});
     }
     if (searchCriteria && searchCriteria.hostStates) {
-      for (const hostState of searchCriteria.hostStates) {
-        params = params.append('host_states', hostState);
-      }
+      params = params.appendAll({'host_states': searchCriteria.hostStates});
     }
     if (searchCriteria && searchCriteria.recoveryStates) {
-      for (const recoveryState of searchCriteria.recoveryStates) {
-        params = params.append('recovery_states', recoveryState);
-      }
+      params =
+          params.appendAll({'recovery_states': searchCriteria.recoveryStates});
     }
     if (searchCriteria && searchCriteria.hostUpdateStates) {
-      for (const hostUpdateState of searchCriteria.hostUpdateStates) {
-        params = params.append('host_update_states', hostUpdateState);
-      }
+      params = params.appendAll(
+          {'host_update_states': searchCriteria.hostUpdateStates});
     }
     if (searchCriteria?.extraInfo?.length === 1) {
       params = params.append('flated_extra_info', searchCriteria.extraInfo[0]);
@@ -455,38 +430,25 @@ export class TfcClient {
   createOrUpdateNote(noteInfo: mttLabModels.CreateOrUpdateNoteInfo):
       Observable<string> {
     const action = noteInfo.id ? 'update' : 'create';
+    const body: tfcModels.CreateOrUpdateNote = {
+      user: this.appData.userNickname || '',
+      lab_name: noteInfo.labName,
+      id: noteInfo.id || undefined,
+      message: noteInfo.message || '',
+      offline_reason: noteInfo.offlineReason || '',
+      offline_reason_id: noteInfo.offlineReasonId || undefined,
+      recovery_action: noteInfo.recoveryAction || '',
+      recovery_action_id: noteInfo.recoveryActionId || undefined,
+      hostname: noteInfo.hostname || '',
+    };
 
     if (noteInfo.noteType === mttLabModels.NoteType.HOST) {
       const params = new AnalyticsParams('host_note', action);
-      const body: tfcModels.CreateOrUpdateNote = {
-        user: this.appData.userNickname || '',
-        lab_name: noteInfo.labName,
-        id: noteInfo.id || undefined,
-        message: noteInfo.message || '',
-        offline_reason: noteInfo.offlineReason || '',
-        offline_reason_id: noteInfo.offlineReasonId || undefined,
-        recovery_action: noteInfo.recoveryAction || '',
-        recovery_action_id: noteInfo.recoveryActionId || undefined,
-        hostname: noteInfo.hostname || '',
-      };
       return this.http.post<string>(
           `${this.tfcApiUrl}/hosts/${noteInfo.hostname}/notes`, body, {params});
-
     } else {
       const params = new AnalyticsParams('device_note', action);
-      const body: tfcModels.CreateOrUpdateNote = {
-        user: this.appData.userNickname || '',
-        lab_name: noteInfo.labName,
-        id: noteInfo.id || undefined,
-        message: noteInfo.message || '',
-        offline_reason: noteInfo.offlineReason || '',
-        offline_reason_id: noteInfo.offlineReasonId || undefined,
-        recovery_action: noteInfo.recoveryAction || '',
-        recovery_action_id: noteInfo.recoveryActionId || undefined,
-        device_serial: noteInfo.deviceSerial || '',
-        hostname: noteInfo.hostname || '',
-      };
-
+      body.device_serial = noteInfo.deviceSerial || '';
       return this.http.post<string>(
           `${this.tfcApiUrl}/devices/${noteInfo.deviceSerial}/notes`, body,
           {params});
