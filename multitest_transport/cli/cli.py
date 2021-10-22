@@ -98,6 +98,8 @@ _PRIVATE_KEY_ID_KEY = 'private_key_id'
 PACKAGE_LOGGER_NAME = 'multitest_transport.cli'
 logger = logging.getLogger(__name__)
 
+_CRASH_REPORT_FILE_PATH = '/data/.crash_report_file'
+
 
 class ActionableError(Exception):
   """Errors which can be corrected by user actions."""
@@ -657,10 +659,16 @@ def _StopMttNode(args, host):
       target_image=host.config.docker_image)
   docker_context = command_util.DockerContext(host.context, login=False)
   docker_helper = command_util.DockerHelper(docker_context)
+
   # TODO: The kill logic should be more general and works for both
   # mtt and dockerized tf.
   if docker_helper.IsContainerRunning(args.name):
     logger.info('Stopping running container %s.', args.name)
+
+    # Remove crash report file to indicate that the docker container was
+    # stopped properly (used to track reliability).
+    docker_helper.Exec(args.name, ['rm', '-f', _CRASH_REPORT_FILE_PATH])
+
     timeout = None
     if host.config.graceful_shutdown or args.wait:
       logger.info('Wait all tests to finish.')
