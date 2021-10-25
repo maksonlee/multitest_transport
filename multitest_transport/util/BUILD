@@ -75,7 +75,6 @@ pytype_strict_library(
         "env.py",
     ],
     srcs_version = "PY2AND3",
-    deps = ["//third_party/py/enum"],
 )
 
 pytype_strict_library(
