@@ -339,7 +339,7 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
   }
 
   addLabel(event: MatChipInputEvent) {
-    const input = event.input;
+    const input = event.chipInput.inputElement;
     const value = event.value;
 
     if ((value || '').trim() && this.labels.indexOf(value.trim()) === -1) {

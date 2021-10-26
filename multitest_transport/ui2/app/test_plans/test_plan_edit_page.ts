@@ -206,7 +206,7 @@ export class TestPlanEditPage extends FormChangeTracker implements
   }
 
   addLabel(event: MatChipInputEvent) {
-    const input = event.input;
+    const input = event.chipInput.inputElement;
     const value = event.value;
 
     if ((value || '').trim() &&

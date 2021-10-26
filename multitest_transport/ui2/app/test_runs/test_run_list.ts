@@ -283,7 +283,7 @@ export class TestRunList implements AfterViewInit, OnDestroy {
 
   /* Add input to chips and reload */
   addFilter(event: MatChipInputEvent) {
-    const input = event.input;
+    const input = event.chipInput.inputElement;
     const value = (event.value || '').trim();
 
     if (value && !this.filters.includes(value)) {
