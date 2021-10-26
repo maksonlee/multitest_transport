@@ -26,10 +26,10 @@ from multitest_transport.core import service_checker
 from multitest_transport.models import sql_models
 from multitest_transport.test_scheduler import download_util
 from multitest_transport.test_scheduler import test_scheduler
+from multitest_transport.util import analytics
 from multitest_transport.util import env
 from multitest_transport.util import tfc_client
 from tradefed_cluster import common
-
 
 APP = flask.Flask(__name__)
 
@@ -42,7 +42,10 @@ def CheckPreviousCrash():
   crash_report_file = pathlib.Path(filepath)
   if crash_report_file.is_file():
     logging.info('Uploading ATS crash status to Google Analytics')
-    # TODO: Upload to analytics
+    analytics.Log(
+        analytics.SYSTEM_CATEGORY,
+        analytics.CRASH_ACTION,
+        label='ats_container')
   else:
     # On ATS start, create a file to track ATS crashing status
     crash_report_file.touch()

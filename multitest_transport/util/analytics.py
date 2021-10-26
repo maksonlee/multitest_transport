@@ -39,6 +39,7 @@ DEVICE_COUNT_PER_WORKER_CATEGORY = 'device_count_per_worker'
 WORKER_COUNT_CATEGORY = 'worker_count'
 
 # GA actions
+CRASH_ACTION = 'crash'
 DOWNLOAD_ACTION = 'download'
 END_ACTION = 'end'
 EXECUTE_ACTION = 'execute'
