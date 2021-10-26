@@ -23,6 +23,7 @@ python launcher.py
   --module="api=test.api:APP"
   --module="backend=test.backend:APP"
 """
+import functools
 import logging
 import multiprocessing
 import os
@@ -210,6 +211,17 @@ def monkeypatch_crypt_rsa():
   crypt.RSAVerifier = _python_rsa.RSAVerifier
 
 
+def monkeypatch_read_consistency():
+  """Use eventually consistent NDB queries by default (b/203420251).
+
+  ATS uses the cloud datastore emulator which can leak memory if all queries
+  (including those outside transactions) are forced to be strongly consistent.
+  """
+  from google.cloud.ndb import _datastore_api    _datastore_api.get_read_options = functools.partial(
+      _datastore_api.get_read_options,
+      default_read_consistency=_datastore_api.EVENTUAL)
+
+
 def set_env_variables():
   """Set the environment variables."""
   os.environ['APPLICATION_ID'] = FLAGS.application_id
@@ -260,6 +272,7 @@ def main(_):
   # Apply monkey patches and configure environment
   monkeypatch_default_auth()
   monkeypatch_crypt_rsa()
+  monkeypatch_read_consistency()
   set_env_variables()
   set_env_config(modules)
 
