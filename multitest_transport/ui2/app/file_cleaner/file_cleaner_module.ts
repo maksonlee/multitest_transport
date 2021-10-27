@@ -20,12 +20,14 @@ import {RouterModule} from '@angular/router';
 
 import {SharedModule} from '../shared/shared_module';
 
+import {FileCleanerConfigEditPage} from './file_cleaner_config_edit_page';
 import {FileCleanerCriterionForm} from './file_cleaner_criterion_form';
 import {FileCleanerOperationForm} from './file_cleaner_operation_form';
 import {FileCleanerPolicyEditPage} from './file_cleaner_policy_edit_page';
 import {FileCleanerSettingList} from './file_cleaner_setting_list';
 
 const COMPONENTS = [
+  FileCleanerConfigEditPage,
   FileCleanerCriterionForm,
   FileCleanerOperationForm,
   FileCleanerPolicyEditPage,

@@ -135,14 +135,19 @@ describe('FileCleanerSettingList', () => {
 
   it('can delete a policy', () => {
     notifier.confirm.and.returnValue(observableOf(true));  // confirm delete
-    reload({policies: [newMockFileCleanerPolicy('Policy')], configs: []});
+    reload({
+      policies: [newMockFileCleanerPolicy('Policy')],
+      configs: [newMockFileCleanerConfig('Config', '', [], ['Policy'])],
+    });
 
-    getEl(element, 'mat-card .delete-button').click();
+    getEls(element, 'mat-card .delete-button')[0].click();
     fixture.detectChanges();
 
-    expect(hasEl(element, 'mat-card')).toBeFalsy();  // card removed
-    expect(client.updateFileCleanerSettings)
-        .toHaveBeenCalledWith(EMPTY_SETTINGS);
+    expect(getEls(element, 'mat-card').length).toBe(1);  // 1 card removed
+    expect(client.updateFileCleanerSettings).toHaveBeenCalledWith({
+      policies: [],
+      configs: [newMockFileCleanerConfig('Config', '', [], [])],
+    });
     expect(notifier.showMessage)
         .toHaveBeenCalledWith(`File cleaner policy 'Policy' deleted.`);
     expect(notifier.showError).not.toHaveBeenCalled();

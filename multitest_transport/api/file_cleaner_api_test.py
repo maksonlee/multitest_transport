@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Tests for file_cleaner_api."""
 
 import json
@@ -95,6 +96,22 @@ class FileCleanerApiTest(api_test_util.TestCase):
         'configs': [{
             'directories': ['/test/path'],
             'name': 'config name',
+            'policy_names': ['policy name', 'invalid policy name']
+        }]
+    }
+    expected_data = {
+        'policies': [{
+            'criteria': [{
+                'type': 'LAST_MODIFIED_TIME'
+            }],
+            'name': 'policy name',
+            'operation': {
+                'type': 'DELETE'
+            }
+        }],
+        'configs': [{
+            'directories': ['/test/path'],
+            'name': 'config name',
             'policy_names': ['policy name']
         }]
     }
@@ -102,7 +119,7 @@ class FileCleanerApiTest(api_test_util.TestCase):
     self.app.put_json('/_ah/api/mtt/v1/file_cleaner/settings', data)
 
     self.assertEqual(
-        self._CreateFileCleanerSettings(data),
+        self._CreateFileCleanerSettings(expected_data),
         ndb_models.GetFileCleanerSettings())
 
 

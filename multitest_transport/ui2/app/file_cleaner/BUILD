@@ -12,6 +12,7 @@ per_file_sass_binaries(
 ng_module(
     name = "file_cleaner",
     srcs = [
+        "file_cleaner_config_edit_page.ts",
         "file_cleaner_criterion_form.ts",
         "file_cleaner_module.ts",
         "file_cleaner_operation_form.ts",
@@ -20,6 +21,7 @@ ng_module(
     ],
     assets = [
         ":styles",
+        "file_cleaner_config_edit_page.ng.html",
         "file_cleaner_criterion_form.ng.html",
         "file_cleaner_operation_form.ng.html",
         "file_cleaner_policy_edit_page.ng.html",
@@ -41,6 +43,7 @@ ng_module(
     name = "tests",
     testonly = True,
     srcs = [
+        "file_cleaner_config_edit_page_test.ts",
         "file_cleaner_criterion_form_test.ts",
         "file_cleaner_operation_form_test.ts",
         "file_cleaner_policy_edit_page_test.ts",

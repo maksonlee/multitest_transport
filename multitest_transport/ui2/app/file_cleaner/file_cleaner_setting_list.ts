@@ -84,6 +84,10 @@ export class FileCleanerSettingList implements OnInit, OnDestroy {
           }
           const updatedSettings = deepCopy(this.settings);
           updatedSettings.policies!.splice(i, 1);
+          updatedSettings.configs?.forEach(config => {
+            config.policy_names =
+                config.policy_names?.filter(name => name !== policy.name);
+          });
           this.mtt.updateFileCleanerSettings(updatedSettings)
               .subscribe(
                   () => {

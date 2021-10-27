@@ -51,5 +51,10 @@ class FileCleanerApi(remote.Service):
     """
     settings = messages.Convert(request, ndb_models.FileCleanerSettings,
                                 messages.FileCleanerSettings)
+    # Remove invalid policy names
+    policy_name_set = {policy.name for policy in settings.policies}
+    for config in settings.configs:
+      config.policy_names = list(
+          filter(lambda name: name in policy_name_set, config.policy_names))
     settings.put()
     return messages.Convert(settings, messages.FileCleanerSettings)

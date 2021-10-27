@@ -1,0 +1,118 @@
+<!--
+ Copyright 2021 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<!-- TODO: Add scuba tests. -->
+<div class="header">
+  <div class="back-button-label">File Cleaner</div>
+  <h1 class="subtitle">
+    <button
+      aria-label="Return to settings page"
+      id="back-button"
+      mat-icon-button
+      matTooltip="Return to settings page"
+      (click)="back()"
+      #backButton
+    >
+      <mat-icon class="back-button-icon">arrow_back</mat-icon>
+    </button>
+    {{ editMode ? "Edit file cleaner config" : "Add a new file cleaner config" }}
+  </h1>
+</div>
+
+<div class="page">
+  <!-- Config Information -->
+  <h2>Config Information</h2>
+
+  <!-- Name Field -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label>Name</mat-label>
+    <input matInput name="name" required type="text" [(ngModel)]="data.name" #name="ngModel" />
+    <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
+  </mat-form-field>
+
+  <!-- Description Field -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label>Description</mat-label>
+    <textarea cdkTextareaAutosize matInput type="text" [(ngModel)]="data.description"></textarea>
+  </mat-form-field>
+
+  <mat-divider></mat-divider>
+
+  <!-- Directory Field -->
+  <h2>Target Directories</h2>
+  <list-form
+    label="Directory"
+    [data]="data.directories"
+    (addItem)="onAddDirectory()"
+    (removeItem)="onDeleteDirectory($event)"
+  >
+  </list-form>
+
+  <mat-divider></mat-divider>
+
+  <!-- Policy Name Field -->
+  <h2>Policy Names</h2>
+  <ng-container *ngIf="policyNames.size; else policyNotFound">
+    <div fxLayout="row" *ngFor="let policy_name of data.policy_names; let i = index">
+      <mat-form-field appearance="outline" floatLabel="always" fxFlex="90">
+        <mat-label>Policy name</mat-label>
+        <mat-select
+          required
+          [(ngModel)]="data.policy_names[i]"
+          (selectionChange)="hasContentChanged = true"
+        >
+          <mat-option matInput *ngFor="let type of policyNames" [value]="type">
+            {{ type }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button
+        aria-label="Delete policy"
+        class="delete-policy-button shared-delete-button"
+        mat-button
+        matTooltip="Delete policy"
+        type="button"
+        (click)="onDeletePolicyName(i); hasContentChanged = true"
+      >
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+
+    <button
+      aria-label="Add"
+      class="add-policy-button"
+      color="accent"
+      mat-stroked-button
+      type="button"
+      (click)="onAddPolicyName(); hasContentChanged = true"
+    >
+      + Add policy
+    </button>
+  </ng-container>
+
+  <ng-template #policyNotFound> No file cleaner policy found. </ng-template>
+
+  <!-- Update/Create Button and Cancel Button-->
+  <div class="button-group">
+    <button color="accent" mat-flat-button type="button" (click)="onSubmit()">
+      {{ editMode ? "Update" : "Create" }}
+    </button>
+    <button color="accent" mat-button type="button" (click)="back()">Cancel</button>
+    <!-- Error messages after validation -->
+    <form-error-info [invalidInputs]="invalidInputs"></form-error-info>
+  </div>
+</div>

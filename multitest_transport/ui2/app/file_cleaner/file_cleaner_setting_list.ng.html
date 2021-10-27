@@ -14,6 +14,7 @@
  limitations under the License.
 -->
 
+<!-- TODO: Add scuba tests. -->
 <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
 
 <div [class.loading-mask]="isLoading" class="page">
@@ -69,8 +70,12 @@
 
   <div class="header-section">
     <h2>Configs</h2>
-    <!-- TODO: Add config edit page. -->
-    <button aria-label="Add a new file cleaner config" color="accent" disabled mat-flat-button>
+    <button
+      aria-label="Add a new file cleaner config"
+      color="accent"
+      mat-flat-button
+      routerLink="/file_cleaner/config/new"
+    >
       + New Config
     </button>
   </div>
@@ -80,8 +85,13 @@
       <h3>
         <span>{{ config.name }}</span>
         <div class="button-group">
-          <!-- TODO: Add config edit page. -->
-          <button aria-label="Edit" class="edit-button" disabled mat-icon-button matTooltip="Edit">
+          <button
+            aria-label="Edit"
+            class="edit-button"
+            mat-icon-button
+            matTooltip="Edit"
+            [routerLink]="['/file_cleaner/config', i]"
+          >
             <mat-icon>edit</mat-icon>
           </button>
           <button
