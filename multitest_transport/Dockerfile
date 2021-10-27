@@ -136,6 +136,14 @@ RUN apt-get -qqy update && apt-get install -qqy \
         google-cloud-sdk=${CLOUD_SDK_VERSION}-0 \
         google-cloud-sdk-datastore-emulator=${CLOUD_SDK_VERSION}-0
 
+
+# Installing dependencies for TVTS
+RUN export DEBIAN_FRONTEND=noninteractive && \
+        curl -sL https://deb.nodesource.com/setup_12.x -o nodesource_setup.sh && \
+        bash nodesource_setup.sh && \
+        apt-get install -y nodejs && \
+        rm nodesource_setup.sh
+
 # grpcio is required to use Cloud Datastore emulator.
 # Reference: https://cloud.google.com/appengine/docs/standard/python/tools/migrate-cloud-datastore-emulator#failing_grpc_imports
 RUN pip install grpcio
