@@ -37,6 +37,7 @@ import {MatProgressBarModule} from '@angular/material/mdc-progress-bar';
 import {MatProgressSpinnerModule} from '@angular/material/mdc-progress-spinner';
 import {MatSnackBarModule} from '@angular/material/mdc-snack-bar';
 import {MatTableModule} from '@angular/material/mdc-table';
+import {MatTooltipModule} from '@angular/material/mdc-tooltip';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatPaginatorModule} from '@angular/material/paginator';
 import {MatRadioModule} from '@angular/material/radio';
@@ -46,13 +47,13 @@ import {MatSortModule} from '@angular/material/sort';
 import {MatStepperModule} from '@angular/material/stepper';
 import {MatTabsModule} from '@angular/material/tabs';
 import {MatToolbarModule} from '@angular/material/toolbar';
-import {MatTooltipModule} from '@angular/material/mdc-tooltip';
 import {MatTreeModule} from '@angular/material/tree';
 
 import {ErrorDialog} from '../services/error_dialog';
 
 import {Breadcrumb} from './breadcrumb';
 import {FileSizePipe} from './file_size_pipe';
+import {ForbiddenValuesValidator} from './forbidden_values_validator';
 import {FormErrorInfo} from './form_error_info';
 import {FromNowPipe} from './from_now_pipe';
 import {HostDeviceSearch} from './host_device_search';
@@ -109,6 +110,7 @@ const COMPONENTS = [
 ];
 
 const DIRECTIVES = [
+  ForbiddenValuesValidator,
   InfiniteScroll,
   TableRowSelect,
   TableRowSelectCheckbox,

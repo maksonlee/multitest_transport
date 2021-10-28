@@ -43,6 +43,7 @@ export class FileCleanerPolicyEditPage extends FormChangeTracker implements
   @ViewChild('backButton', {static: false}) backButton?: MatButton;
   @ViewChildren(FormChangeTracker)
   override trackers!: QueryList<FormChangeTracker>;
+  existingPolicyNames = new Set<string>();
 
   constructor(
       private readonly mtt: MttClient, private readonly notifier: Notifier,
@@ -65,10 +66,15 @@ export class FileCleanerPolicyEditPage extends FormChangeTracker implements
         settings => {
           this.settings = settings;
           this.settings.policies = this.settings.policies || [];
+          this.existingPolicyNames.clear();
+          for (const policy of this.settings.policies) {
+            this.existingPolicyNames.add(policy.name);
+          }
 
           const policy = this.settings.policies[i];
           if (policy) {
             this.editMode = true;
+            this.existingPolicyNames.delete(policy.name);
 
             policy.target = policy.target || FileCleanerTargetType.FILE;
             policy.criteria = policy.criteria || [];

@@ -38,8 +38,22 @@
   <!-- Name Field -->
   <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
     <mat-label>Name</mat-label>
-    <input matInput name="name" required type="text" [(ngModel)]="data.name" #name="ngModel" />
-    <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
+    <input
+      matInput
+      mttForbiddenValues
+      name="name"
+      required
+      type="text"
+      [forbiddenValues]="existingPolicyNames"
+      [(ngModel)]="data.name"
+      #name="ngModel"
+    />
+    <mat-error *ngIf="name.invalid && name.touched">
+      <ng-container *ngIf="name.errors?.forbidden; else nameIsRequired">
+        Name must be unique
+      </ng-container >
+      <ng-template #nameIsRequired>Name is required</ng-template>
+    </mat-error>
   </mat-form-field>
 
   <!-- Target Type Field -->
