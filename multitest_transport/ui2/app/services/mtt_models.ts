@@ -942,19 +942,19 @@ export enum FileCleanerTargetType {
 }
 
 /** File cleaner operation. */
-export interface FileCleanerOperation {
+export declare interface FileCleanerOperation {
   type: FileCleanerOperationType;
   params?: NameValuePair[];
 }
 
 /** File cleaner criterion. */
-export interface FileCleanerCriterion {
+export declare interface FileCleanerCriterion {
   type: FileCleanerCriterionType;
   params?: NameValuePair[];
 }
 
 /** File cleaner policy. */
-export interface FileCleanerPolicy {
+export declare interface FileCleanerPolicy {
   name: string;
   target?: FileCleanerTargetType;
   operation: FileCleanerOperation;
@@ -974,7 +974,7 @@ export function initFileCleanerPolicy(): Partial<FileCleanerPolicy> {
 }
 
 /** File cleaner config. */
-export interface FileCleanerConfig {
+export declare interface FileCleanerConfig {
   name: string;
   description?: string;
   directories?: string[];
@@ -990,7 +990,7 @@ export function initFileCleanerConfig(): Partial<FileCleanerConfig> {
 }
 
 /** File cleaner settings. Combines policies and configs. */
-export interface FileCleanerSettings {
+export declare interface FileCleanerSettings {
   policies?: FileCleanerPolicy[];
   configs?: FileCleanerConfig[];
 }
