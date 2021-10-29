@@ -20,8 +20,9 @@ import shutil
 import tempfile
 
 from absl.testing import absltest
-from multitest_transport.file_server import file_server
 import werkzeug
+
+from multitest_transport.file_server import file_server
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
