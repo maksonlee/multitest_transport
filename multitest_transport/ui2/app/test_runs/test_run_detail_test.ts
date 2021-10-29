@@ -84,8 +84,10 @@ describe('TestRunDetail', () => {
     mttClient.getTestRun.and.returnValue(observableOf(testRun));
     mttClient.getReruns.and.returnValue(observableOf({test_runs: [retryRun]}));
 
-    tfcClient =
-        jasmine.createSpyObj('tfcClient', ['getDeviceInfos', 'getRequest']);
+    tfcClient = jasmine.createSpyObj(
+        'tfcClient', ['getCommandStateStats', 'getDeviceInfos', 'getRequest']);
+    tfcClient.getCommandStateStats.and.returnValue(observableOf(
+        {state_stats: [], create_time: '2021-09-15T01:47:28.430076+00:00'}));
     tfcClient.getDeviceInfos.and.returnValue(observableOf(testDevices));
     tfcClient.getRequest.and.returnValue(observableOf(request));
 

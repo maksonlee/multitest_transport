@@ -15,6 +15,21 @@
  */
 @import 'third_party/py/multitest_transport/ui2/constants';
 
+.jobs-column {
+  min-width: 200px;
+}
+
+.row-divider {
+  border-bottom: 1px solid $primary-less;
+  padding: 4px 0;
+}
+
+.state-stat-text {
+  min-width: 200px;
+  overflow-wrap: anywhere;
+  padding: 12px 4px;
+}
+
 .time-column {
   flex-basis: 148px;
   flex-shrink: 0;
@@ -26,6 +41,7 @@
   color: $text-primary;
 }
 
+// TODO: Remove for modular execution UI
 :host::before {
   border-left: 1px solid $accent;
   content: '';
@@ -55,23 +71,98 @@ div.attempt {
   }
 }
 
+div.elevated-card {
+  background: white;
+  border: 1px solid $accent;
+  border-radius: 6px;
+  display: flex;
+  flex: 1 1 auto;
+  font-size: 14px;
+  padding: 6px 6px 6px 0;
+  position: relative;
+  margin: 4px 0 1px;
+}
+
 div.log {
   align-items: stretch;
   display: flex;
   font-size: 14px;
   margin-top: 4px;
 
-  mat-icon {
-    flex-shrink: 0;
-    font-size: 18px;
-    height: 18px;
+  span {
+    line-height: 20px;
+  }
+}
 
-    &.error {
-      color: $text-danger;
-    }
+div.sectioned-card {
+  background: white;
+  border: 1px solid $accent;
+  border-radius: 6px;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  font-size: 14px;
+  margin: 4px 0 1px;
+  position: relative;
 
-    &.warning {
-      color: $text-warning;
+  div.card-header {
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    background-color: $accent-light;
+    display: flex;
+    padding: 6px 6px 6px 0;
+  }
+
+  div.card-body {
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    display: flex;
+    flex-direction: column;
+
+    mat-header-cell {
+      min-height: 30px;
+      padding: 0;
     }
+    mat-header-row {
+      min-height: 30px;
+    }
+  }
+}
+
+div.command-state-stats {
+  align-items: stretch;
+  display: flex;
+  font-size: 14px;
+
+  span {
+    line-height: 20px;
+  }
+}
+
+mat-card.log-entry {
+  display: flex;
+  flex-direction: row;
+  padding: 8px 16px;
+  width: 100%;
+}
+
+
+mat-icon.status {
+  flex-shrink: 0;
+  font-size: 18px;
+  height: 18px;
+  padding-left: 8px;
+  vertical-align: center;
+
+  &.error {
+    color: $text-danger;
+  }
+
+  &.info {
+    color: $text-success;
+  }
+
+  &.warning {
+    color: $text-warning;
   }
 }

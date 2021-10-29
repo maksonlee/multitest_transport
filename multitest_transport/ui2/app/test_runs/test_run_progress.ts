@@ -14,16 +14,24 @@
  * limitations under the License.
  */
 
-import {ChangeDetectionStrategy, Component, Input, OnChanges, OnInit} from '@angular/core';
+import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
 import * as moment from 'moment';
+import {finalize} from 'rxjs/operators';
 
 import {EventLogEntry, EventLogLevel, TestRun} from '../services/mtt_models';
-import {Command, CommandAttempt, Request} from '../services/tfc_models';
+import {TfcClient} from '../services/tfc_client';
+import {Command, CommandAttempt, CommandStateStats, Request} from '../services/tfc_models';
 import {assertRequiredInput, millisToDuration} from '../shared/util';
 
 /** Progress entity which represents a log entry. */
 interface LogEntity extends EventLogEntry {
   readonly progressType: 'log';
+  readonly timestamp: moment.Moment;
+}
+
+/** Progress entity which represents command state stats. */
+interface CommandStateStatsEntity extends CommandStateStats {
+  readonly progressType: 'command-state-stats';
   readonly timestamp: moment.Moment;
 }
 
@@ -34,14 +42,20 @@ interface AttemptEntity extends CommandAttempt {
 }
 
 /** Entities which define a test run's progress. */
-type ProgressEntity = LogEntity|AttemptEntity;
+type ProgressEntity = LogEntity|AttemptEntity|CommandStateStatsEntity;
+
+/** Tree node for storing state stats data. */
+interface CommandStateStatNode {
+  state: string;
+  count: string;
+  expanded: boolean;
+}
 
 /** Displays the test run progress entities (log entries and attempts). */
 @Component({
   selector: 'test-run-progress',
   styleUrls: ['test_run_progress.css'],
   templateUrl: './test_run_progress.ng.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TestRunProgress implements OnInit, OnChanges {
   readonly EventLogLevel = EventLogLevel;
@@ -49,18 +63,80 @@ export class TestRunProgress implements OnInit, OnChanges {
   @Input() testRun!: TestRun;
   @Input() request?: Request;
 
+  // TODO: Remove after switching to modular execution UI
+  showModUI = false;
+
   entities: ProgressEntity[] = [];
+  stateStats: CommandStateStats = {state_stats: []};
+  statNodes: CommandStateStatNode[] = [];
+
+  displayColumns = [
+    'expand',
+    'jobs',
+    'progress',
+    'module_results',
+    'test_results',
+    'start_time',
+    'output_files',
+  ];
+
+  constructor(
+      private readonly tfcClient: TfcClient,
+  ) {}
 
   ngOnInit() {
     assertRequiredInput(this.testRun, 'testRun', 'test-run-progress');
   }
 
-  ngOnChanges() {
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['testRun'] || changes['request']) {
+      this.load();
+    }
+  }
+
+  load() {
+    if (!this.request) {
+      this.updateEntities();
+      return;
+    }
+
+    this.tfcClient.getCommandStateStats(this.request.id)
+        .pipe(finalize(() => {
+          this.updateEntities();
+        }))
+        .subscribe(
+            (res) => {
+              this.stateStats = res;
+
+              for (const stat of this.stateStats.state_stats) {
+                if (stat.value !== '0') {
+                  this.statNodes.push({
+                    state: stat.key,
+                    count: stat.value,
+                    expanded: false,
+                  });
+                }
+              }
+            },
+            error => {
+              console.log('Failed to load command state stats: %s', error);
+            });
+  }
+
+  updateEntities() {
     // Convert log entries
     const logEntries = this.testRun.log_entries || [];
     const logEntities: LogEntity[] = logEntries.map(e => {
       return {progressType: 'log', timestamp: moment.utc(e.create_time), ...e};
     });
+
+    // Convert command states
+    const stateStatsEntity: CommandStateStatsEntity = {
+      progressType: 'command-state-stats',
+      timestamp: moment.utc(this.stateStats.create_time) || moment.now(),
+      ...this.stateStats,
+    };
+
     // Convert attempts
     const commands = this.request && this.request.commands || [];
     const commandMap = commands.reduce((map: Map<string, Command>, obj: Command) => {
@@ -76,9 +152,19 @@ export class TestRunProgress implements OnInit, OnChanges {
         ...e,
       };
     });
+
     // Combine and sort entities
-    this.entities = [...logEntities, ...attemptEntities].sort(
+    this.entities = [...logEntities, ...attemptEntities, stateStatsEntity].sort(
         (a, b) => a.timestamp.diff(b.timestamp));
+  }
+
+  expandStatNode(index: number) {
+    if (this.statNodes[index].expanded) {
+      this.statNodes[index].expanded = false;
+      return;
+    }
+    this.statNodes[index].expanded = true;
+    // TODO: Load commands
   }
 
   /** Calculate an attempt's duration. */

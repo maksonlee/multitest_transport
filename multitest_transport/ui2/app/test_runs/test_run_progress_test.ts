@@ -17,9 +17,11 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {of as observableOf} from 'rxjs';
 
 import {FileService} from '../services/file_service';
 import {EventLogEntry, TestRun} from '../services/mtt_models';
+import {TfcClient} from '../services/tfc_client';
 import {Command, CommandAttempt, CommandState, Request} from '../services/tfc_models';
 import {getEl, getEls, hasEl} from '../testing/jasmine_util';
 
@@ -29,19 +31,26 @@ import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('TestRunProgress', () => {
   let fs: jasmine.SpyObj<FileService>;
+  let tfcClient: jasmine.SpyObj<TfcClient>;
 
   let fixture: ComponentFixture<TestRunProgress>;
   let element: DebugElement;
   let component: TestRunProgress;
 
   beforeEach(() => {
+    // TODO: Update tests for modular execution UI
     fs = jasmine.createSpyObj(['getTestRunFileUrl', 'getFileBrowseUrl']);
+    tfcClient = jasmine.createSpyObj('tfcClient', ['getCommandStateStats']);
+
+    tfcClient.getCommandStateStats.and.returnValue(observableOf(
+        {state_stats: [], create_time: '2021-09-15T01:47:28.430076+00:00'}));
 
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule],
       aotSummaries: TestRunsModuleNgSummary,
       providers: [
         {provide: FileService, useValue: fs},
+        {provide: TfcClient, useValue: tfcClient},
       ]
     });
 
@@ -60,7 +69,7 @@ describe('TestRunProgress', () => {
       commands,
       command_attempts: attempts
     } as Request;
-    component.ngOnChanges();
+    component.updateEntities();
     fixture.detectChanges();
   }
 

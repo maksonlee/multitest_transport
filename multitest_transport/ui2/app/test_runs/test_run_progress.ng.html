@@ -15,12 +15,124 @@
 -->
 <!-- TODO: add download progress -->
 
+<ng-container *ngIf="showModUI">
+  <ng-container [ngSwitch]="entity.progressType" *ngFor="let entity of entities">
+    <!-- log entry container -->
+    <div class="entity log elevated-card mat-elevation-z2" *ngSwitchCase="'log'">
+        <div>
+          <mat-icon class="status warning" *ngIf="entity.level === EventLogLevel.WARNING">
+            warning
+          </mat-icon>
+          <mat-icon class="status error" *ngIf="entity.level === EventLogLevel.ERROR">
+            error
+          </mat-icon>
+          <mat-icon class="status info" *ngIf="entity.level === EventLogLevel.INFO">done</mat-icon>
+        </div>
+        <div>
+          <span class="log-message" [innerHTML]="entity.message | linkify"></span><br>
+          <span class="timestamp">Started: {{entity.timestamp | date:'MM/dd/yyyy h:mm a'}}</span>
+        </div>
+    </div>
+
+    <!-- command state stats container -->
+    <div class="entity command-state-stats sectioned-card mat-elevation-z2"
+         *ngSwitchCase="'command-state-stats'">
+      <div class="card-header">
+
+        <div>
+          <mat-icon class="status info">done</mat-icon>
+        </div>
+        <div>
+          <span class="log-message">Test run started</span><br>
+          <span class="timestamp">Started: {{entity.timestamp | date:'MM/dd/yyyy h:mm a'}}</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <mat-table [dataSource]="stateStats.state_stats">
+          <ng-container matColumnDef="expand">
+            <mat-header-cell *matHeaderCellDef fxFlex="40px">
+              <!-- Expand button column -->
+            </mat-header-cell>
+          </ng-container>
+
+          <ng-container matColumnDef="jobs">
+            <mat-header-cell *matHeaderCellDef fxFlex class="jobs-column">
+              Jobs
+            </mat-header-cell>
+          </ng-container>
+
+          <ng-container matColumnDef="progress">
+            <mat-header-cell *matHeaderCellDef fxFlex="150px">
+              Test progress
+            </mat-header-cell>
+          </ng-container>
+
+          <ng-container matColumnDef="module_results">
+            <mat-header-cell *matHeaderCellDef fxFlex="150px">
+              Module results
+            </mat-header-cell>
+          </ng-container>
+
+          <ng-container matColumnDef="test_results">
+            <mat-header-cell *matHeaderCellDef fxFlex="150px">
+              Test results
+            </mat-header-cell>
+          </ng-container>
+
+          <ng-container matColumnDef="start_time">
+            <mat-header-cell *matHeaderCellDef fxFlex="150px">
+              Start time
+            </mat-header-cell>
+          </ng-container>
+
+          <ng-container matColumnDef="output_files">
+            <mat-header-cell *matHeaderCellDef fxFlex="100px">
+              <!-- Output files column -->
+            </mat-header-cell>
+          </ng-container>
+
+          <mat-header-row *matHeaderRowDef="displayColumns"></mat-header-row>
+        </mat-table>
+
+        <div *ngFor="let statNode of statNodes; index as i">
+          <div class="state-stat-row row-divider" *ngIf="statNode.count > 0">
+            <div fxFlex="40px">
+              <button mat-icon-button aria-label="Toggle" (click)="expandStatNode(i)"
+                      class="expand-button">
+                <mat-icon class="mat-icon-rtl-mirror">
+                  {{statNode.expanded ? 'expand_more' : 'chevron_right'}}
+                </mat-icon>
+              </button>
+            </div>
+
+            <div fxFlex class="state-stat-text inline">
+              <span>
+                {{statNode.state | titlecase}} ({{statNode.count}})
+              </span>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="empty" *ngIf="!entity.state_stats.length">
+          No jobs found.
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</ng-container>
+
+
 <ng-container [ngSwitch]="entity.progressType" *ngFor="let entity of entities">
   <!-- log entry container -->
   <div class="entity log" *ngSwitchCase="'log'">
     <span class="time-column timestamp">{{entity.timestamp | date:'MM/dd/yyyy h:mm a'}}</span>
-    <mat-icon class="warning" *ngIf="entity.level === EventLogLevel.WARNING">warning</mat-icon>
-    <mat-icon class="error" *ngIf="entity.level === EventLogLevel.ERROR">error</mat-icon>
+    <mat-icon class="warning status" *ngIf="entity.level === EventLogLevel.WARNING">
+      warning
+    </mat-icon>
+    <mat-icon class="error status" *ngIf="entity.level === EventLogLevel.ERROR">
+      error
+    </mat-icon>
     <span class="log-message" [innerHTML]="entity.message | linkify"></span>
   </div>
 

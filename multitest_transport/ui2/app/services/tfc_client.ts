@@ -70,6 +70,13 @@ export class TfcClient {
         `${this.tfcApiUrl}/requests/${encodeURIComponent(requestId)}`);
   }
 
+  getCommandStateStats(requestId: string):
+      Observable<tfcModels.CommandStateStats> {
+    return this.http.get<tfcModels.CommandStateStats>(
+        `${this.tfcApiUrl}/requests/${
+            encodeURIComponent(requestId)}/commands/state_counts`);
+  }
+
   getRequestInvocationStatus(requestId: string): Observable<InvocationStatus> {
     return this.http.get<InvocationStatus>(`${this.tfcApiUrl}/requests/${
         encodeURIComponent(requestId)}/invocation_status`);
