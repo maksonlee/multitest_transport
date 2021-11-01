@@ -64,6 +64,9 @@ RUN wget -q --retry-connrefused -O /tmp/get-pip.py https://bootstrap.pypa.io/pip
 # Install a version of six that supports ensure_* methods.
 RUN pip install six==1.12.0
 
+# Enable rabbitmq management plugin for reliability checking
+RUN rabbitmq-plugins enable rabbitmq_management
+
 # Installing dependencies for VTS
 # Reference: https://android.googlesource.com/platform/test/vts/+/refs/heads/android10-tests-dev/script/setup.sh
 # VTS 9.0 depends on libncurses5.

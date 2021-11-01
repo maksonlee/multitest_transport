@@ -15,6 +15,7 @@
 """Tests for service_checker."""
 from absl.testing import absltest
 import mock
+import requests
 from tradefed_cluster.util import ndb_test_lib
 
 from multitest_transport.core import service_checker
@@ -51,6 +52,21 @@ class FileServerCheckerTest(absltest.TestCase):
     with self.assertRaises(RuntimeError):
       service_checker.FileServerChecker.Run()
 
+
+class RabbitMQCheckerTest(absltest.TestCase):
+
+  @mock.patch.object(requests, 'get')
+  def testRun_error(self, mock_get):
+    mock_get.side_effect = RuntimeError('Test error')
+    with self.assertRaisesRegex(RuntimeError, 'Test error'):
+      service_checker.RabbitMQChecker.Run()
+
+  @mock.patch.object(requests, 'get')
+  def testRun_success(self, mock_get):
+    mock_response = mock.MagicMock()
+    mock_response.raise_for_status.return_value = None
+    mock_get.return_value = mock_response
+    service_checker.RabbitMQChecker.Run()
 
 if __name__ == '__main__':
   absltest.main()

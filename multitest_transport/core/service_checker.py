@@ -17,7 +17,7 @@
 A module to check availability of the core services.
 """
 import logging
-
+import requests
 from tradefed_cluster.util import ndb_shim as ndb
 
 from multitest_transport.util import file_util
@@ -38,6 +38,19 @@ class DatastoreChecker(ServiceChecker):
     ndb.Key('Kind', 1).get()
 
 
+class RabbitMQChecker(ServiceChecker):
+  """RabbitMQ availability checker."""
+  name = 'RabbitMQ'
+  label = 'rabbitmq'
+
+  @classmethod
+  def Run(cls):
+    """Check RabbitMQ service availability using its management plugin."""
+    response = requests.get('http://localhost:15672/api/vhosts',
+                            auth=requests.auth.HTTPBasicAuth('guest', 'guest'))
+    response.raise_for_status()
+
+
 class FileServerChecker(ServiceChecker):
   """Local file server availability checker."""
   name = 'File Server'
@@ -52,7 +65,7 @@ class FileServerChecker(ServiceChecker):
 
 def Check():
   """Check availability of dependent services."""
-  checkers = [DatastoreChecker, FileServerChecker]
+  checkers = [DatastoreChecker, FileServerChecker, RabbitMQChecker]
   logging.info('Checking availability of dependent services...')
   for checker in checkers:
     try:
