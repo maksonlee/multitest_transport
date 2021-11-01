@@ -492,8 +492,8 @@ export function newMockDeviceInfoHistoryList(serial: string = SERIAL):
     const state = i % 2 === 0 ? tfcModels.DeviceState.AVAILABLE :
                                 tfcModels.DeviceState.GONE;
     deviceInfos.push(newMockDeviceInfo(
-        serial, String(deviceNoteIds[i]), state, HIDDEN, HOSTNAME,
-        dt.toISOString()));
+        serial, String(deviceNoteIds[i]), state, HIDDEN, HOSTNAME, RUN_TARGET,
+        tfcModels.DeviceType.PHYSICAL, dt.toISOString()));
   }
   return {
     histories: deviceInfos,

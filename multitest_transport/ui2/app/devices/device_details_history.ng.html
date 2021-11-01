@@ -77,6 +77,20 @@
       </mat-cell>
     </ng-container>
 
+    <!-- Run Target -->
+    <ng-container matColumnDef="run_target">
+      <mat-header-cell *matHeaderCellDef fxFlex="120px"> Run Target </mat-header-cell>
+      <mat-cell
+        *matCellDef="let history"
+        [matTooltip]="history.run_target"
+        fxFlex="120px"
+      >
+        <ng-container *ngIf="history.run_target">
+          <div class="run-target">{{ history.run_target }}</div>
+        </ng-container>
+      </mat-cell>
+    </ng-container>
+
     <!-- Device State -->
     <ng-container matColumnDef="state">
       <mat-header-cell *matHeaderCellDef fxFlex="120px"> Device State </mat-header-cell>

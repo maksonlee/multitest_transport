@@ -57,6 +57,7 @@ export class DeviceDetailsHistory implements OnChanges, OnInit, OnDestroy {
     'offline_reason',
     'recovery_action',
     'message',
+    'run_target',
     'state',
     'battery_level',
     'actions',
