@@ -28,6 +28,7 @@ import {FeedbackService} from '../services/feedback_service';
 import {BatchCreateOrUpdateNotesInfo, NoteType, SurveyTrigger} from '../services/mtt_lab_models';
 import {TfcClient} from '../services/tfc_client';
 import {Note, PredefinedMessage, PredefinedMessagesResponse, PredefinedMessageType} from '../services/tfc_models';
+import {buildApiErrorMessage} from '../shared/util';
 
 import {NoteDialogParams} from './notes_dialog';
 
@@ -169,9 +170,10 @@ export class NotesEditor implements OnDestroy, OnInit {
                   this.setDefaultValue(result.notes[0]);
                 }
               },
-              (err) => {
+              (error) => {
                 this.notifier.showError(
-                    `Unable to get note with id ${noteId}.`);
+                    `Failed to get note with id ${noteId}.`,
+                    buildApiErrorMessage(error));
               });
     } else {
       this.tfcClient.batchGetHostNotes(targetId, [noteId])
@@ -187,9 +189,10 @@ export class NotesEditor implements OnDestroy, OnInit {
                   this.setDefaultValue(result.notes[0]);
                 }
               },
-              (err) => {
+              (error) => {
                 this.notifier.showError(
-                    `Unable to get note with id ${noteId}.`);
+                    `Failed to get note with id ${noteId}.`,
+                    buildApiErrorMessage(error));
               });
     }
   }

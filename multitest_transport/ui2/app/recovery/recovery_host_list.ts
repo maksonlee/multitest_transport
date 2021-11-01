@@ -19,7 +19,6 @@ import {SelectionModel} from '@angular/cdk/collections';
 import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 import {MatTable} from '@angular/material/mdc-table';
-import {ActivatedRoute} from '@angular/router';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
@@ -31,6 +30,7 @@ import {LabHostInfo, NoteType} from '../services/mtt_lab_models';
 import {TfcClient} from '../services/tfc_client';
 import {HostRecoveryStateRequest, RecoveryState} from '../services/tfc_models';
 import {UserService} from '../services/user_service';
+import {buildApiErrorMessage} from '../shared/util';
 
 /** Display a list of host that are recovering by the current user. */
 @Component({
@@ -75,7 +75,6 @@ export class RecoveryHostList implements AfterViewInit, OnChanges, OnDestroy {
       private readonly liveAnnouncer: LiveAnnouncer,
       private readonly matDialog: MatDialog,
       private readonly notifier: Notifier,
-      private readonly route: ActivatedRoute,
       private readonly tfcClient: TfcClient,
       readonly userService: UserService,
   ) {}
@@ -134,7 +133,9 @@ export class RecoveryHostList implements AfterViewInit, OnChanges, OnDestroy {
                 this.liveAnnouncer.announce('Host list loaded', 'assertive');
               },
               (error) => {
-                this.notifier.showError('Unable to load recovery host list');
+                this.notifier.showError(
+                    'Failed to load recovery host list.',
+                    buildApiErrorMessage(error));
               },
           );
     }
@@ -305,7 +306,9 @@ export class RecoveryHostList implements AfterViewInit, OnChanges, OnDestroy {
               }
             },
             (error) => {
-              this.notifier.showError(`Unable to load host ${hostName} note`);
+              this.notifier.showError(
+                  `Failed to load host ${hostName} note`,
+                  buildApiErrorMessage(error));
             },
         );
   }

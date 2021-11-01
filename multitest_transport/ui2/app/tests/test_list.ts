@@ -86,7 +86,7 @@ export class TestList implements OnInit, OnDestroy {
             },
             error => {
               this.notifier.showError(
-                  'Unable to get test suites.', buildApiErrorMessage(error));
+                  'Failed to get test suites.', buildApiErrorMessage(error));
             },
         );
   }

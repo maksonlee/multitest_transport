@@ -28,6 +28,7 @@ import {LabDeviceInfo, NoteType} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
 import {StorageService} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
+import {buildApiErrorMessage} from '../shared/util';
 
 /**
  * Data format when passed to DeviceDetails.
@@ -105,9 +106,10 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
               this.data = result;
               this.liveAnnouncer.announce('Device info loaded', 'assertive');
             },
-            () => {
+            (error) => {
               this.notifier.showError(
-                  `Unable to get device with id ${deviceSerial}.`);
+                  `Failed to get device with id ${deviceSerial}.`,
+                  buildApiErrorMessage(error));
             },
         );
   }

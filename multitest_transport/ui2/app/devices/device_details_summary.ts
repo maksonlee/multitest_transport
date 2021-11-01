@@ -26,6 +26,7 @@ import {DEVICE_SERIAL, HOSTNAME, LabDeviceInfo, REMOVE_DEVICE_MESSAGE} from '../
 import {TfcClient} from '../services/tfc_client';
 import {TestHarness} from '../services/tfc_models';
 import {UserService} from '../services/user_service';
+import {buildApiErrorMessage} from '../shared/util';
 
 /** Readonly form for device summary. */
 @Component({
@@ -87,8 +88,10 @@ export class DeviceDetailsSummary implements OnChanges, OnInit, OnDestroy {
               this.logUrl = this.getLogUrl(result);
               this.liveAnnouncer.announce('Device info loaded', 'assertive');
             },
-            () => {
-              this.notifier.showError(`Unable to get device with id ${id}.`);
+            (error) => {
+              this.notifier.showError(
+                  `Failed to get device with id ${id}.`,
+                  buildApiErrorMessage(error));
             },
         );
   }
