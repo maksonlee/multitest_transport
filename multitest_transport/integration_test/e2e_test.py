@@ -144,7 +144,7 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
             'name': 'android-cts.zip',
             'url': CTS_DOWNLOAD_URL % FLAGS.architecture,
         }])['id']
-    self.container.WaitForState(test_run_id, 'COMPLETED', timeout=10 * 60)
+    self.container.WaitForState(test_run_id, 'COMPLETED', timeout=30 * 60)
     # Verify that the tests were executed
     test_run = self.container.GetTestRun(test_run_id)
     self.assertGreater(int(test_run['total_test_count']), 0)
