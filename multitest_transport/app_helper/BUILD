@@ -79,7 +79,6 @@ pytype_strict_library(
     deps = [
         third_party("absl:app"),
         third_party("absl/flags"),
-        third_party("concurrent:futures"),
         third_party("pika"),
         third_party("six"),
         third_party("yaml"),

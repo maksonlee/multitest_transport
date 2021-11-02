@@ -102,7 +102,6 @@ py_library(
     srcs_version = "PY3",
     deps = [
         third_party("apiclient"),
-        third_party("concurrent:futures"),
         third_party("google/auth:transport/requests"),
         third_party("google/oauth2:credentials"),
         third_party("google/oauth2:service_account"),
@@ -293,7 +292,6 @@ py_test(
         ":ssh_util_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
-        third_party("concurrent:futures"),
         third_party("mock"),
         "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
