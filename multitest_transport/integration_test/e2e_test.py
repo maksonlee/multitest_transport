@@ -16,6 +16,7 @@
 import logging
 import os
 import socket
+import time
 
 from absl import flags
 from absl.testing import absltest
@@ -145,7 +146,8 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
             'url': CTS_DOWNLOAD_URL % FLAGS.architecture,
         }])['id']
     self.container.WaitForState(test_run_id, 'COMPLETED', timeout=30 * 60)
-    # Verify that the tests were executed
+    # Verify that the tests were executed (after waiting for result processing).
+    time.sleep(10)
     test_run = self.container.GetTestRun(test_run_id)
     self.assertGreater(int(test_run['total_test_count']), 0)
     # Verify that the test output exists
