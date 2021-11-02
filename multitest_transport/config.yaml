@@ -134,7 +134,7 @@ device_actions:
   description: >
     Setup a local virtual device. The device type is Cuttlefish:
     https://source.android.com/setup/create/cuttlefish
-  device_type: LOCAL_VIRTUAL
+  device_spec: '\bdevice_serial:\S+:local-virtual-device-\d+\b'
   tradefed_options:
   - name: gce-driver-path
     values:

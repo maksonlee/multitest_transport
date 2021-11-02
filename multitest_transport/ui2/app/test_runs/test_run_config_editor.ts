@@ -19,7 +19,6 @@ import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {MatStepper} from '@angular/material/stepper';
 
 import {TestResourceClassType, TestResourceForm} from '../build_channels/test_resource_form';
-import {DeviceInfoService} from '../services/device_info_service';
 import * as mttModels from '../services/mtt_models';
 import {MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
 import {FormChangeTracker} from '../shared/can_deactivate';
@@ -79,7 +78,6 @@ export class TestRunConfigEditor extends FormChangeTracker implements OnInit {
 
   constructor(
       private readonly dialogRef: MatDialogRef<TestRunConfigEditor>,
-      private readonly deviceInfoService: DeviceInfoService,
       readonly mttObjectMapService: MttObjectMapService,
       @Inject(MAT_DIALOG_DATA) public data: TestRunConfigEditorData) {
     super();
@@ -168,16 +166,10 @@ export class TestRunConfigEditor extends FormChangeTracker implements OnInit {
    * Update the device actions and the test resources according to the selected
    * run targets
    */
-  updateSelectedDeviceActions() {
-    if (!this.deviceInfoService.isInitialized) {
-      return;
-    }
-    const deviceTypes = this.deviceInfoService.deviceSpecsToDeviceTypes(
-        this.data.testRunConfig.device_specs || []);
-
+  updateSelectedDeviceActions(deviceSpecs: string[]) {
     this.selectedDeviceActions = mttModels.updateSelectedDeviceActions(
         this.selectedDeviceActions,
-        Object.values(this.mttObjectMap.deviceActionMap), deviceTypes);
+        Object.values(this.mttObjectMap.deviceActionMap), deviceSpecs);
     this.updateConfigDeviceActionIds();
   }
 

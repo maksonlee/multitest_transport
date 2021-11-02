@@ -75,20 +75,20 @@ def ValidateDeviceActions(device_actions):
     device_actions: a list of ndb_models.DeviceAction objects.
 
   Raises:
-    ValueError: if any two device actions contain different device types or
+    ValueError: if any two device actions contain different device specs or
       identical TradeFed option names.
   """
-  action_with_device_type = None
+  action_with_device_spec = None
   options = dict()
   for index, action in enumerate(device_actions):
-    if action.device_type:
-      if not action_with_device_type:
-        action_with_device_type = action
-      elif action_with_device_type.device_type != action.device_type:
+    if action.device_spec:
+      if not action_with_device_spec:
+        action_with_device_spec = action
+      elif action_with_device_spec.device_spec != action.device_spec:
         raise ValueError(
-            'The selected device actions contain different target device '
-            'types. Please remove one of %s and %s.' %
-            (action_with_device_type.name, action.name))
+            'The selected device actions contain different device specs. '
+            'Please remove one of %s and %s.' %
+            (action_with_device_spec.name, action.name))
 
     for opt in action.tradefed_options:
       if options.setdefault(opt.name, index) != index:

@@ -75,7 +75,7 @@ describe('DeviceActionEditPage', () => {
     expect(textContent).toContain('Edit Device Action');
     expect(textContent).toContain('Device Action Information');
     expect(textContent).toContain('Description');
-    expect(textContent).toContain('Target Device Type');
+    expect(textContent).toContain('Target Device Spec');
     expect(textContent).toContain('TradeFed Options');
   });
 

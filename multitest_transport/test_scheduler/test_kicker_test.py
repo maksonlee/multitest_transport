@@ -117,7 +117,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
 
   def testValidateDeviceActions(self):
     action = ndb_models.DeviceAction(
-        device_type='LOCAL_VIRTUAL',
+        device_spec='spec1',
         tradefed_options=[
             ndb_models.NameMultiValuePair(
                 name='gce-driver-param', values=['--boot-timeout']),
@@ -127,7 +127,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
 
     with self.assertRaises(ValueError):
       test_kicker.ValidateDeviceActions(
-          [action, ndb_models.DeviceAction(device_type='PHYSICAL')])
+          [action, ndb_models.DeviceAction(device_spec='spec2')])
 
     with self.assertRaises(ValueError):
       test_kicker.ValidateDeviceActions([action, action])

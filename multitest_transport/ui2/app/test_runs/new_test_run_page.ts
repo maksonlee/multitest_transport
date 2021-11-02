@@ -26,7 +26,6 @@ import {forkJoin, of as observableOf} from 'rxjs';
 import {finalize, first} from 'rxjs/operators';
 
 import {TestResourceForm} from '../build_channels/test_resource_form';
-import {DeviceInfoService} from '../services/device_info_service';
 import {MttClient} from '../services/mtt_client';
 import * as mttModels from '../services/mtt_models';
 import {RerunContext, testResourceDefToObj} from '../services/mtt_models';
@@ -100,7 +99,6 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
       private readonly mttClient: MttClient,
       private readonly mttObjectMapService: MttObjectMapService,
       private readonly notifier: Notifier,
-      private readonly deviceInfoService: DeviceInfoService,
       private readonly title: Title,
   ) {
     super();
@@ -260,15 +258,10 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
    * Update the device actions and the test resources according to the selected
    * run targets
    */
-  updateSelectedDeviceActions() {
-    if (!this.deviceInfoService.isInitialized) {
-      return;
-    }
-    const deviceTypes = this.deviceInfoService.deviceSpecsToDeviceTypes(
-        this.testRunConfig.device_specs || []);
+  updateSelectedDeviceActions(deviceSpecs: string[]) {
     this.selectedDeviceActions = mttModels.updateSelectedDeviceActions(
         this.selectedDeviceActions,
-        Object.values(this.mttObjectMap.deviceActionMap), deviceTypes);
+        Object.values(this.mttObjectMap.deviceActionMap), deviceSpecs);
 
     this.updateConfigDeviceActionIds();
   }

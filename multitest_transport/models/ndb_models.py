@@ -298,8 +298,11 @@ class DeviceAction(ndb.Model):
     description: a description.
     test_resource_defs: a list of test resource definitions.
     tradefed_target_preparers: a list of Tradefed target preparers.
-    device_type: the type of the devices that require the device action.
+    device_type: (obsolete) the type of the devices that require the device
+      action.
     tradefed_options: key-value pairs to be added to Tradefed configuration.
+    device_spec: the regular expression of the device specs that require the
+      device action.
   """
   name = ndb.StringProperty(required=True)
   description = ndb.StringProperty()
@@ -310,6 +313,7 @@ class DeviceAction(ndb.Model):
   device_type = ndb.StringProperty()
   tradefed_options = ndb.LocalStructuredProperty(
       NameMultiValuePair, repeated=True)
+  device_spec = ndb.StringProperty()
 
 
 class TestRunPhase(messages.Enum):

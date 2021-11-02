@@ -245,8 +245,12 @@ export function getNamespaceFromId(id: string): string {
  * description: a description.
  * test_resource_defs: a list of test resource definitions.
  * tradefed_target_preparers: a list of Tradefed target preparers.
- * device_type: the type of the devices that require the device action.
- * tradefed_options: key-value pairs to be added to Tradefed configuration.
+ * device_type: (obsolete) the type of the devices that require the device
+ *   action.
+ * tradefed_options: key-value pairs to be added to Tradefed
+ * configuration.
+ * device_spec: the regular expression of the device specs that
+ *   require the device action.
  */
 export declare interface DeviceAction {
   id: string;
@@ -256,6 +260,7 @@ export declare interface DeviceAction {
   tradefed_target_preparers?: TradefedConfigObject[];
   device_type?: string;
   tradefed_options?: NameMultiValuePair[];
+  device_spec?: string;
 }
 
 /** initialize a device action */
@@ -274,26 +279,28 @@ export declare interface DeviceActionList {
   device_actions: DeviceAction[];
 }
 
-/** Add or remove the device actions according to the device types */
+/** Add or remove the device actions according to the device specs */
 export function updateSelectedDeviceActions(
     selectedDeviceActions: readonly DeviceAction[],
     allDeviceActions: readonly DeviceAction[],
-    deviceTypes: Set<string>): DeviceAction[] {
+    deviceSpecs: string[]): DeviceAction[] {
   const updatedDeviceActions: DeviceAction[] = [];
 
-  // Exclude the auto-selected DeviceActions that have device type field but do
+  // Exclude the auto-selected DeviceActions that have device_spec field but do
   // not match any device.
-  for (const selectedAction of selectedDeviceActions) {
-    const deviceType = selectedAction.device_type;
-    if (!deviceType || deviceTypes.has(deviceType)) {
-      updatedDeviceActions.push(selectedAction);
+  for (const action of selectedDeviceActions) {
+    const specPattern =
+        action.device_spec ? new RegExp(action.device_spec) : undefined;
+    if (!specPattern || deviceSpecs.some((spec) => spec.match(specPattern))) {
+      updatedDeviceActions.push(action);
     }
   }
 
   // Add the DeviceActions that match any device.
   for (const action of allDeviceActions) {
-    const deviceType = action.device_type;
-    if (deviceType && deviceTypes.has(deviceType) &&
+    const specPattern =
+        action.device_spec ? new RegExp(action.device_spec) : undefined;
+    if (specPattern && deviceSpecs.some((spec) => spec.match(specPattern)) &&
         !updatedDeviceActions.some(
             (selectedAction) => selectedAction === action)) {
       updatedDeviceActions.push(action);

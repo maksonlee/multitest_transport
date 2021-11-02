@@ -48,29 +48,33 @@ describe('MttModels', () => {
   });
 
   describe('updateSelectedDeviceActions', () => {
-    const deviceTypes = new Set<string>(['PHYSICAL', 'LOCAL_VIRTUAL']);
+    const deviceSpecs = [
+      'device_serial:host:local-virtual-device-1 device_type:LOCAL_VIRTUAL',
+      'device_serial:AB'
+    ];
     const deviceActions: mttModels.DeviceAction[] = [
       testUtil.newMockDeviceAction('id1', 'No pattern'),
       testUtil.newMockDeviceAction('id2', 'Match'),
       testUtil.newMockDeviceAction('id3', 'Not match'),
     ];
-    deviceActions[1].device_type = 'LOCAL_VIRTUAL';
-    deviceActions[2].device_type = 'REMOTE';
+    deviceActions[1].device_spec =
+        '\\bdevice_serial:\\S+:local-virtual-device-\\d+\\b';
+    deviceActions[2].device_spec = '\\bdevice_serial:A\\b';
 
-    it('adds the device actions with device_type', () => {
+    it('adds the device actions with device_spec', () => {
       const expectedSelections = [deviceActions[1]];
 
       const updatedSelections =
-          mttModels.updateSelectedDeviceActions([], deviceActions, deviceTypes);
+          mttModels.updateSelectedDeviceActions([], deviceActions, deviceSpecs);
 
       expect(updatedSelections).toEqual(expectedSelections);
     });
 
-    it('removes the device actions with device_type', () => {
+    it('removes the device actions with device_spec', () => {
       const expectedSelections = [deviceActions[0], deviceActions[1]];
 
       const updatedSelections = mttModels.updateSelectedDeviceActions(
-          deviceActions, deviceActions, deviceTypes);
+          deviceActions, deviceActions, deviceSpecs);
 
       expect(updatedSelections).toEqual(expectedSelections);
     });

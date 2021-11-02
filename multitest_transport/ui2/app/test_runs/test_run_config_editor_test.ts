@@ -25,7 +25,6 @@ import {of as observableOf} from 'rxjs';
 
 import {DeviceList} from '../devices/device_list';
 import {APP_DATA} from '../services/app_data';
-import {DeviceInfoService} from '../services/device_info_service';
 import {MttClient} from '../services/mtt_client';
 import {LabDeviceInfo} from '../services/mtt_lab_models';
 import {MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
@@ -42,7 +41,6 @@ describe('TestRunConfigEditor', () => {
   let testRunConfigEditor: TestRunConfigEditor;
   let testRunConfigEditorFixture: ComponentFixture<TestRunConfigEditor>;
   let deviceList: DeviceList;
-  let deviceInfoService: jasmine.SpyObj<DeviceInfoService>;
   let el: DebugElement;
   let mttClient: jasmine.SpyObj<MttClient>;
   let mttObjectMapService: jasmine.SpyObj<MttObjectMapService>;
@@ -65,11 +63,6 @@ describe('TestRunConfigEditor', () => {
     mttObjectMapService.getMttObjectMap.and.returnValue(
         observableOf(newMttObjectMap()));
     dialogRefSpy.backdropClick.and.returnValue(observableOf({}));
-    deviceInfoService = jasmine.createSpyObj<DeviceInfoService>({
-      getDeviceInfos: observableOf([]),
-      isInitialized: true,
-      deviceSpecsToDeviceTypes: new Set<string>(),
-    });
 
     tfcClient = jasmine.createSpyObj('tfcClient', {
       batchGetDevicesLatestNotes: observableOf({}),
@@ -91,7 +84,6 @@ describe('TestRunConfigEditor', () => {
       aotSummaries: TestRunsModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: {isAtsLabInstance: false}},
-        {provide: DeviceInfoService, useValue: deviceInfoService},
         {provide: MttClient, useValue: mttClient},
         {
           provide: MAT_DIALOG_DATA,

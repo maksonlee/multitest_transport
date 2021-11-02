@@ -590,6 +590,7 @@ class DeviceAction(messages.Message):
       TradefedConfigObject, 5, repeated=True)
   device_type = messages.StringField(6)
   tradefed_options = messages.MessageField(NameMultiValuePair, 7, repeated=True)
+  device_spec = messages.StringField(8)
 
 
 @Converter(ndb_models.DeviceAction, DeviceAction)
@@ -603,7 +604,8 @@ def _DeviceActionConverter(obj):
           obj.tradefed_target_preparers, TradefedConfigObject),
       device_type=obj.device_type,
       tradefed_options=ConvertNameValuePairs(
-          obj.tradefed_options, NameMultiValuePair))
+          obj.tradefed_options, NameMultiValuePair),
+      device_spec=obj.device_spec)
 
 
 @Converter(DeviceAction, ndb_models.DeviceAction)
@@ -618,7 +620,8 @@ def _DeviceActionMessageConverter(msg):
           msg.tradefed_target_preparers, ndb_models.TradefedConfigObject),
       device_type=msg.device_type,
       tradefed_options=ConvertNameValuePairs(
-          msg.tradefed_options, ndb_models.NameMultiValuePair))
+          msg.tradefed_options, ndb_models.NameMultiValuePair),
+      device_spec=msg.device_spec)
 
 
 class DeviceActionList(messages.Message):
