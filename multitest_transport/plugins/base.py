@@ -13,13 +13,12 @@
 # limitations under the License.
 
 """Base classes for MTT plugins."""
-
 import collections
+import enum
 import logging
 import re
 
 import attr
-import enum
 import six
 
 from multitest_transport.plugins.registry import PluginRegistry
