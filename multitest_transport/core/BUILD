@@ -121,6 +121,7 @@ pytype_strict_library(
     ],
     srcs_version = "PY2AND3",
     deps = [
+        "//multitest_transport/models:sql_models_lib",
         "//multitest_transport/util",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("requests"),

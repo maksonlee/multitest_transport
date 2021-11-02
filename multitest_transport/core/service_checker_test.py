@@ -21,6 +21,7 @@ from tradefed_cluster.util import ndb_test_lib
 from multitest_transport.core import service_checker
 from multitest_transport.util import env
 from multitest_transport.util import file_util
+from multitest_transport.models import sql_models
 
 
 class DatastoreCheckerTest(ndb_test_lib.NdbWithContextTest):
@@ -51,6 +52,18 @@ class FileServerCheckerTest(absltest.TestCase):
     mock_list_files.side_effect = RuntimeError()
     with self.assertRaises(RuntimeError):
       service_checker.FileServerChecker.Run()
+
+
+class SQLDatabaseChecker(absltest.TestCase):
+
+  def testRun_error(self):
+    type(sql_models.db).engine = mock.PropertyMock(return_value=None)
+    with self.assertRaisesRegex(RuntimeError, 'SQL Database not found'):
+      service_checker.SQLDatabaseChecker.Run()
+
+  def testRun_success(self):
+    type(sql_models.db).engine = mock.PropertyMock(return_value=True)
+    service_checker.SQLDatabaseChecker.Run()
 
 
 class RabbitMQCheckerTest(absltest.TestCase):

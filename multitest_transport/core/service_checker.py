@@ -18,9 +18,10 @@ A module to check availability of the core services.
 """
 import logging
 import requests
-from tradefed_cluster.util import ndb_shim as ndb
 
+from multitest_transport.models import sql_models
 from multitest_transport.util import file_util
+from tradefed_cluster.util import ndb_shim as ndb
 
 
 class ServiceChecker(object):
@@ -63,9 +64,25 @@ class FileServerChecker(ServiceChecker):
       raise RuntimeError('File server root directory not found')
 
 
+class SQLDatabaseChecker(ServiceChecker):
+  """SQL Database availability checker."""
+  name = 'SQL Database'
+  label = 'sql_database'
+
+  @classmethod
+  def Run(cls):
+    """Check sql database availability."""
+    if not sql_models.db.engine:
+      raise RuntimeError('SQL Database not found')
+
+
 def Check():
   """Check availability of dependent services."""
-  checkers = [DatastoreChecker, FileServerChecker, RabbitMQChecker]
+  checkers = [
+      DatastoreChecker,
+      FileServerChecker,
+      SQLDatabaseChecker,
+      RabbitMQChecker]
   logging.info('Checking availability of dependent services...')
   for checker in checkers:
     try:

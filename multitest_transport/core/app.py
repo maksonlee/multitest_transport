@@ -59,9 +59,10 @@ def AppStartHandler():
       env.VERSION, env.CLI_VERSION)
   logging.info('os.environ=%s', os.environ)
 
+  # Service Checks
   CheckPreviousCrash()
-
   service_checker.Check()
+
   config_loader.Load()
   cron_kicker.Init()
 
