@@ -186,10 +186,15 @@ export function isFinalCommandState(state: CommandState) {
   return FINAL_COMMAND_STATES.includes(state);
 }
 
-/** List the number of commands for each state **/
+/** The number of commands with a specific state */
+export declare interface CommandStateStat {
+  readonly state: CommandState;
+  readonly count: number;
+}
+
+/** List the number of commands for each state */
 export declare interface CommandStateStats {
-  // TODO: Convert to enum/int pair
-  readonly state_stats: KeyValuePair[];
+  readonly state_stats: CommandStateStat[];
   readonly create_time?: string;
 }
 

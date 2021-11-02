@@ -20,7 +20,7 @@ import {finalize} from 'rxjs/operators';
 
 import {EventLogEntry, EventLogLevel, TestRun} from '../services/mtt_models';
 import {TfcClient} from '../services/tfc_client';
-import {Command, CommandAttempt, CommandStateStats, Request} from '../services/tfc_models';
+import {Command, CommandAttempt, CommandState, CommandStateStats, Request} from '../services/tfc_models';
 import {assertRequiredInput, millisToDuration} from '../shared/util';
 
 /** Progress entity which represents a log entry. */
@@ -46,8 +46,8 @@ type ProgressEntity = LogEntity|AttemptEntity|CommandStateStatsEntity;
 
 /** Tree node for storing state stats data. */
 interface CommandStateStatNode {
-  state: string;
-  count: string;
+  state: CommandState;
+  count: number;
   expanded: boolean;
 }
 
@@ -109,10 +109,10 @@ export class TestRunProgress implements OnInit, OnChanges {
               this.stateStats = res;
 
               for (const stat of this.stateStats.state_stats) {
-                if (stat.value !== '0') {
+                if (stat.count !== 0) {
                   this.statNodes.push({
-                    state: stat.key,
-                    count: stat.value,
+                    state: stat.state,
+                    count: stat.count,
                     expanded: false,
                   });
                 }
