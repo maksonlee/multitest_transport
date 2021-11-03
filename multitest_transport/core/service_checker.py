@@ -21,6 +21,7 @@ import subprocess
 import requests
 
 from multitest_transport.models import sql_models
+from multitest_transport.util import analytics
 from multitest_transport.util import file_util
 from tradefed_cluster.util import ndb_shim as ndb
 
@@ -33,6 +34,7 @@ class ServiceChecker(object):
 class DatastoreChecker(ServiceChecker):
   """Cloud Datastore availability checker."""
   name = 'Cloud Datastore'
+  label = 'cloud_datastore'
 
   @classmethod
   def Run(cls):
@@ -56,6 +58,7 @@ class RabbitMQChecker(ServiceChecker):
 class FileServerChecker(ServiceChecker):
   """Local file server availability checker."""
   name = 'File Server'
+  label = 'file_server'
 
   @classmethod
   def Run(cls):
@@ -108,3 +111,7 @@ def Check():
       checker.Run()
       logging.info('\t%s: OK', checker.name)
     except Exception:        logging.exception('\t%s: ERROR', checker.name)
+      analytics.Log(
+          analytics.SYSTEM_CATEGORY,
+          analytics.CRASH_ACTION,
+          label=checker.label)
