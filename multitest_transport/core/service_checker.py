@@ -17,6 +17,7 @@
 A module to check availability of the core services.
 """
 import logging
+import subprocess
 import requests
 
 from multitest_transport.models import sql_models
@@ -64,6 +65,23 @@ class FileServerChecker(ServiceChecker):
       raise RuntimeError('File server root directory not found')
 
 
+class FileCleanerChecker(ServiceChecker):
+  """File Cleaner availability checker."""
+  name = 'File Cleaner'
+  label = 'file_cleaner'
+
+  @classmethod
+  def Run(cls):
+    """Check file cleaner availability."""
+    proc = subprocess.Popen(['ps', '-ef'],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            text=True)
+    out, _ = proc.communicate()
+    if 'multitest_transport.file_cleaner' not in out:
+      raise RuntimeError('File Cleaner not active')
+
+
 class SQLDatabaseChecker(ServiceChecker):
   """SQL Database availability checker."""
   name = 'SQL Database'
@@ -78,11 +96,12 @@ class SQLDatabaseChecker(ServiceChecker):
 
 def Check():
   """Check availability of dependent services."""
-  checkers = [
-      DatastoreChecker,
-      FileServerChecker,
-      SQLDatabaseChecker,
-      RabbitMQChecker]
+  checkers = [DatastoreChecker,
+              FileServerChecker,
+              FileCleanerChecker,
+              RabbitMQChecker,
+              SQLDatabaseChecker]
+
   logging.info('Checking availability of dependent services...')
   for checker in checkers:
     try:

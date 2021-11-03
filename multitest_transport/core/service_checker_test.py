@@ -13,6 +13,8 @@
 # limitations under the License.
 
 """Tests for service_checker."""
+import subprocess
+
 from absl.testing import absltest
 import mock
 import requests
@@ -52,6 +54,25 @@ class FileServerCheckerTest(absltest.TestCase):
     mock_list_files.side_effect = RuntimeError()
     with self.assertRaises(RuntimeError):
       service_checker.FileServerChecker.Run()
+
+
+class FileClCheckerTest(absltest.TestCase):
+
+  @mock.patch.object(subprocess, 'Popen')
+  def testRun_error(self, mock_popen):
+    mock_process = mock.MagicMock()
+    mock_process.communicate.return_value = ('None', 'None')
+    mock_popen.return_value = mock_process
+    with self.assertRaisesRegex(RuntimeError, 'File Cleaner not active'):
+      service_checker.FileCleanerChecker.Run()
+
+  @mock.patch.object(subprocess, 'Popen')
+  def testRun_success(self, mock_popen):
+    mock_process = mock.MagicMock()
+    mock_process.communicate.return_value = ('multitest_transport.file_cleaner',
+                                             'None')
+    mock_popen.return_value = mock_process
+    service_checker.FileCleanerChecker.Run()
 
 
 class SQLDatabaseChecker(absltest.TestCase):
