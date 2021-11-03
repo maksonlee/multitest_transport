@@ -61,12 +61,6 @@
             </mat-header-cell>
           </ng-container>
 
-          <ng-container matColumnDef="progress">
-            <mat-header-cell *matHeaderCellDef fxFlex="150px">
-              Test progress
-            </mat-header-cell>
-          </ng-container>
-
           <ng-container matColumnDef="module_results">
             <mat-header-cell *matHeaderCellDef fxFlex="150px">
               Module results
@@ -80,8 +74,14 @@
           </ng-container>
 
           <ng-container matColumnDef="start_time">
-            <mat-header-cell *matHeaderCellDef fxFlex="150px">
+            <mat-header-cell *matHeaderCellDef fxFlex="100px">
               Start time
+            </mat-header-cell>
+          </ng-container>
+
+          <ng-container matColumnDef="duration">
+            <mat-header-cell *matHeaderCellDef fxFlex="100px">
+              +Duration
             </mat-header-cell>
           </ng-container>
 
@@ -94,24 +94,77 @@
           <mat-header-row *matHeaderRowDef="displayColumns"></mat-header-row>
         </mat-table>
 
-        <div *ngFor="let statNode of statNodes; index as i">
-          <div class="state-stat-row row-divider" *ngIf="statNode.count > 0">
+        <div *ngFor="let statNode of statNodeMap | keyvalue">
+          <div class="state-stat-row row-divider" *ngIf="statNode.value.count > 0">
             <div fxFlex="40px">
-              <button mat-icon-button aria-label="Toggle" (click)="expandStatNode(i)"
+              <button mat-icon-button aria-label="Toggle" (click)="expandStatNode(statNode.key)"
                       class="expand-button">
                 <mat-icon class="mat-icon-rtl-mirror">
-                  {{statNode.expanded ? 'expand_more' : 'chevron_right'}}
+                  {{statNode.value.expanded ? 'expand_more' : 'chevron_right'}}
                 </mat-icon>
               </button>
             </div>
 
             <div fxFlex class="state-stat-text inline">
               <span>
-                {{statNode.state | titlecase}} ({{statNode.count}})
+                {{statNode.value.state | titlecase}} ({{statNode.value.count}})
               </span>
             </div>
 
-          </div>
+          </div><!-- End of state stat node row -->
+
+
+          <!-- Commands -->
+          <ng-container *ngIf="statNode.value.expanded">
+            <div *ngFor="let commandNode of statNode.value.commandNodeMap | keyvalue"
+                 class="row-divider">
+              <div fxFlex="20px">
+                <!-- Command row indent column -->
+              </div>
+
+              <div fxFlex="40px">
+                <button mat-icon-button aria-label="Toggle"
+                        (click)="expandCommandNode(statNode.value.state, commandNode.key)"
+                        class="expand-button">
+                  <mat-icon class="mat-icon-rtl-mirror">
+                    {{commandNode.value.expanded ? 'expand_more' : 'chevron_right'}}
+                  </mat-icon>
+                </button>
+              </div>
+
+              <div fxFlex class="job-text inline">
+                <span>
+                  Job {{commandNode.value.id}}
+                </span>
+              </div>
+
+              <div fxFlex="150px">
+                  <!-- TODO: Module results -->
+              </div>
+
+              <div fxFlex="150px">
+                  <!-- TODO: Test results -->
+              </div>
+
+              <div fxFlex="100px" class="row-text">
+                <div>
+                  {{commandNode.value.start_time | date:'h:mm:ss a'}}
+                </div>
+                <div class="secondary-text">
+                  {{commandNode.value.start_time | date:'MM/dd/yyyy'}}
+                </div>
+              </div>
+
+              <div fxFlex="100px" class="row-text secondary-text">
+                  +{{getDuration(commandNode.value)}}
+              </div>
+
+              <div fxFlex="100px">
+                  <!-- Output files column -->
+              </div>
+            </div><!-- End of command row -->
+          </ng-container>
+
         </div>
 
         <div class="empty" *ngIf="!entity.state_stats.length">
@@ -150,3 +203,4 @@
     </div>
   </div>
 </ng-container>
+

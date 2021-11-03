@@ -44,10 +44,16 @@ interface AttemptEntity extends CommandAttempt {
 /** Entities which define a test run's progress. */
 type ProgressEntity = LogEntity|AttemptEntity|CommandStateStatsEntity;
 
+/** Tree node for storing command data */
+interface CommandNode extends Command {
+  expanded: boolean;
+}
+
 /** Tree node for storing state stats data. */
 interface CommandStateStatNode {
   state: CommandState;
   count: number;
+  commandNodeMap: {[commandId: string]: CommandNode};
   expanded: boolean;
 }
 
@@ -68,15 +74,15 @@ export class TestRunProgress implements OnInit, OnChanges {
 
   entities: ProgressEntity[] = [];
   stateStats: CommandStateStats = {state_stats: []};
-  statNodes: CommandStateStatNode[] = [];
+  statNodeMap: {[state in CommandState]?: CommandStateStatNode} = {};
 
   displayColumns = [
     'expand',
     'jobs',
-    'progress',
     'module_results',
     'test_results',
     'start_time',
+    'duration',
     'output_files',
   ];
 
@@ -90,11 +96,11 @@ export class TestRunProgress implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['testRun'] || changes['request']) {
-      this.load();
+      this.loadCommandStateStats();
     }
   }
 
-  load() {
+  loadCommandStateStats() {
     if (!this.request) {
       this.updateEntities();
       return;
@@ -110,11 +116,12 @@ export class TestRunProgress implements OnInit, OnChanges {
 
               for (const stat of this.stateStats.state_stats) {
                 if (stat.count !== 0) {
-                  this.statNodes.push({
+                  this.statNodeMap[stat.state] = {
                     state: stat.state,
                     count: stat.count,
+                    commandNodeMap: {},
                     expanded: false,
-                  });
+                  };
                 }
               }
             },
@@ -158,13 +165,58 @@ export class TestRunProgress implements OnInit, OnChanges {
         (a, b) => a.timestamp.diff(b.timestamp));
   }
 
-  expandStatNode(index: number) {
-    if (this.statNodes[index].expanded) {
-      this.statNodes[index].expanded = false;
+  expandStatNode(state: CommandState) {
+    if (!this.statNodeMap[state]) {
       return;
     }
-    this.statNodes[index].expanded = true;
-    // TODO: Load commands
+    if (this.statNodeMap[state]!.expanded) {
+      this.statNodeMap[state]!.expanded = false;
+      return;
+    }
+    this.statNodeMap[state]!.expanded = true;
+    this.loadCommands(state);
+  }
+
+  expandCommandNode(state: CommandState, commandId: string) {
+    if (!this.statNodeMap[state] ||
+        !this.statNodeMap[state]!.commandNodeMap[commandId]) {
+      return;
+    }
+    if (this.statNodeMap[state]!.commandNodeMap[commandId].expanded) {
+      this.statNodeMap[state]!.commandNodeMap[commandId].expanded = false;
+      return;
+    }
+    this.statNodeMap[state]!.commandNodeMap[commandId].expanded = true;
+    // TODO: Load attempts
+  }
+
+  loadCommands(state: CommandState) {
+    if (!this.request) {
+      return;
+    }
+    if (!this.statNodeMap[state]) {
+      console.log(
+          'Attempting to load commands for state not in state map: %s', state);
+      return;
+    }
+
+    this.tfcClient.listCommands(this.request.id, state)
+        .pipe()
+        .subscribe(
+            res => {
+              const commandNodeMap: {[commandId: string]: CommandNode} = {};
+              for (const command of res.commands) {
+                commandNodeMap[command.id] = Object.assign(command, {
+                  expanded: false,
+                });
+              }
+              this.statNodeMap[state]!.commandNodeMap = commandNodeMap;
+            },
+            error => {
+              // TODO: Convert to notifier dialogs
+              console.log(
+                  'Failed to load commands for state %s: %s', state, error);
+            });
   }
 
   /** Calculate an attempt's duration. */

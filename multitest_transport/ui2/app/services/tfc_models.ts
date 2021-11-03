@@ -186,6 +186,12 @@ export function isFinalCommandState(state: CommandState) {
   return FINAL_COMMAND_STATES.includes(state);
 }
 
+/** A list of commands */
+export declare interface CommandMessageCollection {
+  readonly commands: Command[];
+  readonly page_token: string;
+}
+
 /** The number of commands with a specific state */
 export declare interface CommandStateStat {
   readonly state: CommandState;

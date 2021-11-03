@@ -70,6 +70,17 @@ export class TfcClient {
         `${this.tfcApiUrl}/requests/${encodeURIComponent(requestId)}`);
   }
 
+  listCommands(requestId: string, state?: string):
+      Observable<tfcModels.CommandMessageCollection> {
+    let params = new HttpParams();
+    if (state) {
+      params = params.append('state', state);
+    }
+    return this.http.get<tfcModels.CommandMessageCollection>(
+        `${this.tfcApiUrl}/requests/${encodeURIComponent(requestId)}/commands`,
+        {params});
+  }
+
   getCommandStateStats(requestId: string):
       Observable<tfcModels.CommandStateStats> {
     return this.http.get<tfcModels.CommandStateStats>(

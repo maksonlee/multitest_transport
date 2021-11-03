@@ -19,9 +19,24 @@
   min-width: 200px;
 }
 
+.job-text {
+  min-width: 180px;
+  overflow-wrap: anywhere;
+  padding: 12px 4px;
+}
+
 .row-divider {
   border-bottom: 1px solid $primary-less;
   padding: 4px 0;
+}
+
+.row-text {
+  padding: 6px 0px;
+}
+
+.secondary-text {
+  color: $primary;
+  font-style: italic;
 }
 
 .state-stat-text {
