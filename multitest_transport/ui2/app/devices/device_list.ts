@@ -339,7 +339,10 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
     if (!initialSerials.length) {
       return;
     }
-    const query: DeviceSearchCriteria = {deviceSerial: initialSerials};
+    const query: DeviceSearchCriteria = {
+      deviceSerial: initialSerials,
+      includeOfflineDevices: this.appData.isAtsLabInstance ?? true,
+    };
     this.tfcClient.queryDeviceInfos(query, initialSerials.length)
         .pipe(takeUntil(this.destroy))
         .subscribe(

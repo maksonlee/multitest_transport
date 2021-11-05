@@ -769,20 +769,6 @@ describe('DeviceList', () => {
        deviceList.urlParams = convertToParamMap({});
        expect(deviceList.hasQueryStringParams()).toBeFalse();
      });
-
-  it('validates input devices if validation is enabled', async () => {
-    deviceList.validationEnabled = true;
-    // Two devices are initially selected, but only device-2 is valid.
-    deviceList.initialSelection = ['device-1', 'device-2'];
-    tfcClient.queryDeviceInfos.and.returnValue(
-        observableOf({deviceInfos: [{device_serial: 'device-2'}]}));
-    deviceList.ngOnChanges({'initialSelection': {} as SimpleChange});
-    await deviceListFixture.whenStable();
-    // Device validity was checked and device-1 was automatically unselected.
-    expect(tfcClient.queryDeviceInfos)
-        .toHaveBeenCalledWith({deviceSerial: ['device-1', 'device-2']}, 2);
-    expect(deviceList.selectedSerials).toEqual(['device-2']);
-  });
 });
 
 describe('DeviceList in ATS instance', () => {
@@ -905,5 +891,22 @@ describe('DeviceList in ATS instance', () => {
     deviceListFixture.detectChanges();
     el = deviceListFixture.debugElement;
     expect(getTextContent(el)).toContain('Add notes');
+  });
+
+  it('validates input devices if validation is enabled', () => {
+    deviceList.validationEnabled = true;
+    // Two devices are initially selected, but only device-2 is valid.
+    deviceList.initialSelection = ['device-1', 'device-2'];
+    tfcClient.queryDeviceInfos.and.returnValue(
+        observableOf({deviceInfos: [{device_serial: 'device-2'}]}));
+    deviceList.ngOnChanges({'initialSelection': {} as SimpleChange});
+    deviceListFixture.detectChanges();
+    // Device validity was checked and device-1 was automatically unselected.
+    const query: DeviceSearchCriteria = {
+      deviceSerial: ['device-1', 'device-2'],
+      includeOfflineDevices: false,  // ATS doesn't include offline devices.
+    };
+    expect(tfcClient.queryDeviceInfos).toHaveBeenCalledWith(query, 2);
+    expect(deviceList.selectedSerials).toEqual(['device-2']);
   });
 });
