@@ -13,7 +13,7 @@
 # limitations under the License.
 
 FROM ubuntu:20.04
-MAINTAINER Moon Kim <moonk@google.com>
+MAINTAINER Android Test Station <mtt-eng@google.com>
 
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
@@ -61,8 +61,6 @@ RUN pip3 install \
 RUN wget -q --retry-connrefused -O /tmp/get-pip.py https://bootstrap.pypa.io/pip/2.7/get-pip.py && \
     python /tmp/get-pip.py && \
     rm /tmp/get-pip.py
-# Install a version of six that supports ensure_* methods.
-RUN pip install six==1.12.0
 
 # Enable rabbitmq management plugin for reliability checking
 RUN rabbitmq-plugins enable rabbitmq_management
@@ -103,9 +101,9 @@ ENV PATH ${JAVA_HOME}/bin:${PATH}
 # Install SDK tools (aapt, adb, fastboot, mke2fs)
 RUN mkdir -p /sdk_tools/lib64
 # Use wget for more reliable retries
-RUN wget -q --retry-connrefused -O build-tools.zip https://dl.google.com/android/repository/build-tools_r29.0.3-linux.zip \
-    && unzip -jq build-tools.zip -d /sdk_tools android-10/aapt \
-    && unzip -jq build-tools.zip -d /sdk_tools/lib64 android-10/lib64/* \
+RUN wget -q --retry-connrefused -O build-tools.zip https://dl.google.com/android/repository/build-tools_r30.0.2-linux.zip \
+    && unzip -jq build-tools.zip -d /sdk_tools android-11/aapt \
+    && unzip -jq build-tools.zip -d /sdk_tools/lib64 android-11/lib64/* \
     && rm build-tools.zip
 RUN wget -q --retry-connrefused -O platform-tools.zip https://dl.google.com/android/repository/platform-tools-latest-linux.zip \
     && unzip -jq platform-tools.zip -d /sdk_tools \
@@ -118,7 +116,7 @@ ENV LD_LIBRARY_PATH /sdk_tools/lib64:${LD_LIBRARY_PATH}
 
 # Install Google Cloud SDK
 # Reference: https://github.com/GoogleCloudPlatform/cloud-sdk-docker/blob/master/Dockerfile
-ENV CLOUD_SDK_VERSION=334.0.0
+ENV CLOUD_SDK_VERSION=363.0.0
 ENV CLOUD_SDK_ROOT=/usr/lib/google-cloud-sdk
 RUN apt-get -qqy update && apt-get install -qqy \
         curl \
@@ -139,17 +137,12 @@ RUN apt-get -qqy update && apt-get install -qqy \
         google-cloud-sdk=${CLOUD_SDK_VERSION}-0 \
         google-cloud-sdk-datastore-emulator=${CLOUD_SDK_VERSION}-0
 
-
 # Installing dependencies for TVTS
 RUN export DEBIAN_FRONTEND=noninteractive && \
         curl -sL https://deb.nodesource.com/setup_12.x -o nodesource_setup.sh && \
         bash nodesource_setup.sh && \
         apt-get install -y nodejs && \
         rm nodesource_setup.sh
-
-# grpcio is required to use Cloud Datastore emulator.
-# Reference: https://cloud.google.com/appengine/docs/standard/python/tools/migrate-cloud-datastore-emulator#failing_grpc_imports
-RUN pip install grpcio
 
 # Install cuttlefish-common
 # debuild -d skips checking the dependency of debhelper-compat 12.
