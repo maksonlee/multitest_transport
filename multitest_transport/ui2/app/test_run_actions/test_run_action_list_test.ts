@@ -40,7 +40,7 @@ describe('TestRunActionList', () => {
 
   beforeEach(() => {
     liveAnnouncer = jasmine.createSpyObj(['announce', 'clear']);
-    notifier = jasmine.createSpyObj(['confirm', 'showError']);
+    notifier = jasmine.createSpyObj(['confirm', 'showError', 'showMessage']);
     client = jasmine.createSpyObj([
       'list', 'authorize', 'authorizeWithServiceAccount', 'unauthorize',
       'delete'
