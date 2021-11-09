@@ -13,8 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
-<div [class.loading-mask]="isLoading" class="container">
+<div class="container">
   <mat-table [dataSource]="deviceInfos" class="selectable" aria-label="Device Picker">
     <!-- Checkbox Column -->
     <ng-container matColumnDef="select">
@@ -27,7 +26,7 @@
           aria-label="Check all devices"
         >
         </mat-checkbox>
-        ({{selectedSerials ? selectedSerials.length : 0}}/{{deviceInfos ? deviceInfos.length : 0}})
+        ({{selection.selected.length}}/{{deviceInfos.length}})
       </mat-header-cell>
       <mat-cell *matCellDef="let row">
         <mat-checkbox
@@ -111,7 +110,7 @@
     ></mat-row>
   </mat-table>
 
-  <div class="empty" *ngIf="deviceInfos && deviceInfos.length === 0">
+  <div class="empty" *ngIf="deviceInfos.length === 0">
     No devices found.
   </div>
 </div>

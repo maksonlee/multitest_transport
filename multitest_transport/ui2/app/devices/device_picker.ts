@@ -14,29 +14,19 @@
  * limitations under the License.
  */
 
-import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {SelectionModel} from '@angular/cdk/collections';
-import {Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges} from '@angular/core';
-import {Observable, ReplaySubject, Subscription} from 'rxjs';
-import {first, takeUntil, tap} from 'rxjs/operators';
+import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
 
-import {DeviceInfoService} from '../services/device_info_service';
-import {Notifier} from '../services/notifier';
 import {DeviceInfo} from '../services/tfc_models';
-import {buildApiErrorMessage} from '../shared/util';
 
-/**
- * A component for displaying a list of devices.
- *
- * If given deviceInfos as input, that list will be displayed. Otherwise, it
- * will retrieve and display the list of devices connected to the host.
- */
+/** A component for displaying a given list of devices. */
 @Component({
   selector: 'device-picker',
   styleUrls: ['device_picker.css'],
   templateUrl: './device_picker.ng.html',
 })
-export class DevicePicker implements OnChanges, OnDestroy, OnInit {
+export class DevicePicker implements OnChanges, OnInit {
+  // TODO: Remove the selection and rename this class.
   // When true, shows a column of checkboxes
   @Input() selectable = false;
   // When true, disables each checkbox (but still visible)
@@ -47,93 +37,28 @@ export class DevicePicker implements OnChanges, OnDestroy, OnInit {
     'device_serial', 'hostname', 'product', 'product_variant', 'build_id',
     'battery_level', 'sim_status', 'state'
   ];
-  @Input() deviceInfos?: DeviceInfo[];
-  @Input() autoUpdate = false;
+  @Input() deviceInfos: DeviceInfo[] = [];
   @Output() selectionChange = new EventEmitter<string[]>();
-
-  private readonly destroy = new ReplaySubject<void>(1);
 
   serialMap: {[serial: string]: DeviceInfo} = {};
 
-  isLoading = false;
-  deviceInfoSubscription?: Subscription;
-
   selection = new SelectionModel<string>(
       /*allow multi select*/ true, this.selectedSerials);
-
-  // TODO: Add a process to detect weather new device is added
-  constructor(
-      private readonly notifier: Notifier,
-      private readonly liveAnnouncer: LiveAnnouncer,
-      private readonly deviceInfoService: DeviceInfoService) {}
 
   ngOnInit() {
     if (this.selectable) {
       this.displayedDeviceInfoColumns.unshift('select');
     }
-
-    if (!this.deviceInfos) {
-      this.isLoading = true;
-      this.liveAnnouncer.announce('Loading', 'polite');
-      // Load initial device info.
-      this.subscribeDeviceInfos(this.deviceInfoService.getDeviceInfos().pipe(
-          tap(() => {
-            if (this.isLoading) {
-              this.liveAnnouncer.announce('Loading complete', 'assertive');
-            }
-            this.isLoading = false;
-          }),
-          first()));
-    }
-  }
-
-  subscribeDeviceInfos(deviceInfoObs: Observable<DeviceInfo[]>): Subscription {
-    return deviceInfoObs.pipe(takeUntil(this.destroy))
-        .subscribe(
-            infos => {
-              this.deviceInfos = infos;
-
-              // Unselect unavailable devices.
-              this.serialMap = this.infosToSerialMap(this.deviceInfos);
-
-              let isSelectionChanged = false;
-              this.selection.selected.forEach(serial => {
-                if (!this.serialMap[serial]) {
-                  this.selection.deselect(serial);
-                  isSelectionChanged = true;
-                }
-              });
-              if (isSelectionChanged) {
-                this.selectionChange.emit(this.selection.selected);
-              }
-            },
-            error => {
-              this.notifier.showError(
-                  'Failed to load devices.', buildApiErrorMessage(error));
-            });
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['autoUpdate']) {
-      if (this.autoUpdate) {
-        if (!this.deviceInfoSubscription) {
-          this.deviceInfoSubscription = this.subscribeDeviceInfos(
-              this.deviceInfoService.getDeviceInfos());
-        }
-      } else if (this.deviceInfoSubscription) {
-        this.deviceInfoSubscription.unsubscribe();
-        this.deviceInfoSubscription = undefined;
-      }
+    if (changes['deviceInfos']) {
+      this.serialMap = this.infosToSerialMap(this.deviceInfos);
     }
-    if (changes['selectedSerials']) {
+    if (changes['selectedSerials'] || changes['deviceInfos']) {
       this.selection.clear();
       this.selection.select(...this.selectedSerials);
     }
-  }
-
-  ngOnDestroy() {
-    this.destroy.next();
-    this.destroy.complete();
   }
 
   /** Converts an array of DeviceInfos to a map indexed by serials */

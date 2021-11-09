@@ -18,7 +18,6 @@ ng_module(
         "app_data.ts",
         "auth_dialog.ts",
         "auth_service.ts",
-        "device_info_service.ts",
         "error_dialog.ts",
         "feedback_service.ts",
         "file_service.ts",
@@ -62,7 +61,6 @@ ng_module(
     testonly = True,
     srcs = [
         "analytics_service_test.ts",
-        "device_info_service_test.ts",
         "file_service_test.ts",
         "mtt_client_test.ts",
         "mtt_lab_models_test.ts",

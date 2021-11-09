@@ -23,14 +23,11 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services/app_data';
-import {DeviceInfoService} from '../services/device_info_service';
 import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
 import {Test, TestRun} from '../services/mtt_models';
 import {MttObjectMap, MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
-import {DeviceInfo} from '../services/tfc_models';
 import {getEl} from '../testing/jasmine_util';
-import {newMockDeviceInfo} from '../testing/mtt_lab_mocks';
 import {newMockDeviceAction, newMockNodeConfig, newMockTest, newMockTestRun} from '../testing/mtt_mocks';
 
 import {NewTestRunPage} from './new_test_run_page';
@@ -47,15 +44,12 @@ describe('NewTestRunPage', () => {
   let liveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
   let mttClient: jasmine.SpyObj<MttClient>;
   let mttObjectMapService: jasmine.SpyObj<MttObjectMapService>;
-  let deviceInfoService: jasmine.SpyObj<DeviceInfoService>;
 
   let el: DebugElement;
-  let connectedDevice: DeviceInfo;
   let test: Test;
   let testRun: TestRun;
 
   beforeEach(() => {
-    connectedDevice = newMockDeviceInfo('connectedDevice123');
     test = newMockTest();
     testRun = newMockTestRun(test);
 
@@ -69,9 +63,6 @@ describe('NewTestRunPage', () => {
     mttObjectMapService.getMttObjectMap.and.returnValue(
         observableOf(newMttObjectMap()));
 
-    deviceInfoService =
-        jasmine.createSpyObj({getDeviceInfos: observableOf([connectedDevice])});
-
     TestBed.configureTestingModule({
       declarations: [DeviceListStubComponent],
       imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
@@ -82,7 +73,6 @@ describe('NewTestRunPage', () => {
         {provide: FileService, useValue: {}},
         {provide: MttClient, useValue: mttClient},
         {provide: MttObjectMapService, useValue: mttObjectMapService},
-        {provide: DeviceInfoService, useValue: deviceInfoService},
       ],
     });
     newTestRunPageFixture = TestBed.createComponent(NewTestRunPage);

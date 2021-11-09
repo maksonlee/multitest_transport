@@ -16,9 +16,7 @@
 
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {of as observableOf} from 'rxjs';
 
-import {DeviceInfoService} from '../services/device_info_service';
 import {DeviceInfo} from '../services/tfc_models';
 import {getEl, getTextContent} from '../testing/jasmine_util';
 import {newMockDeviceInfo} from '../testing/mtt_lab_mocks';
@@ -30,24 +28,18 @@ import {DevicesModuleNgSummary} from './devices_module.ngsummary';
 describe('DevicePicker', () => {
   let devicePicker: DevicePicker;
   let devicePickerFixture: ComponentFixture<DevicePicker>;
-  let deviceInfoService: jasmine.SpyObj<DeviceInfoService>;
   let el: DebugElement;
 
-  let connectedDevice: DeviceInfo;
   let testedDevice: DeviceInfo;
+  let testedDevice2: DeviceInfo;
 
   beforeEach(() => {
-    connectedDevice = newMockDeviceInfo('connectedDevice123');
     testedDevice = newMockDeviceInfo('testedDevice456');
-    deviceInfoService =
-        jasmine.createSpyObj({getDeviceInfos: observableOf([connectedDevice])});
+    testedDevice2 = newMockDeviceInfo('testedDevice123');
 
     TestBed.configureTestingModule({
       imports: [DevicesModule],
       aotSummaries: DevicesModuleNgSummary,
-      providers: [
-        {provide: DeviceInfoService, useValue: deviceInfoService},
-      ],
     });
 
     devicePickerFixture = TestBed.createComponent(DevicePicker);
@@ -61,10 +53,6 @@ describe('DevicePicker', () => {
     expect(devicePicker).toBeTruthy();
   });
 
-  it('called deviceInfoService to load device data', () => {
-    expect(deviceInfoService.getDeviceInfos).toHaveBeenCalled();
-  });
-
   it('should show HTML correctly', () => {
     expect(getEl(el, 'mat-header-cell')).toBeTruthy();
   });
@@ -73,12 +61,6 @@ describe('DevicePicker', () => {
     const checkbox = getEl(el, 'mat-checkbox');
     expect(checkbox).toBeTruthy();
     expect(checkbox.getAttribute('aria-label')).toBe('Check all devices');
-  });
-
-  it('displayed correct device info', () => {
-    expect(getTextContent(el)).toContain(connectedDevice.device_serial);
-    expect(getTextContent(el))
-        .toContain(connectedDevice.sim_operator as string);
   });
 
   it('correctly displays a given empty list', () => {
@@ -91,12 +73,12 @@ describe('DevicePicker', () => {
     devicePicker.deviceInfos = [testedDevice];
     devicePickerFixture.detectChanges();
     expect(getTextContent(el)).toContain(testedDevice.device_serial);
+    expect(getTextContent(el)).toContain(testedDevice.sim_operator as string);
   });
 
   it('infosToSerialMap correctly converts device info lists', () => {
-    const result =
-        devicePicker.infosToSerialMap([connectedDevice, testedDevice]);
-    expect(result[connectedDevice.device_serial]).toBe(connectedDevice);
+    const result = devicePicker.infosToSerialMap([testedDevice2, testedDevice]);
+    expect(result[testedDevice2.device_serial]).toBe(testedDevice2);
     expect(result[testedDevice.device_serial]).toBe(testedDevice);
   });
 
@@ -107,20 +89,20 @@ describe('DevicePicker', () => {
 
   it('hasSelectedSerial returns true if a serial and product are selected',
      () => {
-       devicePicker.serialMap[connectedDevice.device_serial] = connectedDevice;
+       devicePicker.serialMap[testedDevice2.device_serial] = testedDevice2;
        devicePicker.serialMap[testedDevice.device_serial] = testedDevice;
        devicePicker.selection.clear();
        devicePicker.selection.select(
-           ...[connectedDevice.device_serial, testedDevice.product]);
+           ...[testedDevice2.device_serial, testedDevice.product]);
        expect(devicePicker.hasSelectedSerial()).toEqual(true);
      });
 
   it('hasSelectedSerial returns false if no serials are selected', () => {
-    devicePicker.serialMap[connectedDevice.device_serial] = connectedDevice;
+    devicePicker.serialMap[testedDevice2.device_serial] = testedDevice2;
     devicePicker.serialMap[testedDevice.device_serial] = testedDevice;
     devicePicker.selection.clear();
     devicePicker.selection.select(
-        ...[connectedDevice.product, testedDevice.product]);
+        ...[testedDevice2.product, testedDevice.product]);
     expect(devicePicker.hasSelectedSerial()).toEqual(false);
   });
 
