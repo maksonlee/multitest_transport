@@ -19,7 +19,8 @@
 <div [class.loading-mask]="isLoading" class="page">
   <div class="header-section">
     <span class="description">
-      File cleaner will periodically clean up unused files in hosts.
+      File cleaner will clean up unused files in hosts hourly. You can define some policies and
+      apply a combination of them to target directories in a config.
     </span>
   </div>
 
@@ -60,6 +61,17 @@
           </button>
         </div>
       </h3>
+      <mat-card-content>
+        <div>
+          {{ policy.operation.type | titlecase }} {{ policy.target | lowercase }}
+          <ng-container *ngIf="policy.criteria && policy.criteria.length">
+            based on
+            <ng-container *ngFor="let criterion of policy.criteria">
+              {{ criterion.type | lowercase }}
+            </ng-container>
+          </ng-container>
+        </div>
+      </mat-card-content>
     </mat-card>
   </ng-container>
 

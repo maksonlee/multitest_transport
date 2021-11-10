@@ -22,10 +22,10 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf, throwError} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
-import {FileCleanerSettings} from '../services/mtt_models';
+import {FileCleanerOperationType, FileCleanerSettings, FileCleanerTargetType} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {getEl, getEls, hasEl} from '../testing/jasmine_util';
-import {newMockFileCleanerConfig, newMockFileCleanerPolicy} from '../testing/mtt_mocks';
+import {newMockFileCleanerConfig, newMockFileCleanerCriterion, newMockFileCleanerOperation, newMockFileCleanerPolicy} from '../testing/mtt_mocks';
 
 import {FileCleanerModule} from './file_cleaner_module';
 import {FileCleanerSettingList} from './file_cleaner_setting_list';
@@ -96,7 +96,10 @@ describe('FileCleanerSettingList', () => {
     reload({
       policies: [
         newMockFileCleanerPolicy('Policy #1'),
-        newMockFileCleanerPolicy('Policy #2')
+        newMockFileCleanerPolicy(
+            'Policy #2', FileCleanerTargetType.DIRECTORY,
+            newMockFileCleanerOperation(FileCleanerOperationType.DELETE),
+            [newMockFileCleanerCriterion()])
       ],
       configs: [],
     });
@@ -106,7 +109,10 @@ describe('FileCleanerSettingList', () => {
     const cards = getEls(element, 'mat-card');
     expect(cards.length).toBe(2);
     expect(cards[0].textContent).toContain('Policy #1');
+    expect(cards[0].textContent).toContain('Archive file');
     expect(cards[1].textContent).toContain('Policy #2');
+    expect(cards[1].textContent)
+        .toContain('Delete directory  based on  last_access_time');
   });
 
   it('can display config list', () => {

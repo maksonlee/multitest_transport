@@ -51,7 +51,7 @@
     <mat-error *ngIf="name.invalid && name.touched">
       <ng-container *ngIf="name.errors?.forbidden; else nameIsRequired">
         Name must be unique
-      </ng-container >
+      </ng-container>
       <ng-template #nameIsRequired>Name is required</ng-template>
     </mat-error>
   </mat-form-field>
@@ -76,6 +76,12 @@
 
   <!-- Criterion Field -->
   <h2>File Cleaner Criteria</h2>
+  <p class="description">
+    Will apply the operation to all files/directories if there are no criteria. Please make sure the
+    ttl of last access/modified time is more than the test execution time when you want to apply the
+    policy to test result files (default under /data/app_default_bucket/test_runs) and test tmp
+    files (default under /data/tmp), or the tests may fail.
+  </p>
   <file-cleaner-criterion-form
     [criteria]="data.criteria"
     (addCriterion)="onAddCriterion()"
