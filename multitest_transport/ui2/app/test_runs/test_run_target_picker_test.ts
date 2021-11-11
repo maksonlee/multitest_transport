@@ -69,4 +69,18 @@ describe('TestRunTargetPicker', () => {
       'device_serial:p1', 'device_serial:p2'
     ]);
   });
+
+  it('can get the device serials', () => {
+    testRunTargetPicker.deviceSpecs =
+        ['device_serial:host.name.domain:some-device-serial'];
+    const serials = testRunTargetPicker.getDeviceSerials();
+    expect(serials[0]).toEqual('host.name.domain:some-device-serial');
+  });
+
+  it('can handle invalid serials', () => {
+    testRunTargetPicker.deviceSpecs =
+        ['device_serial:host.name.domain:long-serial-with whitespace '];
+    const serials = testRunTargetPicker.getDeviceSerials();
+    expect(serials).toEqual([]);
+  });
 });

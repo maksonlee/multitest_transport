@@ -40,9 +40,9 @@ export class TestRunTargetPicker extends FormChangeTracker {
   manualDeviceSpecs = false;
 
   getDeviceSerials(): string[] {
-    const deviceSerials = [];
+    const deviceSerials: string[] = [];
     for (const spec of this.deviceSpecs || []) {
-      const match = /^device_serial:(\S*)+$/.exec(spec);
+      const match = /^device_serial:(\S+)$/.exec(spec);
       if (match) {
         deviceSerials.push(match[1]);
       }
