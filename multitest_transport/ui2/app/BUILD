@@ -43,6 +43,7 @@ ng_module(
         "//multitest_transport/ui2/app/config_sets",
         "//multitest_transport/ui2/app/device_actions",
         "//multitest_transport/ui2/app/devices",
+        "//multitest_transport/ui2/app/file_browser",
         "//multitest_transport/ui2/app/file_cleaner",
         "//multitest_transport/ui2/app/hosts",
         "//multitest_transport/ui2/app/notes",

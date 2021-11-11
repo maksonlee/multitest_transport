@@ -1,0 +1,84 @@
+<!--
+ Copyright 2021 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="page">
+
+  <!-- TODO: Add breadcrumb file navigator-->
+
+  <!-- Table to display the file list -->
+  <mat-table *ngIf="files?.length; else emptyTemplate"
+    [dataSource]="files" aria-label="File Browser">
+    <!-- Name -->
+    <ng-container matColumnDef="name">
+      <mat-header-cell *matHeaderCellDef [fxFlex]="45">
+        Name
+      </mat-header-cell>
+      <mat-cell *matCellDef="let file" [fxFlex]="45">
+        {{ file.name }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Timestamp -->
+    <ng-container matColumnDef="timestamp">
+      <mat-header-cell *matHeaderCellDef [fxFlex]="35">
+        Timestamp
+      </mat-header-cell>
+      <mat-cell *matCellDef="let file" [fxFlex]="35">
+        {{ file.update_time | utc | date:'MM/dd/yyyy h:mma' }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Size -->
+    <ng-container matColumnDef="size">
+      <mat-header-cell *matHeaderCellDef [fxFlex]="10">
+        Size
+      </mat-header-cell>
+      <mat-cell *matCellDef="let file" [fxFlex]="10">
+        {{ file.type !== FileType.DIRECTORY ? humanFileSize(file.size) : "" }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- Actions -->
+    <ng-container matColumnDef="action">
+      <mat-header-cell *matHeaderCellDef [fxFlex]="10"></mat-header-cell>
+      <mat-cell *matCellDef="let file" [fxFlex]="10" fxLayoutAlign="center">
+        <button mat-icon-button aria-label="Change directory" class="change-dir"
+                *ngIf="file.type === FileType.DIRECTORY"
+                (click)="changeDirectory(file.path); $event.stopPropagation()">
+          <mat-icon>navigate_next</mat-icon>
+        </button>
+        <button mat-icon-button aria-label="Delete" class="delete"
+                *ngIf="file.type !== FileType.DIRECTORY"
+                (click)="deleteFile(file); $event.stopPropagation()">
+          <mat-icon>delete_forever</mat-icon>
+        </button>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Header -->
+    <mat-header-row *matHeaderRowDef="columnsToDisplay"> </mat-header-row>
+    <mat-row *matRowDef="let file; columns: columnsToDisplay" tabindex="0"></mat-row>
+  </mat-table>
+
+  <!-- No content found template -->
+  <ng-template #emptyTemplate>
+    <h3 class="not-found">
+      No File Found
+    </h3>
+  </ng-template>
+
+  <mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"></mat-spinner>
+</div>

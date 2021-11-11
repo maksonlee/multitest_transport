@@ -35,6 +35,7 @@ import {DeviceActionEditPage} from './device_actions/device_action_edit_page';
 import {DeviceActionList} from './device_actions/device_action_list';
 import {DeviceDetailsPage} from './devices/device_details_page';
 import {DeviceListPage} from './devices/device_list_page';
+import {FileBrowserPage} from './file_browser/file_browser_page';
 import {FileCleanerConfigEditPage} from './file_cleaner/file_cleaner_config_edit_page';
 import {FileCleanerPolicyEditPage} from './file_cleaner/file_cleaner_policy_edit_page';
 import {FileCleanerSettingList} from './file_cleaner/file_cleaner_setting_list';
@@ -158,6 +159,7 @@ export const routes: Routes = [
   },
   {path: 'test_runs/:id', component: TestRunDetailPage},
   {path: 'auth_return', component: AuthReturnPage},
+  {path: 'file_browser', children: [{path: '**', component: FileBrowserPage}]},
   {
     path: 'file_cleaner/policy/new',
     component: FileCleanerPolicyEditPage,
@@ -188,6 +190,9 @@ export class Mtt implements OnDestroy {
   sideNavExpanded = false;
   dialogRef!: MatDialogRef<SetupWizardDialog>;
   private readonly destroy = new ReplaySubject<void>();
+
+  // TODO: Remove showFileBrowser flag once the feature is ready
+  showFileBrowser = false;
 
   constructor(
       private readonly analytics: AnalyticsService,

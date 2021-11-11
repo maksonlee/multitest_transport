@@ -98,6 +98,12 @@
           <span>View Files</span>
         </a>
 
+        <a mat-list-item *ngIf="showFileBrowser" routerLink="/file_browser"
+           routerLinkActive="active" matTooltip="File Browser">
+          <mat-icon matListIcon>layers</mat-icon>
+          <span>File Browser</span>
+        </a>
+
         <mat-divider></mat-divider>
 
         <h3 matSubheader>

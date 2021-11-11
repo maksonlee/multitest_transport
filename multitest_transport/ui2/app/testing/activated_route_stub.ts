@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import {convertToParamMap, ParamMap, Params} from '@angular/router';
-import {ReplaySubject} from 'rxjs';
+import {convertToParamMap, ParamMap, Params, UrlSegment} from '@angular/router';
+import {Observable, of as observableOf, ReplaySubject} from 'rxjs';
 
 /**
  * An ActivateRoute test double with a `paramMap` observable.
@@ -28,11 +28,23 @@ export class ActivatedRouteStub {
    * and pumps new values into the `paramMap` observable.
    */
   private readonly subject = new ReplaySubject<ParamMap>();
+  private readonly urls: Observable<UrlSegment[]> = observableOf([]);
 
-  constructor(initialQueryParams?: Params) {
+  constructor(initialQueryParams?: Params, urlSegments?: UrlSegment[]) {
     if (initialQueryParams) {
       this.setQueryParamMap(initialQueryParams);
     }
+
+    if (urlSegments) {
+      this.urls = observableOf(urlSegments);
+    }
+  }
+
+  /**
+   * The mock url observable.
+   */
+  get url(): Observable<UrlSegment[]> {
+    return this.urls;
   }
 
   /**
