@@ -16,7 +16,12 @@
 
 <div class="page">
 
-  <!-- TODO: Add breadcrumb file navigator-->
+  <!-- Breadcrumb -->
+  <breadcrumb
+      [prefix]="'root'"
+      [path]="currentDirectory"
+      (pathChange)="changeDirectory($event)">
+  </breadcrumb>
 
   <!-- Table to display the file list -->
   <mat-table *ngIf="files?.length; else emptyTemplate"
