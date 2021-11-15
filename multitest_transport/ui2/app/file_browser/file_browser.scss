@@ -15,16 +15,18 @@
  */
 @import 'third_party/py/multitest_transport/ui2/constants';
 
-mat-row {
-  &:hover, &.selected {
-    background-color: $accent-light;
-    cursor: pointer;
-  }
-}
+.file-browser-page {
+    mat-row {
+      &:hover, &.selected {
+        background-color: $accent-light;
+        cursor: pointer;
+      }
+    }
 
-mat-table {
-  overflow-x: hidden;
-  overflow-y: scroll;
+    mat-table {
+      overflow-x: hidden;
+      overflow-y: scroll;
+    }
 }
 
 .not-found {
