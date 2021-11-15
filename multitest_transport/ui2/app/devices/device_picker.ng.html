@@ -15,31 +15,6 @@
 -->
 <div class="container">
   <mat-table [dataSource]="deviceInfos" class="selectable" aria-label="Device Picker">
-    <!-- Checkbox Column -->
-    <ng-container matColumnDef="select">
-      <mat-header-cell *matHeaderCellDef>
-        <mat-checkbox
-          (change)="$event ? toggleSelection() : null"
-          [checked]="hasSelectedSerial() && isAllSelected()"
-          [indeterminate]="hasSelectedSerial() && !isAllSelected()"
-          [disabled]="selectDisabled"
-          aria-label="Check all devices"
-        >
-        </mat-checkbox>
-        ({{selection.selected.length}}/{{deviceInfos.length}})
-      </mat-header-cell>
-      <mat-cell *matCellDef="let row">
-        <mat-checkbox
-          (click)="$event.stopPropagation()"
-          (change)="$event ? onSelectionChange(row) : null"
-          [checked]="selection.isSelected(row.device_serial)"
-          [disabled]="selectDisabled"
-          [aria-label]="'Device with serial' + row.device_serial"
-        >
-        </mat-checkbox>
-      </mat-cell>
-    </ng-container>
-
     <!-- Serial Column -->
     <ng-container matColumnDef="device_serial">
       <mat-header-cell *matHeaderCellDef> Serial </mat-header-cell>
@@ -104,10 +79,7 @@
     </ng-container>
 
     <mat-header-row *matHeaderRowDef="displayedDeviceInfoColumns; sticky: true"></mat-header-row>
-    <mat-row
-      *matRowDef="let row; columns: displayedDeviceInfoColumns"
-      [class.selected]="selection.isSelected(row.device_serial)"
-    ></mat-row>
+    <mat-row *matRowDef="let row; columns: displayedDeviceInfoColumns"></mat-row>
   </mat-table>
 
   <div class="empty" *ngIf="deviceInfos.length === 0">
