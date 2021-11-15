@@ -153,6 +153,23 @@
 
   <mat-divider></mat-divider>
 
+  <!-- Modular Execution Parameters -->
+  <h2> Modular Execution Parameters </h2>
+
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label> Module Config Pattern </mat-label>
+    <input matInput type="text" [(ngModel)]="data.module_config_pattern"
+           name="module_config_pattern">
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label> Module Execution Args </mat-label>
+    <input matInput type="text" [(ngModel)]="data.module_execution_args"
+           name="module_execution_args">
+  </mat-form-field>
+
+  <mat-divider></mat-divider>
+
   <!-- Default Test Run Parameter -->
   <h2> Default Test Run Parameters </h2>
   <div fxLayout="column">

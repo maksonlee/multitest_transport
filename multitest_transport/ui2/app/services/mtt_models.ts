@@ -460,6 +460,10 @@ export declare interface Test {
   runner_sharding_args?: string;
   /** Default test run parameter */
   default_test_run_parameters?: TestRunParameters;
+  /** Pattern to get the list of modules for the test suite */
+  module_config_pattern?: string;
+  /** Command argument used to run a specific module */
+  module_execution_args?: string;
 }
 
 /** Initialize a test */
