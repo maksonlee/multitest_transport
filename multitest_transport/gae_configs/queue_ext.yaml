@@ -36,7 +36,7 @@ queue:
   target: default
 
 - name: tfc-event-queue
-  rate: 20/s
+  rate: 100/s
   target: default
 
 - name: test-output-uploader-queue
