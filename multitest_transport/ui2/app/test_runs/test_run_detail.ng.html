@@ -125,10 +125,10 @@
       <mat-grid-tile *ngIf="testRun.test_devices">
         <div class="grid-tile">
           <span class="tile-title">Devices Tested</span>
-          <device-picker class="compact" [deviceInfos]="testRun.test_devices || []"
+          <simple-device-list class="compact" [deviceInfos]="testRun.test_devices || []"
                        [displayedDeviceInfoColumns]="deviceInfoColumns"
                        *ngIf="testRun.test_devices">
-          </device-picker>
+          </simple-device-list>
         </div>
       </mat-grid-tile>
     </mat-grid-list>

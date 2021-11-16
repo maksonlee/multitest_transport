@@ -23,8 +23,8 @@ ng_module(
         "device_list.ts",
         "device_list_page.ts",
         "device_list_table.ts",
-        "device_picker.ts",
         "devices_module.ts",
+        "simple_device_list.ts",
     ],
     assets = [
         ":styles",
@@ -36,7 +36,7 @@ ng_module(
         "device_list.ng.html",
         "device_list_page.ng.html",
         "device_list_table.ng.html",
-        "device_picker.ng.html",
+        "simple_device_list.ng.html",
     ],
     visibility = ["//multitest_transport"],
     deps = [
@@ -70,7 +70,7 @@ ng_module(
         "device_details_test.ts",
         "device_list_table_test.ts",
         "device_list_test.ts",
-        "device_picker_test.ts",
+        "simple_device_list_test.ts",
     ],
     visibility = ["//multitest_transport"],
     deps = [

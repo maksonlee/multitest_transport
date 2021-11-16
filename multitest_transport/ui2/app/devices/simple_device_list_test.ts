@@ -21,13 +21,13 @@ import {DeviceInfo} from '../services/tfc_models';
 import {getEl, getTextContent} from '../testing/jasmine_util';
 import {newMockDeviceInfo} from '../testing/mtt_lab_mocks';
 
-import {DevicePicker} from './device_picker';
 import {DevicesModule} from './devices_module';
 import {DevicesModuleNgSummary} from './devices_module.ngsummary';
+import {SimpleDeviceList} from './simple_device_list';
 
-describe('DevicePicker', () => {
-  let devicePicker: DevicePicker;
-  let devicePickerFixture: ComponentFixture<DevicePicker>;
+describe('SimpleDeviceList', () => {
+  let simpleDeviceList: SimpleDeviceList;
+  let simpleDeviceListFixture: ComponentFixture<SimpleDeviceList>;
   let el: DebugElement;
 
   let testedDevice: DeviceInfo;
@@ -40,14 +40,14 @@ describe('DevicePicker', () => {
       aotSummaries: DevicesModuleNgSummary,
     });
 
-    devicePickerFixture = TestBed.createComponent(DevicePicker);
-    el = devicePickerFixture.debugElement;
-    devicePicker = devicePickerFixture.componentInstance;
-    devicePickerFixture.detectChanges();
+    simpleDeviceListFixture = TestBed.createComponent(SimpleDeviceList);
+    el = simpleDeviceListFixture.debugElement;
+    simpleDeviceList = simpleDeviceListFixture.componentInstance;
+    simpleDeviceListFixture.detectChanges();
   });
 
   it('initializes a component', () => {
-    expect(devicePicker).toBeTruthy();
+    expect(simpleDeviceList).toBeTruthy();
   });
 
   it('should show HTML correctly', () => {
@@ -55,14 +55,14 @@ describe('DevicePicker', () => {
   });
 
   it('correctly displays a given empty list', () => {
-    devicePicker.deviceInfos = [];
-    devicePickerFixture.detectChanges();
+    simpleDeviceList.deviceInfos = [];
+    simpleDeviceListFixture.detectChanges();
     expect(getTextContent(el)).toContain('No devices found.');
   });
 
   it('correctly displays a given device list', () => {
-    devicePicker.deviceInfos = [testedDevice];
-    devicePickerFixture.detectChanges();
+    simpleDeviceList.deviceInfos = [testedDevice];
+    simpleDeviceListFixture.detectChanges();
     expect(getTextContent(el)).toContain(testedDevice.device_serial);
     expect(getTextContent(el)).toContain(testedDevice.sim_operator as string);
   });
@@ -70,6 +70,6 @@ describe('DevicePicker', () => {
   it('displayed correct aria label for table', () => {
     const matTable = getEl(el, 'mat-table');
     expect(matTable).toBeTruthy();
-    expect(matTable.getAttribute('aria-label')).toBe('Device Picker');
+    expect(matTable.getAttribute('aria-label')).toBe('Simple Device List');
   });
 });

@@ -34,7 +34,7 @@ import {DeviceDetailsSummary} from './device_details_summary';
 import {DeviceList} from './device_list';
 import {DeviceListPage} from './device_list_page';
 import {DeviceListTable} from './device_list_table';
-import {DevicePicker} from './device_picker';
+import {SimpleDeviceList} from './simple_device_list';
 
 const COMPONENTS = [
   DeviceDetails,
@@ -45,7 +45,7 @@ const COMPONENTS = [
   DeviceListTable,
   DeviceList,
   DeviceListPage,
-  DevicePicker,
+  SimpleDeviceList,
 ];
 
 @NgModule({

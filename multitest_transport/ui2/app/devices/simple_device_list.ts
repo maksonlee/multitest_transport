@@ -20,12 +20,11 @@ import {DeviceInfo} from '../services/tfc_models';
 
 /** A component for displaying a given list of devices. */
 @Component({
-  selector: 'device-picker',
-  styleUrls: ['device_picker.css'],
-  templateUrl: './device_picker.ng.html',
+  selector: 'simple-device-list',
+  styleUrls: ['simple_device_list.css'],
+  templateUrl: './simple_device_list.ng.html',
 })
-export class DevicePicker {
-  // TODO: Rename this class.
+export class SimpleDeviceList {
   @Input()
   displayedDeviceInfoColumns: string[] = [
     'device_serial', 'hostname', 'product', 'product_variant', 'build_id',
