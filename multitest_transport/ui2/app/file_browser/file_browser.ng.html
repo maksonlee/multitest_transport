@@ -31,8 +31,16 @@
       <mat-header-cell *matHeaderCellDef [fxFlex]="45">
         Name
       </mat-header-cell>
-      <mat-cell *matCellDef="let file" [fxFlex]="45">
-        {{ file.name }}
+      <mat-cell class="name-cell" *matCellDef="let file" [fxFlex]="45">
+         <a *ngIf="file.type === FileType.DIRECTORY"
+           [href]="'file_browser/'+file.path">
+            {{ file.name }}
+        </a>
+        <a *ngIf="file.type !== FileType.DIRECTORY"
+           [href]="PROXY_PATH + '/file/' + file.path"
+           target="_blank" aria-label="Download" class="download">
+             {{ file.name }}
+        </a>
       </mat-cell>
     </ng-container>
 
@@ -59,7 +67,7 @@
     <!-- Actions -->
     <ng-container matColumnDef="action">
       <mat-header-cell *matHeaderCellDef [fxFlex]="10"></mat-header-cell>
-      <mat-cell *matCellDef="let file" [fxFlex]="10" fxLayoutAlign="center">
+      <mat-cell class="navigate-cell" *matCellDef="let file" [fxFlex]="10" fxLayoutAlign="center">
         <a *ngIf="file.type === FileType.DIRECTORY"
            [href]="'file_browser/'+file.path">
           <button mat-icon-button aria-label="Change directory" class="change-dir">

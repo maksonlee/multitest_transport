@@ -84,12 +84,22 @@ describe('FileBrowser', () => {
     ]);
   });
 
+  it('should display correct href on anchor tag for name cell', () => {
+    const path = 'local_file_store/dir/filename';
+    const file = {path} as FileNode;
+    fs.listFiles.and.returnValue(observableOf([file]));
+    initComponent(path);
+    const link = getEl<HTMLAnchorElement>(element, '.name-cell a');
+    expect(link.href.endsWith('fs_proxy/file/local_file_store/dir/filename'))
+        .toBeTruthy();
+  });
+
   it('should display correct href on anchor tag for navigation', () => {
     const path = 'local_file_store/dir';
     const directory = {path, type: FileType.DIRECTORY} as FileNode;
     fs.listFiles.and.returnValue(observableOf([directory]));
     initComponent(path);
-    const link = getEl<HTMLAnchorElement>(element, 'mat-row a');
+    const link = getEl<HTMLAnchorElement>(element, '.navigate-cell a');
     expect(link.href.endsWith('file_browser/local_file_store/dir'))
         .toBeTruthy();
   });
