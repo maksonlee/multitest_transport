@@ -62,14 +62,14 @@
           </ng-container>
 
           <ng-container matColumnDef="module_results">
-            <mat-header-cell *matHeaderCellDef fxFlex="150px">
+            <mat-header-cell *matHeaderCellDef fxFlex="120px">
               Module results
             </mat-header-cell>
           </ng-container>
 
           <ng-container matColumnDef="test_results">
-            <mat-header-cell *matHeaderCellDef fxFlex="150px">
-              Test results
+            <mat-header-cell *matHeaderCellDef fxFlex="200px">
+              Test results (failed/total)
             </mat-header-cell>
           </ng-container>
 
@@ -134,16 +134,40 @@
 
               <div fxFlex class="job-text inline">
                 <span>
-                  Job {{commandNode.value.id}}
+                  Job {{commandNode.value.id}}: {{commandNode.value.name || commandNode.value.command_line}}
                 </span>
               </div>
 
-              <div fxFlex="150px">
-                  <!-- TODO: Module results -->
+              <div fxFlex="120px" class="display-flex">
+                <ng-container *ngIf="commandNode.value.failed_test_run_count">
+                  <mat-icon *ngIf="commandNode.value.failed_test_run_count > 0"
+                            class="results error">
+                    error_outline
+                  </mat-icon>
+                  <mat-icon *ngIf="commandNode.value.failed_test_run_count == 0"
+                            class="results success">
+                    done
+                  </mat-icon>
+                  <span class="count-text">
+                    {{commandNode.value.failed_test_run_count}} errors
+                  </span>
+                </ng-container>
               </div>
 
-              <div fxFlex="150px">
-                  <!-- TODO: Test results -->
+              <div fxFlex="200px" class="display-flex">
+                <ng-container *ngIf="commandNode.value.failed_test_count">
+                  <mat-icon *ngIf="commandNode.value.failed_test_count > 0"
+                            class="results error">
+                    error_outline
+                  </mat-icon>
+                  <mat-icon *ngIf="commandNode.value.failed_test_count == 0"
+                            class="results success">
+                    done
+                  </mat-icon>
+                  <span class="count-text">
+                    {{commandNode.value.failed_test_count}}/{{commandNode.value.total_test_count}}
+                  </span>
+                </ng-container>
               </div>
 
               <div fxFlex="100px" class="row-text">
@@ -174,7 +198,6 @@
     </div>
   </ng-container>
 </ng-container>
-
 
 <ng-container [ngSwitch]="entity.progressType" *ngFor="let entity of entities">
   <!-- log entry container -->

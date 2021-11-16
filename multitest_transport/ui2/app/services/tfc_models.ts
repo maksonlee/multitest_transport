@@ -160,6 +160,14 @@ export declare interface Command {
   readonly create_time?: string;
   /** timestamp when the command was last updated */
   readonly update_time?: string;
+  /** total test count for the latest command attempt */
+  readonly total_test_count?: number;
+  /** failed test count for the latest command attempt */
+  readonly failed_test_count?: number;
+  /** passed test count for the latest command attempt */
+  readonly passed_test_count?: number;
+  /** failed test run count for the latest command attempt */
+  readonly failed_test_run_count?: number;
 }
 
 /** Possible states for a command */

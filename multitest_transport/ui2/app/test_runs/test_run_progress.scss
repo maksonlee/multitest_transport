@@ -15,6 +15,14 @@
  */
 @import 'third_party/py/multitest_transport/ui2/constants';
 
+.count-text {
+  margin: 11px 4px;
+}
+
+.display-flex {
+  display: flex;
+}
+
 .jobs-column {
   min-width: 200px;
 }
@@ -162,22 +170,35 @@ mat-card.log-entry {
 }
 
 
-mat-icon.status {
-  flex-shrink: 0;
-  font-size: 18px;
-  height: 18px;
-  padding-left: 8px;
-  vertical-align: center;
+mat-icon {
+  &.status {
+    flex-shrink: 0;
+    font-size: 18px;
+    height: 18px;
+    padding-left: 8px;
+    vertical-align: center;
 
-  &.error {
-    color: $text-danger;
+    &.error {
+      color: $text-danger;
+    }
+
+    &.info {
+      color: $text-success;
+    }
+
+    &.warning {
+      color: $text-warning;
+    }
   }
 
-  &.info {
-    color: $text-success;
-  }
+  &.results {
+    margin: 8px 0px;
+    &.error {
+      color: $text-danger;
+    }
 
-  &.warning {
-    color: $text-warning;
+    &.success {
+      color: $text-success;
+    }
   }
 }
