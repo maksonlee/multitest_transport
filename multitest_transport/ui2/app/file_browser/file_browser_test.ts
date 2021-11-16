@@ -22,7 +22,7 @@ import {ActivatedRoute, Router, UrlSegment} from '@angular/router';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
-import {FileNode, FileService} from '../services/file_service';
+import {FileNode, FileService, FileType} from '../services/file_service';
 import {Notifier} from '../services/notifier';
 import {ActivatedRouteStub} from '../testing/activated_route_stub';
 import {getEl} from '../testing/jasmine_util';
@@ -82,6 +82,16 @@ describe('FileBrowser', () => {
     expect(router.createUrlTree).toHaveBeenCalledWith([
       'file_browser', 'a', 'b'
     ]);
+  });
+
+  it('should display correct href on anchor tag for navigation', () => {
+    const path = 'local_file_store/dir';
+    const directory = {path, type: FileType.DIRECTORY} as FileNode;
+    fs.listFiles.and.returnValue(observableOf([directory]));
+    initComponent(path);
+    const link = getEl<HTMLAnchorElement>(element, 'mat-row a');
+    expect(link.href.endsWith('file_browser/local_file_store/dir'))
+        .toBeTruthy();
   });
 
   it('should delete file when delete button clicked', () => {

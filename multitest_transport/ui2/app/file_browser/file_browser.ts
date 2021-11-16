@@ -21,7 +21,7 @@ import {ActivatedRoute, Router, UrlSegment} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {filter, finalize, mergeMap, takeUntil} from 'rxjs/operators';
 
-import {FileNode, FileService, FileType, humanFileSize} from '../services/file_service';
+import {FileNode, FileService, FileType, humanFileSize, PROXY_PATH} from '../services/file_service';
 import {Notifier} from '../services/notifier';
 import {buildApiErrorMessage} from '../shared/util';
 
@@ -34,6 +34,7 @@ import {buildApiErrorMessage} from '../shared/util';
 export class FileBrowser implements OnInit, OnDestroy {
   readonly FileType = FileType;
   readonly humanFileSize = humanFileSize;
+  readonly PROXY_PATH = PROXY_PATH;
 
   isLoading = false;
   // Hold list of files when navigate to or load a directory

@@ -60,11 +60,12 @@
     <ng-container matColumnDef="action">
       <mat-header-cell *matHeaderCellDef [fxFlex]="10"></mat-header-cell>
       <mat-cell *matCellDef="let file" [fxFlex]="10" fxLayoutAlign="center">
-        <button mat-icon-button aria-label="Change directory" class="change-dir"
-                *ngIf="file.type === FileType.DIRECTORY"
-                (click)="changeDirectory(file.path); $event.stopPropagation()">
-          <mat-icon>navigate_next</mat-icon>
-        </button>
+        <a *ngIf="file.type === FileType.DIRECTORY"
+           [href]="'file_browser/'+file.path">
+          <button mat-icon-button aria-label="Change directory" class="change-dir">
+            <mat-icon>navigate_next</mat-icon>
+          </button>
+        </a>
         <button mat-icon-button aria-label="Delete" class="delete"
                 *ngIf="file.type !== FileType.DIRECTORY"
                 (click)="deleteFile(file); $event.stopPropagation()">
