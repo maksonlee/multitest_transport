@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import {KeyValue} from '@angular/common';
 import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
 import * as moment from 'moment';
 import {finalize} from 'rxjs/operators';
@@ -55,6 +56,8 @@ interface CommandStateStatNode {
   count: number;
   commandNodeMap: {[commandId: string]: CommandNode};
   expanded: boolean;
+  pageToken?: string;
+  isLoading: boolean;
 }
 
 /** Displays the test run progress entities (log entries and attempts). */
@@ -105,7 +108,6 @@ export class TestRunProgress implements OnInit, OnChanges {
       this.updateEntities();
       return;
     }
-
     this.tfcClient.getCommandStateStats(this.request.id)
         .pipe(finalize(() => {
           this.updateEntities();
@@ -121,6 +123,7 @@ export class TestRunProgress implements OnInit, OnChanges {
                     count: stat.count,
                     commandNodeMap: {},
                     expanded: false,
+                    isLoading: false,
                   };
                 }
               }
@@ -211,6 +214,7 @@ export class TestRunProgress implements OnInit, OnChanges {
                 });
               }
               this.statNodeMap[state]!.commandNodeMap = commandNodeMap;
+              this.statNodeMap[state]!.pageToken = res.page_token;
             },
             error => {
               // TODO: Convert to notifier dialogs
@@ -218,6 +222,52 @@ export class TestRunProgress implements OnInit, OnChanges {
                   'Failed to load commands for state %s: %s', state, error);
             });
   }
+
+  loadMoreCommands(state: CommandState) {
+    if (!this.request) {
+      return;
+    }
+    if (!this.statNodeMap[state]) {
+      console.log(
+          'Attempting to load commands for state not in state map: %s', state);
+      return;
+    }
+
+    this.statNodeMap[state]!.isLoading = true;
+    this.tfcClient
+        .listCommands(
+            this.request.id, state, this.statNodeMap[state]!.pageToken)
+        .pipe(finalize(() => {
+          this.statNodeMap[state]!.isLoading = false;
+        }))
+        .subscribe(
+            res => {
+              for (const command of res.commands) {
+                this.statNodeMap[state]!.commandNodeMap[command.id] =
+                    Object.assign(command, {
+                      expanded: false,
+                    });
+              }
+              this.statNodeMap[state]!.pageToken = res.page_token;
+            },
+            error => {
+              // TODO: Convert to notifier dialogs
+              console.log(
+                  'Failed to load commands for state %s: %s', state, error);
+            });
+  }
+
+  /**
+   * Iterates using insertion order when using keyvalue for a map.
+   *
+   * The default iteration behavior for keyvalue is to sort by key, but this
+   * causes the list to look jumbled when loading new entries since we load by
+   * create_time.
+   **/
+  originalOrder = (a: KeyValue<number, string>, b: KeyValue<number, string>):
+      number => {
+        return 0;
+      }
 
   /** Calculate an attempt's duration. */
   getDuration(attempt: CommandAttempt): string {

@@ -33,6 +33,16 @@
   padding: 12px 4px;
 }
 
+.load-more-button {
+  border: 1px solid $primary-less;
+  color: $accent;
+  font-size: 12px;
+  height: 24px;
+  line-height: 12px;
+  margin: 6px 0;
+}
+
+
 .row-divider {
   border-bottom: 1px solid $primary-less;
   padding: 4px 0;

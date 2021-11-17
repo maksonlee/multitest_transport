@@ -116,7 +116,7 @@
 
           <!-- Commands -->
           <ng-container *ngIf="statNode.value.expanded">
-            <div *ngFor="let commandNode of statNode.value.commandNodeMap | keyvalue"
+            <div *ngFor="let commandNode of statNode.value.commandNodeMap | keyvalue: originalOrder"
                  class="row-divider">
               <div fxFlex="20px">
                 <!-- Command row indent column -->
@@ -187,7 +187,18 @@
                   <!-- Output files column -->
               </div>
             </div><!-- End of command row -->
-          </ng-container>
+
+            <!-- Load more commands button -->
+            <div *ngIf="statNode.value.pageToken">
+              <div fxFlex="60px">
+                <!-- Command row indent column -->
+              </div>
+              <button mat-button class="load-more-button" [disabled]='statNode.value.isLoading'
+                      (click)="loadMoreCommands(statNode.value.state)">
+              {{statNode.value.isLoading ? 'Loading more commands...' : 'Load more commands'}}
+              </button>
+            </div>
+          </ng-container><!-- End of stat node row -->
 
         </div>
 
