@@ -111,13 +111,11 @@ describe('TestPlanEditPage', () => {
     const fakeInput = document.createElement('input');
     testPlanEditPage.addLabel({
       chipInput: {inputElement: fakeInput} as MatChipInput,
-      input: fakeInput,
       value: ' label1  '
     });
     expect(testPlanEditPage.data.labels).toEqual(['label1']);
     testPlanEditPage.addLabel({
       chipInput: {inputElement: fakeInput} as MatChipInput,
-      input: fakeInput,
       value: 'label2'
     });
     expect(testPlanEditPage.data.labels).toEqual(['label1', 'label2']);
@@ -125,7 +123,6 @@ describe('TestPlanEditPage', () => {
     // Should not add duplicate label
     testPlanEditPage.addLabel({
       chipInput: {inputElement: fakeInput} as MatChipInput,
-      input: fakeInput,
       value: ' label1  '
     });
     expect(testPlanEditPage.data.labels).toEqual(['label1', 'label2']);
