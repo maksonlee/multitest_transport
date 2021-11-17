@@ -19,7 +19,7 @@ import {of as observableOf, throwError} from 'rxjs';
 import {toArray} from 'rxjs/operators';
 
 import {AppData} from './app_data';
-import {DEFAULT_UPLOAD_CONFIG, FileNode, FileService, FileType, joinPath, PROXY_PATH, getDirectoryPath, encodePath} from './file_service';
+import {DEFAULT_UPLOAD_CONFIG, encodePath, FILE_BROWSER_PATH, FileNode, FileService, FileType, getDirectoryPath, joinPath, PROXY_PATH} from './file_service';
 import {TestRun} from './mtt_models';
 import {CommandAttempt, CommandState} from './tfc_models';
 
@@ -62,36 +62,31 @@ describe('FileService', () => {
 
   it('can get file browse URL for absolute file URLs', () => {
     const url = 'file:///root/path/to/file';
-    const expected = `${location.protocol}//${
-      location.hostname}:1234/browse/path/to/file`;
+    const expected = `${FILE_BROWSER_PATH}/path/to/file`;
     expect(fs.getFileBrowseUrl(url)).toEqual(expected);
   });
 
   it('can get file browse URL for relative file paths', () => {
     const path = 'path/to/file';
-    const expected = `${location.protocol}//${
-        location.hostname}:1234/browse/path/to/file`;
+    const expected = `${FILE_BROWSER_PATH}/path/to/file`;
     expect(fs.getFileBrowseUrl(path)).toEqual(expected);
   });
 
   it('can get file open URL for absolute file URLs', () => {
     const url = 'file:///root/path/to/file';
-    const expected =
-        `${location.protocol}//${location.hostname}:1234/open/path/to/file`;
+    const expected = `${PROXY_PATH.slice(1)}/file/path/to/file`;
     expect(fs.getFileOpenUrl(url)).toEqual(expected);
   });
 
   it('can get file open URL for http file URLs', () => {
     const url = 'http://hostname.com:8006/file/path/to/file';
-    const expected =
-        `${location.protocol}//${location.hostname}:1234/open/path/to/file`;
+    const expected = `${PROXY_PATH.slice(1)}/file/path/to/file`;
     expect(fs.getFileOpenUrl(url)).toEqual(expected);
   });
 
   it('can get file open URL for relative file paths', () => {
     const path = 'path/to/file';
-    const expected = `${location.protocol}//${
-        location.hostname}:1234/open/path/to/file`;
+    const expected = `${PROXY_PATH.slice(1)}/file/path/to/file`;
     expect(fs.getFileOpenUrl(path)).toEqual(expected);
   });
 

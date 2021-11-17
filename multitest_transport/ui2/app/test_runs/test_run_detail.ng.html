@@ -69,7 +69,8 @@
             </button>
 
             <a button mat-stroked-button color="accent" *ngIf="outputFilesUrl"
-               [href]="outputFilesUrl" (click)="trackClickEvent('view_output_files')">
+               [href]="outputFilesUrl" target="_blank"
+               (click)="trackClickEvent('view_output_files')">
               {{isLastAttemptFinal() ? 'View Output Files' : 'View Working Directory'}}
             </a>
 

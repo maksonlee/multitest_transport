@@ -24,6 +24,9 @@ import {CommandAttempt, isFinalCommandState} from './tfc_models';
 
 /** File server proxy path. */
 export const PROXY_PATH = '/fs_proxy';
+/** File Browser url path. */
+export const FILE_BROWSER_PATH = 'file_browser';
+
 /** Default file upload configuration. */
 export const DEFAULT_UPLOAD_CONFIG: FileUploadConfig = {
   initialChunkSize: 4 * 1024 * 1024,  // 4MB
@@ -44,21 +47,12 @@ export const UPLOAD_CONFIG =
 export class FileService {
   /** Current upload chunk size, adjusted according to upload time. */
   private chunkSize: number;
-  /** Base URL of the file browser. */
-  private readonly fileBrowserUrl: string = '';
 
   constructor(
       @Inject(APP_DATA) private readonly appData: AppData,
       private readonly http: HttpClient,
       @Inject(UPLOAD_CONFIG) private readonly uploadConfig: FileUploadConfig) {
     this.chunkSize = uploadConfig.initialChunkSize;
-    if (!appData.fileBrowserUrl) {
-      return;
-    }
-    const fileBrowserUrl = new URL(appData.fileBrowserUrl);
-    fileBrowserUrl.protocol = location.protocol;
-    fileBrowserUrl.hostname = location.hostname;
-    this.fileBrowserUrl = fileBrowserUrl.toString();
   }
 
   /**
@@ -95,7 +89,7 @@ export class FileService {
    */
   getFileBrowseUrl(dirUrl: string): string {
     const relativePath = this.getRelativePath(dirUrl);
-    return joinPath(this.fileBrowserUrl, 'browse', relativePath);
+    return joinPath(FILE_BROWSER_PATH, relativePath);
   }
 
   /**
@@ -105,7 +99,7 @@ export class FileService {
    */
   getFileOpenUrl(fileUrl: string): string {
     const relativePath = this.getRelativePath(fileUrl);
-    return joinPath(this.fileBrowserUrl, 'open', relativePath);
+    return joinPath(PROXY_PATH, 'file', relativePath);
   }
 
   /**

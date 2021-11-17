@@ -93,14 +93,9 @@
           <span>Settings</span>
         </a>
 
-        <a mat-list-item matTooltip="View Files" (click)="openBuildPicker()">
-          <mat-icon matListIcon>folder_open</mat-icon>
-          <span>View Files</span>
-        </a>
-
-        <a mat-list-item *ngIf="showFileBrowser" routerLink="/file_browser"
+        <a mat-list-item routerLink="/file_browser"
            routerLinkActive="active" matTooltip="File Browser">
-          <mat-icon matListIcon>layers</mat-icon>
+          <mat-icon matListIcon>folder_open</mat-icon>
           <span>File Browser</span>
         </a>
 

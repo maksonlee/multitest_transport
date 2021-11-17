@@ -22,13 +22,13 @@ import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {NavigationEnd, Router, RouterModule, Routes} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
-import {first, takeUntil} from 'rxjs/operators';
+import {takeUntil} from 'rxjs/operators';
 
 import {AuthModule} from './auth/auth_module';
 import {AuthReturnPage} from './auth/auth_return_page';
 import {BuildChannelEditPage} from './build_channels/build_channel_edit_page';
 import {BuildChannelList} from './build_channels/build_channel_list';
-import {BuildPicker, BuildPickerData, BuildPickerMode} from './build_channels/build_picker';
+import {BuildPicker} from './build_channels/build_picker';
 import {ConfigSetList} from './config_sets/config_set_list';
 import {ConfigSetPicker} from './config_sets/config_set_picker';
 import {DeviceActionEditPage} from './device_actions/device_action_edit_page';
@@ -44,8 +44,7 @@ import {HostListPage} from './hosts/host_list_page';
 import {NotesModule} from './notes/notes_module';
 import {AnalyticsInterceptor, AnalyticsService} from './services/analytics_service';
 import {APP_DATA, AppData} from './services/app_data';
-import {MttClient} from './services/mtt_client';
-import {Notifier} from './services/notifier';
+import {FILE_BROWSER_PATH} from './services/file_service';
 import {ServicesModule} from './services/services_module';
 import {StrictParamsInterceptor} from './services/strict_params';
 import {UserService} from './services/user_service';
@@ -55,7 +54,6 @@ import {SetupWizardDialog} from './setup_wizard/setup_wizard_dialog';
 import {SetupWizardModule} from './setup_wizard/setup_wizard_module';
 import {UnsavedChangeGuard} from './shared/can_deactivate';
 import {SharedModule} from './shared/shared_module';
-import {buildApiErrorMessage} from './shared/util';
 import {TestPlanEditPage} from './test_plans/test_plan_edit_page';
 import {TestPlanListPage} from './test_plans/test_plan_list_page';
 import {TestRunActionList} from './test_run_actions/test_run_action_list';
@@ -159,7 +157,10 @@ export const routes: Routes = [
   },
   {path: 'test_runs/:id', component: TestRunDetailPage},
   {path: 'auth_return', component: AuthReturnPage},
-  {path: 'file_browser', children: [{path: '**', component: FileBrowserPage}]},
+  {
+    path: FILE_BROWSER_PATH,
+    children: [{path: '**', component: FileBrowserPage}]
+  },
   {
     path: 'file_cleaner/policy/new',
     component: FileCleanerPolicyEditPage,
@@ -191,14 +192,9 @@ export class Mtt implements OnDestroy {
   dialogRef!: MatDialogRef<SetupWizardDialog>;
   private readonly destroy = new ReplaySubject<void>();
 
-  // TODO: Remove showFileBrowser flag once the feature is ready
-  showFileBrowser = false;
-
   constructor(
       private readonly analytics: AnalyticsService,
       private readonly dialog: MatDialog,
-      private readonly mttClient: MttClient,
-      private readonly notifier: Notifier,
       private readonly router: Router,
       readonly userService: UserService,
       @Inject(APP_DATA) readonly appData: AppData,
@@ -240,25 +236,6 @@ export class Mtt implements OnDestroy {
         this.analytics.trackLocation(path);
       }
     });
-  }
-
-  openBuildPicker() {
-    this.mttClient.getBuildChannels().pipe(first()).subscribe(
-        buildChannelList => {
-          this.dialog.open<BuildPicker, BuildPickerData, string>(BuildPicker, {
-            width: '800px',
-            maxHeight: '100vh',
-            panelClass: 'build-picker-container',
-            data: {
-              buildChannels: buildChannelList.build_channels || [],
-              mode: BuildPickerMode.VIEW,
-            }
-          });
-        },
-        error => {
-          this.notifier.showError(
-              `Failed to load build channels.`, buildApiErrorMessage(error));
-        });
   }
 
   checkUserPermission() {
