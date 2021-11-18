@@ -25,7 +25,6 @@ import {CommandAttempt, CommandState} from './tfc_models';
 
 describe('FileService', () => {
   const appData: AppData = {
-    fileBrowserUrl: 'http://localhost:1234/',
     fileServerRoot: '/root',
   };
   let http: jasmine.SpyObj<HttpClient>;

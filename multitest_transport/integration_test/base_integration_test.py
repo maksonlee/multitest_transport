@@ -28,10 +28,6 @@ class BaseIntegrationTest(integration_util.DockerContainerTest):
     """Tests that the MTT server was started."""
     requests.get(self.container.base_url).raise_for_status()
 
-  def testFileServer(self):
-    """Tests that the file server was started."""
-    requests.get(self.container.file_server_url).raise_for_status()
-
   def testInitialState_runs(self):
     """Tests that there are no test runs initially."""
     response = requests.get(self.container.mtt_api_url + '/test_runs')

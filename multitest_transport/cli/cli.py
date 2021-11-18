@@ -163,8 +163,6 @@ def _GetMttServerPublicPorts(control_server_port):
   """
   return (
       (control_server_port, _MTT_CONTROL_SERVER_PORT),
-      (control_server_port + 5,
-       _MTT_CONTROL_SERVER_PORT + 5),  # FILE_BROWSER_PORT
       (control_server_port + 6,
        _MTT_CONTROL_SERVER_PORT + 6),  # FILE_SERVER_PORT
   )

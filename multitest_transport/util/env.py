@@ -51,7 +51,6 @@ GCS_BUCKET_NAME = os.environ.get('BUCKET_NAME', 'app_default_bucket')
 STORAGE_PATH = os.environ.get('MTT_STORAGE_PATH')
 FILE_SERVER_ROOT = os.environ.get('MTT_FILE_SERVER_ROOT')
 FILE_SERVER_URL = os.environ.get('MTT_FILE_SERVER_URL')
-FILE_BROWSER_URL = os.environ.get('MTT_FILE_BROWSER_URL')
 
 # Google OAuth2 parameters
 GOOGLE_OAUTH2_CLIENT_ID = os.environ.get('MTT_GOOGLE_OAUTH2_CLIENT_ID', UNKNOWN)

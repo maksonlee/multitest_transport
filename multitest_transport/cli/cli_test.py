@@ -498,7 +498,6 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '0.0.0.0:8100:8000',
-            '-p', '0.0.0.0:8105:8005',
             '-p', '0.0.0.0:8106:8006',
             '-p', '127.0.0.1:5137:5037',
             '--cap-add', 'sys_admin',
@@ -541,7 +540,6 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '0.0.0.0:8100:8000',
-            '-p', '0.0.0.0:8105:8005',
             '-p', '0.0.0.0:8106:8006',
             '-p', '127.0.0.1:5137:5037',
             '--cap-add', 'sys_admin',
@@ -585,7 +583,6 @@ class CliTest(parameterized.TestCase):
             '--mount', ('type=bind,src=/local/.ats_storage,'
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '0.0.0.0:8100:8000',
-            '-p', '0.0.0.0:8105:8005',
             '-p', '0.0.0.0:8106:8006',
             '-p', '127.0.0.1:5137:5037',
             '--cap-add', 'sys_admin',

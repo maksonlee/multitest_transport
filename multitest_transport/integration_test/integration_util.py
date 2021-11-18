@@ -57,7 +57,6 @@ class MttContainer(object):
   def __enter__(self):
     """Start the MTT docker container."""
     self._control_server_port = portpicker.pick_unused_port()
-    self._file_server_port = portpicker.pick_unused_port()
     kwargs = {
         'cap_add': ['sys_admin'],
         'devices': ['/dev/fuse'],
@@ -70,7 +69,6 @@ class MttContainer(object):
         'network_mode': 'bridge',
         'ports': {
             '8000/tcp': self._control_server_port,
-            '8005/tcp': self._file_server_port
         },
         'security_opt': ['apparmor:unconfined'],
     }
@@ -94,7 +92,6 @@ class MttContainer(object):
     self._delegate.start()
     # Determine the base URLs
     self.base_url = 'http://localhost:%d' % self._control_server_port
-    self.file_server_url = 'http://localhost:%d' % self._file_server_port
     self.mtt_api_url = '%s/_ah/api/mtt/v1' % self.base_url
     self.tfc_api_url = '%s/_ah/api/tradefed_cluster/v1' % self.base_url
     # Wait for application start

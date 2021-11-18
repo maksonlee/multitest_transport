@@ -52,7 +52,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
 RUN pip3 install \
         absl-py \
         attrs \
-        browsepy \
         cachetools \
         flask \
         grpcio \

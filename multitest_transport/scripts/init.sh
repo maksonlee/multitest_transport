@@ -90,7 +90,7 @@ then
   # TODO: Use config to differentiate worker and controller.
   elif [[ "${OPERATION_MODE}"=="on_premise" ]]
   then
-    # Only launch worker's file server and browsepy in on_premise mode.
+    # Only launch worker's file server in on_premise mode.
     FILE_SERVICE_ONLY="true"
   fi
 

@@ -27,8 +27,6 @@ export declare interface AppData {
   readonly analyticsTrackingId?: string;
   /** Hostname. */
   readonly hostname?: string;
-  /** Base URL of the file browser. */
-  readonly fileBrowserUrl?: string;
   /** Base path served by the file server. */
   readonly fileServerRoot?: string;
   /** True if running in development mode. */

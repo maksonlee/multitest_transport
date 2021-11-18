@@ -66,7 +66,6 @@ MTT_PYTHON="python3.8"
 MTT_PORT="${MTT_CONTROL_SERVER_PORT}"
 MTT_CORE_PORT="$((${MTT_CONTROL_SERVER_PORT}+1))"
 MTT_TFC_PORT="$((${MTT_CONTROL_SERVER_PORT}+2))"
-FILE_BROWSER_PORT="$((${MTT_CONTROL_SERVER_PORT}+5))"
 FILE_SERVER_PORT="$((${MTT_CONTROL_SERVER_PORT}+6))"
 DATASTORE_EMULATOR_PORT="$((${MTT_CONTROL_SERVER_PORT}+7))"
 
@@ -86,16 +85,6 @@ function start_rabbitmq_puller {
       --target "core=http://localhost:${MTT_CORE_PORT}/_ah/queue/{queue}" \
       --target "tfc=http://localhost:${MTT_TFC_PORT}/_ah/queue/{queue}" \
       "queue.yaml" \
-      &
-}
-
-function start_browsepy {
-  # Start browsepy file server
-  echo "Starting browsepy..."
-  browsepy \
-      --directory="$STORAGE_PATH" \
-      "$MTT_HOST" \
-      "$FILE_BROWSER_PORT" \
       &
 }
 
@@ -176,7 +165,6 @@ function start_main_server {
   DEV_MODE="$DEV_MODE" \
   MTT_FILE_SERVER_ROOT="$STORAGE_PATH" \
   MTT_FILE_SERVER_URL="http://localhost:$FILE_SERVER_PORT/" \
-  MTT_FILE_BROWSER_URL="http://localhost:$FILE_BROWSER_PORT/" \
   MTT_GOOGLE_OAUTH2_CLIENT_ID="$MTT_GOOGLE_OAUTH2_CLIENT_ID" \
   MTT_GOOGLE_OAUTH2_CLIENT_SECRET="$MTT_GOOGLE_OAUTH2_CLIENT_SECRET" \
   MTT_VERSION="$MTT_VERSION" \
@@ -210,7 +198,6 @@ function start_file_cleaner {
 
 if [ $FILE_SERVICE_ONLY == "false" ]
 then
-  start_browsepy
   start_local_file_server
   start_datastore_emulator
   start_mysql_database
@@ -218,7 +205,6 @@ then
   start_main_server
   start_file_cleaner
 else
-  start_browsepy
   start_local_file_server
   start_file_cleaner
 fi
