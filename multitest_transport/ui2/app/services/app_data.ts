@@ -39,6 +39,8 @@ export declare interface AppData {
   readonly logoutUrl?: string;
   /** Current MTT version. */
   readonly mttVersion?: string;
+  /** Base URL of Netdata. */
+  readonly netdataUrl?: string;
   /** Whether or not the user has completed the setup wizard. */
   readonly setupWizardCompleted?: boolean;
   /** Current user's email. */
@@ -49,4 +51,12 @@ export declare interface AppData {
   readonly isAtsLabInstance?: boolean;
   /** Base URL for logs. */
   readonly logUrl?: string;
+}
+
+/** Converts local url to real url. */
+export function convertLocalUrl(localUrl: string, hostname?: string): string {
+  const url = new URL(localUrl);
+  url.protocol = location.protocol;
+  url.hostname = location.hostname;
+  return url.toString();
 }

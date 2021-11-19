@@ -431,6 +431,10 @@ def _StartMttNode(args, host):
       for host_port, docker_port in _GetMttServerPublicPorts(args.port):
         # The server binds to IPv4 addresses only.
         docker_helper.AddPort('0.0.0.0:%d' % host_port, docker_port)
+      if not control_server_url:
+        # Public Netdata port
+        docker_helper.AddPort('0.0.0.0:%d' % (args.port + 8),
+                              _MTT_CONTROL_SERVER_PORT + 8)
     else:
       docker_helper.AddEnv('MTT_CONTROL_SERVER_PORT', args.port)
   if host.config.lab_name:

@@ -109,6 +109,16 @@
           <mat-icon matListIcon>android</mat-icon>
           <span> WebAOA </span>
         </a>
+        <a
+          *ngIf="netdataUrl"
+          mat-list-item
+          matTooltip="Monitor"
+          target="_blank"
+          [href]="netdataUrl"
+        >
+          <mat-icon matListIcon>monitor_heart</mat-icon>
+          <span>Storage Monitor</span>
+        </a>
 
         <mat-divider></mat-divider>
 

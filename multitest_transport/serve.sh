@@ -20,6 +20,7 @@ trap "echo cleaning up... && pkill -P $$ -TERM" SIGINT SIGTERM EXIT
 
 readonly SCRIPT_PATH="$(realpath "$0")"
 readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+readonly NETDATA_STREAM_API_KEY="2ba5b231-875d-4d39-82b0-adafd4c977d9"
 
 # Set environment defaults
 ADB_VERSION="$(adb version | grep -oP "Version \K(.*)")"
@@ -68,11 +69,20 @@ MTT_CORE_PORT="$((${MTT_CONTROL_SERVER_PORT}+1))"
 MTT_TFC_PORT="$((${MTT_CONTROL_SERVER_PORT}+2))"
 FILE_SERVER_PORT="$((${MTT_CONTROL_SERVER_PORT}+6))"
 DATASTORE_EMULATOR_PORT="$((${MTT_CONTROL_SERVER_PORT}+7))"
+NETDATA_PORT="$((${MTT_CONTROL_SERVER_PORT}+8))"
 
 # Create storage directory if it doesn't exist
 if [[ ! -d "$STORAGE_PATH" ]]; then
   echo "Storage path $STORAGE_PATH does not exist. Creating..."
   mkdir -p "$STORAGE_PATH"
+fi
+
+# Create netdata directories if they don't exist
+if [[ ! -d "$STORAGE_PATH/netdata" ]]; then
+  echo "Netdata path does not exist. Creating..."
+  mkdir -p "$STORAGE_PATH/netdata/cache"
+  mkdir -p "$STORAGE_PATH/netdata/lib"
+  mkdir -p "$STORAGE_PATH/netdata/log"
 fi
 
 function start_rabbitmq_puller {
@@ -165,6 +175,7 @@ function start_main_server {
   DEV_MODE="$DEV_MODE" \
   MTT_FILE_SERVER_ROOT="$STORAGE_PATH" \
   MTT_FILE_SERVER_URL="http://localhost:$FILE_SERVER_PORT/" \
+  MTT_NETDATA_URL="http://localhost:$NETDATA_PORT/" \
   MTT_GOOGLE_OAUTH2_CLIENT_ID="$MTT_GOOGLE_OAUTH2_CLIENT_ID" \
   MTT_GOOGLE_OAUTH2_CLIENT_SECRET="$MTT_GOOGLE_OAUTH2_CLIENT_SECRET" \
   MTT_VERSION="$MTT_VERSION" \
@@ -196,6 +207,52 @@ function start_file_cleaner {
       &
 }
 
+function start_netdata {
+  # Start Netdata
+  echo "Starting Netdata..."
+
+cat << EOF > ${STORAGE_PATH}/netdata/stream.conf
+[${NETDATA_STREAM_API_KEY}]
+  enabled = yes
+EOF
+
+  netdata -c "${SCRIPT_DIR}/scripts/netdata.conf" \
+      -p "${NETDATA_PORT}" \
+      -W set global "cache directory" "${STORAGE_PATH}/netdata/cache" \
+      -W set global "config directory" "${STORAGE_PATH}/netdata" \
+      -W set global "lib directory" "${STORAGE_PATH}/netdata/lib" \
+      -W set global "log directory" "${STORAGE_PATH}/netdata/log" \
+      &
+}
+
+function start_netdata_headless_collector {
+  # Start Netdata headless collector
+  echo "Starting Netdata..."
+
+  local control_server_hostname=$(echo ${MTT_CONTROL_SERVER_URL} | sed "s,^\([^:/]\+://\)\?\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\2,g")
+  local control_server_port=$(echo ${MTT_CONTROL_SERVER_URL} | sed "s,^\([^:/]\+://\)\+\([^:/]\+\)\(:\([0-9]\{1\,5\}\)\)\?\+.*$,\4,g")
+  local control_server_stream_port=$((${control_server_port:-80}+8))
+
+cat << EOF > ${STORAGE_PATH}/netdata/stream.conf
+[stream]
+  enabled = yes
+  destination = ${control_server_hostname}
+  api key = ${NETDATA_STREAM_API_KEY}
+  default port = ${control_server_stream_port}
+EOF
+
+  echo "Streaming Netdata metrics to ${control_server_hostname}:${control_server_stream_port}"
+
+  netdata -c "${SCRIPT_DIR}/scripts/netdata.conf" \
+      -W set global "cache directory" "${STORAGE_PATH}/netdata/cache" \
+      -W set global "config directory" "${STORAGE_PATH}/netdata" \
+      -W set global "lib directory" "${STORAGE_PATH}/netdata/lib" \
+      -W set global "log directory" "${STORAGE_PATH}/netdata/log" \
+      -W set global "memory mode" none \
+      -W set web enabled no \
+      &
+}
+
 if [ $FILE_SERVICE_ONLY == "false" ]
 then
   start_local_file_server
@@ -204,8 +261,10 @@ then
   start_rabbitmq_puller
   start_main_server
   start_file_cleaner
+  start_netdata
 else
   start_local_file_server
   start_file_cleaner
+  start_netdata_headless_collector
 fi
 wait

@@ -36,10 +36,11 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         locales \
         locales-all \
         lsof \
+        mariadb-server \
         ndppd \
+        netdata \
         python \
         python3 \
-        mariadb-server \
         python3-pip \
         rabbitmq-server=3.8.2-0ubuntu1 \
         socat \

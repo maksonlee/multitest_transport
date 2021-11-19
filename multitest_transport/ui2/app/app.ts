@@ -43,7 +43,7 @@ import {HostDetailsPage} from './hosts/host_details_page';
 import {HostListPage} from './hosts/host_list_page';
 import {NotesModule} from './notes/notes_module';
 import {AnalyticsInterceptor, AnalyticsService} from './services/analytics_service';
-import {APP_DATA, AppData} from './services/app_data';
+import {APP_DATA, AppData, convertLocalUrl} from './services/app_data';
 import {FILE_BROWSER_PATH} from './services/file_service';
 import {ServicesModule} from './services/services_module';
 import {StrictParamsInterceptor} from './services/strict_params';
@@ -189,6 +189,7 @@ export const routes: Routes = [
     {selector: 'mtt', styleUrls: ['./app.css'], templateUrl: './app.ng.html'})
 export class Mtt implements OnDestroy {
   sideNavExpanded = false;
+  netdataUrl: string = '';
   dialogRef!: MatDialogRef<SetupWizardDialog>;
   private readonly destroy = new ReplaySubject<void>();
 
@@ -206,6 +207,9 @@ export class Mtt implements OnDestroy {
         panelClass: 'no-padding-container',
         width: '600px',
       });
+    }
+    if (appData.netdataUrl) {
+      this.netdataUrl = convertLocalUrl(appData.netdataUrl, appData.hostname);
     }
     this.initRouteTrackingForAnalytics();
     this.checkUserPermission();

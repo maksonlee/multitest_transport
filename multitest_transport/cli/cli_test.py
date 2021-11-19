@@ -584,6 +584,7 @@ class CliTest(parameterized.TestCase):
                         'dst=/tmp/.mnt/.ats_storage'),
             '-p', '0.0.0.0:8100:8000',
             '-p', '0.0.0.0:8106:8006',
+            '-p', '0.0.0.0:8108:8008',
             '-p', '127.0.0.1:5137:5037',
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
