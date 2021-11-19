@@ -24,8 +24,12 @@ h2 {
   color: $grey-800;
   width: 800px;
 
+  mat-checkbox {
+    margin-left: -10px;
+  }
+
   .notice {
-    padding: 8px 0 18px 24px;
+    padding: 8px 0 18px 34px;
   }
 
   .tag-description {

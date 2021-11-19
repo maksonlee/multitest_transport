@@ -32,6 +32,7 @@ $theme: mat.define-light-theme(
 $typography: mat.define-typography-config();
 
 @include mat.all-component-themes($theme);
+@include mat.mdc-checkbox-theme($theme);
 @include mat.mdc-dialog-theme($theme);
 @include mat.mdc-tooltip-theme($theme);
 @include mat.mdc-button-theme($theme);
@@ -40,6 +41,7 @@ $typography: mat.define-typography-config();
 @include mat.mdc-progress-spinner-theme($theme);
 @include mat.mdc-progress-bar-theme($theme);
 
+@include mat.mdc-checkbox-typography($typography);
 @include mat.mdc-dialog-typography($typography);
 @include mat.mdc-tooltip-typography($typography);
 @include mat.mdc-button-typography($typography);

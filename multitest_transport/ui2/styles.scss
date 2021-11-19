@@ -46,6 +46,7 @@ $theme: map_merge(
 );
 
 @include mat.all-component-themes($theme);
+@include mat.mdc-checkbox-theme($theme);
 @include mat.mdc-dialog-theme($theme);
 @include mat.mdc-tooltip-theme($theme);
 @include mat.mdc-button-theme($theme);
@@ -54,6 +55,7 @@ $theme: map_merge(
 @include mat.mdc-progress-spinner-theme($theme);
 @include mat.mdc-progress-bar-theme($theme);
 
+@include mat.mdc-checkbox-typography($typography);
 @include mat.mdc-dialog-typography($typography);
 @include mat.mdc-tooltip-typography($typography);
 @include mat.mdc-button-typography($typography);
@@ -137,13 +139,6 @@ mat-spinner.loading-spinner {
 
 .back-button-label {
   color: $navigation;
-}
-
-// Aligns checkboxes with the first line of label text
-.checkbox-align-text {
-  .mat-checkbox-inner-container {
-    margin: 4px 8px auto 0;
-  }
 }
 
 .compact {
@@ -274,28 +269,8 @@ mat-spinner.loading-spinner {
   padding-right: 20px;
 }
 
-.mat-checkbox {
+.mat-mdc-checkbox {
   margin-top: -2px;
-
-  &.mat-checkbox-indeterminate,
-  &.mat-checkbox-checked {
-    .mat-checkbox-background {
-      background-color: unset;
-    }
-    .mat-checkbox-frame {
-      border-color: $accent-dark;
-    }
-    .mat-checkbox-mixedmark {
-      background-color: $accent-dark;
-    }
-    .mat-checkbox-checkmark-path {
-      stroke: $accent-dark !important;
-    }
-  }
-}
-
-.mat-checkbox-layout {
-  white-space: normal !important;
 }
 
 .mat-form-field-appearance-outline {
