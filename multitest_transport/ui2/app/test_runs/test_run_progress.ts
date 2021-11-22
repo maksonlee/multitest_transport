@@ -47,6 +47,7 @@ type ProgressEntity = LogEntity|AttemptEntity|CommandStateStatsEntity;
 
 /** Tree node for storing command data */
 interface CommandNode extends Command {
+  attempts: CommandAttempt[];
   expanded: boolean;
 }
 
@@ -68,6 +69,7 @@ interface CommandStateStatNode {
 })
 export class TestRunProgress implements OnInit, OnChanges {
   readonly EventLogLevel = EventLogLevel;
+  readonly CommandState = CommandState;
 
   @Input() testRun!: TestRun;
   @Input() request?: Request;
@@ -190,7 +192,7 @@ export class TestRunProgress implements OnInit, OnChanges {
       return;
     }
     this.statNodeMap[state]!.commandNodeMap[commandId].expanded = true;
-    // TODO: Load attempts
+    this.loadAttempts(state, commandId);
   }
 
   loadCommands(state: CommandState) {
@@ -210,6 +212,7 @@ export class TestRunProgress implements OnInit, OnChanges {
               const commandNodeMap: {[commandId: string]: CommandNode} = {};
               for (const command of res.commands) {
                 commandNodeMap[command.id] = Object.assign(command, {
+                  attempts: [],
                   expanded: false,
                 });
               }
@@ -245,6 +248,7 @@ export class TestRunProgress implements OnInit, OnChanges {
               for (const command of res.commands) {
                 this.statNodeMap[state]!.commandNodeMap[command.id] =
                     Object.assign(command, {
+                      attempts: [],
                       expanded: false,
                     });
               }
@@ -254,6 +258,37 @@ export class TestRunProgress implements OnInit, OnChanges {
               // TODO: Convert to notifier dialogs
               console.log(
                   'Failed to load commands for state %s: %s', state, error);
+            });
+  }
+
+  loadAttempts(state: CommandState, commandId: string) {
+    if (!this.request) {
+      return;
+    }
+    if (!this.statNodeMap[state]) {
+      console.log(
+          'Attempting to load commands for state not in state map: %s', state);
+      return;
+    }
+    if (!this.statNodeMap[state]!.commandNodeMap[commandId]) {
+      console.log(
+          'Attempting to load attempts for command not in command map: %s',
+          commandId);
+      return;
+    }
+
+    this.tfcClient.listCommandAttempts(this.request.id, commandId)
+        .pipe()
+        .subscribe(
+            res => {
+              this.statNodeMap[state]!.commandNodeMap[commandId].attempts =
+                  res.command_attempts;
+            },
+            error => {
+              // TODO: Convert to notifier dialogs
+              console.log(
+                  'Failed to load attempts for command %s: %s', commandId,
+                  error);
             });
   }
 

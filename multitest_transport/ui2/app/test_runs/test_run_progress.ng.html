@@ -20,13 +20,15 @@
     <!-- log entry container -->
     <div class="entity log elevated-card mat-elevation-z2" *ngSwitchCase="'log'">
         <div>
-          <mat-icon class="status warning" *ngIf="entity.level === EventLogLevel.WARNING">
+          <mat-icon class="progress-status warning" *ngIf="entity.level === EventLogLevel.WARNING">
             warning
           </mat-icon>
-          <mat-icon class="status error" *ngIf="entity.level === EventLogLevel.ERROR">
+          <mat-icon class="progress-status error" *ngIf="entity.level === EventLogLevel.ERROR">
             error
           </mat-icon>
-          <mat-icon class="status info" *ngIf="entity.level === EventLogLevel.INFO">done</mat-icon>
+          <mat-icon class="progress-status info" *ngIf="entity.level === EventLogLevel.INFO">
+            done
+          </mat-icon>
         </div>
         <div>
           <span class="log-message" [innerHTML]="entity.message | linkify"></span><br>
@@ -40,7 +42,7 @@
       <div class="card-header">
 
         <div>
-          <mat-icon class="status info">done</mat-icon>
+          <mat-icon class="progress-status info">done</mat-icon>
         </div>
         <div>
           <span class="log-message">Test run started</span><br>
@@ -118,78 +120,157 @@
           <ng-container *ngIf="statNode.value.expanded">
             <div *ngFor="let commandNode of statNode.value.commandNodeMap | keyvalue: originalOrder"
                  class="row-divider">
-              <div fxFlex="20px">
-                <!-- Command row indent column -->
-              </div>
-
-              <div fxFlex="40px">
-                <button mat-icon-button aria-label="Toggle"
-                        (click)="expandCommandNode(statNode.value.state, commandNode.key)"
-                        class="expand-button">
-                  <mat-icon class="mat-icon-rtl-mirror">
-                    {{commandNode.value.expanded ? 'expand_more' : 'chevron_right'}}
-                  </mat-icon>
-                </button>
-              </div>
-
-              <div fxFlex class="job-text inline">
-                <span>
-                  Job {{commandNode.value.id}}: {{commandNode.value.name || commandNode.value.command_line}}
-                </span>
-              </div>
-
-              <div fxFlex="120px" class="display-flex">
-                <ng-container *ngIf="commandNode.value.failed_test_run_count">
-                  <mat-icon *ngIf="commandNode.value.failed_test_run_count > 0"
-                            class="results error">
-                    error_outline
-                  </mat-icon>
-                  <mat-icon *ngIf="commandNode.value.failed_test_run_count == 0"
-                            class="results success">
-                    done
-                  </mat-icon>
-                  <span class="count-text">
-                    {{commandNode.value.failed_test_run_count}} errors
-                  </span>
-                </ng-container>
-              </div>
-
-              <div fxFlex="200px" class="display-flex">
-                <ng-container *ngIf="commandNode.value.failed_test_count">
-                  <mat-icon *ngIf="commandNode.value.failed_test_count > 0"
-                            class="results error">
-                    error_outline
-                  </mat-icon>
-                  <mat-icon *ngIf="commandNode.value.failed_test_count == 0"
-                            class="results success">
-                    done
-                  </mat-icon>
-                  <span class="count-text">
-                    {{commandNode.value.failed_test_count}}/{{commandNode.value.total_test_count}}
-                  </span>
-                </ng-container>
-              </div>
-
-              <div fxFlex="100px" class="row-text">
-                <div>
-                  {{commandNode.value.start_time | date:'h:mm:ss a'}}
+              <div>
+                <div fxFlex="20px">
+                  <!-- Command row indent column -->
                 </div>
-                <div class="secondary-text">
-                  {{commandNode.value.start_time | date:'MM/dd/yyyy'}}
+
+                <div fxFlex="40px">
+                  <button mat-icon-button aria-label="Toggle"
+                          (click)="expandCommandNode(statNode.value.state, commandNode.key)"
+                          class="expand-button">
+                    <mat-icon class="mat-icon-rtl-mirror">
+                      {{commandNode.value.expanded ? 'expand_more' : 'chevron_right'}}
+                    </mat-icon>
+                  </button>
                 </div>
+
+                <div fxFlex class="id-text inline">
+                  <span>
+                    Job {{commandNode.value.id}}: {{commandNode.value.name || commandNode.value.command_line}}
+                  </span>
+                </div>
+
+                <div fxFlex="120px" class="display-flex">
+                  <ng-container *ngIf="commandNode.value.failed_test_run_count">
+                    <mat-icon *ngIf="commandNode.value.failed_test_run_count > 0"
+                              class="results error">
+                      error_outline
+                    </mat-icon>
+                    <mat-icon *ngIf="commandNode.value.failed_test_run_count == 0"
+                              class="results success">
+                      done
+                    </mat-icon>
+                    <span class="count-text">
+                      {{commandNode.value.failed_test_run_count}} errors
+                    </span>
+                  </ng-container>
+                </div>
+
+                <div fxFlex="200px" class="display-flex">
+                  <ng-container *ngIf="commandNode.value.failed_test_count">
+                    <mat-icon *ngIf="commandNode.value.failed_test_count > 0"
+                              class="results error">
+                      error_outline
+                    </mat-icon>
+                    <mat-icon *ngIf="commandNode.value.failed_test_count == 0"
+                              class="results success">
+                      done
+                    </mat-icon>
+                    <span class="count-text">
+                      {{commandNode.value.failed_test_count}}/{{commandNode.value.total_test_count}}
+                    </span>
+                  </ng-container>
+                </div>
+
+                <div fxFlex="100px" class="row-text">
+                  <div>
+                    {{commandNode.value.start_time | date:'h:mm:ss a'}}
+                  </div>
+                  <div class="secondary-text">
+                    {{commandNode.value.start_time | date:'MM/dd/yyyy'}}
+                  </div>
+                </div>
+
+                <div fxFlex="100px" class="row-text secondary-text">
+                    +{{getDuration(commandNode.value)}}
+                </div>
+
+                <div fxFlex="100px">
+                    <!-- Output files column -->
+                </div>
+              </div><!-- End of command row -->
+
+              <div *ngIf="commandNode.value.expanded" class="display-flex" fxLayout="column">
+                <!-- Attempt row -->
+                <div *ngFor="let attempt of commandNode.value.attempts"
+                              class="display-flex">
+                  <div fxFlex="60px">
+                    <!-- Attempt row indent column -->
+                  </div>
+
+                  <div fxFlex="40px">
+                    <mat-icon class="mat-icon-rtl-mirror attempt-status completed"
+                              *ngIf="attempt.state==CommandState.COMPLETED">
+                      check_circle_outline
+                    </mat-icon>
+                    <mat-icon class="mat-icon-rtl-mirror attempt-status error"
+                              *ngIf="attempt.state==CommandState.ERROR">
+                      error_outline
+                    </mat-icon>
+                  </div>
+
+                  <div fxFlex class="elevated-card attempt mat-elevation-z2">
+                    <div fxFlex class="id-text inline">
+                      Attempt {{attempt.attempt_id}}
+                    </div>
+
+                    <div fxFlex="120px" class="display-flex">
+                      <ng-container *ngIf="attempt.value.failed_test_run_count">
+                        <mat-icon *ngIf="attempt.value.failed_test_run_count > 0"
+                                  class="results error">
+                          error_outline
+                        </mat-icon>
+                        <mat-icon *ngIf="attempt.value.failed_test_run_count == 0"
+                                  class="results success">
+                          done
+                        </mat-icon>
+                        <span class="count-text">
+                          {{attempt.failed_test_run_count}} errors
+                        </span>
+                      </ng-container>
+                    </div>
+
+                    <div fxFlex="200px" class="display-flex">
+                      <ng-container *ngIf="attempt.failed_test_count">
+                        <mat-icon *ngIf="attempt.failed_test_count > 0"
+                                  class="results error">
+                          error_outline
+                        </mat-icon>
+                        <mat-icon *ngIf="attempt.failed_test_count == 0"
+                                  class="results success">
+                          done
+                        </mat-icon>
+                        <span class="count-text">
+                          {{attempt.failed_test_count}}/{{attempt.total_test_count}}
+                        </span>
+                      </ng-container>
+                    </div>
+
+                    <div fxFlex="100px" class="row-text">
+                      <div>
+                        {{attempt.start_time | date:'h:mm:ss a'}}
+                      </div>
+                      <div class="secondary-text">
+                        {{attempt.start_time | date:'MM/dd/yyyy'}}
+                      </div>
+                    </div>
+
+                    <div fxFlex="100px" class="row-text secondary-text">
+                        +{{getDuration(attempt)}}
+                    </div>
+
+                    <div fxFlex="85px"> <!-- Reduced to account for right margin and padding -->
+                        <!-- Output files column -->
+                    </div>
+                  </div><!-- End of attempt card -->
+                </div><!-- End of attempt row -->
               </div>
 
-              <div fxFlex="100px" class="row-text secondary-text">
-                  +{{getDuration(commandNode.value)}}
-              </div>
-
-              <div fxFlex="100px">
-                  <!-- Output files column -->
-              </div>
-            </div><!-- End of command row -->
+            </div><!-- End of command row for loop -->
 
             <!-- Load more commands button -->
-            <div *ngIf="statNode.value.pageToken">
+            <div *ngIf="statNode.value.pageToken" class="row-divider">
               <div fxFlex="60px">
                 <!-- Command row indent column -->
               </div>
@@ -214,10 +295,10 @@
   <!-- log entry container -->
   <div class="entity log" *ngSwitchCase="'log'">
     <span class="time-column timestamp">{{entity.timestamp | date:'MM/dd/yyyy h:mm a'}}</span>
-    <mat-icon class="warning status" *ngIf="entity.level === EventLogLevel.WARNING">
+    <mat-icon class="warning progress-status" *ngIf="entity.level === EventLogLevel.WARNING">
       warning
     </mat-icon>
-    <mat-icon class="error status" *ngIf="entity.level === EventLogLevel.ERROR">
+    <mat-icon class="error progress-status" *ngIf="entity.level === EventLogLevel.ERROR">
       error
     </mat-icon>
     <span class="log-message" [innerHTML]="entity.message | linkify"></span>

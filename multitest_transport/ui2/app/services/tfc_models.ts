@@ -248,6 +248,11 @@ export declare interface CommandAttempt {
   readonly failed_test_run_count?: number;
 }
 
+/** A list of command attempts */
+export declare interface CommandAttemptMessageCollection {
+  readonly command_attempts: CommandAttempt[];
+}
+
 /** Possible states for a device. */
 export enum DeviceState {
   ALLOCATED = 'ALLOCATED',

@@ -92,6 +92,13 @@ export class TfcClient {
             encodeURIComponent(requestId)}/commands/state_counts`);
   }
 
+  listCommandAttempts(requestId: string, commandId: string):
+      Observable<tfcModels.CommandAttemptMessageCollection> {
+    return this.http.get<tfcModels.CommandAttemptMessageCollection>(
+        `${this.tfcApiUrl}/requests/${encodeURIComponent(requestId)}/commands/${
+            encodeURIComponent(commandId)}/command_attempts`);
+  }
+
   getRequestInvocationStatus(requestId: string): Observable<InvocationStatus> {
     return this.http.get<InvocationStatus>(`${this.tfcApiUrl}/requests/${
         encodeURIComponent(requestId)}/invocation_status`);
