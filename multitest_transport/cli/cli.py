@@ -159,12 +159,11 @@ def _GetMttServerPublicPorts(control_server_port):
     control_server_port: the control server port on the host.
 
   Returns:
-    pairs of host ports and docker ports.
+    tuple of ports.
   """
   return (
-      (control_server_port, _MTT_CONTROL_SERVER_PORT),
-      (control_server_port + 6,
-       _MTT_CONTROL_SERVER_PORT + 6),  # FILE_SERVER_PORT
+      control_server_port,
+      control_server_port + 6,  # FILE_SERVER_PORT
   )
 
 
@@ -427,16 +426,14 @@ def _StartMttNode(args, host):
   # TODO: Use config to differentiate worker and controller.
   if (control_server_url and operation_mode
       == lab_config_pb2.OperationMode.ON_PREMISE) or not control_server_url:
+    docker_helper.AddEnv('MTT_CONTROL_SERVER_PORT', args.port)
     if network == _DOCKER_BRIDGE_NETWORK:
-      for host_port, docker_port in _GetMttServerPublicPorts(args.port):
+      for port in _GetMttServerPublicPorts(args.port):
         # The server binds to IPv4 addresses only.
-        docker_helper.AddPort('0.0.0.0:%d' % host_port, docker_port)
+        docker_helper.AddPort('0.0.0.0:%d' % port, port)
       if not control_server_url:
         # Public Netdata port
-        docker_helper.AddPort('0.0.0.0:%d' % (args.port + 8),
-                              _MTT_CONTROL_SERVER_PORT + 8)
-    else:
-      docker_helper.AddEnv('MTT_CONTROL_SERVER_PORT', args.port)
+        docker_helper.AddPort('0.0.0.0:%d' % (args.port + 8), args.port + 8)
   if host.config.lab_name:
     docker_helper.AddEnv('LAB_NAME', host.config.lab_name)
   if host.config.cluster_name:
