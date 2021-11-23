@@ -19,7 +19,7 @@ import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {Router} from '@angular/router';
 import {RouterTestingModule} from '@angular/router/testing';
-import {of as observableOf} from 'rxjs';
+import {EMPTY, of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
 import {TestPackageInfo, TestRunState, TestRunSummary} from '../services/mtt_models';
@@ -70,6 +70,7 @@ describe('TestRunList', () => {
 
     mttClient =
         jasmine.createSpyObj('mttClient', ['getTestRuns', 'deleteTestRuns']);
+    mttClient.deleteTestRuns.and.returnValue(EMPTY);
     mttClient.getTestRuns.and.returnValue(
         observableOf({test_runs: [testRunCompleted, testRunPending]}));
 
