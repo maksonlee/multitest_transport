@@ -96,11 +96,22 @@ div.attempt {
   position: relative;
   margin: 4px 0 1px;
 
+  &.attempt-error {
+    background: $danger-background;
+  }
+
   div.attempt-content {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
     overflow: hidden;
+  }
+
+  div.attempt-extra-info {
+    padding: 12px 4px;
+    font-family: monospace;
+    white-space: pre;
+    word-break: break-all;
   }
 }
 
@@ -121,6 +132,7 @@ div.elevated-card {
 
   &.attempt {
     border: 1px solid $primary-less;
+    flex-direction: column;
     margin-right: 8px;
   }
 }

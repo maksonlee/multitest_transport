@@ -47,7 +47,12 @@ type ProgressEntity = LogEntity|AttemptEntity|CommandStateStatsEntity;
 
 /** Tree node for storing command data */
 interface CommandNode extends Command {
-  attempts: CommandAttempt[];
+  attemptNodeMap: {[attemptId: string]: CommandAttemptNode};
+  expanded: boolean;
+}
+
+/** Tree node for storing attempt data */
+interface CommandAttemptNode extends CommandAttempt {
   expanded: boolean;
 }
 
@@ -195,6 +200,20 @@ export class TestRunProgress implements OnInit, OnChanges {
     this.loadAttempts(state, commandId);
   }
 
+  expandAttemptNode(state: CommandState, commandId: string, attemptId: string) {
+    if (!this.statNodeMap[state] ||
+        !this.statNodeMap[state]!.commandNodeMap[commandId] ||
+        !this.statNodeMap[state]!.commandNodeMap[commandId]
+             .attemptNodeMap[attemptId]) {
+      return;
+    }
+    this.statNodeMap[state]!.commandNodeMap[commandId]
+        .attemptNodeMap[attemptId]
+        .expanded = !this.statNodeMap[state]!.commandNodeMap[commandId]
+                         .attemptNodeMap[attemptId]
+                         .expanded;
+  }
+
   loadCommands(state: CommandState) {
     if (!this.request) {
       return;
@@ -212,7 +231,7 @@ export class TestRunProgress implements OnInit, OnChanges {
               const commandNodeMap: {[commandId: string]: CommandNode} = {};
               for (const command of res.commands) {
                 commandNodeMap[command.id] = Object.assign(command, {
-                  attempts: [],
+                  attemptNodeMap: {},
                   expanded: false,
                 });
               }
@@ -248,7 +267,7 @@ export class TestRunProgress implements OnInit, OnChanges {
               for (const command of res.commands) {
                 this.statNodeMap[state]!.commandNodeMap[command.id] =
                     Object.assign(command, {
-                      attempts: [],
+                      attemptNodeMap: {},
                       expanded: false,
                     });
               }
@@ -281,8 +300,15 @@ export class TestRunProgress implements OnInit, OnChanges {
         .pipe()
         .subscribe(
             res => {
-              this.statNodeMap[state]!.commandNodeMap[commandId].attempts =
-                  res.command_attempts;
+              const attemptNodeMap:
+                  {[attemptId: string]: CommandAttemptNode} = {};
+              for (const attempt of res.command_attempts) {
+                attemptNodeMap[attempt.attempt_id] = Object.assign(attempt, {
+                  expanded: false,
+                });
+              }
+              this.statNodeMap[state]!.commandNodeMap[commandId]
+                  .attemptNodeMap = attemptNodeMap;
             },
             error => {
               // TODO: Convert to notifier dialogs
@@ -290,6 +316,26 @@ export class TestRunProgress implements OnInit, OnChanges {
                   'Failed to load attempts for command %s: %s', commandId,
                   error);
             });
+  }
+
+  getAttemptExtraInfo(attempt: CommandAttemptNode): string|undefined {
+    switch (attempt.state) {
+      case CommandState.COMPLETED:
+        return attempt.summary;
+      case CommandState.ERROR:
+      case CommandState.FATAL:
+        return attempt.subprocess_command_error || attempt.error;
+      default:
+        return undefined;
+    }
+  }
+
+  getAttemptExtraInfoLines(attempt: CommandAttemptNode): string[] {
+    const s = this.getAttemptExtraInfo(attempt);
+    if (!s) {
+      return [];
+    }
+    return s.trim().split('\n');
   }
 
   /**
