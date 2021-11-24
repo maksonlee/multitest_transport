@@ -37,7 +37,7 @@ import {FilterBarUtility} from '../shared/filterbar_util';
 import {OverflowListType} from '../shared/overflow_list';
 import {DEFAULT_PAGE_SIZE, Paginator} from '../shared/paginator';
 import {TableRowsSelectManager} from '../shared/table_rows_select';
-import {areArraysEqual, assertRequiredInput, getFilterDefaultSingleValue, removeFirst} from '../shared/util';
+import {areArraysEqual, assertRequiredInput, buildApiErrorMessage, getFilterDefaultSingleValue, removeFirst} from '../shared/util';
 
 /** Displaying a list of devices. */
 @Component({
@@ -765,9 +765,10 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
               this.notifier.showMessage(`Device '${deviceSerial}' removed`);
               this.load(0, true);
             },
-            () => {
+            (error) => {
               this.notifier.showError(
-                  `Failed to remove device ${deviceSerial}`);
+                  `Failed to remove device ${deviceSerial}`,
+                  buildApiErrorMessage(error));
             });
   }
 

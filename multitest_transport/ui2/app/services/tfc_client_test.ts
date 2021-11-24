@@ -865,14 +865,13 @@ describe('TfcClient', () => {
       tfcClient.removeDevice(deviceSerial, hostname);
 
       const context = AnalyticsContext.create('device', 'remove');
-      const body = {
-        'hostname': hostname,
-      };
+      let params = new HttpParams();
+      params = params.append('hostname', hostname);
 
       expect(httpClientSpy.post)
           .toHaveBeenCalledWith(
-              `${tfcClient.tfcApiUrl}/devices/${deviceSerial}/remove`, body,
-              {context});
+              `${tfcClient.tfcApiUrl}/devices/${deviceSerial}/remove`, null,
+              {params, context});
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
     });
   });

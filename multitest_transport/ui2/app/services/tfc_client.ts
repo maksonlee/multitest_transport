@@ -596,11 +596,13 @@ export class TfcClient {
   /** Removes a device from host. */
   removeDevice(deviceSerial: string, hostname: string): Observable<void> {
     const context = AnalyticsContext.create('device', 'remove');
-    const body = {
-      'hostname': hostname,
-    };
+    let params = new HttpParams();
+    if (hostname) {
+      params = params.append('hostname', hostname);
+    }
     return this.http.post<void>(
-        `${this.tfcApiUrl}/devices/${deviceSerial}/remove`, body, {context});
+        `${this.tfcApiUrl}/devices/${deviceSerial}/remove`, null,
+        {context, params});
   }
 
   /** Removes the host. */
