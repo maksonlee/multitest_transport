@@ -22,7 +22,7 @@ import * as mocks from '../testing/mtt_lab_mocks';
 import {newMockDeviceInfo, newMockHostUpdateStateSummary} from '../testing/mtt_lab_mocks';
 import {newMockCommand, newMockCommandAttempt, newMockInvocationStatus, newMockRequest} from '../testing/mtt_mocks';
 
-import {AnalyticsParams} from './analytics_service';
+import {AnalyticsContext} from './analytics_service';
 import {ONLINE_DEVICE_STATES, TfcClient} from './tfc_client';
 import * as tfcModels from './tfc_models';
 import {DeviceInfosResponse} from './tfc_models';
@@ -779,7 +779,7 @@ describe('TfcClient', () => {
     });
 
     it('calls API for host correctly', () => {
-      const params = new AnalyticsParams('host_note', 'create');
+      const context = AnalyticsContext.create('host_note', 'create');
       const noteInfo: mttLabModels.CreateOrUpdateNoteInfo = {
         user: appData.userNickname,
         hostname: 'host1',
@@ -809,12 +809,12 @@ describe('TfcClient', () => {
       expect(httpClientSpy.post)
           .toHaveBeenCalledWith(
               `${tfcClient.tfcApiUrl}/hosts/${noteInfo.hostname}/notes`, body,
-              {params});
+              {context});
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
     });
 
     it('calls API for device correctly', () => {
-      const params = new AnalyticsParams('device_note', 'create');
+      const context = AnalyticsContext.create('device_note', 'create');
       const noteInfo: mttLabModels.CreateOrUpdateNoteInfo = {
         user: appData.userNickname,
         deviceSerial: 'device1',
@@ -846,7 +846,7 @@ describe('TfcClient', () => {
       expect(httpClientSpy.post)
           .toHaveBeenCalledWith(
               `${tfcClient.tfcApiUrl}/devices/${noteInfo.deviceSerial}/notes`,
-              body, {params});
+              body, {context});
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
     });
   });
@@ -864,7 +864,7 @@ describe('TfcClient', () => {
 
       tfcClient.removeDevice(deviceSerial, hostname);
 
-      const params = new AnalyticsParams('device', 'remove');
+      const context = AnalyticsContext.create('device', 'remove');
       const body = {
         'hostname': hostname,
       };
@@ -872,7 +872,7 @@ describe('TfcClient', () => {
       expect(httpClientSpy.post)
           .toHaveBeenCalledWith(
               `${tfcClient.tfcApiUrl}/devices/${deviceSerial}/remove`, body,
-              {params});
+              {context});
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
     });
   });
@@ -889,12 +889,12 @@ describe('TfcClient', () => {
 
       tfcClient.removeHost(hostname);
 
-      const params = new AnalyticsParams('host', 'remove');
+      const context = AnalyticsContext.create('host', 'remove');
 
       expect(httpClientSpy.post)
           .toHaveBeenCalledWith(
               `${tfcClient.tfcApiUrl}/hosts/${hostname}/remove`, null,
-              {params});
+              {context});
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
     });
   });
@@ -914,7 +914,7 @@ describe('TfcClient', () => {
 
       tfcClient.updatePredefinedMessage(id, content);
 
-      const params = new AnalyticsParams('predefined_message', 'update');
+      const context = AnalyticsContext.create('predefined_message', 'update');
       const body = {
         'content': content,
       };
@@ -922,7 +922,7 @@ describe('TfcClient', () => {
       expect(httpClientSpy.patch)
           .toHaveBeenCalledWith(
               `${tfcClient.tfcApiUrl}/predefined_messages/${id}`, body,
-              {params});
+              {context});
       expect(httpClientSpy.patch).toHaveBeenCalledTimes(1);
     });
   });
@@ -947,7 +947,7 @@ describe('TfcClient', () => {
 
       tfcClient.createPredefinedMessage(predefinedMessageInfo);
 
-      const params = new AnalyticsParams('predefined_message', 'create');
+      const context = AnalyticsContext.create('predefined_message', 'create');
 
       const body = {
         'lab_name': predefinedMessageInfo.labName,
@@ -957,7 +957,7 @@ describe('TfcClient', () => {
 
       expect(httpClientSpy.post)
           .toHaveBeenCalledWith(
-              `${tfcClient.tfcApiUrl}/predefined_messages`, body, {params});
+              `${tfcClient.tfcApiUrl}/predefined_messages`, body, {context});
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
     });
   });
@@ -974,11 +974,11 @@ describe('TfcClient', () => {
 
       tfcClient.deletePredefinedMessage(id);
 
-      const params = new AnalyticsParams('predefined_message', 'delete');
+      const context = AnalyticsContext.create('predefined_message', 'delete');
 
       expect(httpClientSpy.delete)
           .toHaveBeenCalledWith(
-              `${tfcClient.tfcApiUrl}/predefined_messages/${id}`, {params});
+              `${tfcClient.tfcApiUrl}/predefined_messages/${id}`, {context});
       expect(httpClientSpy.delete).toHaveBeenCalledTimes(1);
     });
   });
@@ -1054,7 +1054,7 @@ describe('TfcClient', () => {
 
       tfcClient.batchSetHostsRecoveryStates(hostRecoveryStateRequests);
 
-      const params = new AnalyticsParams('hosts', 'setRecoveryStates');
+      const context = AnalyticsContext.create('hosts', 'setRecoveryStates');
 
       const body = {
         host_recovery_state_requests: hostRecoveryStateRequests,
@@ -1062,7 +1062,7 @@ describe('TfcClient', () => {
 
       expect(httpClientSpy.post)
           .toHaveBeenCalledWith(
-              tfcClient.batchSetHostsRecoveryStatesUrl, body, {params});
+              tfcClient.batchSetHostsRecoveryStatesUrl, body, {context});
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
     });
 
@@ -1080,7 +1080,7 @@ describe('TfcClient', () => {
 
       tfcClient.batchSetHostsRecoveryStates(hostRecoveryStateRequests);
 
-      const params = new AnalyticsParams('hosts', 'setRecoveryStates');
+      const context = AnalyticsContext.create('hosts', 'setRecoveryStates');
 
       const body = {
         host_recovery_state_requests: hostRecoveryStateRequests,
@@ -1088,7 +1088,7 @@ describe('TfcClient', () => {
 
       expect(httpClientSpy.post)
           .toHaveBeenCalledWith(
-              tfcClient.batchSetHostsRecoveryStatesUrl, body, {params});
+              tfcClient.batchSetHostsRecoveryStatesUrl, body, {context});
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
     });
   });
@@ -1116,7 +1116,7 @@ describe('TfcClient', () => {
 
       tfcClient.batchSetDevicesRecoveryStates(deviceRecoveryStateRequests);
 
-      const params = new AnalyticsParams('devices', 'setRecoveryStates');
+      const context = AnalyticsContext.create('devices', 'setRecoveryStates');
 
       const body = {
         device_recovery_state_requests: deviceRecoveryStateRequests,
@@ -1124,7 +1124,7 @@ describe('TfcClient', () => {
 
       expect(httpClientSpy.post)
           .toHaveBeenCalledWith(
-              tfcClient.batchSetDevicesRecoveryStatesUrl, body, {params});
+              tfcClient.batchSetDevicesRecoveryStatesUrl, body, {context});
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
     });
 
@@ -1144,7 +1144,7 @@ describe('TfcClient', () => {
 
       tfcClient.batchSetDevicesRecoveryStates(deviceRecoveryStateRequests);
 
-      const params = new AnalyticsParams('devices', 'setRecoveryStates');
+      const context = AnalyticsContext.create('devices', 'setRecoveryStates');
 
       const body = {
         device_recovery_state_requests: deviceRecoveryStateRequests,
@@ -1152,7 +1152,7 @@ describe('TfcClient', () => {
 
       expect(httpClientSpy.post)
           .toHaveBeenCalledWith(
-              tfcClient.batchSetDevicesRecoveryStatesUrl, body, {params});
+              tfcClient.batchSetDevicesRecoveryStatesUrl, body, {context});
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
     });
   });
@@ -1177,8 +1177,8 @@ describe('TfcClient', () => {
 
       tfcClient.batchCreateOrUpdateDevicesNotesWithPredefinedMessage(notesInfo);
 
-      const params =
-          new AnalyticsParams('device_note', 'batchCreateOrUpdateNotes');
+      const context =
+          AnalyticsContext.create('device_note', 'batchCreateOrUpdateNotes');
 
       notesInfo.user = appData.userNickname;
       const body = notesInfo;
@@ -1188,7 +1188,7 @@ describe('TfcClient', () => {
               `${
                   tfcClient
                       .tfcApiUrl}/devices/notes:batchUpdateNotesWithPredefinedMessage`,
-              body, {params});
+              body, {context});
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
     });
   });
@@ -1213,8 +1213,8 @@ describe('TfcClient', () => {
 
       tfcClient.batchCreateOrUpdateHostsNotesWithPredefinedMessage(notesInfo);
 
-      const params =
-          new AnalyticsParams('host_note', 'batchCreateOrUpdateNotes');
+      const context =
+          AnalyticsContext.create('host_note', 'batchCreateOrUpdateNotes');
 
       notesInfo.user = appData.userNickname;
       const body = notesInfo;
@@ -1224,7 +1224,7 @@ describe('TfcClient', () => {
               `${
                   tfcClient
                       .tfcApiUrl}/hosts/notes:batchUpdateNotesWithPredefinedMessage`,
-              body, {params});
+              body, {context});
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
     });
   });
@@ -1241,12 +1241,13 @@ describe('TfcClient', () => {
           [hostname], harnemssImage, appData.userNickname);
       tfcClient.batchUpdateHostMetadata(requestBody);
 
-      const params = new AnalyticsParams('hosts', 'batchUpdateHostMetadata');
+      const context =
+          AnalyticsContext.create('hosts', 'batchUpdateHostMetadata');
 
       expect(httpClientSpy.post)
           .toHaveBeenCalledWith(
               `${tfcClient.tfcApiUrl}/hosts/hostMetadata:batchUpdate`,
-              requestBody, {params});
+              requestBody, {context});
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
     });
 

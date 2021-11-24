@@ -19,7 +19,7 @@
  * exported along with Services that might be re-used.
  */
 
-export {AnalyticsInterceptor, AnalyticsParams, AnalyticsService} from './analytics_service';
+export {AnalyticsContext, AnalyticsInterceptor, AnalyticsService} from './analytics_service';
 export {APP_DATA, AppData} from './app_data';
 export {FeedbackService} from './feedback_service';
 export {Notifier} from './notifier';

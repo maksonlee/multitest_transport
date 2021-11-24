@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {HttpEvent, HttpHandler, HttpInterceptor, HttpParams, HttpRequest} from '@angular/common/http';
+import {HttpContext, HttpContextToken, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest} from '@angular/common/http';
 import {Inject, Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
 import {finalize, tap} from 'rxjs/operators';
@@ -93,12 +93,19 @@ export class AnalyticsService {
   }
 }
 
-/** HTTP parameters that hold additional Google Analytics metadata. */
-export class AnalyticsParams extends HttpParams {
-  constructor(readonly category: string, readonly action: string) {
-    super();
+/** Additional Google Analytics metadata to inject into requests. */
+export class AnalyticsContext {
+  constructor(readonly category: string, readonly action: string) {}
+
+  static create(category: string, action: string): HttpContext {
+    return new HttpContext().set(
+        ANALYTICS_CONTEXT, new AnalyticsContext(category, action));
   }
 }
+
+/** Token used to store analytics metadata. */
+export const ANALYTICS_CONTEXT =
+    new HttpContextToken<AnalyticsContext|undefined>(() => undefined);
 
 /** HTTP interceptor that sends request information to Google Analytics. */
 @Injectable()
@@ -108,27 +115,27 @@ export class AnalyticsInterceptor implements HttpInterceptor {
   /** Track HTTP requests, their duration, and errors received. */
   intercept<T>(req: HttpRequest<T>, next: HttpHandler):
       Observable<HttpEvent<T>> {
-    const params = req.params;
-    if (!(params instanceof AnalyticsParams)) {
+    const context = req.context.get(ANALYTICS_CONTEXT);
+    if (!context) {
       return next.handle(req);  // skip tracking
     }
 
     // record request start
     const start = Date.now();
-    this.analytics.trackEvent(params.category, params.action);
+    this.analytics.trackEvent(context.category, context.action);
 
     return next.handle(req).pipe(
         tap({
           // record error response
           error: error => {
             this.analytics.trackError(
-                `${params.category} ${params.action}: ${error.status}`);
+                `${context.category} ${context.action}: ${error.status}`);
           }
         }),
         finalize(() => {
           // record request duration
           this.analytics.trackTiming(
-              params.category, params.action, Date.now() - start);
+              context.category, context.action, Date.now() - start);
         }));
   }
 }

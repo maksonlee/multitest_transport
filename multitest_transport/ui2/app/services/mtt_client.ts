@@ -19,7 +19,7 @@ import {Injectable} from '@angular/core';
 import {EMPTY, from, Observable} from 'rxjs';
 import {map, switchMap} from 'rxjs/operators';
 
-import {AnalyticsParams} from './analytics_service';
+import {AnalyticsContext} from './analytics_service';
 import {AuthService, REDIRECT_URI} from './auth_service';
 import {readBlobAsText} from './file_service';
 import * as model from './mtt_models';
@@ -62,11 +62,11 @@ export class MttClient {
   /** Sends build channel authorization code to complete flow. */
   private sendBuildChannelAuthorizationCode(
       buildChannelId: string, code: string): Observable<void> {
-    const params = new AnalyticsParams('build_channels', 'authorize');
+    const context = AnalyticsContext.create('build_channels', 'authorize');
     return this.http.post<void>(
         `${MTT_API_URL}/build_channels/${
             encodeURIComponent(buildChannelId)}/auth`,
-        {'redirect_uri': REDIRECT_URI, 'code': code}, {params});
+        {'redirect_uri': REDIRECT_URI, 'code': code}, {context});
   }
 
   /** Fetches a build channel's authorization information to start flow. */
@@ -83,21 +83,21 @@ export class MttClient {
   authorizeBuildChannelWithServiceAccount(buildChannelId: string, key: Blob):
       Observable<void> {
     return from(readBlobAsText(key)).pipe(switchMap(data => {
-      const params = new AnalyticsParams('build_channels', 'authorize');
+      const context = AnalyticsContext.create('build_channels', 'authorize');
       return this.http.put<void>(
           `${MTT_API_URL}/build_channels/${
               encodeURIComponent(buildChannelId)}/auth`,
-          {value: data}, {params});
+          {value: data}, {context});
     }));
   }
 
   /** Revokes a build channel's authorization. */
   unauthorizeBuildChannel(buildChannelId: string): Observable<void> {
-    const params = new AnalyticsParams('build_channels', 'unauthorize');
+    const context = AnalyticsContext.create('build_channels', 'unauthorize');
     return this.http.delete<void>(
         `${MTT_API_URL}/build_channels/${
             encodeURIComponent(buildChannelId)}/auth`,
-        {params});
+        {context});
   }
 
   lookupBuildItem(url: string): Observable<model.BuildItem> {
@@ -118,11 +118,12 @@ export class MttClient {
   }
 
   deleteBuildItem(id: string, path: string) {
-    const params = new AnalyticsParams('build_channels', 'delete_build_item')
-                       .set('path', path);
+    const context =
+        AnalyticsContext.create('build_channels', 'delete_build_item');
+    const params = new HttpParams().set('path', path);
     return this.http.delete(
         `${MTT_API_URL}/build_channels/${encodeURIComponent(id)}/build_items`,
-        {params});
+        {context, params});
   }
 
   getBuildChannelProviders(): Observable<model.BuildChannelProviderList> {
@@ -136,9 +137,9 @@ export class MttClient {
   }
 
   createBuildChannel(buildChannelConfig: model.BuildChannelConfig) {
-    const params = new AnalyticsParams('build_channels', 'create');
+    const context = AnalyticsContext.create('build_channels', 'create');
     return this.http.post(
-        `${MTT_API_URL}/build_channels`, buildChannelConfig, {params});
+        `${MTT_API_URL}/build_channels`, buildChannelConfig, {context});
   }
 
   getBuildChannel(id: string) {
@@ -153,16 +154,16 @@ export class MttClient {
 
   updateBuildChannel(
       buildChannelId: string, buildChannelConfig: model.BuildChannelConfig) {
-    const params = new AnalyticsParams('build_channels', 'update');
+    const context = AnalyticsContext.create('build_channels', 'update');
     return this.http.put(
         `${MTT_API_URL}/build_channels/${encodeURIComponent(buildChannelId)}`,
-        buildChannelConfig, {params});
+        buildChannelConfig, {context});
   }
 
   deleteBuildChannel(id: string) {
-    const params = new AnalyticsParams('build_channels', 'delete');
+    const context = AnalyticsContext.create('build_channels', 'delete');
     return this.http.delete(
-        `${MTT_API_URL}/build_channels/${encodeURIComponent(id)}`, {params});
+        `${MTT_API_URL}/build_channels/${encodeURIComponent(id)}`, {context});
   }
 
   getConfigSetBuildChannels(): Observable<model.BuildChannelList> {
@@ -183,19 +184,19 @@ export class MttClient {
   }
 
   importConfigSet(url = '', content = ''): Observable<model.ConfigSetInfo> {
-    const params = new AnalyticsParams('config_sets', 'import');
+    const context = AnalyticsContext.create('config_sets', 'import');
     if (!url) {
       url = 'local';
     }
     return this.http.post<model.ConfigSetInfo>(
         `${MTT_API_URL}/config_sets/import/${encodeURIComponent(url)}`,
-        {'content': content}, {params});
+        {'content': content}, {context});
   }
 
   deleteConfigSet(url: string) {
-    const params = new AnalyticsParams('config_sets', 'delete');
+    const context = AnalyticsContext.create('config_sets', 'delete');
     return this.http.delete(
-        `${MTT_API_URL}/config_sets/${encodeURIComponent(url)}`, {params});
+        `${MTT_API_URL}/config_sets/${encodeURIComponent(url)}`, {context});
   }
 
   getDeviceAction(id: string): Observable<model.DeviceAction> {
@@ -209,29 +210,29 @@ export class MttClient {
   }
 
   createDeviceAction(deviceAction: model.DeviceAction) {
-    const params = new AnalyticsParams('device_actions', 'create');
+    const context = AnalyticsContext.create('device_actions', 'create');
     return this.http.post(
-        `${MTT_API_URL}/device_actions`, deviceAction, {params});
+        `${MTT_API_URL}/device_actions`, deviceAction, {context});
   }
 
   updateDeviceAction(id: string, deviceAction: model.DeviceAction) {
-    const params = new AnalyticsParams('device_actions', 'update');
+    const context = AnalyticsContext.create('device_actions', 'update');
     return this.http.put(
         `${MTT_API_URL}/device_actions/${encodeURIComponent(id)}`, deviceAction,
-        {params});
+        {context});
   }
 
   deleteDeviceAction(id: string) {
-    const params = new AnalyticsParams('device_actions', 'delete');
+    const context = AnalyticsContext.create('device_actions', 'delete');
     return this.http.delete(
-        `${MTT_API_URL}/device_actions/${encodeURIComponent(id)}`, {params});
+        `${MTT_API_URL}/device_actions/${encodeURIComponent(id)}`, {context});
   }
 
   createNewTestRunRequest(newtestRun: model.NewTestRunRequest):
       Observable<model.TestRun> {
-    const params = new AnalyticsParams('test_runs', 'create');
+    const context = AnalyticsContext.create('test_runs', 'create');
     return this.http.post<model.TestRun>(
-        `${MTT_API_URL}/test_runs`, newtestRun, {params});
+        `${MTT_API_URL}/test_runs`, newtestRun, {context});
   }
 
   getNodeConfig(): Observable<model.NodeConfig> {
@@ -239,20 +240,20 @@ export class MttClient {
   }
 
   updateNodeConfig(nodeConfig: model.NodeConfig) {
-    const params = new AnalyticsParams('node_config', 'update');
-    return this.http.put(`${MTT_API_URL}/node_config`, nodeConfig, {params});
+    const context = AnalyticsContext.create('node_config', 'update');
+    return this.http.put(`${MTT_API_URL}/node_config`, nodeConfig, {context});
   }
 
   exportNodeConfig(): Observable<model.SimpleMessage> {
-    const params = new AnalyticsParams('node_config', 'export');
+    const context = AnalyticsContext.create('node_config', 'export');
     return this.http.get<model.SimpleMessage>(
-        `${MTT_API_URL}/node_config/export`, {params});
+        `${MTT_API_URL}/node_config/export`, {context});
   }
 
   importNodeConfig(value: string): Observable<void> {
-    const params = new AnalyticsParams('node_config', 'import');
+    const context = AnalyticsContext.create('node_config', 'import');
     return this.http.post<void>(
-        `${MTT_API_URL}/node_config/import`, {'value': value}, {params});
+        `${MTT_API_URL}/node_config/import`, {'value': value}, {context});
   }
 
   getPrivateNodeConfig(): Observable<model.PrivateNodeConfig> {
@@ -261,31 +262,32 @@ export class MttClient {
   }
 
   updatePrivateNodeConfig(privateNodeConfig: model.PrivateNodeConfig) {
-    const params = new AnalyticsParams('private_node_config', 'update');
+    const context = AnalyticsContext.create('private_node_config', 'update');
     return this.http.put(
-        `${MTT_API_URL}/private_node_config`, privateNodeConfig, {params});
+        `${MTT_API_URL}/private_node_config`, privateNodeConfig, {context});
   }
 
   setDefaultServiceAccount(key: Blob): Observable<void> {
     return from(readBlobAsText(key)).pipe(switchMap(data => {
-      const params = new AnalyticsParams(
+      const context = AnalyticsContext.create(
           'private_node_config', 'set_default_service_account');
       return this.http.put<void>(
           `${MTT_API_URL}/private_node_config/default_service_account`,
-          {value: data}, {params});
+          {value: data}, {context});
     }));
   }
 
   removeDefaultServiceAccount() {
-    const params = new AnalyticsParams(
+    const context = AnalyticsContext.create(
         'private_node_config', 'remove_default_service_account');
     return this.http.delete(
-        `${MTT_API_URL}/private_node_config/default_service_account`, {params});
+        `${MTT_API_URL}/private_node_config/default_service_account`,
+        {context});
   }
 
   createTest(test: model.Test) {
-    const params = new AnalyticsParams('tests', 'create');
-    return this.http.post(`${MTT_API_URL}/tests`, test, {params});
+    const context = AnalyticsContext.create('tests', 'create');
+    return this.http.post(`${MTT_API_URL}/tests`, test, {context});
   }
 
   getTest(id: string): Observable<model.Test> {
@@ -298,28 +300,28 @@ export class MttClient {
   }
 
   updateTest(testId: string, test: model.Test) {
-    const params = new AnalyticsParams('tests', 'update');
+    const context = AnalyticsContext.create('tests', 'update');
     return this.http.put(
-        `${MTT_API_URL}/tests/${encodeURIComponent(testId)}`, test, {params});
+        `${MTT_API_URL}/tests/${encodeURIComponent(testId)}`, test, {context});
   }
 
   deleteTest(id: string) {
-    const params = new AnalyticsParams('tests', 'delete');
+    const context = AnalyticsContext.create('tests', 'delete');
     return this.http.delete(
-        `${MTT_API_URL}/tests/${encodeURIComponent(id)}`, {params});
+        `${MTT_API_URL}/tests/${encodeURIComponent(id)}`, {context});
   }
 
   createTestPlan(testPlan: model.TestPlan) {
-    const params = new AnalyticsParams('test_plans', 'create');
+    const context = AnalyticsContext.create('test_plans', 'create');
     return this.http.post<model.TestPlan>(
-        `${MTT_API_URL}/test_plans`, testPlan, {params});
+        `${MTT_API_URL}/test_plans`, testPlan, {context});
   }
 
   updateTestPlan(testPlanId: string, testPlan: model.TestPlan) {
-    const params = new AnalyticsParams('test_plans', 'update');
+    const context = AnalyticsContext.create('test_plans', 'update');
     return this.http.put<model.TestPlan>(
         `${MTT_API_URL}/test_plans/${encodeURIComponent(testPlanId)}`, testPlan,
-        {params});
+        {context});
   }
 
   getTestPlan(id: string): Observable<model.TestPlan> {
@@ -332,16 +334,16 @@ export class MttClient {
   }
 
   runTestPlan(id: string) {
-    const params = new AnalyticsParams('test_plans', 'run');
+    const context = AnalyticsContext.create('test_plans', 'run');
     return this.http.post(
         `${MTT_API_URL}/test_plans/${encodeURIComponent(id)}/run`, null,
-        {params});
+        {context});
   }
 
   deleteTestPlan(id: string) {
-    const params = new AnalyticsParams('test_plans', 'delete');
+    const context = AnalyticsContext.create('test_plans', 'delete');
     return this.http.delete(
-        `${MTT_API_URL}/test_plans/${encodeURIComponent(id)}`, {params});
+        `${MTT_API_URL}/test_plans/${encodeURIComponent(id)}`, {context});
   }
 
   getTestRun(id: string): Observable<model.TestRun> {
@@ -350,10 +352,10 @@ export class MttClient {
   }
 
   cancelTestRun(id: string) {
-    const params = new AnalyticsParams('test_runs', 'cancel');
+    const context = AnalyticsContext.create('test_runs', 'cancel');
     return this.http.post(
         `${MTT_API_URL}/test_runs/${encodeURIComponent(id)}/cancel`, null,
-        {params});
+        {context});
   }
 
   deleteTestRuns(ids: string[]) {
@@ -405,9 +407,9 @@ export class MttClient {
   }
 
   updateFileCleanerSettings(settings: model.FileCleanerSettings) {
-    const params = new AnalyticsParams('file_cleaner', 'update');
+    const context = AnalyticsContext.create('file_cleaner', 'update');
     return this.http.put(
-        `${MTT_API_URL}/file_cleaner/settings`, settings, {params});
+        `${MTT_API_URL}/file_cleaner/settings`, settings, {context});
   }
 }
 
@@ -446,25 +448,25 @@ export class TestRunActionClient {
 
   /** Creates a new test run action. */
   create(data: model.TestRunAction): Observable<model.TestRunAction> {
-    const params = new AnalyticsParams('test_run_actions', 'create');
+    const context = AnalyticsContext.create('test_run_actions', 'create');
     return this.http.post<model.TestRunAction>(
-        TestRunActionClient.PATH, data, {params});
+        TestRunActionClient.PATH, data, {context});
   }
 
   /** Updates an existing test run action. */
   update(id: string, data: model.TestRunAction):
       Observable<model.TestRunAction> {
-    const params = new AnalyticsParams('test_run_actions', 'update');
+    const context = AnalyticsContext.create('test_run_actions', 'update');
     return this.http.put<model.TestRunAction>(
         `${TestRunActionClient.PATH}/${encodeURIComponent(id)}`, data,
-        {params});
+        {context});
   }
 
   /** Deletes a test run action. */
   delete(id: string): Observable<void> {
-    const params = new AnalyticsParams('test_run_actions', 'delete');
+    const context = AnalyticsContext.create('test_run_actions', 'delete');
     return this.http.delete<void>(
-        `${TestRunActionClient.PATH}/${encodeURIComponent(id)}`, {params});
+        `${TestRunActionClient.PATH}/${encodeURIComponent(id)}`, {context});
   }
 
   /** Authorizes a test run action. */
@@ -478,18 +480,19 @@ export class TestRunActionClient {
   /** Authorizes a test run action with a service account JSON key. */
   authorizeWithServiceAccount(id: string, key: Blob): Observable<void> {
     return from(readBlobAsText(key)).pipe(switchMap(data => {
-      const params = new AnalyticsParams('test_run_actions', 'authorize');
+      const context = AnalyticsContext.create('test_run_actions', 'authorize');
       return this.http.put<void>(
           `${TestRunActionClient.PATH}/${encodeURIComponent(id)}/auth`,
-          {value: data}, {params});
+          {value: data}, {context});
     }));
   }
 
   /** Revokes a test run action's authorization. */
   unauthorize(id: string): Observable<void> {
-    const params = new AnalyticsParams('test_run_actions', 'unauthorize');
+    const context = AnalyticsContext.create('test_run_actions', 'unauthorize');
     return this.http.delete<void>(
-        `${TestRunActionClient.PATH}/${encodeURIComponent(id)}/auth`, {params});
+        `${TestRunActionClient.PATH}/${encodeURIComponent(id)}/auth`,
+        {context});
   }
 
   // Fetches authorization information to start authorization flow.
@@ -502,10 +505,10 @@ export class TestRunActionClient {
 
   // Sends authorization code to complete authorization flow.
   private sendAuthorizationCode(id: string, code: string): Observable<void> {
-    const params = new AnalyticsParams('test_run_actions', 'authorize');
+    const context = AnalyticsContext.create('test_run_actions', 'authorize');
     return this.http.post<void>(
         `${TestRunActionClient.PATH}/${encodeURIComponent(id)}/auth`,
-        {'redirect_uri': REDIRECT_URI, 'code': code}, {params});
+        {'redirect_uri': REDIRECT_URI, 'code': code}, {context});
   }
 }
 

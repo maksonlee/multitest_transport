@@ -19,7 +19,7 @@ import {Inject, Injectable} from '@angular/core';
 import {merge, Observable, of as observableOf} from 'rxjs';
 import {map} from 'rxjs/operators';
 
-import {AnalyticsParams} from './analytics_service';
+import {AnalyticsContext} from './analytics_service';
 import {APP_DATA, AppData} from './app_data';
 import * as mttLabModels from './mtt_lab_models';
 import * as tfcModels from './tfc_models';
@@ -429,31 +429,30 @@ export class TfcClient {
   createPredefinedMessage(predefinedMessageInfo:
                               mttLabModels.CreatePredefinedMessageInfo):
       Observable<tfcModels.PredefinedMessage> {
-    const params = new AnalyticsParams('predefined_message', 'create');
+    const context = AnalyticsContext.create('predefined_message', 'create');
     const body = {
       'lab_name': predefinedMessageInfo.labName,
       'type': predefinedMessageInfo.predefinedMessageType,
       'content': predefinedMessageInfo.content,
     };
     return this.http.post<tfcModels.PredefinedMessage>(
-        `${this.tfcApiUrl}/predefined_messages`, body, {params});
+        `${this.tfcApiUrl}/predefined_messages`, body, {context});
   }
 
   updatePredefinedMessage(id: number, content: string):
       Observable<tfcModels.PredefinedMessage> {
-    const params = new AnalyticsParams('predefined_message', 'update');
+    const context = AnalyticsContext.create('predefined_message', 'update');
     const body = {
       'content': content,
     };
-
     return this.http.patch<tfcModels.PredefinedMessage>(
-        `${this.tfcApiUrl}/predefined_messages/${id}`, body, {params});
+        `${this.tfcApiUrl}/predefined_messages/${id}`, body, {context});
   }
 
   deletePredefinedMessage(id: number): Observable<tfcModels.PredefinedMessage> {
-    const params = new AnalyticsParams('predefined_message', 'delete');
+    const context = AnalyticsContext.create('predefined_message', 'delete');
     return this.http.delete<tfcModels.PredefinedMessage>(
-        `${this.tfcApiUrl}/predefined_messages/${id}`, {params});
+        `${this.tfcApiUrl}/predefined_messages/${id}`, {context});
   }
 
   createOrUpdateNote(noteInfo: mttLabModels.CreateOrUpdateNoteInfo):
@@ -472,37 +471,38 @@ export class TfcClient {
     };
 
     if (noteInfo.noteType === mttLabModels.NoteType.HOST) {
-      const params = new AnalyticsParams('host_note', action);
+      const context = AnalyticsContext.create('host_note', action);
       return this.http.post<string>(
-          `${this.tfcApiUrl}/hosts/${noteInfo.hostname}/notes`, body, {params});
+          `${this.tfcApiUrl}/hosts/${noteInfo.hostname}/notes`, body, {context});
     } else {
-      const params = new AnalyticsParams('device_note', action);
+      const context = AnalyticsContext.create('device_note', action);
       body.device_serial = noteInfo.deviceSerial || '';
       return this.http.post<string>(
           `${this.tfcApiUrl}/devices/${noteInfo.deviceSerial}/notes`, body,
-          {params});
+          {context});
     }
   }
 
   batchCreateOrUpdateDevicesNotesWithPredefinedMessage(
       notesInfo: mttLabModels.BatchCreateOrUpdateNotesInfo):
       Observable<tfcModels.NoteList> {
-    const params =
-        new AnalyticsParams('device_note', 'batchCreateOrUpdateNotes');
+    const context =
+        AnalyticsContext.create('device_note', 'batchCreateOrUpdateNotes');
     notesInfo.user = this.appData.userNickname || '';
     return this.http.post<tfcModels.NoteList>(
         `${this.tfcApiUrl}/devices/notes:batchUpdateNotesWithPredefinedMessage`,
-        notesInfo, {params});
+        notesInfo, {context});
   }
 
   batchCreateOrUpdateHostsNotesWithPredefinedMessage(
       notesInfo: mttLabModels.BatchCreateOrUpdateNotesInfo):
       Observable<tfcModels.NoteList> {
-    const params = new AnalyticsParams('host_note', 'batchCreateOrUpdateNotes');
+    const context =
+        AnalyticsContext.create('host_note', 'batchCreateOrUpdateNotes');
     notesInfo.user = this.appData.userNickname || '';
     return this.http.post<tfcModels.NoteList>(
         `${this.tfcApiUrl}/hosts/notes:batchUpdateNotesWithPredefinedMessage`,
-        notesInfo, {params});
+        notesInfo, {context});
   }
 
   batchGetDeviceNotes(deviceSerial: string, noteIds: number[]):
@@ -555,29 +555,29 @@ export class TfcClient {
   batchSetDevicesRecoveryStates(deviceRecoveryStateRequests:
                                     tfcModels.DeviceRecoveryStateRequest[]):
       Observable<void> {
-    const params = new AnalyticsParams('devices', 'setRecoveryStates');
+    const context = AnalyticsContext.create('devices', 'setRecoveryStates');
     const body = {
       device_recovery_state_requests: deviceRecoveryStateRequests,
     } as tfcModels.DeviceRecoveryStateRequests;
     return this.http.post<void>(
-        this.batchSetDevicesRecoveryStatesUrl, body, {params});
+        this.batchSetDevicesRecoveryStatesUrl, body, {context});
   }
 
   batchSetHostsRecoveryStates(hostRecoveryStateRequests:
                                   tfcModels.HostRecoveryStateRequest[]):
       Observable<void> {
-    const params = new AnalyticsParams('hosts', 'setRecoveryStates');
+    const context = AnalyticsContext.create('hosts', 'setRecoveryStates');
     const body = {
       host_recovery_state_requests: hostRecoveryStateRequests,
     } as tfcModels.HostRecoveryStateRequests;
     return this.http.post<void>(
-        this.batchSetHostsRecoveryStatesUrl, body, {params});
+        this.batchSetHostsRecoveryStatesUrl, body, {context});
   }
 
   batchUpdateHostMetadata(
       requestBody: tfcModels.BatchUpdateHostMetadataRequest,
       spliceNumber = 50): Observable<void> {
-    const params = new AnalyticsParams('hosts', 'batchUpdateHostMetadata');
+    const context = AnalyticsContext.create('hosts', 'batchUpdateHostMetadata');
     if (requestBody.user === undefined) {
       requestBody.user = this.appData.userNickname;
     }
@@ -588,26 +588,26 @@ export class TfcClient {
       requestBodySliced.hostnames = hostnames.splice(0, spliceNumber);
       batchUpdates.push(this.http.post<void>(
           `${this.tfcApiUrl}/hosts/hostMetadata:batchUpdate`, requestBodySliced,
-          {params}));
+          {context}));
     }
     return merge(...batchUpdates);
   }
 
   /** Removes a device from host. */
   removeDevice(deviceSerial: string, hostname: string): Observable<void> {
-    const params = new AnalyticsParams('device', 'remove');
+    const context = AnalyticsContext.create('device', 'remove');
     const body = {
       'hostname': hostname,
     };
     return this.http.post<void>(
-        `${this.tfcApiUrl}/devices/${deviceSerial}/remove`, body, {params});
+        `${this.tfcApiUrl}/devices/${deviceSerial}/remove`, body, {context});
   }
 
   /** Removes the host. */
   removeHost(hostname: string): Observable<void> {
-    const params = new AnalyticsParams('host', 'remove');
+    const context = AnalyticsContext.create('host', 'remove');
     return this.http.post<void>(
-        `${this.tfcApiUrl}/hosts/${hostname}/remove`, null, {params});
+        `${this.tfcApiUrl}/hosts/${hostname}/remove`, null, {context});
   }
 
   /** Gets a list of filter hint by FilterHintType. */

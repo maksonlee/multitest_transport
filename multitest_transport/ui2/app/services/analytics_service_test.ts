@@ -18,7 +18,7 @@ import {HTTP_INTERCEPTORS, HttpClient} from '@angular/common/http';
 import {HttpClientTestingModule, HttpTestingController} from '@angular/common/http/testing';
 import {TestBed} from '@angular/core/testing';
 
-import {AnalyticsInterceptor, AnalyticsParams, AnalyticsService} from './analytics_service';
+import {AnalyticsContext, AnalyticsInterceptor, AnalyticsService} from './analytics_service';
 import {AppData} from './app_data';
 
 // Google Analytics global site tag
@@ -162,8 +162,8 @@ describe('AnalyticsInterceptor', () => {
 
     it('records event and timing', () => {
       // HTTP request with analytics metadata
-      const params = new AnalyticsParams(CATEGORY, ACTION);
-      http.get<string>('url', {params}).subscribe(data => {
+      const context = AnalyticsContext.create(CATEGORY, ACTION);
+      http.get<string>('url', {context}).subscribe(data => {
         expect(data).toEqual('response');
       });
 
@@ -179,8 +179,8 @@ describe('AnalyticsInterceptor', () => {
 
     it('records error status code', () => {
       // HTTP request with analytics metadata
-      const params = new AnalyticsParams(CATEGORY, ACTION);
-      http.get<string>('url', {params})
+      const context = AnalyticsContext.create(CATEGORY, ACTION);
+      http.get<string>('url', {context})
           .subscribe(
               () => {
                 fail('expected error');
