@@ -10,10 +10,7 @@ pytype_strict_binary(
     srcs_version = "PY3",
     test_lib = True,
     visibility = ["//visibility:private"],
-    deps = [
-        ":cli_lib",
-        "//net/proto2/python/public:use_pure_python",  # fixdeps: keep go/proto_python_default
-    ],
+    deps = [":cli_lib"],
 )
 
 py_library(
@@ -117,7 +114,6 @@ pytype_strict_binary(
     test_lib = True,
     deps = [
         ":lab_cli_lib",
-        "//net/proto2/python/public:use_pure_python",  # fixdeps: keep go/proto_python_default
         third_party("dateutil"),
     ],
 )
@@ -214,7 +210,6 @@ py_test(
         ":common",
         ":google_auth_util_lib",
         ":unittest_util_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
@@ -234,7 +229,6 @@ py_test(
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
         third_party("mock"),
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
@@ -249,7 +243,6 @@ py_test(
         ":ssh_util_lib",
         third_party("absl/testing:absltest"),
         third_party("mock"),
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
@@ -263,7 +256,6 @@ py_test(
         ":gcs_file_util_lib",
         third_party("absl/testing:absltest"),
         third_party("mock"),
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
     ],
 )
@@ -293,7 +285,6 @@ py_test(
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
         third_party("mock"),
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
@@ -308,7 +299,6 @@ py_test(
         third_party("apiclient"),
         third_party("absl/testing:absltest"),
         third_party("mock"),
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
@@ -321,7 +311,6 @@ py_test(
     deps = [
         ":lab_cli_lib",
         ":unittest_util_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
