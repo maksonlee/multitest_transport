@@ -88,7 +88,7 @@
           </ng-container>
 
           <ng-container matColumnDef="output_files">
-            <mat-header-cell *matHeaderCellDef fxFlex="100px">
+            <mat-header-cell *matHeaderCellDef fxFlex="160px">
               <!-- Output files column -->
             </mat-header-cell>
           </ng-container>
@@ -137,7 +137,8 @@
 
                 <div fxFlex class="id-text inline">
                   <span>
-                    Job {{commandNode.value.id}}: {{commandNode.value.name || commandNode.value.command_line}}
+                    Job {{commandNode.value.id}}: {{commandNode.value.name ||
+                                                    commandNode.value.command_line}}
                   </span>
                 </div>
 
@@ -186,7 +187,7 @@
                     +{{getDuration(commandNode.value)}}
                 </div>
 
-                <div fxFlex="100px">
+                <div fxFlex="160px">
                     <!-- Output files column -->
                 </div>
               </div><!-- End of command row -->
@@ -262,8 +263,15 @@
                           +{{getDuration(attempt.value)}}
                       </div>
 
-                      <div fxFlex="85px"> <!-- Reduced to account for right margin and padding -->
-                          <!-- Output files column -->
+                      <div fxFlex="145px"> <!-- Reduced to account for right margin and padding -->
+                        <a [href]="getOutputFilesUrl(attempt.value)"
+                           mat-button
+                           color="accent"
+                           target='_blank'
+                           *ngIf="getOutputFilesUrl(attempt.value)">
+                          {{isFinished(attempt.value) ? 'View Output Files' :
+                                                        'View Working Directory'}}
+                        </a>
                       </div>
                     </div>
 

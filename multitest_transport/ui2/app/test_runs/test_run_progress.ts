@@ -19,9 +19,10 @@ import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core'
 import * as moment from 'moment';
 import {finalize} from 'rxjs/operators';
 
+import {FileService} from '../services/file_service';
 import {EventLogEntry, EventLogLevel, TestRun} from '../services/mtt_models';
 import {TfcClient} from '../services/tfc_client';
-import {Command, CommandAttempt, CommandState, CommandStateStats, Request} from '../services/tfc_models';
+import {Command, CommandAttempt, CommandState, CommandStateStats, isFinalCommandState, Request} from '../services/tfc_models';
 import {assertRequiredInput, millisToDuration} from '../shared/util';
 
 /** Progress entity which represents a log entry. */
@@ -97,6 +98,7 @@ export class TestRunProgress implements OnInit, OnChanges {
   ];
 
   constructor(
+      private readonly fs: FileService,
       private readonly tfcClient: TfcClient,
   ) {}
 
@@ -336,6 +338,16 @@ export class TestRunProgress implements OnInit, OnChanges {
       return [];
     }
     return s.trim().split('\n');
+  }
+
+  isFinished(attempt: CommandAttempt): boolean {
+    return isFinalCommandState(attempt.state);
+  }
+
+  /** Generate the output files URL for an attempt. */
+  getOutputFilesUrl(attempt: CommandAttempt): string {
+    const url = this.fs.getTestRunFileUrl(this.testRun, attempt);
+    return this.fs.getFileBrowseUrl(url);
   }
 
   /**
