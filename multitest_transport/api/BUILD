@@ -69,7 +69,6 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":build_channel_api_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster/util:google_import_fixer",
         third_party("google/oauth2:credentials"),
         third_party("mock"),
@@ -101,7 +100,6 @@ py_test(
         ":api_test_util_lib",
         ":build_channel_provider_api_lib",
         third_party("mock"),
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
@@ -131,7 +129,6 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":config_set_api_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
@@ -161,7 +158,6 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":device_action_api_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
@@ -189,7 +185,6 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":node_config_api_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
@@ -229,7 +224,6 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":private_node_config_api_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
@@ -289,7 +283,6 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":test_api_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
@@ -324,7 +317,6 @@ py_test(
         ":api_test_util_lib",
         ":test_plan_api_lib",
         third_party("mock"),
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
@@ -388,7 +380,6 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":test_run_action_api_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster/util:google_import_fixer",
         third_party("google/oauth2:credentials"),
         third_party("mock"),
@@ -426,7 +417,6 @@ py_test(
         ":api_test_util_lib",
         ":test_run_api_lib",
         third_party("mock"),
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 

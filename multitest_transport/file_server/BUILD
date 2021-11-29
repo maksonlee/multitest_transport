@@ -75,6 +75,5 @@ py_test(
         third_party("absl/testing:absltest"),
         third_party("mock"),
         third_party("webtest"),
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )

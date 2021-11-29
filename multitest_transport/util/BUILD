@@ -30,7 +30,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":analytics_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         third_party("absl/testing:absltest"),
         third_party("mock"),
     ],
@@ -62,7 +61,6 @@ py_test(
         third_party("absl/testing:absltest"),
         ":analytics_uploader_lib",
         ":env_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "//multitest_transport/models:ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("mock"),
@@ -111,7 +109,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":oauth2_util_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("mock"),
         third_party("google/oauth2:service_account"),
@@ -175,7 +172,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":tfc_client_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         "@tradefed_cluster//tradefed_cluster/plugins:base_lib",
         third_party("absl/testing:absltest"),
@@ -230,7 +226,6 @@ py_test(
     deps = [
         ":env_lib",
         ":file_util_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
         third_party("mock"),

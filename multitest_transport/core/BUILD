@@ -59,7 +59,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":cron_kicker_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("absl/testing:absltest"),
         third_party("mock"),
@@ -87,7 +86,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":ndb_upgrader_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "//third_party/py/protorpc:protorpc_all",
         "@tradefed_cluster//tradefed_cluster/util:ndb_test_lib",
         third_party("absl/testing:absltest"),
@@ -137,7 +135,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":service_checker_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster/util:ndb_test_lib",
         third_party("mock"),
     ],

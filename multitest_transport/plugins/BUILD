@@ -31,7 +31,6 @@ py_test(
         ":android_lib",
         third_party("absl/testing:absltest"),
         third_party("mock"),
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
@@ -57,7 +56,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":file_upload_hook_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "//multitest_transport/models",
         third_party("absl/testing:absltest"),
         third_party("mock"),
@@ -91,7 +89,6 @@ py_test(
         third_party("absl/testing:absltest"),
         third_party("apiclient"),
         third_party("mock"),
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
@@ -123,7 +120,6 @@ py_test(
         third_party("absl/testing:absltest"),
         third_party("apiclient"),
         third_party("mock"),
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
     ],
 )
 
@@ -204,7 +200,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":web_hook_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "//multitest_transport/models",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("absl/testing:absltest"),

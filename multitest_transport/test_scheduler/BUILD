@@ -31,7 +31,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":download_util_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("mock"),
@@ -73,7 +72,6 @@ py_test(
     deps = [
         ":download_util_lib",
         ":test_kicker_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "//multitest_transport/models:build_lib",
         "//multitest_transport/models:messages_lib",
         "//multitest_transport/models:ndb_models_lib",
@@ -125,7 +123,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":test_plan_kicker_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("mock"),
     ],
@@ -186,7 +183,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":test_scheduler_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "//third_party/py/absl/testing:absltest",
         "//multitest_transport/models:messages_lib",
         "//multitest_transport/models:ndb_models_lib",
@@ -225,7 +221,6 @@ py_test(
     deps = [
         ":test_result_handler_lib",
         ":tfc_event_handler_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("mock"),
     ],
@@ -252,7 +247,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":test_run_manager_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("mock"),
     ],

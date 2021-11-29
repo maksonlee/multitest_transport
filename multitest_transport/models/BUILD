@@ -28,7 +28,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":build_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("mock"),
     ],
@@ -58,7 +57,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":config_encoder_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
     ],
 )
@@ -92,7 +90,6 @@ py_test(
         ":build_lib",
         ":config_encoder_lib",
         ":config_set_helper_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "//multitest_transport/test_scheduler",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("mock"),
@@ -118,7 +115,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":event_log_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
     ],
 )
@@ -155,7 +151,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":messages_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
     ],
 )
@@ -241,7 +236,6 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":test_run_hook_lib",
-        "//net/proto2/python/public:use_pure_python",  # Automatically added go/proto_python_default
         "@tradefed_cluster//tradefed_cluster:command_task_api_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("mock"),
