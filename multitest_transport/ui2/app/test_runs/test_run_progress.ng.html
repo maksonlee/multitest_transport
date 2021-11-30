@@ -15,30 +15,30 @@
 -->
 <!-- TODO: add download progress -->
 
-<ng-container *ngIf="showModUI">
-  <ng-container [ngSwitch]="entity.progressType" *ngFor="let entity of entities">
-    <!-- log entry container -->
-    <div class="entity log elevated-card mat-elevation-z2" *ngSwitchCase="'log'">
-        <div>
-          <mat-icon class="progress-status warning" *ngIf="entity.level === EventLogLevel.WARNING">
-            warning
-          </mat-icon>
-          <mat-icon class="progress-status error" *ngIf="entity.level === EventLogLevel.ERROR">
-            error
-          </mat-icon>
-          <mat-icon class="progress-status info" *ngIf="entity.level === EventLogLevel.INFO">
-            done
-          </mat-icon>
-        </div>
-        <div>
-          <span class="log-message" [innerHTML]="entity.message | linkify"></span><br>
-          <span class="timestamp">Started: {{entity.timestamp | date:'MM/dd/yyyy h:mm a'}}</span>
-        </div>
-    </div>
+<ng-container [ngSwitch]="entity.progressType" *ngFor="let entity of entities">
+  <!-- log entry container -->
+  <div class="entity log elevated-card mat-elevation-z2" *ngSwitchCase="'log'">
+      <div>
+        <mat-icon class="progress-status warning" *ngIf="entity.level === EventLogLevel.WARNING">
+          warning
+        </mat-icon>
+        <mat-icon class="progress-status error" *ngIf="entity.level === EventLogLevel.ERROR">
+          error
+        </mat-icon>
+        <mat-icon class="progress-status info" *ngIf="entity.level === EventLogLevel.INFO">
+          done
+        </mat-icon>
+      </div>
+      <div>
+        <span class="log-message" [innerHTML]="entity.message | linkify"></span><br>
+        <span class="timestamp">Started: {{entity.timestamp | date:'MM/dd/yyyy h:mm a'}}</span>
+      </div>
+  </div>
 
-    <!-- command state stats container -->
-    <div class="entity command-state-stats sectioned-card mat-elevation-z2"
-         *ngSwitchCase="'command-state-stats'">
+  <!-- command state stats container -->
+  <div *ngSwitchCase="'command-state-stats'">
+    <div *ngIf="entity.state_stats.length"
+         class="entity command-state-stats sectioned-card mat-elevation-z2">
       <div class="card-header">
 
         <div>
@@ -100,7 +100,7 @@
           <div class="state-stat-row row-divider" *ngIf="statNode.value.count > 0">
             <div fxFlex="40px">
               <button mat-icon-button aria-label="Toggle" (click)="expandStatNode(statNode.key)"
-                      class="expand-button">
+                      class="expand-button stat-expand-button">
                 <mat-icon class="mat-icon-rtl-mirror">
                   {{statNode.value.expanded ? 'expand_more' : 'chevron_right'}}
                 </mat-icon>
@@ -119,7 +119,7 @@
           <!-- Commands -->
           <ng-container *ngIf="statNode.value.expanded">
             <div *ngFor="let commandNode of statNode.value.commandNodeMap | keyvalue: originalOrder"
-                 class="row-divider">
+                 class="command-row row-divider">
               <div>
                 <div fxFlex="20px">
                   <!-- Command row indent column -->
@@ -195,7 +195,7 @@
               <div *ngIf="commandNode.value.expanded" class="display-flex" fxLayout="column">
                 <!-- Attempt row -->
                 <div *ngFor="let attempt of commandNode.value.attemptNodeMap | keyvalue: originalOrder"
-                              class="display-flex">
+                              class="attempt-row display-flex">
                   <div fxFlex="60px">
                     <!-- Attempt row indent column -->
                   </div>
@@ -312,42 +312,8 @@
               </button>
             </div>
           </ng-container><!-- End of stat node row -->
-
-        </div>
-
-        <div class="empty" *ngIf="!entity.state_stats.length">
-          No jobs found.
         </div>
       </div>
     </div>
-  </ng-container>
-</ng-container>
-
-<ng-container [ngSwitch]="entity.progressType" *ngFor="let entity of entities">
-  <!-- log entry container -->
-  <div class="entity log" *ngSwitchCase="'log'">
-    <span class="time-column timestamp">{{entity.timestamp | date:'MM/dd/yyyy h:mm a'}}</span>
-    <mat-icon class="warning progress-status" *ngIf="entity.level === EventLogLevel.WARNING">
-      warning
-    </mat-icon>
-    <mat-icon class="error progress-status" *ngIf="entity.level === EventLogLevel.ERROR">
-      error
-    </mat-icon>
-    <span class="log-message" [innerHTML]="entity.message | linkify"></span>
-  </div>
-
-  <!-- attempt container -->
-  <div class="entity attempt mat-elevation-z2" *ngSwitchCase="'attempt'">
-    <div class="time-column">
-      <div class="timestamp">{{entity.timestamp | date:'MM/dd/yyyy h:mm a'}}</div>
-      <div class="duration">+{{getDuration(entity)}}</div>
-    </div>
-    <div class="attempt-content">
-      <div class="attempt-header">
-        <div>Running "{{entity.command.name || entity.command.command_line}}" (attempt {{entity.attempt_id}})</div>
-      </div>
-      <attempt-status [testRun]="testRun" [attempt]="entity"></attempt-status>
-    </div>
   </div>
 </ng-container>
-

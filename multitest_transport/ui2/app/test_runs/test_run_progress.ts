@@ -80,9 +80,6 @@ export class TestRunProgress implements OnInit, OnChanges {
   @Input() testRun!: TestRun;
   @Input() request?: Request;
 
-  // TODO: Remove after switching to modular execution UI
-  showModUI = false;
-
   entities: ProgressEntity[] = [];
   stateStats: CommandStateStats = {state_stats: []};
   statNodeMap: {[state in CommandState]?: CommandStateStatNode} = {};

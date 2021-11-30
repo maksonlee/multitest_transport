@@ -33,17 +33,48 @@ describe('TestRunProgress', () => {
   let fs: jasmine.SpyObj<FileService>;
   let tfcClient: jasmine.SpyObj<TfcClient>;
 
+  let command: Command;
+  let attempt: CommandAttempt;
+
   let fixture: ComponentFixture<TestRunProgress>;
   let element: DebugElement;
   let component: TestRunProgress;
 
   beforeEach(() => {
-    // TODO: Update tests for modular execution UI
-    fs = jasmine.createSpyObj(['getTestRunFileUrl', 'getFileBrowseUrl']);
-    tfcClient = jasmine.createSpyObj('tfcClient', ['getCommandStateStats']);
+    command = {
+      request_id: 'request_id',
+      id: 'command_id',
+      name: 'name',
+      command_line: 'command_line',
+      state: CommandState.COMPLETED,
+    };
 
-    tfcClient.getCommandStateStats.and.returnValue(observableOf(
-        {state_stats: [], create_time: '2021-09-15T01:47:28.430076+00:00'}));
+    attempt = {
+      attempt_id: 'attempt_id',
+      command_id: 'command_id',
+      request_id: 'request_id',
+      create_time: '2000-01-01T00:00:00',
+      state: CommandState.COMPLETED,
+    };
+
+    fs = jasmine.createSpyObj(['getTestRunFileUrl', 'getFileBrowseUrl']);
+    tfcClient = jasmine.createSpyObj(
+        'tfcClient',
+        ['getCommandStateStats', 'listCommands', 'listCommandAttempts']);
+
+    tfcClient.getCommandStateStats.and.returnValue(observableOf({
+      state_stats: [
+        {state: CommandState.COMPLETED, count: 3},
+        {state: CommandState.ERROR, count: 2},
+        {state: CommandState.RUNNING, count: 1},
+      ],
+      create_time: '2000-01-01T00:00:00',
+    }));
+
+    tfcClient.listCommands.and.returnValue(observableOf({commands: [command]}));
+
+    tfcClient.listCommandAttempts.and.returnValue(
+        observableOf({command_attempts: [attempt]}));
 
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule],
@@ -57,6 +88,8 @@ describe('TestRunProgress', () => {
     fixture = TestBed.createComponent(TestRunProgress);
     element = fixture.debugElement;
     component = fixture.componentInstance;
+
+    reload([], [command], [attempt]);
   });
 
   /** Convenience method to reload a new set of progress entities. */
@@ -69,14 +102,13 @@ describe('TestRunProgress', () => {
       commands,
       command_attempts: attempts
     } as Request;
-    component.updateEntities();
+    component.loadCommandStateStats();
     fixture.detectChanges();
   }
 
   it('can initialize the component', () => {
     reload();
     expect(component).toBeTruthy();
-    expect(hasEl(element, '.entity')).toBeFalsy();
   });
 
   it('can display a log entry', () => {
@@ -92,33 +124,6 @@ describe('TestRunProgress', () => {
     expect(logEntries[0].textContent).toContain('Log message');
   });
 
-  it('can display an attempt', () => {
-    fs.getFileBrowseUrl.and.returnValue('http://browse_url/');
-    reload(
-        [],
-        [{
-          id: 'command_id',
-          name: 'name',
-          command_line: 'command_line',
-        }],
-        [{
-          attempt_id: 'attempt_id',
-          command_id: 'command_id',
-          create_time: '2000-01-01T00:00:00',
-          state: CommandState.COMPLETED,
-        }]);
-
-    // One attempt entity is displayed
-    expect(hasEl(element, '.log')).toBeFalsy();
-    const attempts = getEls(element, '.attempt');
-    expect(attempts.length).toBe(1);
-    expect(attempts[0].textContent).toContain('(attempt attempt_id)');
-
-    // Output file URL generated
-    const link = getEl<HTMLAnchorElement>(element, '.attempt a');
-    expect(link.href).toEqual('http://browse_url/');
-  });
-
   it('can display multiple progress entities', () => {
     reload(
         [
@@ -131,23 +136,36 @@ describe('TestRunProgress', () => {
             message: 'Log #2',
           }
         ],
-        [{
-          id: 'command_id',
-          name: 'name',
-          command_line: 'command_line',
-        }],
-        [{
-          attempt_id: 'Attempt #1',
-          command_id: 'command_id',
-          create_time: '2000-01-02T00:00:00',
-          state: CommandState.COMPLETED,
-        }]);
+        [command], [attempt]);
 
     // Three entities displayed in ascending order by timestamp
     const entities = getEls(element, '.entity');
     expect(entities.length).toBe(3);
     expect(entities[0].textContent).toContain('Log #1');
-    expect(entities[1].textContent).toContain('Attempt #1');
+    expect(entities[1].textContent).toContain('Test run started');
     expect(entities[2].textContent).toContain('Log #2');
+  });
+
+  it('can display the command state stats', () => {
+    const stats = getEls(element, '.command-state-stats');
+    expect(stats.length).toBe(1);
+    expect(stats[0].textContent).toContain('Completed (3)');
+    expect(stats[0].textContent).toContain('Error (2)');
+    expect(stats[0].textContent).toContain('Running (1)');
+  });
+
+  it('can display the commands', () => {
+    component.expandStatNode(CommandState.COMPLETED);
+    fixture.detectChanges();
+    const commandRow = getEl(element, '.command-row');
+    expect(commandRow.textContent).toContain('Job command_id: name');
+  });
+
+  it('can display the attempts', () => {
+    component.expandStatNode(CommandState.COMPLETED);
+    component.expandCommandNode(CommandState.COMPLETED, 'command_id');
+    fixture.detectChanges();
+    const attemptRow = getEl(element, '.attempt-row');
+    expect(attemptRow.textContent).toContain('Attempt attempt_id');
   });
 });
