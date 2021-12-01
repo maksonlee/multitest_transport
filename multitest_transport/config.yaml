@@ -91,6 +91,8 @@ device_actions:
       - svc power stayon true # Stay awake
       - locksettings clear --old 1234 # Attempt to clear leftover credentials
       - locksettings clear --old 12345
+      - locksettings clear --old 0000
+      - locksettings clear --old primary
       - locksettings set-disabled true # Remove lock screen
       - echo 'chrome --disable-fre' > /data/local/tmp/chrome-command-line # Dismiss Chrome startup
   # Reboot required for some settings (e.g. system_locales, user_setup_complete)
