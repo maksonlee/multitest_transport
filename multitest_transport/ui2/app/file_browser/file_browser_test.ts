@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-import {Location} from '@angular/common';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute, Router, UrlSegment} from '@angular/router';
+import {ActivatedRoute, UrlSegment} from '@angular/router';
 import {RouterTestingModule} from '@angular/router/testing';
-import {of as observableOf} from 'rxjs';
+import {of as observableOf, ReplaySubject} from 'rxjs';
 
 import {FileNode, FileService, FileType} from '../services/file_service';
 import {Notifier} from '../services/notifier';
-import {ActivatedRouteStub} from '../testing/activated_route_stub';
 import {getEl} from '../testing/jasmine_util';
 
 import {FileBrowser} from './file_browser';
@@ -38,20 +36,13 @@ describe('FileBrowser', () => {
 
   let fs: jasmine.SpyObj<FileService>;
   let notifier: jasmine.SpyObj<Notifier>;
-  let router: jasmine.SpyObj<Router>;
-  let location: jasmine.SpyObj<Location>;
-  const urlSegments = [new UrlSegment('a', {}), new UrlSegment('b', {})];
-  const activatedRouteSpy = new ActivatedRouteStub(undefined, urlSegments);
+  let url: ReplaySubject<UrlSegment[]>;
 
   beforeEach(() => {
-    fs = jasmine.createSpyObj(['getRelativePath', 'listFiles', 'deleteFile']);
-    fs.getRelativePath.and.callFake(fileUrl => fileUrl);
+    fs = jasmine.createSpyObj(['listFiles', 'deleteFile']);
     fs.listFiles.and.returnValue(observableOf([]));
     notifier = jasmine.createSpyObj('notifier', ['confirm', 'showError']);
-    router = jasmine.createSpyObj(['createUrlTree']);
-    router.createUrlTree.and.returnValue('');
-    location = jasmine.createSpyObj('location', ['replaceState']);
-    location.replaceState.and.returnValue((''));
+    url = new ReplaySubject<UrlSegment[]>();
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, FileBrowserModule, RouterTestingModule],
@@ -59,57 +50,42 @@ describe('FileBrowser', () => {
       providers: [
         {provide: FileService, useValue: fs},
         {provide: Notifier, useValue: notifier},
-        {provide: Router, useValue: router},
-        {provide: ActivatedRoute, useValue: activatedRouteSpy},
-        {provide: Location, useValue: location},
+        {provide: ActivatedRoute, useValue: {url}},
       ],
     });
   });
 
   /** Helper method to initialize the FileBrowser component. */
-  function initComponent(path = '') {
+  function initComponent(path = '', nodes: Array<Partial<FileNode>> = []) {
     fixture = TestBed.createComponent(FileBrowser);
     component = fixture.componentInstance;
     element = fixture.debugElement;
-    component.path = path;
+    fs.listFiles.and.returnValue(observableOf(nodes));
+    url.next([new UrlSegment(path, {})]);
     fixture.detectChanges();
   }
 
   it('can load path correctly', () => {
-    initComponent();
+    initComponent('a/b');
     expect(component).toBeTruthy();
-    expect(component.path).toEqual('a/b');
-    expect(router.createUrlTree).toHaveBeenCalledWith([
-      'file_browser', 'a', 'b'
-    ]);
+    expect(component.currentDirectory).toEqual('a/b');
+    expect(fs.listFiles).toHaveBeenCalledWith('a/b');
   });
 
   it('should display correct href on anchor tag for name cell', () => {
-    const path = 'local_file_store/dir/filename';
-    const file = {path} as FileNode;
-    fs.listFiles.and.returnValue(observableOf([file]));
-    initComponent(path);
+    initComponent('dir', [{path: 'dir/filename', type: FileType.FILE}]);
     const link = getEl<HTMLAnchorElement>(element, '.name-cell a');
-    expect(link.href.endsWith('fs_proxy/file/local_file_store/dir/filename'))
-        .toBeTruthy();
+    expect(link.href.endsWith('fs_proxy/file/dir/filename')).toBeTruthy();
   });
 
   it('should display correct href on anchor tag for navigation', () => {
-    const path = 'local_file_store/dir';
-    const directory = {path, type: FileType.DIRECTORY} as FileNode;
-    fs.listFiles.and.returnValue(observableOf([directory]));
-    initComponent(path);
+    initComponent('dir', [{path: 'dir/nested', type: FileType.DIRECTORY}]);
     const link = getEl<HTMLAnchorElement>(element, '.navigate-cell a');
-    expect(link.href.endsWith('file_browser/local_file_store/dir'))
-        .toBeTruthy();
+    expect(link.href.endsWith('file_browser/dir/nested')).toBeTruthy();
   });
 
   it('should delete file when delete button clicked', () => {
-    // initialize with a file in a nested directory
-    const file = {path: 'local_file_store/dir/filename'} as FileNode;
-    fs.listFiles.and.returnValue(observableOf([file]));
-    initComponent('local_file_store/dir/filename');
-    fs.listFiles.calls.reset();
+    initComponent('dir', [{path: 'dir/filename', type: FileType.FILE}]);
     // confirm deletion
     notifier.confirm.and.returnValue(observableOf(true));
     fs.deleteFile.and.returnValue(observableOf(null));
@@ -117,6 +93,6 @@ describe('FileBrowser', () => {
     // delete button will delete the file and reload the current directory
     getEl(element, 'mat-row button.delete').click();
     expect(notifier.confirm).toHaveBeenCalled();
-    expect(fs.deleteFile).toHaveBeenCalledWith('local_file_store/dir/filename');
+    expect(fs.deleteFile).toHaveBeenCalledWith('dir/filename');
   });
 });

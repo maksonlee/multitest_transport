@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import {Location} from '@angular/common';
 import {Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MatTable} from '@angular/material/mdc-table';
 import {ActivatedRoute, Router, UrlSegment} from '@angular/router';
@@ -41,8 +40,6 @@ export class FileBrowser implements OnInit, OnDestroy {
   files: FileNode[] = [];
   // Hold information of the current directory path
   currentDirectory: string = '';
-  // Contains the directory informamtion
-  path: string = '';
 
   // Table that displays the list of files
   @ViewChild(MatTable, {static: false}) table!: MatTable<{}>;
@@ -54,44 +51,20 @@ export class FileBrowser implements OnInit, OnDestroy {
   constructor(
       private readonly fs: FileService,
       private readonly route: ActivatedRoute,
-      private readonly router: Router,
+      readonly router: Router,
       private readonly notifier: Notifier,
-      private readonly location: Location,
   ) {}
 
   ngOnInit() {
     this.route.url.pipe(takeUntil(this.destroy))
         .subscribe((url: UrlSegment[]) => {
-          if (!url || !url.length) {
-            return;
-          }
-          this.path = url.map(u => u.path).join('/');
+          this.currentDirectory = url.map(u => u.path).join('/');
+          this.loadFiles();
         });
-    this.changeDirectory(this.path ? this.path : '');
   }
 
   ngOnDestroy() {
     this.destroy.next();
-  }
-
-  /**
-   * Update url based on current path.
-   * @param path: directory path
-   */
-  updateUrl(path: string) {
-    const urlTree =
-        this.router.createUrlTree(['file_browser', ...path.split('/')]);
-    this.location.replaceState(urlTree.toString());
-  }
-
-  /**
-   * Change directory
-   * @param directory: path to directory
-   */
-  changeDirectory(directory: string) {
-    this.currentDirectory = directory;
-    this.updateUrl(this.currentDirectory);
-    this.loadFiles();
   }
 
   /** Reloads the list of files in the current directory. */

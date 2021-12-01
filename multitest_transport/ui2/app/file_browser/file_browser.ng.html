@@ -20,7 +20,7 @@
   <breadcrumb
       [prefix]="'root'"
       [path]="currentDirectory"
-      (pathChange)="changeDirectory($event)">
+      (pathChange)="router.navigateByUrl('/file_browser/' + $event)">
   </breadcrumb>
 
   <!-- Table to display the file list -->
@@ -33,7 +33,7 @@
       </mat-header-cell>
       <mat-cell class="name-cell" *matCellDef="let file" [fxFlex]="45">
          <a *ngIf="file.type === FileType.DIRECTORY"
-           [href]="'file_browser/'+file.path">
+           [routerLink]="'/file_browser/' + file.path">
             {{ file.name }}
         </a>
         <a *ngIf="file.type !== FileType.DIRECTORY"
@@ -67,9 +67,10 @@
     <!-- Actions -->
     <ng-container matColumnDef="action">
       <mat-header-cell *matHeaderCellDef [fxFlex]="10"></mat-header-cell>
-      <mat-cell class="navigate-cell" *matCellDef="let file" [fxFlex]="10" fxLayoutAlign="center">
+      <mat-cell class="navigate-cell" *matCellDef="let file" [fxFlex]="10"
+                fxLayoutAlign="center center">
         <a *ngIf="file.type === FileType.DIRECTORY"
-           [href]="'file_browser/'+file.path">
+           [routerLink]="'/file_browser/' + file.path">
           <button mat-icon-button aria-label="Change directory" class="change-dir">
             <mat-icon>navigate_next</mat-icon>
           </button>
