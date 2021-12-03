@@ -279,6 +279,7 @@ export enum DeviceType {
   PHYSICAL = 'PHYSICAL',
   REMOTE = 'REMOTE',
   TCP = 'TCP',
+  LOCAL_VIRTUAL = 'LOCAL_VIRTUAL',
 }
 
 /** Possible recovery states for a device or host. */

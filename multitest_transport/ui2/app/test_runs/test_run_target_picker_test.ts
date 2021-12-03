@@ -83,4 +83,52 @@ describe('TestRunTargetPicker', () => {
     const serials = testRunTargetPicker.getDeviceSerials();
     expect(serials).toEqual([]);
   });
+
+  it('can autocomplete device spec keys', () => {
+    let result = testRunTargetPicker.getDeviceSpecsAutocompleteOptions('');
+    expect(result.length).toEqual(6);
+
+    result =
+        testRunTargetPicker.getDeviceSpecsAutocompleteOptions('Devic').sort(
+            (first, second) => first.value.localeCompare(second.value));
+    expect(result).toEqual([
+      {value: 'device_serial:', displayedValue: 'device_serial'},
+      {value: 'device_type:', displayedValue: 'device_type'},
+    ]);
+
+    result =
+        testRunTargetPicker
+            .getDeviceSpecsAutocompleteOptions('product:a;product')
+            .sort((first, second) => first.value.localeCompare(second.value));
+    expect(result).toEqual([
+      {value: 'product:a;product_variant:', displayedValue: 'product_variant'},
+      {value: 'product:a;product:', displayedValue: 'product'},
+    ]);
+  });
+
+  it('can autocomplete device spec values', () => {
+    let result = testRunTargetPicker.getDeviceSpecsAutocompleteOptions(':');
+    expect(result).toEqual([]);
+
+    result = testRunTargetPicker.getDeviceSpecsAutocompleteOptions('notfound:');
+    expect(result).toEqual([]);
+
+    result =
+        testRunTargetPicker.getDeviceSpecsAutocompleteOptions('device_type:');
+    expect(result).toEqual([
+      {value: 'device_type:PHYSICAL', displayedValue: 'PHYSICAL'},
+      {value: 'device_type:LOCAL_VIRTUAL', displayedValue: 'LOCAL_VIRTUAL'},
+    ]);
+
+    result = testRunTargetPicker.getDeviceSpecsAutocompleteOptions(
+        'product:a;sim_state:a');
+    expect(result).toEqual([
+      {value: 'product:a;sim_state:ABSENT', displayedValue: 'ABSENT'},
+      {value: 'product:a;sim_state:READY', displayedValue: 'READY'},
+    ]);
+
+    result = testRunTargetPicker.getDeviceSpecsAutocompleteOptions(
+        'device_serial:sim_state:a');
+    expect(result).toEqual([]);
+  });
 });

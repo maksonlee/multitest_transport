@@ -40,7 +40,14 @@
     <mat-label> Device Spec </mat-label>
     <input matInput type="text" [ngModel]="getDeviceSpecsString()"
            [disabled]="!manualDeviceSpecs"
-           (change)="onDeviceSpecsStringChange($event.target.value); hasContentChanged = true">
+           (change)="onDeviceSpecsStringChange($event.target.value); hasContentChanged = true"
+           (ngModelChange)="onDeviceSpecsModelChange($event)"
+           [matAutocomplete]="deviceSpecsAutocomplete">
+    <mat-autocomplete #deviceSpecsAutocomplete="matAutocomplete">
+      <mat-option *ngFor="let option of deviceSpecsAutocompleteOptions" [value]="option.value">
+        {{option.displayedValue}}
+      </mat-option>
+    </mat-autocomplete>
   </mat-form-field>
 
   <!-- manual shard count and run target edit -->
