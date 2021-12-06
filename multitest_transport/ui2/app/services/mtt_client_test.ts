@@ -587,6 +587,23 @@ describe('MttClient', () => {
     });
   });
 
+  describe('deleteTestRuns', () => {
+    beforeEach(() => {
+      httpClientSpy.delete.and.returnValue(observableOf(null));
+    });
+
+    it('calls API and parses response correctly', () => {
+      mttClient.deleteTestRuns(['test_run_1', 'test_run_2']);
+      const params = new HttpParams()
+                         .append('test_run_ids', 'test_run_1')
+                         .append('test_run_ids', 'test_run_2');
+      expect(httpClientSpy.delete)
+          .toHaveBeenCalledWith(
+              `${MTT_API_URL}/test_runs`, jasmine.objectContaining({params}));
+      expect(httpClientSpy.delete).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('getTestRunOutput', () => {
     const test = testUtil.newMockTest();
     const testRun = testUtil.newMockTestRun(test);

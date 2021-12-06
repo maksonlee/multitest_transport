@@ -359,8 +359,9 @@ export class MttClient {
   }
 
   deleteTestRuns(ids: string[]) {
-    const params = new HttpParams({fromObject: {'test_run_ids': ids}});
-    return this.http.delete(`${MTT_API_URL}/test_runs`, {params});
+    const context = AnalyticsContext.create('test_runs', 'delete');
+    const params = new HttpParams().appendAll({'test_run_ids': ids});
+    return this.http.delete(`${MTT_API_URL}/test_runs`, {context, params});
   }
 
   getTestRuns(
