@@ -31,7 +31,7 @@
       </div>
       <div>
         <span class="log-message" [innerHTML]="entity.message | linkify"></span><br>
-        <span class="timestamp">Started: {{entity.timestamp | date:'MM/dd/yyyy h:mm a'}}</span>
+        <span class="timestamp">Started: {{entity.timestamp | utc | date:'MM/dd/yyyy h:mm a'}}</span>
       </div>
   </div>
 
@@ -46,7 +46,7 @@
         </div>
         <div>
           <span class="log-message">Test run started</span><br>
-          <span class="timestamp">Started: {{entity.timestamp | date:'MM/dd/yyyy h:mm a'}}</span>
+          <span class="timestamp">Started: {{entity.timestamp | utc | date:'MM/dd/yyyy h:mm a'}}</span>
         </div>
       </div>
       <div class="card-body">
@@ -88,7 +88,7 @@
           </ng-container>
 
           <ng-container matColumnDef="output_files">
-            <mat-header-cell *matHeaderCellDef fxFlex="160px">
+            <mat-header-cell *matHeaderCellDef fxFlex="190px">
               <!-- Output files column -->
             </mat-header-cell>
           </ng-container>
@@ -176,10 +176,10 @@
 
                 <div fxFlex="100px" class="row-text">
                   <div>
-                    {{commandNode.value.start_time | date:'h:mm:ss a'}}
+                    {{commandNode.value.start_time | utc | date:'h:mm:ss a'}}
                   </div>
                   <div class="secondary-text">
-                    {{commandNode.value.start_time | date:'MM/dd/yyyy'}}
+                    {{commandNode.value.start_time | utc | date:'MM/dd/yyyy'}}
                   </div>
                 </div>
 
@@ -187,7 +187,7 @@
                     +{{getDuration(commandNode.value)}}
                 </div>
 
-                <div fxFlex="160px">
+                <div fxFlex="190px">
                     <!-- Output files column -->
                 </div>
               </div><!-- End of command row -->
@@ -252,10 +252,10 @@
 
                       <div fxFlex="100px" class="row-text">
                         <div>
-                          {{attempt.value.start_time | date:'h:mm:ss a'}}
+                          {{attempt.value.start_time | utc | date:'h:mm:ss a'}}
                         </div>
                         <div class="secondary-text">
-                          {{attempt.value.start_time | date:'MM/dd/yyyy'}}
+                          {{attempt.value.start_time | utc | date:'MM/dd/yyyy'}}
                         </div>
                       </div>
 
@@ -263,7 +263,7 @@
                           +{{getDuration(attempt.value)}}
                       </div>
 
-                      <div fxFlex="145px"> <!-- Reduced to account for right margin and padding -->
+                      <div fxFlex="175px"> <!-- Reduced to account for right margin and padding -->
                         <a [href]="getOutputFilesUrl(attempt.value)"
                            mat-button
                            color="accent"

@@ -23,11 +23,6 @@ a:hover {
 mat-table {
   overflow-x: auto;
 
-  mat-cell,
-  mat-header-cell {
-    margin-right: 10px;
-  }
-
   mat-header-cell:last-of-type,
   mat-cell:last-of-type {
     justify-content: center;

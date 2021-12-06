@@ -94,7 +94,7 @@
 
     <!-- Checkbox Column -->
     <ng-container matColumnDef="select">
-      <mat-header-cell *matHeaderCellDef fxFlex="40px">
+      <mat-header-cell *matHeaderCellDef fxFlex="76px">
         <mat-checkbox
           (change)="$event ? toggleSelection() : null"
           [checked]="isAllSelected()"
@@ -104,7 +104,7 @@
         >
         </mat-checkbox>
       </mat-header-cell>
-      <mat-cell *matCellDef="let row" fxFlex="40px">
+      <mat-cell *matCellDef="let row" fxFlex="76px">
         <mat-checkbox
           (click)="$event.stopPropagation()"
           (change)="selection.toggle(row)"
@@ -125,8 +125,8 @@
 
     <!-- Test Package Version -->
     <ng-container matColumnDef="test_package">
-      <mat-header-cell *matHeaderCellDef fxFlex="100px">Test Package</mat-header-cell>
-      <mat-cell *matCellDef="let testRun" fxFlex="100px">
+      <mat-header-cell *matHeaderCellDef fxFlex="150px">Test Package</mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex="150px">
         {{testRun.test_package_info | testPackageInfo}}
       </mat-cell>
     </ng-container>
