@@ -107,6 +107,7 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
   switchTab(tabChangeEvent: MatTabChangeEvent) {
     this.router.navigate([], {
       fragment: this.matTabOptions[tabChangeEvent.index],
+      queryParamsHandling: 'merge',
     });
   }
 

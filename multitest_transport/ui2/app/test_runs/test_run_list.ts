@@ -236,11 +236,6 @@ export class TestRunList implements AfterViewInit, OnDestroy {
     this.isTableScrolled = el.scrollLeft === el.scrollWidth - el.clientWidth;
   }
 
-  /** Switch to the test run details page. */
-  viewDetails(id: string) {
-    this.router.navigate([`test_runs/${id}`], {queryParamsHandling: 'merge'});
-  }
-
   /* Update column display data */
   toggleDisplayColumn(event: Event, show: boolean, columnIndex: number) {
     event.stopPropagation();

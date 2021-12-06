@@ -204,9 +204,9 @@
     <ng-container matColumnDef="view" stickyEnd>
       <mat-header-cell *matHeaderCellDef fxFlex="100px"></mat-header-cell>
       <mat-cell *matCellDef="let testRun" fxFlex="100px">
-        <button mat-stroked-button (click)="viewDetails(testRun.id)">
+        <a mat-stroked-button [routerLink]="'/test_runs/' + testRun.id" queryParamsHandling="merge">
           View
-        </button>
+        </a>
       </mat-cell>
     </ng-container>
 

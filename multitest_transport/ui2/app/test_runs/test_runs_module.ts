@@ -20,6 +20,7 @@
 
 import {NgModule} from '@angular/core';
 import {Title} from '@angular/platform-browser';
+import {RouterModule} from '@angular/router';
 
 import {BuildChannelsModule} from '../build_channels/build_channels_module';
 import {DeviceActionsModule} from '../device_actions/device_actions_module';
@@ -62,7 +63,7 @@ const COMPONENTS = [
   providers: [Title],
   imports: [
     BuildChannelsModule, DeviceActionsModule, DevicesModule,
-    TestRunActionsModule, ServicesModule, SharedModule
+    TestRunActionsModule, ServicesModule, SharedModule, RouterModule
   ],
   exports: COMPONENTS,
   entryComponents: [TestRunConfigEditor],
