@@ -832,6 +832,16 @@ def _PullUpdate(args, host):
     logger.info('%s is already using the same image as remote, skip.',
                 args.name)
     return False
+  if host.config.enable_ui_update or host.config.enable_autoupdate:
+    if (host.config.max_concurrent_update_percentage and
+        not host.metadata.get(_ALLOW_TO_UPDATE_KEY, False)):
+      logger.info(
+          'Pending to kick-off the update of currently running container '
+          'until getting sign-off from control server, '
+          'because max_concurrent_update_percentage was '
+          'limited to %d%% in the physical cluster.',
+          host.config.max_concurrent_update_percentage)
+      return False
   host.control_server_client.SubmitHostUpdateStateChangedEvent(
       host.config.hostname, host_util.HostUpdateState.SYNCING,
       target_image=host.config.docker_image)
@@ -869,15 +879,6 @@ def _UpdateMttNode(args, host):
     args: a parsed argparse.Namespace object.
     host: an instance of host_util.Host.
   """
-  if host.config.enable_ui_update or host.config.enable_autoupdate:
-    if (host.config.max_concurrent_update_percentage and
-        not host.metadata.get(_ALLOW_TO_UPDATE_KEY, False)):
-      logger.info(
-          'Pending to start update until getting sign-off from control server, '
-          'because max_concurrent_update_percentage was '
-          'limited to %d%% in the physical cluster.',
-          host.config.max_concurrent_update_percentage)
-      return
   if not _PullUpdate(args, host):
     return
   logger.info('Restarting %s.', args.name)

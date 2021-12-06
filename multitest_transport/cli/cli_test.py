@@ -1609,47 +1609,6 @@ class CliTest(parameterized.TestCase):
     (self.mock_control_server_client.PatchTestHarnessImageToHostMetadata
      .assert_called_with(host.config.hostname, host.config.docker_image))
 
-  @mock.patch.object(cli, '_StartMttNode')
-  @mock.patch.object(cli, '_StopMttNode')
-  @mock.patch.object(cli, '_PullUpdate')
-  def testUpdateMttNode_blockedByClusterConcurrencyLimit(
-      self, mock_pull_update, mock_stop, mock_start):
-    """Test Update MTT Node but temporarily blocked by concurrency limit."""
-    args = self.arg_parser.parse_args(['update'])
-    host = self._CreateHost(
-        enable_ui_update=True, max_concurrent_update_percentage=10)
-    host.metadata = {
-        cli._TEST_HARNESS_IMAGE_KEY: 'repo/image_1:tag_1',
-        cli._ALLOW_TO_UPDATE_KEY: False,
-    }
-
-    cli._UpdateMttNode(args, host)
-
-    mock_pull_update.assert_not_called()
-    mock_stop.assert_not_called()
-    mock_start.assert_not_called()
-
-  @mock.patch.object(cli, '_StartMttNode')
-  @mock.patch.object(cli, '_StopMttNode')
-  @mock.patch.object(cli, '_PullUpdate')
-  def testUpdateMttNode_allowedByClusterConcurrencyLimit(
-      self, mock_pull_update, mock_stop, mock_start):
-    """Test Update MTT Node and allowed by concurrency limit."""
-    mock_pull_update.return_value = True
-    args = self.arg_parser.parse_args(['update'])
-    host = self._CreateHost(
-        enable_autoupdate=True, max_concurrent_update_percentage=10)
-    host.metadata = {
-        cli._TEST_HARNESS_IMAGE_KEY: 'repo/image_1:tag_1',
-        cli._ALLOW_TO_UPDATE_KEY: True,
-    }
-
-    cli._UpdateMttNode(args, host)
-
-    mock_pull_update.assert_called_once()
-    mock_stop.assert_called_once()
-    mock_start.assert_called_once()
-
   def testPullUpdate_forceUpdate(self):
     """Test PullUpdate with force_update."""
     args = self.arg_parser.parse_args(['update', '--force_update'])
@@ -1663,6 +1622,44 @@ class CliTest(parameterized.TestCase):
     args = self.arg_parser.parse_args(['update'])
     host = self._CreateHost()
     self.assertTrue(cli._PullUpdate(args, host))
+    is_running.assert_called_once_with('mtt')
+
+  @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
+  @mock.patch('__main__.cli.command_util.DockerHelper.GetImageIdForContainer')
+  @mock.patch('__main__.cli.command_util.DockerHelper.GetRemoteImageDigest')
+  def testPullUpdate_allowedByClusterConcurrencyLimit(
+      self, get_remote_image_digest, get_image_id, is_running):
+    """Test PullUpdate when container is running, and concurrency allows."""
+    is_running.return_value = True
+    get_image_id.return_value = 'image_id'
+    get_remote_image_digest.side_effect = ['container_image', 'remote_image']
+    args = self.arg_parser.parse_args(['update'])
+    host = self._CreateHost(
+        enable_autoupdate=True, max_concurrent_update_percentage=10)
+    host.metadata = {
+        cli._TEST_HARNESS_IMAGE_KEY: 'repo/image_1:tag_1',
+        cli._ALLOW_TO_UPDATE_KEY: True,
+    }
+    self.assertTrue(cli._PullUpdate(args, host))
+    is_running.assert_called_once_with('mtt')
+
+  @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
+  @mock.patch('__main__.cli.command_util.DockerHelper.GetImageIdForContainer')
+  @mock.patch('__main__.cli.command_util.DockerHelper.GetRemoteImageDigest')
+  def testPullUpdate_blockedByClusterConcurrencyLimitContainerRunning(
+      self, get_remote_image_digest, get_image_id, is_running):
+    """Test PullUpdate when container is running, but concurrency blocks."""
+    is_running.return_value = True
+    get_image_id.return_value = 'image_id'
+    get_remote_image_digest.side_effect = ['container_image', 'remote_image']
+    args = self.arg_parser.parse_args(['update'])
+    host = self._CreateHost(
+        enable_ui_update=True, max_concurrent_update_percentage=10)
+    host.metadata = {
+        cli._TEST_HARNESS_IMAGE_KEY: 'repo/image_1:tag_1',
+        cli._ALLOW_TO_UPDATE_KEY: False,
+    }
+    self.assertFalse(cli._PullUpdate(args, host))
     is_running.assert_called_once_with('mtt')
 
   @mock.patch('__main__.cli.command_util.DockerHelper.IsContainerRunning')
