@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """A util file that stores common function that involve file operation."""
+import dataclasses
 import datetime
 import io
 import json
@@ -25,22 +26,23 @@ import shutil
 import socket
 import stat
 from typing import BinaryIO, Iterator, List, Optional
+import urllib.error
+import urllib.parse
+import urllib.request
 import zipfile
 
 import apiclient
-import attr
-from six.moves import urllib
 
 from multitest_transport.util import env
 
 DOWNLOAD_BUFFER_SIZE = 16 * 1024 * 1024
 UPLOAD_BUFFER_SIZE = 512 * 1024
-LOCAL_HOSTNAME = ['localhost', '0.0.0.0', '127.0.0.1', '::', '::1']
+LOCAL_HOSTNAME = ('localhost', '0.0.0.0', '127.0.0.1', '::', '::1')
 HTTP_TIMEOUT_SECONDS = 30
 MAX_HTTP_READ_ATTEMPTS = 3
 
 
-@attr.s(auto_attribs=True, frozen=True)
+@dataclasses.dataclass(frozen=True)
 class FileChunk(object):
   """File chunk during download."""
   data: bytes
@@ -48,7 +50,7 @@ class FileChunk(object):
   total_size: int
 
 
-@attr.s(auto_attribs=True, frozen=True)
+@dataclasses.dataclass(frozen=True)
 class TestSuiteInfo(object):
   """Test suite information."""
   build_number: str
@@ -58,13 +60,13 @@ class TestSuiteInfo(object):
   version: str
 
 
-@attr.s(auto_attribs=True, frozen=True)
+@dataclasses.dataclass(frozen=True)
 class TestModuleInfo(object):
   """Test module information."""
   name: str
 
 
-@attr.s(auto_attribs=True, frozen=True)
+@dataclasses.dataclass(frozen=True)
 class FileInfo(object):
   """File information."""
   url: str  # file URL
@@ -74,14 +76,14 @@ class FileInfo(object):
   timestamp: Optional[datetime.datetime] = None  # last modification datetime
 
 
-@attr.s(auto_attribs=True, frozen=True)
+@dataclasses.dataclass(frozen=True)
 class FileSegment(object):
   """Partial file content."""
   offset: int  # starting offset
   lines: List[bytes]  # lines of content
 
   @property
-  def length(self):
+  def length(self) -> int:
     return sum([len(line) for line in self.lines])
 
 
@@ -142,7 +144,7 @@ class BaseReadStream(io.RawIOBase):
     """
     raise NotImplementedError
 
-  def seek(self, offset, whence=os.SEEK_SET):
+  def seek(self, offset: int, whence: int = os.SEEK_SET):
     if whence == os.SEEK_SET:
       self.cursor = offset
     elif whence == os.SEEK_CUR:
@@ -158,36 +160,36 @@ class BaseReadStream(io.RawIOBase):
       raise ValueError('Unsupported whence %s' % whence)
     return self.cursor
 
-  def tell(self):
+  def tell(self) -> int:
     return self.cursor
 
-  def read(self, size=-1):
+  def read(self, size: int = -1) -> bytes:
     data = self.ReadBytes(offset=self.cursor, length=size) or b''
     self.cursor += len(data)
     return data
 
-  def readinto(self, b):
+  def readinto(self, b: bytearray) -> int:
     data = self.read(len(b))
     b[:len(data)] = data
     return len(data)
 
-  def readall(self):
+  def readall(self) -> bytes:
     return self.read()
 
   def write(self, *args, **kwargs):
     raise io.UnsupportedOperation('write')
 
-  def seekable(self):
+  def seekable(self) -> bool:
     return True
 
-  def readable(self):
+  def readable(self) -> bool:
     return True
 
 
 class BaseWriteStream(io.RawIOBase):
   """Abstract write-only file-like object."""
 
-  def __init__(self, handle):
+  def __init__(self, handle: 'FileHandle'):
     super(BaseWriteStream, self).__init__()
     self.handle = handle
     self.cursor = 0
@@ -205,7 +207,7 @@ class BaseWriteStream(io.RawIOBase):
     """
     raise NotImplementedError
 
-  def tell(self):
+  def tell(self) -> int:
     return self.cursor
 
   def close(self):
@@ -215,19 +217,19 @@ class BaseWriteStream(io.RawIOBase):
   def read(self, *arg, **kwargs):
     raise io.UnsupportedOperation('read')
 
-  def write(self, data):
+  def write(self, data: bytes) -> int:
     self.WriteBytes(offset=self.cursor, data=data, finish=False)
     self.cursor += len(data)
     return len(data)
 
-  def writable(self):
+  def writable(self) -> bool:
     return True
 
 
 class FileHandle(object):
   """File-like object which wraps a URL and can read file metadata/content."""
 
-  def __init__(self, url):
+  def __init__(self, url: str):
     super(FileHandle, self).__init__()
     self.url = url
 
@@ -380,7 +382,7 @@ class HttpReadStream(BaseReadStream):
           # requesting content from after EOF
           return None
         raise
-      except socket.timeout as e:
+      except socket.timeout:
         if MAX_HTTP_READ_ATTEMPTS <= attempt:
           raise
         logging.info(
@@ -392,7 +394,7 @@ class HttpReadStream(BaseReadStream):
 class HttpWriteStream(BaseWriteStream):
   """Write-only file-like object which uses HTTP requests."""
 
-  def __init__(self, handle, url):
+  def __init__(self, handle: FileHandle, url: str):
     super(HttpWriteStream, self).__init__(handle)
     self.url = url
 

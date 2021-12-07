@@ -16,10 +16,11 @@
 import ctypes
 import logging
 import multiprocessing
+from typing import Iterator, Optional, Tuple
+import urllib.parse
+import urllib.request
 
 import flask
-import six
-from six.moves import urllib
 
 from multitest_transport.models import ndb_models
 from multitest_transport.util import analytics
@@ -74,7 +75,7 @@ _METRIC_KEYS = {
 
 
 @APP.route('/_ah/queue/' + analytics.QUEUE_NAME, methods=['POST'])
-def UploadEvent():
+def UploadEvent() -> flask.Response:
   """Parses event parameters from the request body and uploads to GA."""
   params = flask.request.get_json(force=True)
   category = params.pop('category')
@@ -83,7 +84,7 @@ def UploadEvent():
   return flask.Response(status=201 if uploaded else 204)
 
 
-def _UploadEvent(category, action, **kwargs):
+def _UploadEvent(category: str, action: str, **kwargs) -> bool:
   """Uploads an event to GA if metrics are enabled."""
   private_node_config = ndb_models.GetPrivateNodeConfig()
   if (env.IS_DEV_MODE or not private_node_config.metrics_enabled or
@@ -91,7 +92,7 @@ def _UploadEvent(category, action, **kwargs):
     logging.debug('Metrics disabled - skipping %s:%s', category, action)
     return False
   event = _Event(private_node_config.server_uuid, category, action, **kwargs)
-  data = six.ensure_binary(urllib.parse.urlencode(dict(event)))
+  data = urllib.parse.urlencode(dict(event)).encode()
   request = urllib.request.Request(
       url=_GA_ENDPOINT, data=data, headers={'User-Agent': 'MTT'})
   try:
@@ -108,15 +109,13 @@ class _Event(object):
   """Holds GA event information."""
 
   def __init__(self,
-               server_uuid,
-               category,
-               action,
-               label=None,
-               value=None,
+               server_uuid: str,
+               category: str,
+               action: str,
+               label: Optional[str] = None,
+               value: Optional[str] = None,
                **kwargs):
-
     private_node_config = ndb_models.GetPrivateNodeConfig()
-
     # Required parameters
     self.v = _API_VERSION  # API version
     self.tid = _TRACKING_ID  # Tracking ID
@@ -133,19 +132,19 @@ class _Event(object):
     setattr(self, _METRIC_KEYS['app_version'], env.VERSION)
     setattr(self, _METRIC_KEYS['is_google'], env.IS_GOOGLE)
     setattr(self, _METRIC_KEYS['user_tag'], private_node_config.gms_client_id)
-    for key, value in six.iteritems(kwargs):
+    for key, value in kwargs.items():
       if not _METRIC_KEYS[key]:
         logging.warning('Unknown metric key: %s', key)
         continue
       setattr(self, _METRIC_KEYS[key], value)
 
-  def __iter__(self):
-    for key, value in six.iteritems(self.__dict__):
+  def __iter__(self) -> Iterator[Tuple[str, str]]:
+    for key, value in self.__dict__.items():
       if value is not None:
         yield key, value
 
-  def __eq__(self, other):
+  def __eq__(self, other) -> bool:
     return isinstance(other, _Event) and dict(self) == dict(other)
 
-  def __ne__(self, other):
+  def __ne__(self, other) -> bool:
     return not self.__eq__(other)

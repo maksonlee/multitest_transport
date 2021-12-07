@@ -14,11 +14,10 @@
 
 """Tests for tfc_client."""
 import threading
+from unittest import mock
 
 from absl.testing import absltest
 import apiclient
-import mock
-
 from tradefed_cluster import testbed_dependent_test
 from tradefed_cluster.plugins import base as tfc_plugins
 

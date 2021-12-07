@@ -14,8 +14,11 @@
 
 """SQL utilities."""
 import contextlib
+import enum
 import logging
+from typing import Generator, Type, Union
 
+from protorpc import messages
 import sqlalchemy as sa
 from sqlalchemy.ext import declarative
 import sqlalchemy_utils as sa_utils
@@ -25,7 +28,8 @@ class IntEnum(sa.TypeDecorator):
   """Stores enums as integers, supports enum.IntEnum and messages.Enum."""
   impl = sa.Integer
 
-  def __init__(self, enum_cls, *args, **kwargs):
+  def __init__(self, enum_cls: Type[Union[enum.IntEnum, messages.Enum]], *args,
+               **kwargs):
     super(IntEnum, self).__init__(*args, **kwargs)
     self.enum_cls = enum_cls
 
@@ -40,12 +44,12 @@ class Database(object):
   """Database session and model manager."""
   _engine = None
 
-  def __init__(self, uri, **options):
+  def __init__(self, uri: str, **options):
     self.uri = uri
     self.options = options
     self.Model = declarative.declarative_base()  
   @property
-  def engine(self):
+  def engine(self) -> sa.engine.Engine:
     """Returns the sqlalchemy engine, connecting and create DB if necessary."""
     if not self._engine:
       logging.info('Connecting to %s', self.uri)
@@ -55,7 +59,7 @@ class Database(object):
     return self._engine
 
   @contextlib.contextmanager
-  def Session(self):
+  def Session(self) -> Generator[sa.orm.scoped_session, None, None]:
     """Context manager that provides an sqlalchemy session."""
     session_factory = sa.orm.sessionmaker(
         bind=self.engine, expire_on_commit=False)

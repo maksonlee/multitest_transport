@@ -13,10 +13,11 @@
 # limitations under the License.
 
 """Tests for analytics_uploader."""
+from unittest import mock
+import urllib.parse
+import urllib.request
+
 from absl.testing import absltest
-import mock
-import six
-from six.moves import urllib
 from tradefed_cluster import testbed_dependent_test
 
 from multitest_transport.models import ndb_models
@@ -55,7 +56,7 @@ class AnalyticsUploaderTest(testbed_dependent_test.TestbedDependentTest):
     uploaded = analytics_uploader._UploadEvent('category', 'action')
     self.assertTrue(uploaded)
     request = mock_urlopen.call_args[0][0]
-    data = dict(urllib.parse.parse_qsl(six.ensure_text(request.data)))
+    data = dict(urllib.parse.parse_qsl(request.data.decode()))
     self.assertEqual(analytics_uploader._GA_ENDPOINT, request.get_full_url())
     self.assertValidEvent(data, 'server', 'category', 'action')
 

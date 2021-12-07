@@ -13,8 +13,9 @@
 # limitations under the License.
 
 """Unit tests for sql_util."""
+from unittest import mock
+
 from absl.testing import absltest
-import mock
 from protorpc import messages
 import sqlalchemy as sa
 import sqlalchemy_utils as sa_utils

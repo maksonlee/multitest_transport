@@ -20,12 +20,12 @@ import os
 import shutil
 import socket
 import tempfile
+from unittest import mock
+import urllib.error
+import urllib.request
 
 from absl.testing import absltest
 from absl.testing import parameterized
-import mock
-import six
-from six.moves import urllib
 
 from multitest_transport.util import env
 from multitest_transport.util import file_util
@@ -413,7 +413,7 @@ class RemoteFileHandleTest(absltest.TestCase):
             'update_time': 946684800000
         },
     ])
-    mock_urlopen.return_value = io.BytesIO(six.ensure_binary(data))
+    mock_urlopen.return_value = io.BytesIO(data.encode())
 
     files = file_util.RemoteFileHandle('file:///root/path').ListFiles()
     mock_urlopen.assert_called_with('http://file_server:8006/dir/path')

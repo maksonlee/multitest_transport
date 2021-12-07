@@ -13,17 +13,19 @@
 # limitations under the License.
 
 """OAuth2 utilities."""
+import dataclasses
 import json
 import logging
 import pickle
+from typing import List, Optional, Tuple
+import urllib.parse
 
-import attr
-import google_auth_httplib2
-from google_auth_oauthlib import flow
-from six.moves import urllib
-from tradefed_cluster.util import ndb_shim as ndb
 from google.auth import credentials as ga_credentials
 from google.oauth2 import credentials as authorized_user
+import google_auth_httplib2
+from google_auth_oauthlib import flow
+import httplib2
+from tradefed_cluster.util import ndb_shim as ndb
 
 MANUAL_COPY_PASTE_URI = 'urn:ietf:wg:oauth:2.0:oob'
 GOOGLE_AUTH_URI = 'https://accounts.google.com/o/oauth2/auth'
@@ -33,15 +35,16 @@ GOOGLE_TOKEN_URI = 'https://accounts.google.com/o/oauth2/token'
 class CredentialsProperty(ndb.BlobProperty):
   """Stores authorized user or service account credentials."""
 
-  def _validate(self, value):
+  def _validate(self, value: bytes):
     if value is not None and not isinstance(value, ga_credentials.Credentials):
       raise TypeError('Value %s is not a Credentials instance.' % value)
 
-  def _to_base_type(self, value):
+  def _to_base_type(self, value: bytes):
     # Using protocol 2 to ensure compatibility with Python 2.
     return pickle.dumps(value, protocol=2)
 
-  def _from_base_type(self, value):
+  def _from_base_type(self,
+                      value: bytes) -> Optional[ga_credentials.Credentials]:
     try:
       # Use UTF-8 encoding for backwards compatibility with Python 2
       credentials = pickle.loads(value, encoding='utf-8')
@@ -61,30 +64,23 @@ class CredentialsProperty(ndb.BlobProperty):
       return None
 
 
-@attr.s(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class OAuth2Config(object):
   """OAuth2 configuration."""
-  client_id = attr.ib()
-  client_secret = attr.ib()
-  scopes = attr.ib(factory=list)
-  auth_uri = attr.ib(default=GOOGLE_AUTH_URI)
-  token_uri = attr.ib(default=GOOGLE_TOKEN_URI)
+  client_id: str
+  client_secret: str
+  scopes: List[str]
+  auth_uri: str = GOOGLE_AUTH_URI
+  token_uri: str = GOOGLE_TOKEN_URI
 
   @property
-  def is_valid(self):
+  def is_valid(self) -> bool:
     return all([self.client_id, self.client_secret, self.scopes])
 
 
-def ApplyHeader(headers, credentials, scopes=None):
-  """Helper function to apply credentials to request headers."""
-  if not credentials:
-    return  # TODO: try to use default credentials
-  if scopes:
-    credentials = ga_credentials.with_scopes_if_required(credentials, scopes)
-  credentials.apply(headers)
-
-
-def AuthorizeHttp(http, credentials, scopes=None):
+def AuthorizeHttp(http: httplib2.Http,
+                  credentials: Optional[ga_credentials.Credentials],
+                  scopes: Optional[List[str]] = None):
   """Helper function to apply credentials to an HTTP client."""
   if not credentials:
     return http  # TODO: try to use default credentials
@@ -93,7 +89,7 @@ def AuthorizeHttp(http, credentials, scopes=None):
   return google_auth_httplib2.AuthorizedHttp(credentials, http)
 
 
-def GetRedirectUri(redirect_uri):
+def GetRedirectUri(redirect_uri: str) -> Tuple[str, bool]:
   """Verifies a redirect URI, returning the actual URI to use.
 
   Args:
@@ -109,7 +105,8 @@ def GetRedirectUri(redirect_uri):
   return redirect_uri, False
 
 
-def GetOAuth2Flow(oauth2_config, redirect_uri):
+def GetOAuth2Flow(oauth2_config: Optional[OAuth2Config],
+                  redirect_uri: str) -> flow.Flow:
   """Constructs a OAuth2 flow used to generate URLs and exchange codes.
 
   Args:

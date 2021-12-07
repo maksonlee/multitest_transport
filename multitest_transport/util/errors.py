@@ -13,12 +13,13 @@
 # limitations under the License.
 
 """Error types."""
+from typing import Optional
 
 
 class BaseError(Exception):
   """Base MTT error class."""
 
-  def __init__(self, message, http_status=None):
+  def __init__(self, message: str, http_status: Optional[int] = None):
     super(BaseError, self).__init__(message)
     if not hasattr(self, 'message'):
       self.message = message

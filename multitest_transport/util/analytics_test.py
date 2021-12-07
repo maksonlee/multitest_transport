@@ -14,16 +14,12 @@
 
 """Tests for analytics."""
 import json
-import os
+from unittest import mock
 
 from absl.testing import absltest
-import mock
 from tradefed_cluster.services import task_scheduler
 
 from multitest_transport.util import analytics
-
-GAE_CONFIGS_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), 'gae_configs')
 
 
 class AnalyticsTest(absltest.TestCase):

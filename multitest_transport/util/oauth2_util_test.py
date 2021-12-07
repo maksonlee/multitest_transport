@@ -16,11 +16,10 @@
 import json
 
 from absl.testing import absltest
-import six
-from tradefed_cluster import testbed_dependent_test
-from tradefed_cluster.util import ndb_shim as ndb
 from google.oauth2 import credentials as authorized_user
 from google.oauth2 import service_account
+from tradefed_cluster import testbed_dependent_test
+from tradefed_cluster.util import ndb_shim as ndb
 
 from multitest_transport.util import oauth2_util
 
@@ -68,7 +67,7 @@ class CredentialsPropertyTest(testbed_dependent_test.TestbedDependentTest):
         'client_secret': 'client_secret',
         'refresh_token': 'refresh_token',
     }
-    value = six.ensure_binary(json.dumps(data))
+    value = json.dumps(data).encode()
     credentials = prop._from_base_type(value)
     self.assertIsNotNone(credentials)
     self.assertEqual('client_id', credentials.client_id)

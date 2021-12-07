@@ -18,11 +18,11 @@ import json
 import shutil
 import uuid
 
+from tradefed_cluster import common
 from tradefed_cluster.services import task_scheduler
+
 from multitest_transport.util import env
 from multitest_transport.util import tfc_client
-from tradefed_cluster import common
-
 
 # Analytics uploading task queue
 QUEUE_NAME = 'analytics-queue'
@@ -48,7 +48,7 @@ START_ACTION = 'start'
 TARGET_PREPARER_ACTION = 'target_preparer'
 
 
-def Log(category, action, **kwargs):
+def Log(category: str, action: str, **kwargs):
   """Schedules a task to upload an event to GA."""
   payload = json.dumps(dict(category=category, action=action, **kwargs))
   task_scheduler.AddTask(queue_name=QUEUE_NAME, payload=payload)
