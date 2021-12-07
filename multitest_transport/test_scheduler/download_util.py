@@ -34,7 +34,7 @@ TEST_RESOURCE_CACHE_DIR = 'test_resources'
 # Max number of workers used when downloading resources
 MAX_WORKERS = 12
 # Max idle time for test resource downloads (will be cancelled if exceeded)
-MAX_DOWNLOAD_IDLE_TIME = datetime.timedelta(hours=1)
+MAX_DOWNLOAD_IDLE_TIME = datetime.timedelta(minutes=10)
 # Max test resource cache access time (will be deleted if exceeded)
 MAX_CACHE_ACCESS_TIME = datetime.timedelta(days=7)
 

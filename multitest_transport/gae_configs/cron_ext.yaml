@@ -26,7 +26,7 @@ cron:
 - description: Clean up test resource download trackers
   url: /sidekicks/test_resource_tracker_cleaner
   target: default
-  schedule: every 1 hours
+  schedule: every 10 minutes
 
 - description: Check test/test plan schedule
   url: /test_scheduler/cron
