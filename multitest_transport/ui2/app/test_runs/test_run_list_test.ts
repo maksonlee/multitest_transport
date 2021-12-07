@@ -216,12 +216,17 @@ describe('TestRunList', () => {
      }));
 
   it('can delete test runs', () => {
+    testRunList.prevPageToken = 'prev';
+    testRunList.nextPageToken = 'next';
     notifier.confirm.and.returnValue(observableOf(true));  // confirm delete
 
     testRunList.selection.select(testRunCompleted);
     testRunListFixture.detectChanges();
     getEl(el, '.delete-button').click();
     expect(mttClient.deleteTestRuns).toHaveBeenCalledWith(['completed']);
+    // Reloads current page (previous page token with backwards == false)
+    expect(mttClient.getTestRuns)
+        .toHaveBeenCalledWith(DEFAULT_PAGE_SIZE, 'prev', false, [], []);
   });
 
   it('cannot delete non-final test runs', () => {

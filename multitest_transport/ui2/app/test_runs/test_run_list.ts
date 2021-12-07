@@ -230,6 +230,13 @@ export class TestRunList implements AfterViewInit, OnDestroy {
     this.load(false);
   }
 
+  /** Reload the current page of runs. */
+  reload() {
+    this.nextPageToken = this.prevPageToken;
+    this.prevPageToken = undefined;
+    this.load(false);
+  }
+
   /** Check if table is scrolled to the right to update sticky styling. */
   checkTableScrolled() {
     const el = this.table.nativeElement;
@@ -353,7 +360,7 @@ export class TestRunList implements AfterViewInit, OnDestroy {
                   this.selection.selected.map(testRun => testRun.id!))
               .pipe(
                   finalize(() => {
-                    this.load();
+                    this.reload();
                   }),
                   )
               .subscribe(
