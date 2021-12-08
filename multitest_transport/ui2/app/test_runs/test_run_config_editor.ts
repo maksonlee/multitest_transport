@@ -56,7 +56,7 @@ const TOTAL_STEPS = 4;
 export class TestRunConfigEditor extends FormChangeTracker implements OnInit {
   @ViewChild(TestResourceForm, {static: true})
   testResourceForm!: TestResourceForm;
-  @Output() configSubmitted = new EventEmitter<mttModels.TestRunConfig>();
+  @Output() readonly configSubmitted = new EventEmitter<mttModels.TestRunConfig>();
 
   // Record each step whether it has finished or not
   stepCompletionStatusMap: {[stepNum: number]: boolean} = {};

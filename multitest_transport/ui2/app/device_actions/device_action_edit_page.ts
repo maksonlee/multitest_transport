@@ -162,9 +162,9 @@ export class DeviceActionEditPage extends FormChangeTracker implements
 
   validate(): boolean {
     this.invalidInputs = this.getInvalidInputs();
-    this.trackers.forEach((tracker) => {
+    for (const tracker of this.trackers) {
       this.invalidInputs.push(...tracker.getInvalidInputs());
-    });
+    }
     return !this.invalidInputs.length;
   }
 

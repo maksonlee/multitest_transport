@@ -38,7 +38,7 @@ import {assertRequiredInput} from '../shared/util';
 export class DeviceActionPicker extends FormChangeTracker implements OnInit {
   @Input() deviceActions!: DeviceAction[];
   @Input() selectedDeviceActions!: DeviceAction[];
-  @Output() selectionChange = new EventEmitter();
+  @Output() readonly selectionChange = new EventEmitter();
 
   selection =
       new SelectionModel<DeviceAction>(true, this.selectedDeviceActions);

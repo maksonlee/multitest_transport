@@ -17,8 +17,8 @@
 import {enableProdMode} from '@angular/core';
 import {platformBrowser} from '@angular/platform-browser';
 
-import {MttModuleNgFactory} from './app/app.ngfactory';
+import {MttModule} from './app/app';
 
 
 // Bootstrap the MTT Module
-platformBrowser().bootstrapModuleFactory(MttModuleNgFactory);
+platformBrowser().bootstrapModule(MttModule);

@@ -33,8 +33,8 @@ import {OptionValueChangeEvent} from './tradefed_config_option_form';
 export class TargetPreparerForm extends FormChangeTracker implements OnInit {
   @Input() targetPreparers!: Array<Partial<TradefedConfigObject>>;
   @Input() canEdit = true;
-  @Output() addTargetPreparer = new EventEmitter();
-  @Output() deleteTargetPreparer = new EventEmitter<number>();
+  @Output() readonly addTargetPreparer = new EventEmitter();
+  @Output() readonly deleteTargetPreparer = new EventEmitter<number>();
   @ViewChildren(FormChangeTracker) override trackers!: QueryList<FormChangeTracker>;
 
   ngOnInit() {
@@ -71,7 +71,7 @@ export class TargetPreparerForm extends FormChangeTracker implements OnInit {
         !targetPreparer.option_values[event.index]) {
       return;
     }
-    targetPreparer.option_values[event.index]!.values = arr;
+    targetPreparer.option_values[event.index].values = arr;
     return arr;
   }
 
@@ -82,9 +82,9 @@ export class TargetPreparerForm extends FormChangeTracker implements OnInit {
    */
   override getInvalidInputs(): ElementRef[] {
     this.invalidInputs = super.getInvalidInputs();
-    this.trackers.forEach((tracker) => {
+    for (const tracker of this.trackers) {
       this.invalidInputs.push(...tracker.getInvalidInputs());
-    });
+    }
     return this.invalidInputs;
   }
 }

@@ -66,7 +66,7 @@ export class InfiniteScroll implements OnChanges, OnInit, OnDestroy {
   @Input() scrollDebounceTimeMs = DEFAULT_DEBOUNCE_TIME_MS;
 
   /** Event emitted when the element has scrolled enough to need new content. */
-  @Output() scrollLoad = new EventEmitter<InfiniteScrollLoadEvent>();
+  @Output() readonly scrollLoad = new EventEmitter<InfiniteScrollLoadEvent>();
 
   /**
    * Target element to which to apply the scrolling behavior. This property is

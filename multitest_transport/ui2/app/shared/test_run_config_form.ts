@@ -51,9 +51,9 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
   @Input() prevTestRunId?: string;
 
   /** Emits the updated config for two-way binding with parent */
-  @Output() testRunConfigChange = new EventEmitter<Partial<TestRunConfig>>();
+  @Output() readonly testRunConfigChange = new EventEmitter<Partial<TestRunConfig>>();
   /** Emits the latest rerun parameters. */
-  @Output() rerunContext = new EventEmitter<RerunContext>();
+  @Output() readonly rerunContext = new EventEmitter<RerunContext>();
 
   /** Notified when the component is destroyed. */
   private readonly destroy = new ReplaySubject<void>();

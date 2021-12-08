@@ -35,8 +35,8 @@ export class TestRunConfigSummary implements OnInit {
   @Input() config!: mttModels.TestRunConfig;
   @Input() editable = true;
   @Input() title = 'Test Run Config';
-  @Output() configChange = new EventEmitter<mttModels.TestRunConfig>();
-  @Output() configDelete = new EventEmitter();
+  @Output() readonly configChange = new EventEmitter<mttModels.TestRunConfig>();
+  @Output() readonly configDelete = new EventEmitter();
 
   viewDetails = true;
   mttObjectMap = newMttObjectMap();

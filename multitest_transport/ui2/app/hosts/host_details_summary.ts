@@ -33,7 +33,7 @@ import {assertRequiredInput} from '../shared/util';
   templateUrl: './host_details_summary.ng.html',
 })
 export class HostDetailsSummary implements OnChanges, OnInit, OnDestroy {
-  @Output() dataLoadedEvent = new EventEmitter<boolean>();
+  @Output() readonly dataLoadedEvent = new EventEmitter<boolean>();
   @Input() id!: string;
   private readonly destroy = new ReplaySubject<void>();
   readonly overflowListType = OverflowListType;

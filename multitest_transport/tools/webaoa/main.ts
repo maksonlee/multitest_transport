@@ -18,7 +18,7 @@
 import {enableProdMode} from '@angular/core';
 import {platformBrowser} from '@angular/platform-browser';
 
-import {AppModuleNgFactory} from './app_module.ngfactory';
+import {AppModule} from './app_module';
 
 // Enable faster runtime when compiled
 if (COMPILED) {
@@ -26,4 +26,4 @@ if (COMPILED) {
 }
 
 // Bootstrap the application
-platformBrowser().bootstrapModuleFactory(AppModuleNgFactory);
+platformBrowser().bootstrapModule(AppModule);

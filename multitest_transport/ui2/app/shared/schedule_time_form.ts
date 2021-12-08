@@ -84,7 +84,7 @@ export class ScheduleTimeForm implements ControlValueAccessor, OnChanges {
 
   // Timezone value and options
   @Input() timezone = LOCAL_TZ;
-  @Output() timezoneChange = new EventEmitter<string>();
+  @Output() readonly timezoneChange = new EventEmitter<string>();
   timezoneOptions: string[] = [];
 
   // Selected parameters

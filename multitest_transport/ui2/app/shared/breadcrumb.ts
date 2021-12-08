@@ -28,7 +28,7 @@ import {assertRequiredInput} from './util';
 export class Breadcrumb implements OnChanges, OnInit {
   @Input() prefix?: string;
   @Input() path!: string;
-  @Output() pathChange = new EventEmitter<string>();
+  @Output() readonly pathChange = new EventEmitter<string>();
 
   pathArray: string[] = [];
 

@@ -50,8 +50,8 @@ export class TestResourceForm extends FormChangeTracker implements OnInit {
   @Input() canAdd = true;
   @Input() canDelete = true;
 
-  @Output() addTestResource = new EventEmitter();
-  @Output() removeTestResource = new EventEmitter<number>();
+  @Output() readonly addTestResource = new EventEmitter();
+  @Output() readonly removeTestResource = new EventEmitter<number>();
 
   // Whenever an event fired such as add or remove, it will set this value to
   // true

@@ -35,7 +35,7 @@ import {assertRequiredInput, deepCopy} from '../shared/util';
 export class TestRunActionPicker extends FormChangeTracker implements OnInit {
   @Input() actions!: TestRunAction[];
   @Input() selectedActions!: TestRunAction[];
-  @Output() selectionChange = new EventEmitter();
+  @Output() readonly selectionChange = new EventEmitter();
 
   selection = new SelectionModel<TestRunAction>(true, this.selectedActions);
 

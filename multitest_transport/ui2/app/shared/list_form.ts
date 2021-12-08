@@ -32,8 +32,8 @@ import {assertRequiredInput} from './util';
 export class ListForm extends FormChangeTracker implements OnInit {
   @Input() data!: string[];
   @Input() label!: string;
-  @Output() addItem = new EventEmitter();
-  @Output() removeItem = new EventEmitter<number>();
+  @Output() readonly addItem = new EventEmitter();
+  @Output() readonly removeItem = new EventEmitter<number>();
 
   ngOnInit() {
     assertRequiredInput(this.data, 'data', 'ListForm');

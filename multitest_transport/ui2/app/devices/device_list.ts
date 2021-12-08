@@ -55,7 +55,7 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
   /** Validates the initially selected devices. */
   @Input() validationEnabled = false;
   @Input() initialSelection: string[] = [];
-  @Output() selectedSerialsChange = new EventEmitter<string[]>();
+  @Output() readonly selectedSerialsChange = new EventEmitter<string[]>();
 
   selectedSerials: string[] = [];
   isLoading = false;

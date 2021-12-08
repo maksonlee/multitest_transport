@@ -53,12 +53,12 @@ describe('TableRowsSelect', () => {
      });
 
   describe('TableRowSelect directive', () => {
+    const CLICK = new MouseEvent('click');
+    const SHIFT_CLICK = new MouseEvent('click', {shiftKey: true});
     let tableRowSelect: TableRowSelect;
-    let evt: MouseEvent;
 
     beforeEach(() => {
       tableRowSelect = new TableRowSelect(tableRowsSelectManager);
-      evt = document.createEvent('MouseEvents');
     });
 
     it('removes or adds an item in selection correctly', () => {
@@ -67,20 +67,16 @@ describe('TableRowsSelect', () => {
           ['host1', 'host2', 'host3', 'host4', 'host5', 'host6', 'host7'];
       tableRowSelect.rowIndex = 0;
       tableRowSelect.rowIdFieldValue = 'host1';
-      evt.initMouseEvent(
-          'click', true, true, window, 0, 0, 0, 0, 0, false, false, false,
-          false, 0, null);
 
       // Selects the item.
-      tableRowSelect.select(evt);
-
+      tableRowSelect.select(CLICK);
       expect(tableRowsSelectManager.selection.selected)
           .toContain(expectedSelection);
       expect(tableRowsSelectManager.selectionChange.emit)
           .toHaveBeenCalledTimes(1);
 
       // Deselects the item.
-      tableRowSelect.select(evt);
+      tableRowSelect.select(CLICK);
       expect(tableRowsSelectManager.selection.selected)
           .not.toContain(expectedSelection);
       expect(tableRowsSelectManager.selectionChange.emit)
@@ -97,12 +93,8 @@ describe('TableRowsSelect', () => {
       tableRowSelect.rowIndex = 5;
       tableRowSelect.rowIdFieldValue =
           tableRowsSelectManager.rowIdFieldAllValues[tableRowSelect.rowIndex];
-      evt.initMouseEvent(
-          'click', true, true, window, 0, 0, 0, 0, 0, false, false, true, false,
-          0, null);
 
-      tableRowSelect.select(evt);
-
+      tableRowSelect.select(SHIFT_CLICK);
       expect(tableRowsSelectManager.selection.selected)
           .toEqual(expectedSelection);
       expect(tableRowsSelectManager.selectionChange.emit)
@@ -120,12 +112,8 @@ describe('TableRowsSelect', () => {
       tableRowSelect.rowIndex = 3;
       tableRowSelect.rowIdFieldValue =
           tableRowsSelectManager.rowIdFieldAllValues[tableRowSelect.rowIndex];
-      evt.initMouseEvent(
-          'click', true, true, window, 0, 0, 0, 0, 0, false, false, true, false,
-          0, null);
 
-      tableRowSelect.select(evt);
-
+      tableRowSelect.select(SHIFT_CLICK);
       expect(tableRowsSelectManager.selection.selected)
           .toEqual(expectedSelection);
       expect(tableRowsSelectManager.selectionChange.emit)
@@ -174,8 +162,6 @@ describe('TableRowsSelect', () => {
   describe('TableRowSelectCheckbox directive', () => {
     let tableRowSelectCheckbox: TableRowSelectCheckbox;
 
-    let evt: MouseEvent;
-
     beforeEach(() => {
       const tableRowSelects: TableRowSelect[] = [];
       for (let i = 0; i < 7; i++) {
@@ -188,7 +174,6 @@ describe('TableRowsSelect', () => {
 
       tableRowSelectCheckbox =
           new TableRowSelectCheckbox(tableRowsSelectManager);
-      evt = document.createEvent('MouseEvents');
     });
 
     it('removes or adds an item in selection correctly', () => {
@@ -197,13 +182,9 @@ describe('TableRowsSelect', () => {
           ['host1', 'host2', 'host3', 'host4', 'host5', 'host6', 'host7'];
       tableRowSelectCheckbox.rowIndex = 0;
       tableRowSelectCheckbox.rowIdFieldValue = 'host1';
-      evt.initMouseEvent(
-          'click', true, true, window, 0, 0, 0, 0, 0, false, false, false,
-          false, 0, null);
 
       // Selects the item.
       tableRowSelectCheckbox.select();
-
       expect(tableRowsSelectManager.selection.selected)
           .toContain(expectedSelection);
       expect(tableRowsSelectManager.selectionChange.emit)
@@ -211,7 +192,6 @@ describe('TableRowsSelect', () => {
 
       // Deselects the item.
       tableRowSelectCheckbox.select();
-
       expect(tableRowsSelectManager.selection.selected)
           .not.toContain(expectedSelection);
       expect(tableRowsSelectManager.selectionChange.emit)

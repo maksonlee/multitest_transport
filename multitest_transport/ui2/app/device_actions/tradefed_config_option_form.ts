@@ -42,9 +42,9 @@ export class TradefedConfigOptionForm extends FormChangeTracker {
   @Input() optionTypeName = 'TradeFed Option';
   @Input() optionValues?: NameMultiValuePair[];
   @Input() canEdit = true;
-  @Output() addOption = new EventEmitter();
-  @Output() removeOption = new EventEmitter<number>();
-  @Output() optionValueChange = new EventEmitter<OptionValueChangeEvent>();
+  @Output() readonly addOption = new EventEmitter();
+  @Output() readonly removeOption = new EventEmitter<number>();
+  @Output() readonly optionValueChange = new EventEmitter<OptionValueChangeEvent>();
   arrayToString = arrayToString;
 
   /** Emit event when option's value changes */

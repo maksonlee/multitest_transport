@@ -31,8 +31,8 @@ import {assertRequiredInput} from './util';
 })
 export class NameValuePairListForm extends FormChangeTracker implements OnInit {
   @Input() data!: NameValuePair[];
-  @Output() addNameValuePair = new EventEmitter();
-  @Output() removeNameValuePair = new EventEmitter<number>();
+  @Output() readonly addNameValuePair = new EventEmitter();
+  @Output() readonly removeNameValuePair = new EventEmitter<number>();
 
   ngOnInit() {
     assertRequiredInput(this.data, 'data', 'NameValuePairListForm');

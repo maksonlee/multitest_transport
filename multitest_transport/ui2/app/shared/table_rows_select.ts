@@ -19,7 +19,7 @@
  */
 
 import {SelectionModel} from '@angular/cdk/collections';
-import {AfterContentInit, ContentChildren, Directive, EventEmitter, HostListener, Input, OnInit, Optional, Output, QueryList} from '@angular/core';
+import {AfterContentInit, ContentChildren, Directive, EventEmitter, HostListener, Input, OnInit, Output, QueryList} from '@angular/core';
 import {assertRequiredInput} from './util';
 
 /**
@@ -39,9 +39,7 @@ export class TableRowSelectCheckbox {
     return this.rowsSelectManager.selection.isSelected(this.rowIdFieldValue);
   }
 
-  constructor(
-      @Optional() public rowsSelectManager: TableRowsSelectManager,
-  ) {
+  constructor(public rowsSelectManager: TableRowsSelectManager) {
     assertRequiredInput(
         this.rowsSelectManager, 'rowsSelectManager', 'TableRowSelectCheckbox');
   }
@@ -82,9 +80,7 @@ export class TableRowsSelectCheckbox {
         !this.rowsSelectManager.isAllSelected();
   }
 
-  constructor(
-      @Optional() public rowsSelectManager: TableRowsSelectManager,
-  ) {
+  constructor(public rowsSelectManager: TableRowsSelectManager) {
     assertRequiredInput(
         this.rowsSelectManager, 'rowsSelectManager', 'TableRowSelectCheckbox');
   }
@@ -118,9 +114,7 @@ export class TableRowSelect {
   /** True if the user selects the row with shift key. */
   isSelectedWithShiftKey = false;
 
-  constructor(
-      @Optional() public rowsSelectManager: TableRowsSelectManager,
-  ) {
+  constructor(public rowsSelectManager: TableRowsSelectManager) {
     assertRequiredInput(
         this.rowsSelectManager, 'rowsSelectManager', 'TableRowSelect');
   }
@@ -175,7 +169,7 @@ export class TableRowsSelectManager implements OnInit, AfterContentInit {
   @Input() initialSelection: string[] = [];
   @Input() rowIdFieldAllValues: string[] = [];
 
-  @Output() selectionChange = new EventEmitter<string[]>();
+  @Output() readonly selectionChange = new EventEmitter<string[]>();
 
   /** The index of a row that was clicked last time. */
   prevClickedRowIndex = -1;

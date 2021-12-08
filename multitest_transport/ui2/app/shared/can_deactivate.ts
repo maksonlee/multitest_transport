@@ -72,9 +72,9 @@ export abstract class FormChangeTracker {
       return invalidFields;
     }
     // When validating form, touch form fields to show error messages
-    this.ngmodels.forEach(ngmodel => {
+    for (const ngmodel of this.ngmodels) {
       ngmodel.control.markAsTouched();
-    });
+    }
     // Find all invalid fields
     invalidFields = this.findInvald(this.formSelects);
     return invalidFields.concat(this.findInvald(this.formInputs));
@@ -96,12 +96,12 @@ export abstract class FormChangeTracker {
    * state
    */
   resetForm() {
-    this.formInputs.forEach(input => {
+    for (const input of this.formInputs) {
       input.nativeElement.classList.remove('ng-dirty');
-    });
-    this.trackers.forEach(tracker => {
+    }
+    for (const tracker of this.trackers) {
       tracker.resetForm();
-    });
+    }
     this.hasContentChanged = false;
   }
 

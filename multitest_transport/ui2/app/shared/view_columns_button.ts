@@ -12,7 +12,7 @@ import {TableColumn} from 'google3/third_party/py/multitest_transport/ui2/app/se
 })
 export class ViewColumnsButton {
   @Input() columns: TableColumn[] = [];
-  @Output() columnToggled = new EventEmitter<number>();
+  @Output() readonly columnToggled = new EventEmitter<number>();
 
   toggleColumn(event: Event, columnIndex: number) {
     event.stopPropagation();

@@ -41,11 +41,11 @@ export class UnassignedOfflineHostList implements OnInit {
   @Input() listRowMaxHeight = 400;
   @Input() currentLabOwners: string[] = [];
 
-  @Output() assignHostsToMe = new EventEmitter<string[]>();
-  @Output() assignHostsTo = new EventEmitter<HostAssignInfo>();
-  @Output() notesUpdated = new EventEmitter<string[]>();
-  @Output() changeSort = new EventEmitter<Sort>();
-  @Output() removeHostFromList = new EventEmitter<LabHostInfo>();
+  @Output() readonly assignHostsToMe = new EventEmitter<string[]>();
+  @Output() readonly assignHostsTo = new EventEmitter<HostAssignInfo>();
+  @Output() readonly notesUpdated = new EventEmitter<string[]>();
+  @Output() readonly changeSort = new EventEmitter<Sort>();
+  @Output() readonly removeHostFromList = new EventEmitter<LabHostInfo>();
 
   constructor(
       private readonly feedbackService: FeedbackService,

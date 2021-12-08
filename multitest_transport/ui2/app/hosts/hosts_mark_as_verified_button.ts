@@ -32,7 +32,7 @@ import {HostRecoveryStateRequest, RecoveryState} from '../services/tfc_models';
 export class HostsMarkAsVerifiedButton implements OnDestroy {
   @Input() hostNames: string[] = [];
   @Input() disabled: boolean = false;
-  @Output() hostsMarkedAsVerified = new EventEmitter<string[]>();
+  @Output() readonly hostsMarkedAsVerified = new EventEmitter<string[]>();
 
   protected readonly destroy = new ReplaySubject<void>();
 

@@ -35,7 +35,7 @@ export class TestRunConfigList implements OnInit {
   @Input() data: mttModels.TestRunConfig[] = [];
   @Input() configTemplate?: Partial<mttModels.TestRunConfig>;
   @Input() configTitle = 'Test Run Config';
-  @Output() dataChange = new EventEmitter();
+  @Output() readonly dataChange = new EventEmitter();
 
   constructor(
       private readonly mttObjectMapService: MttObjectMapService,

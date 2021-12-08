@@ -81,8 +81,8 @@ export class DeviceListTable implements OnDestroy, OnInit, OnChanges {
   /** When true, shows a column of checkboxes. */
   @Input() selectable = true;
 
-  @Output() selectionChange = new EventEmitter<string[]>();
-  @Output() deviceListChangeSort = new EventEmitter<Sort>();
+  @Output() readonly selectionChange = new EventEmitter<string[]>();
+  @Output() readonly deviceListChangeSort = new EventEmitter<Sort>();
 
   @ViewChild(MatTable, {static: true}) matTable!: MatTable<{}>;
   @ViewChild('table', {static: false, read: ElementRef}) table!: ElementRef;

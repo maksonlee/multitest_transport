@@ -39,7 +39,7 @@ export class LocalFileStore implements OnInit, OnDestroy {
   readonly FileType = FileType;
 
   @Input() url!: string;
-  @Output() urlChange = new EventEmitter<string>();
+  @Output() readonly urlChange = new EventEmitter<string>();
 
   @ViewChild(MatTable, {static: false}) table!: MatTable<{}>;
   columnsToDisplay = ['name', 'timestamp', 'size', 'action'];

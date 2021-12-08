@@ -43,8 +43,8 @@ export class MultiSelect implements OnInit, OnChanges {
   @Input() formWidth = '300px';
   @Input() appearance: 'legacy'|'standard'|'fill'|'outline' = 'legacy';
   @Input() disabled = false;
-  @Output() selectionChange = new EventEmitter<string[]>();
-  @Output() keydown = new EventEmitter<KeyboardEvent>();
+  @Output() readonly selectionChange = new EventEmitter<string[]>();
+  @Output() readonly keydown = new EventEmitter<KeyboardEvent>();
 
   @ViewChild(MatSelect, {static: true}) matSelect!: MatSelect;
 

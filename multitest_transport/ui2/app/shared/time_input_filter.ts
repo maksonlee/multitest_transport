@@ -81,7 +81,7 @@ export class TimeInputFilter {
   @Input() maximumNumber = 99;
   @Input() operator = TimeFilterOperator.ALL;
 
-  @Output() timeFilterChange = new EventEmitter<TimeFilterEvent>();
+  @Output() readonly timeFilterChange = new EventEmitter<TimeFilterEvent>();
 
   operators = TimeFilterOperator.OPERATORS;
 

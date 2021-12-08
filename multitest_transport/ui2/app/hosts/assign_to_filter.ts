@@ -37,7 +37,7 @@ export class AssignToFilter implements OnChanges, OnInit, OnDestroy {
   @Input() dataSource: string[] = [];
   @Input() disabled: boolean = false;
 
-  @Output() submit = new EventEmitter<HostAssignInfo>();
+  @Output() readonly submit = new EventEmitter<HostAssignInfo>();
 
   private readonly destroy = new ReplaySubject<void>();
   valueControl = new FormControl();

@@ -74,9 +74,9 @@ export const dateTimeValidator: ValidatorFn =
 })
 export class NotesEditor implements OnDestroy, OnInit {
   @Input() params!: NoteDialogParams;
-  @Output() close = new EventEmitter();
-  @Output() saved = new EventEmitter<boolean>();
-  @Output() switchToListMode = new EventEmitter<boolean>();
+  @Output() readonly close = new EventEmitter();
+  @Output() readonly saved = new EventEmitter<boolean>();
+  @Output() readonly switchToListMode = new EventEmitter<boolean>();
 
   readonly OverflowListType = OverflowListType;
   readonly NoteType = NoteType;

@@ -46,7 +46,7 @@ export class RecoveryDeviceList implements OnInit, OnChanges, OnDestroy {
 
   @Input() hostName!: string;
   @Input() selectedLab = '';
-  @Output() hide = new EventEmitter();
+  @Output() readonly hide = new EventEmitter();
 
   private readonly destroy = new ReplaySubject<void>();
 

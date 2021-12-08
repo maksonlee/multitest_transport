@@ -33,8 +33,8 @@ export class FileCleanerCriterionForm extends FormChangeTracker implements
   readonly CRITERION_TYPES = Object.values(FileCleanerCriterionType);
 
   @Input() criteria!: FileCleanerCriterion[];
-  @Output() addCriterion = new EventEmitter();
-  @Output() deleteCriterion = new EventEmitter<number>();
+  @Output() readonly addCriterion = new EventEmitter();
+  @Output() readonly deleteCriterion = new EventEmitter<number>();
 
   @ViewChildren(FormChangeTracker)
   override trackers!: QueryList<FormChangeTracker>;

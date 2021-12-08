@@ -36,8 +36,8 @@ export class BuildChannelItem implements OnInit {
   @Input() buildChannel!: BuildChannel;
   @Input() edit = true;
 
-  @Output() authChange = new EventEmitter<BuildChannel>();
-  @Output() deleteItem = new EventEmitter<BuildChannel>();
+  @Output() readonly authChange = new EventEmitter<BuildChannel>();
+  @Output() readonly deleteItem = new EventEmitter<BuildChannel>();
 
   constructor(
       private readonly mtt: MttClient, private readonly notifier: Notifier) {}

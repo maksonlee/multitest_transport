@@ -34,8 +34,8 @@ import {HostRecoveryStateRequest, RecoveryState} from '../services/tfc_models';
 export class MarkHostAsFixedButton implements OnDestroy {
   @Input() disabled: boolean = false;
   @Input() host?: LabHostInfo;
-  @Output() hostMarkedAsFixed = new EventEmitter<string>();
-  @Output() hostAssigneeChange = new EventEmitter<HostAssignInfo>();
+  @Output() readonly hostMarkedAsFixed = new EventEmitter<string>();
+  @Output() readonly hostAssigneeChange = new EventEmitter<HostAssignInfo>();
 
   private readonly destroy = new ReplaySubject<void>();
   readonly RecoveryState = RecoveryState;

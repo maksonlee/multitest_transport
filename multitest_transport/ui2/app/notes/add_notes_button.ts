@@ -34,8 +34,8 @@ export class AddNotesButton implements OnDestroy {
   @Input() labName = '';
   @Input() disabled = false;
   @Input() deviceHostMap: Array<[string, string]> = [];
-  @Output() notesUpdated = new EventEmitter<string[]>();
-  @Output() click = new EventEmitter<MouseEvent>();
+  @Output() readonly notesUpdated = new EventEmitter<string[]>();
+  @Output() readonly click = new EventEmitter<MouseEvent>();
 
   protected readonly destroy = new ReplaySubject<void>();
 

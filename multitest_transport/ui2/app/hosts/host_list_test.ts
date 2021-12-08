@@ -487,8 +487,8 @@ describe('HostList', () => {
     hostList.toggleSelection(event, option);
 
     const searchCriteria = hostList.getSearchCriteria();
-    expect(searchCriteria!.hostnames!.length).toEqual(1);
-    expect(searchCriteria!.hostnames![0]).toEqual(hostname);
+    expect(searchCriteria.hostnames!.length).toEqual(1);
+    expect(searchCriteria.hostnames![0]).toEqual(hostname);
   });
 
   it('can remove search text manually', () => {
@@ -503,16 +503,16 @@ describe('HostList', () => {
         {valueControl: `Hostname: (${hostname} | ${hostname2})`});
     hostList.submit(event);
     let searchCriteria = hostList.getSearchCriteria();
-    expect(searchCriteria!.hostnames!.length).toEqual(2);
-    expect(searchCriteria!.hostnames![0]).toEqual(hostname);
-    expect(searchCriteria!.hostnames![1]).toEqual(hostname2);
+    expect(searchCriteria.hostnames!.length).toEqual(2);
+    expect(searchCriteria.hostnames![0]).toEqual(hostname);
+    expect(searchCriteria.hostnames![1]).toEqual(hostname2);
 
     // step 2: edit search criteria manually
     hostList.formGroup.setValue({valueControl: `Hostname: (${hostname})`});
     hostList.submit(event);
     searchCriteria = hostList.getSearchCriteria();
-    expect(searchCriteria!.hostnames!.length).toEqual(1);
-    expect(searchCriteria!.hostnames![0]).toEqual(hostname);
+    expect(searchCriteria.hostnames!.length).toEqual(1);
+    expect(searchCriteria.hostnames![0]).toEqual(hostname);
   });
 
   it('can clear search text manually', () => {
@@ -524,8 +524,8 @@ describe('HostList', () => {
     hostList.formGroup.setValue({valueControl: `Hostname: (${hostname})`});
     hostList.submit(event);
     let searchCriteria = hostList.getSearchCriteria();
-    expect(searchCriteria!.hostnames!.length).toEqual(1);
-    expect(searchCriteria!.hostnames![0]).toEqual(hostname);
+    expect(searchCriteria.hostnames!.length).toEqual(1);
+    expect(searchCriteria.hostnames![0]).toEqual(hostname);
 
     // step 2 clear
     hostList.formGroup.setValue({valueControl: ''});
@@ -550,10 +550,10 @@ describe('HostList', () => {
         {valueControl: `Hostname: (${hostname}) Host Group: (${hostGroup})`});
     hostList.submit(event);
     const searchCriteria = hostList.getSearchCriteria();
-    expect(searchCriteria!.hostnames!.length).toEqual(1);
-    expect(searchCriteria!.hostGroups!.length).toEqual(1);
-    expect(searchCriteria!.hostnames![0]).toEqual(hostname);
-    expect(searchCriteria!.hostGroups![0]).toEqual(hostGroup);
+    expect(searchCriteria.hostnames!.length).toEqual(1);
+    expect(searchCriteria.hostGroups!.length).toEqual(1);
+    expect(searchCriteria.hostnames![0]).toEqual(hostname);
+    expect(searchCriteria.hostGroups![0]).toEqual(hostGroup);
   });
 
   it('can press enter key to refresh search criteria', () => {
@@ -572,8 +572,8 @@ describe('HostList', () => {
     hostList.toggleSelection(event, option);
     hostList.submit(event);
     const searchCriteria = hostList.getSearchCriteria();
-    expect(searchCriteria!.hostnames!.length).toEqual(1);
-    expect(searchCriteria!.hostnames![0]).toEqual(hostname);
+    expect(searchCriteria.hostnames!.length).toEqual(1);
+    expect(searchCriteria.hostnames![0]).toEqual(hostname);
   });
 
   it('should reflect the column name on search criteria string right after the column is selected',

@@ -20,7 +20,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {Title} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, Router, UrlSerializer} from '@angular/router';
-import {of as observableOf} from 'rxjs';
+import {firstValueFrom, of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services';
 import {TfcClient} from '../services/tfc_client';
@@ -47,7 +47,7 @@ describe('OfflineHostListPage', () => {
     const hostInfosResponse = newMockOfflineHostInfosByLabResponse(lab);
     const labInfosResponse = newMockLabInfosResponse();
     routerSpy = jasmine.createSpyObj('Router', {
-      navigate: observableOf(true).toPromise(),
+      navigate: firstValueFrom(observableOf(true)),
       createUrlTree: {},
     });
     tfcClientSpy = jasmine.createSpyObj('tfcClient', {

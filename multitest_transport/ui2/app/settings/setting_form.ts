@@ -115,9 +115,9 @@ export class SettingForm extends FormChangeTracker implements OnInit,
    */
   validateForm() {
     this.invalidInputs = [];
-    this.nameValuePairListForms.forEach((form) => {
+    for (const form of this.nameValuePairListForms) {
       this.invalidInputs = this.invalidInputs.concat(form.getInvalidInputs());
-    });
+    }
     return !this.invalidInputs.length;
   }
 

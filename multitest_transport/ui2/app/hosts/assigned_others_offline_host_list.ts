@@ -38,8 +38,8 @@ export class AssignedOthersOfflineHostList implements OnInit {
   @Input() labName = '';
   @Input() listHeaderRowTop = '0';
   @Input() listRowMaxHeight = 400;
-  @Output() assignHostsTo = new EventEmitter<HostAssignInfo>();
-  @Output() changeSort = new EventEmitter<Sort>();
+  @Output() readonly assignHostsTo = new EventEmitter<HostAssignInfo>();
+  @Output() readonly changeSort = new EventEmitter<Sort>();
 
   constructor(
       readonly userService: UserService,

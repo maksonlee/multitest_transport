@@ -36,7 +36,7 @@ import {buildApiErrorMessage} from '../shared/util';
 })
 export class DeviceDetailsSummary implements OnChanges, OnInit, OnDestroy {
   @Input() id!: string;
-  @Output() dataLoadedEvent = new EventEmitter<boolean>();
+  @Output() readonly dataLoadedEvent = new EventEmitter<boolean>();
   @Input() newWindow = false;
 
   private readonly destroy = new ReplaySubject<void>();

@@ -83,7 +83,7 @@ export class BuildPicker implements OnInit, OnDestroy {
   private readonly destroy = new ReplaySubject<void>();
 
   /** Update build channels in parent after authorization. */
-  @Output() buildChannelsChange = new EventEmitter<BuildChannel[]>();
+  @Output() readonly buildChannelsChange = new EventEmitter<BuildChannel[]>();
 
   readonly BuildPickerMode = BuildPickerMode;
   mode = BuildPickerMode.SELECT;
@@ -360,16 +360,12 @@ export class BuildPicker implements OnInit, OnDestroy {
    * @param event An InfiniteScrollLoadEvent event
    */
   onScrollLoad(event: InfiniteScrollLoadEvent) {
-    event.completed = this.loadMore().then(() => this.nextPageToken.length > 0);
-  }
-
-  async loadMore() {
-    // To avoid double loading, it's possible that multiple loads are happending
-    // we only load if previous load finish
+    // To avoid double loading, we only load if previous load finished.
     if (this.isLoadingBuildItems) {
       return;
     }
-    await this.loadBuildList(this.nextPageToken);
+    this.loadBuildList(this.nextPageToken);
+    event.completed = Promise.resolve(this.nextPageToken.length > 0);
   }
 
   /**

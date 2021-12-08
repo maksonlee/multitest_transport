@@ -39,11 +39,11 @@ export class AssignedMeOfflineHostList implements OnInit {
   @Input() labName = '';
   @Input() listHeaderRowTop = '0';
   @Input() listRowMaxHeight = 400;
-  @Output() assignHostsTo = new EventEmitter<HostAssignInfo>();
-  @Output() notesUpdated = new EventEmitter<string[]>();
-  @Output() changeSort = new EventEmitter<Sort>();
-  @Output()
-  assignedMeHostListDataSourceChange = new EventEmitter<LabHostInfo[]>();
+  @Output() readonly assignHostsTo = new EventEmitter<HostAssignInfo>();
+  @Output() readonly notesUpdated = new EventEmitter<string[]>();
+  @Output() readonly changeSort = new EventEmitter<Sort>();
+  @Output() readonly assignedMeHostListDataSourceChange =
+      new EventEmitter<LabHostInfo[]>();
 
   constructor(
       private readonly feedbackService: FeedbackService,

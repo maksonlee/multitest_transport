@@ -48,8 +48,8 @@ export class RecoveryHostList implements AfterViewInit, OnChanges, OnDestroy {
   @Input() selectedHostGroups: string[] = [];
   @Input() selectedLab = '';
   @Input() selectedRunTargets: string[] = [];
-  @Output() focusedHostNameChange = new EventEmitter<string>();
-  @Output() selectionChange = new EventEmitter<string[]>();
+  @Output() readonly focusedHostNameChange = new EventEmitter<string>();
+  @Output() readonly selectionChange = new EventEmitter<string[]>();
 
   private readonly destroy = new ReplaySubject<void>();
 

@@ -82,10 +82,10 @@ export class HostListTable implements OnInit, OnChanges, OnDestroy {
 
   @Input() navigatePageMode: NavigatePageMode = NavigatePageMode.PAGE;
 
-  @Output() selectionChange = new EventEmitter<string[]>();
-  @Output() hostAssigneeChange = new EventEmitter<HostAssignInfo>();
-  @Output() hostListChangeSort = new EventEmitter<Sort>();
-  @Output() removeHostFromList = new EventEmitter<LabHostInfo>();
+  @Output() readonly selectionChange = new EventEmitter<string[]>();
+  @Output() readonly hostAssigneeChange = new EventEmitter<HostAssignInfo>();
+  @Output() readonly hostListChangeSort = new EventEmitter<Sort>();
+  @Output() readonly removeHostFromList = new EventEmitter<LabHostInfo>();
 
   @ViewChild(MatTable, {static: true}) matTable!: MatTable<{}>;
 

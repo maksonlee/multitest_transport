@@ -46,7 +46,7 @@ export class NoteList implements OnChanges, OnInit, OnDestroy {
   // A device serial or a hostname.
   @Input() id!: string;
   @Input() noteType!: NoteType;
-  @Output() showEditor = new EventEmitter<NoteDialogParams>();
+  @Output() readonly showEditor = new EventEmitter<NoteDialogParams>();
   labName = '';
   /** Used for adding/editing a device note. */
   hostname?: string;

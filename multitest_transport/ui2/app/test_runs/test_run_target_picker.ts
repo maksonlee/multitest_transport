@@ -35,9 +35,10 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
   @Input() autoUpdate = false;
   @Input() allowPartialDeviceMatch = false;
 
-  @Output() deviceSpecsChange = new EventEmitter<string[]>();
-  @Output() shardCountChange = new EventEmitter<number>();
-  @Output() allowPartialDeviceMatchChange = new EventEmitter<boolean>();
+  @Output() readonly deviceSpecsChange = new EventEmitter<string[]>();
+  @Output() readonly shardCountChange = new EventEmitter<number>();
+  @Output() readonly allowPartialDeviceMatchChange =
+      new EventEmitter<boolean>();
 
   manualDeviceSpecs = false;
   deviceSpecsAutocompleteOptions:
