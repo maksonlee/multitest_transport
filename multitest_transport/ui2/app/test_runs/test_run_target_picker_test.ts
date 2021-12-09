@@ -92,8 +92,12 @@ describe('TestRunTargetPicker', () => {
         testRunTargetPicker.getDeviceSpecsAutocompleteOptions('Devic').sort(
             (first, second) => first.value.localeCompare(second.value));
     expect(result).toEqual([
-      {value: 'device_serial:', displayedValue: 'device_serial'},
-      {value: 'device_type:', displayedValue: 'device_type'},
+      {
+        value: 'device_serial:',
+        displayedValue: 'device_serial',
+        reopenPanel: true
+      },
+      {value: 'device_type:', displayedValue: 'device_type', reopenPanel: true},
     ]);
 
     result =
@@ -101,8 +105,16 @@ describe('TestRunTargetPicker', () => {
             .getDeviceSpecsAutocompleteOptions('product:a;product')
             .sort((first, second) => first.value.localeCompare(second.value));
     expect(result).toEqual([
-      {value: 'product:a;product_variant:', displayedValue: 'product_variant'},
-      {value: 'product:a;product:', displayedValue: 'product'},
+      {
+        value: 'product:a;product_variant:',
+        displayedValue: 'product_variant',
+        reopenPanel: true
+      },
+      {
+        value: 'product:a;product:',
+        displayedValue: 'product',
+        reopenPanel: true
+      },
     ]);
   });
 
@@ -116,15 +128,31 @@ describe('TestRunTargetPicker', () => {
     result =
         testRunTargetPicker.getDeviceSpecsAutocompleteOptions('device_type:');
     expect(result).toEqual([
-      {value: 'device_type:PHYSICAL', displayedValue: 'PHYSICAL'},
-      {value: 'device_type:LOCAL_VIRTUAL', displayedValue: 'LOCAL_VIRTUAL'},
+      {
+        value: 'device_type:PHYSICAL',
+        displayedValue: 'PHYSICAL',
+        reopenPanel: false
+      },
+      {
+        value: 'device_type:LOCAL_VIRTUAL',
+        displayedValue: 'LOCAL_VIRTUAL',
+        reopenPanel: false
+      },
     ]);
 
     result = testRunTargetPicker.getDeviceSpecsAutocompleteOptions(
         'product:a;sim_state:a');
     expect(result).toEqual([
-      {value: 'product:a;sim_state:ABSENT', displayedValue: 'ABSENT'},
-      {value: 'product:a;sim_state:READY', displayedValue: 'READY'},
+      {
+        value: 'product:a;sim_state:ABSENT',
+        displayedValue: 'ABSENT',
+        reopenPanel: false
+      },
+      {
+        value: 'product:a;sim_state:READY',
+        displayedValue: 'READY',
+        reopenPanel: false
+      },
     ]);
 
     result = testRunTargetPicker.getDeviceSpecsAutocompleteOptions(

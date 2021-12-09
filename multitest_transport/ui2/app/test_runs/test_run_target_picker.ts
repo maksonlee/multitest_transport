@@ -15,9 +15,18 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {MatAutocompleteTrigger} from '@angular/material/autocomplete';
+import {MatOptionSelectionChange} from '@angular/material/core';
 
 import {DeviceType} from '../services/tfc_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
+
+declare interface AutocompleteOption {
+  value: string;
+  displayedValue: string;
+  // Whether to reopen the panel after this option is selected.
+  reopenPanel: boolean;
+}
 
 /**
  * A component for selecting run targets.
@@ -41,8 +50,7 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
       new EventEmitter<boolean>();
 
   manualDeviceSpecs = false;
-  deviceSpecsAutocompleteOptions:
-      Array<{value: string, displayedValue: string}> = [];
+  deviceSpecsAutocompleteOptions: AutocompleteOption[] = [];
 
   // TODO: Query TFC for possible values.
   private readonly DEVICE_SPEC_SUGGESTION: {[key: string]: string[]} = {
@@ -79,8 +87,7 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
    * partial key or a partial value, and then filters the options by the suffix.
    * When the user selects any option, it is appended to the input field.
    */
-  getDeviceSpecsAutocompleteOptions(specs: string):
-      Array<{value: string, displayedValue: string}> {
+  getDeviceSpecsAutocompleteOptions(specs: string): AutocompleteOption[] {
     const keyBegin =
         Math.max(0, specs.lastIndexOf(' ') + 1, specs.lastIndexOf(';') + 1);
     const colon = specs.indexOf(':', keyBegin);
@@ -90,7 +97,11 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
       const partialKey = specs.slice(keyBegin);
       return Object.keys(this.DEVICE_SPEC_SUGGESTION)
           .filter(key => key.toLowerCase().includes(partialKey.toLowerCase()))
-          .map(key => ({value: prefix + key + ':', displayedValue: key}));
+          .map(key => ({
+                 value: prefix + key + ':',
+                 displayedValue: key,
+                 reopenPanel: true
+               }));
     } else {
       // The suffix is a value.
       const key = specs.slice(keyBegin, colon);
@@ -101,7 +112,11 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
             .filter(
                 value =>
                     value.toLowerCase().includes(partialValue.toLowerCase()))
-            .map(value => ({value: prefix + value, displayedValue: value}));
+            .map(value => ({
+                   value: prefix + value,
+                   displayedValue: value,
+                   reopenPanel: false
+                 }));
       }
     }
     return [];
@@ -119,6 +134,16 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
   onDeviceSpecsModelChange(deviceSpecsString: string) {
     this.deviceSpecsAutocompleteOptions =
         this.getDeviceSpecsAutocompleteOptions(deviceSpecsString);
+  }
+
+  onDeviceSpecsAutocomplete(
+      event: MatOptionSelectionChange, option: AutocompleteOption,
+      trigger: MatAutocompleteTrigger) {
+    if (event.source.selected && option.reopenPanel) {
+      setTimeout(() => {
+        trigger.openPanel();
+      });
+    }
   }
 
   /**
