@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Unit tests for gcs."""
+import datetime
 
 from absl.testing import absltest
 import apiclient
@@ -28,253 +29,152 @@ from multitest_transport.util import file_util
 
 class GCSBuildProviderTest(absltest.TestCase):
 
+  def setUp(self):
+    super().setUp()
+    self.provider = gcs.GCSBuildProvider()
+    self.api_client = self.provider._client = mock.MagicMock()
+
   def testGetBuildItem_withPathToFile(self):
-    """Test GetBuildItem with input a path to file."""
-    provider = gcs.GCSBuildProvider()
-    path = 'sample_bucket/path/to/file/kitten.png'
-    response = {
-        'bucket': 'sample_bucket',
-        'contentType': 'image/png',
-        'crc32c': 'pNKjPQ==',
-        'etag': 'CO7voM6XjtwCEAE=',
-        'generation': '1531007560333294',
-        'id': 'sample_bucket/path/to/file/kitten.png/1531007560333294',
-        'kind': 'storage#object',
-        'md5Hash': 'KCbI3PYk1aHfekIvf/osrw==',
-        'mediaLink': 'https://sample_link_for_media_download',
-        'metageneration': '1',
-        'name': 'path/to/file/kitten.png',
-        'selfLink': 'https://sample_link_to_the_object',
-        'size': '168276',
-        'storageClass': 'MULTI_REGIONAL',
-        'timeCreated': '2018-07-07T23:52:40.332Z',
-        'timeStorageClassUpdated': '2018-07-07T23:52:40.332Z',
-        'updated': '2018-07-07T23:52:40.332Z'
+    """Tests that files can be fetched from GCS."""
+    self.api_client.objects().get().execute.return_value = {
+        'name': 'dir/file',
+        'size': '123',
+        'updated': '2018-07-07T23:52:40.332Z',
     }
 
-    mock_api_client = mock.MagicMock()
-    mock_api_client.objects().get().execute.return_value = response
-    provider._client = mock_api_client
-
-    build_item = provider.GetBuildItem(path)
-    self.assertTrue(build_item.is_file)
-    self.assertEqual(build_item.name, 'kitten.png')
-    self.assertEqual(build_item.path, path)
-
-  def testGetBuildItem_withInvalidBucketName(self):
-    """Test GetBuildItem with invalid bucket name."""
-    provider = gcs.GCSBuildProvider()
-    path = 'invalid_bucket_name/path/to/file/kitten.png'
-
-    mock_api_client = mock.MagicMock()
-    side_effect = apiclient.http.HttpError(mock.Mock(status=404), 'not found')
-    mock_api_client.objects().get().execute.side_effect = side_effect
-    provider._client = mock_api_client
-
-    build_item = provider.GetBuildItem(path)
-    self.assertIsNone(build_item)
+    build_item = self.provider.GetBuildItem('bucket/dir/file')
+    self.assertEqual(
+        build_item,
+        base.BuildItem(
+            name='file',
+            path='bucket/dir/file',
+            is_file=True,
+            size=123,
+            timestamp=datetime.datetime(2018, 7, 7, 23, 52, 40, 332000)))
 
   def testGetBuildItem_withPathToDirectory(self):
-    """Test GetBuildItem with input a path to directory."""
-    provider = gcs.GCSBuildProvider()
-    path = 'sample_bucket/pathToDirectory/'
-    response = {
-        'bucket': 'sample_bucket',
-        'contentType': 'application/x-www-form-urlencoded;charset=UTF-8',
-        'crc32c': 'AAAAAA==',
-        'etag': 'CMaAgsuXjtwCEAE=',
-        'generation': '1531007553536070',
-        'id': 'sample_bucket/aa5/abc/bla//1531007553536070',
-        'kind': 'storage#object',
-        'md5Hash': '1B2M2Y8AsgTpgAmY7PhCfg==',
-        'mediaLink': 'https://sample_link_for_media_download',
-        'metageneration': '1',
-        'name': 'pathToDirectory/',
-        'selfLink': 'https://sample_link_to_the_object',
+    """Tests that directories can be fetched from GCS."""
+    self.api_client.objects().get().execute.return_value = {
+        'name': 'dir/',
         'size': '0',
-        'storageClass': 'MULTI_REGIONAL',
-        'timeCreated': '2018-07-07T23:52:33.535Z',
-        'timeStorageClassUpdated': '2018-07-07T23:52:33.535Z',
-        'updated': '2018-07-07T23:52:33.535Z'
+        'updated': '2018-07-07T23:52:33.535Z',
     }
 
-    mock_api_client = mock.MagicMock()
-    mock_api_client.objects().get().execute.return_value = response
-    provider._client = mock_api_client
+    build_item = self.provider.GetBuildItem('bucket/dir/')
+    self.assertEqual(
+        build_item,
+        base.BuildItem(
+            name='dir/',
+            path='bucket/dir/',
+            is_file=False,
+            size=0,
+            timestamp=datetime.datetime(2018, 7, 7, 23, 52, 33, 535000)))
 
-    build_item = provider.GetBuildItem(path)
-    self.assertFalse(build_item.is_file)
-    self.assertEqual(build_item.size, 0)
+  def testGetBuildItem_fileNotFound(self):
+    """Tests that None is returned if the file is not found."""
+    side_effect = apiclient.http.HttpError(mock.Mock(status=404), 'not found')
+    self.api_client.objects().get().execute.side_effect = side_effect
 
-  def testGetBuildItem_withNoObjectName(self):
-    """Test GetBuildItem with input a path with no object name."""
-    provider = gcs.GCSBuildProvider()
-    path = 'sample_bucket'
-    build_item = provider.GetBuildItem(path)
-    self.assertFalse(build_item.is_file)
-    self.assertEqual(build_item.size, None)
-    self.assertEqual(build_item.path, path)
-
-  @mock.patch.object(gcs.GCSBuildProvider, '_GetGCSObject')
-  def testGetBuildItem_withNoFilename(self, mock_gcs_object):
-    """Test GetBuildItem with input a path with no filename."""
-    provider = gcs.GCSBuildProvider()
-    path = 'sample_bucket/sample_path'
-    mock_gcs_object.side_effect = [None, None]
-    build_item = provider.GetBuildItem(path)
-    self.assertEqual(build_item, None)
-    mock_gcs_object.asset_has_calls([
-        mock.call('sample_bucket', 'sample_path'),
-        mock.call('sample_bucket', 'sample_path/')
+    build_item = self.provider.GetBuildItem('bucket/dir/file')
+    self.assertIsNone(build_item)
+    # Automatically retries with a trailing slash to check for directories.
+    self.api_client.objects().get.assert_has_calls([
+        mock.call(bucket='bucket', object='dir/file'),
+        mock.ANY,  # Execute request.
+        mock.call(bucket='bucket', object='dir/file/'),
     ])
 
-  def testListBuildItems_withNormalResponse(self):
-    """Test ListBuildItems with input that contains both file and directory."""
-    provider = gcs.GCSBuildProvider()
+  def testGetBuildItem_rootDirectory(self):
+    """Tests that the root dir is returned if no object name is provided."""
+    build_item = self.provider.GetBuildItem('bucket')
+    self.assertEqual(build_item,
+                     base.BuildItem(name=None, path='bucket', is_file=False))
+
+  def testListBuildItems(self):
+    """Tests that GCS files and directories can be listed."""
     response = {
         'items': [{
-            'bucket': 'sample_bucket',
-            'contentType': 'image/png',
-            'name': 'fake/path/kitten.png',
-            'size': '168276',
+            'bucket': 'bucket',
+            'contentType': 'text/plain',
+            'name': 'dir/file',
+            'size': '456',
             'updated': '2018-07-06T23:29:21.410Z'
         }],
-        'nextPageToken':
-            'CgV0bXAzLw==',
-        'prefixes': ['fake/path/temp1/', 'fake/path/temp2/']
+        'nextPageToken': 'nextPageToken',
+        'prefixes': ['dir/nested_dir/'],
     }
+    self.api_client.objects().list().execute.return_value = response
 
-    mock_api_client = mock.MagicMock()
-    mock_api_client.objects().list().execute.return_value = response
-    provider._client = mock_api_client
-
-    build_items, next_page_token = provider.ListBuildItems(
-        path='sample_bucket/fake/path', page_token=None)
-    self.assertIsNotNone(build_items)
-    self.assertEqual(next_page_token, 'CgV0bXAzLw==')
-    self.assertEqual(len(build_items), 3)
-    self.assertEqual(build_items[0].name, 'kitten.png')
-    self.assertEqual(build_items[0].path, 'sample_bucket/fake/path/kitten.png')
-
-  def testListBuildItems_withFileOnlyResponse(self):
-    """Test ListBuildItems with input that contains only files."""
-    provider = gcs.GCSBuildProvider()
-    response = {
-        'items': [{
-            'bucket': 'sample_bucket',
-            'contentType': 'image/png',
-            'name': 'kitten.png',
-            'size': '168276',
-            'updated': '2018-07-06T23:29:21.410Z'
-        }],
-        'nextPageToken':
-            'CgV0bXAzLw==',
-    }
-
-    mock_api_client = mock.MagicMock()
-    mock_api_client.objects().list().execute.return_value = response
-    provider._client = mock_api_client
-
-    build_items, next_page_token = provider.ListBuildItems(
-        path='sample_bucket', page_token=None)
-
-    self.assertIsNotNone(build_items)
-    self.assertEqual(next_page_token, 'CgV0bXAzLw==')
-    self.assertEqual(len(build_items), 1)
-    self.assertEqual(build_items[0].name, 'kitten.png')
-    self.assertTrue(build_items[0].is_file)
-
-  def testListBuildItems_withDirectoryOnlyResponse(self):
-    """Test ListBuildItems with input that contains only directory."""
-    provider = gcs.GCSBuildProvider()
-    response = {'nextPageToken': 'CgV0bXAzLw==', 'prefixes': ['aa5/', 'tmp1/']}
-
-    mock_api_client = mock.MagicMock()
-    mock_api_client.objects().list().execute.return_value = response
-    provider._client = mock_api_client
-
-    build_items, next_page_token = provider.ListBuildItems(
-        path='sample_bucket/', page_token=None)
-    self.assertIsNotNone(build_items)
-    self.assertEqual(next_page_token, 'CgV0bXAzLw==')
-    self.assertEqual(len(build_items), 2)
-    self.assertFalse(build_items[0].is_file)
+    build_items, next_page_token = self.provider.ListBuildItems(
+        path='bucket/dir', page_token=None)
+    self.assertEqual(next_page_token, 'nextPageToken')
+    self.assertEqual(build_items, [
+        base.BuildItem(
+            name='nested_dir/',
+            path='bucket/dir/nested_dir/',
+            is_file=False),
+        base.BuildItem(
+            name='file',
+            path='bucket/dir/file',
+            is_file=True,
+            size=456,
+            timestamp=datetime.datetime(2018, 7, 6, 23, 29, 21, 410000)),
+    ])
 
   def testListBuildItems_withEmptyFolder(self):
-    """Test ListBuildItems with input that mimics an empty folder."""
-    provider = gcs.GCSBuildProvider()
-    response = {
+    """Tests that empty folders are ignored when listing GCS objects."""
+    self.api_client.objects().list().execute.return_value = {
         'items': [{
-            'bucket': 'sample_bucket',
+            'bucket': 'bucket',
+            'contentType': 'text/plain',
+            'name': 'dir/',  # Name is empty (just folder prefix).
+            'size': '0',
+            'updated': '2018-07-06T23:29:21.410Z'
+        }, {
+            'bucket': 'bucket',
             'contentType': 'application/x-www-form-urlencoded;charset=UTF-8',
-            'name': 'kitten.png',
-            'size': '168276',
+            'name': 'dir/empty_folder',  # Content type identifies empty folder.
+            'size': '0',
             'updated': '2018-07-06T23:29:21.410Z'
         }],
-        'nextPageToken':
-            'CgV0bXAzLw==',
+        'nextPageToken': 'nextPageToken',
     }
 
-    mock_api_client = mock.MagicMock()
-    mock_api_client.objects().list().execute.return_value = response
-    provider._client = mock_api_client
+    build_items, next_page_token = self.provider.ListBuildItems(
+        path='bucket/dir', page_token=None)
+    self.assertEqual(next_page_token, 'nextPageToken')
+    self.assertEmpty(build_items)
 
-    build_items, next_page_token = provider.ListBuildItems(
-        path='sample_bucket/', page_token=None)
-    self.assertIsNotNone(build_items)
-    self.assertEqual(next_page_token, 'CgV0bXAzLw==')
-    self.assertEqual(len(build_items), 0)
-
-  def testListBuildItems_withInvalidBucket(self):
-    """Test ListBuildItems with Invalid Bucket Name."""
-    provider = gcs.GCSBuildProvider()
-
-    mock_api_client = mock.MagicMock()
+  def testListBuildItems_bucketNotFound(self):
+    """Tests that an error is raised if the bucket is not found."""
     side_effect = apiclient.http.HttpError(mock.Mock(status=404), 'not found')
-    mock_api_client.objects().list().execute.side_effect = side_effect
-    provider._client = mock_api_client
-
-    with self.assertRaises(gcs.GCSBucketNotFoundError) as e:
-      provider.ListBuildItems(path='invalid_bucket/', page_token=None)
-
-    self.assertEqual(
-        e.exception.message, 'bucket invalid_bucket does not exist')
+    self.api_client.objects().list().execute.side_effect = side_effect
+    with self.assertRaisesRegex(gcs.GCSBucketNotFoundError,
+                                'bucket invalid_bucket does not exist'):
+      self.provider.ListBuildItems(path='invalid_bucket/', page_token=None)
 
   @mock.patch.object(gcs.GCSBuildProvider, 'GetBuildItem')
   def testDownloadFile_withInvalidFile(self, mock_get_build_item):
-    """Try to download folder instead of file."""
-    provider = gcs.GCSBuildProvider()
-    path = 'bucket/fake/path/'
-    fake_build_item = base.BuildItem(
-        name='path/',
-        path='bucket/fake/path/',
-        is_file=False,
-        size=0,
-        timestamp=None)
-    mock_get_build_item.return_value = fake_build_item
-    with self.assertRaises(errors.FileNotFoundError) as e:
-      list(provider.DownloadFile(path))
-    self.assertEqual(
-        e.exception.message, 'Build item bucket/fake/path/ does not exist')
+    """Tests that an error is raised when attempting to download a directory."""
+    mock_get_build_item.return_value = base.BuildItem(
+        name='path/', path='bucket/fake/path/', is_file=False)
+    with self.assertRaisesRegex(errors.FileNotFoundError,
+                                'Build item bucket/fake/path/ does not exist'):
+      list(self.provider.DownloadFile('bucket/fake/path/'))
 
   @mock.patch.object(gcs.GCSBuildProvider, 'GetBuildItem')
   def testDownloadFile_withNoneValue(self, mock_get_build_item):
     """Try to download a file that does not exist."""
-    provider = gcs.GCSBuildProvider()
-    path = 'bucket/fake/path/'
     mock_get_build_item.return_value = None
-    with self.assertRaises(errors.FileNotFoundError) as e:
-      list(provider.DownloadFile(path))
-    self.assertEqual(
-        e.exception.message, 'Build item bucket/fake/path/ does not exist')
+    with self.assertRaisesRegex(errors.FileNotFoundError,
+                                'Build item bucket/fake/path/ does not exist'):
+      list(self.provider.DownloadFile('bucket/fake/path/'))
 
   @mock.patch.object(gcs.GCSBuildProvider, 'GetBuildItem')
   @mock.patch.object(
       apiclient.http.MediaIoBaseDownload, 'next_chunk', autospec=True)
   def testDownloadFile(self, mock_next_chunk, mock_get_build_item):
     """Test downloading a file with multiple chunks."""
-    provider = gcs.GCSBuildProvider()
-    provider._client = mock.MagicMock()
     path = 'bucket/fake/path/kitten.png'
     mock_get_build_item.return_value = base.BuildItem(
         name='kitten.png',
@@ -294,11 +194,13 @@ class GCSBuildProviderTest(absltest.TestCase):
       return status, done
     mock_next_chunk.side_effect = _next_chunk
 
-    result = list(provider.DownloadFile(path))
-    provider._client.objects().get_media.assert_called_with(
+    result = list(self.provider.DownloadFile(path))
+    self.api_client.objects().get_media.assert_called_with(
         bucket='bucket', object='fake/path/kitten.png')
-    expected = [file_util.FileChunk(data=b'hello', offset=5, total_size=10),
-                file_util.FileChunk(data=b'world', offset=10, total_size=10)]
+    expected = [
+        file_util.FileChunk(data=b'hello', offset=5, total_size=10),
+        file_util.FileChunk(data=b'world', offset=10, total_size=10)
+    ]
     self.assertEqual(expected, result)
 
 

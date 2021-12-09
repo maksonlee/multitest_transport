@@ -221,17 +221,6 @@ class GCSBuildProvider(base.BuildProvider):
     items = response.get('items', [])
     prefix_len = len(object_name) if object_name else 0
 
-    if not item_type or item_type == base.BuildItemType.FILE:
-      for item in items:
-        if item['contentType'] == _EMPTY_FOLDER_CONTENT_TYPE:
-          continue
-        build_items.append(
-            base.BuildItem(
-                name=item['name'][prefix_len:],
-                path=_PATH_DELIMITER.join([bucket, item['name']]),
-                is_file=True,
-                size=int(item['size']),
-                timestamp=_ParseTimeStamp(item['updated'])))
     if not item_type or item_type == base.BuildItemType.DIRECTORY:
       for directory_prefix in directory_prefixes:
         build_items.append(
@@ -241,6 +230,20 @@ class GCSBuildProvider(base.BuildProvider):
                 is_file=False,
                 size=None,
                 timestamp=None))
+    if not item_type or item_type == base.BuildItemType.FILE:
+      for item in items:
+        if item['contentType'] == _EMPTY_FOLDER_CONTENT_TYPE:
+          continue
+        item_name = item['name'][prefix_len:]
+        if not item_name:
+          continue
+        build_items.append(
+            base.BuildItem(
+                name=item_name,
+                path=_PATH_DELIMITER.join([bucket, item['name']]),
+                is_file=True,
+                size=int(item['size']),
+                timestamp=_ParseTimeStamp(item['updated'])))
     next_page_token = response.get('nextPageToken')
     return (build_items, next_page_token)
 
