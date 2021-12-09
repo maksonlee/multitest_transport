@@ -132,8 +132,8 @@ export class TestPlanEditPage extends FormChangeTracker implements
         return !this.invalidInputs.length;
       }
       case Step.CONFIGURE_TEST_RUN: {
-        const res =
-            !!this.data.test_run_configs && !!this.data.test_run_configs.length;
+        const res = !!this.data.test_run_sequences &&
+            !!this.data.test_run_sequences.length;
         if (!res) {
           this.errorMessage = 'Test run configuration is required';
         }
@@ -226,6 +226,10 @@ export class TestPlanEditPage extends FormChangeTracker implements
     }
   }
 
+  updateConfigSequenceList(sequences: mttModels.TestRunSequence[]) {
+    this.data.test_run_sequences = sequences;
+  }
+
   back() {
     this.router.navigate(['test_plans']);
   }
@@ -242,10 +246,8 @@ export class TestPlanEditPage extends FormChangeTracker implements
       labels: this.data.labels,
       cron_exp: this.data.cron_exp!.trim(),
       cron_exp_timezone: this.data.cron_exp_timezone,
-      test_run_configs: this.data.test_run_configs,
-      before_device_action_ids: [],
-      test_run_action_refs: [],
-      test_resource_pipes: [],
+      test_run_configs: [],
+      test_run_sequences: this.data.test_run_sequences,
     };
 
     if (this.editMode) {

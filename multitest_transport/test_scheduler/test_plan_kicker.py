@@ -152,13 +152,14 @@ def KickTestPlan(test_plan_id, task_name=None):
   test_runs = []
   exc_info = None
   try:
-    for config in test_plan.test_run_configs:
+    for sequence in test_plan.test_run_sequences:
       test_run = retry_wrapper(
           test_kicker.CreateTestRun,
           fkwargs=dict(
               labels=test_plan.labels,
               test_plan_key=test_plan.key,
-              test_run_config=config))
+              test_run_config=sequence.test_run_configs[0],
+              rerun_configs=sequence.test_run_configs[1:]))
       test_runs.append(test_run)
   except Exception:      # Record exception info and cancel all scheduled runs
     exc_info = sys.exc_info()

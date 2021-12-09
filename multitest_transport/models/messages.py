@@ -901,6 +901,24 @@ def _TestRunConfigMessageConverter(msg):
       allow_partial_device_match=msg.allow_partial_device_match)
 
 
+class TestRunConfigList(messages.Message):
+  """A list of test run configs."""
+  test_run_configs = messages.MessageField(TestRunConfig, 1, repeated=True)
+
+
+@Converter(ndb_models.TestRunConfigList, TestRunConfigList)
+def _TestRunConfigListConverter(obj):
+  return TestRunConfigList(
+      test_run_configs=ConvertList(obj.test_run_configs, TestRunConfig),)
+
+
+@Converter(TestRunConfigList, ndb_models.TestRunConfigList)
+def _TestRunConfigListMessageConverter(msg):
+  return ndb_models.TestRunConfigList(
+      test_run_configs=ConvertList(msg.test_run_configs,
+                                   ndb_models.TestRunConfig))
+
+
 # TODO: Deprecate TestResourcePipe
 class TestResourcePipe(messages.Message):
   """A test resource pipe for a test plan."""
@@ -925,6 +943,32 @@ def _TestResourcePipeMessageConverter(msg):
       test_resource_type=msg.test_resource_type)
 
 
+class TestRunSequence(messages.Message):
+  """A list of test run configs to run as retries."""
+  id = messages.StringField(1)
+  state = messages.EnumField(ndb_models.TestRunSequenceState, 2)
+  test_run_configs = messages.MessageField(TestRunConfig, 3, repeated=True)
+  finished_test_run_ids = messages.StringField(4, repeated=True)
+
+
+@Converter(ndb_models.TestRunSequence, TestRunSequence)
+def _TestRunSequenceConverter(obj):
+  return TestRunSequence(
+      id=str(obj.key.id()),
+      state=obj.state,
+      test_run_configs=ConvertList(obj.test_run_configs, TestRunConfig),
+      finished_test_run_ids=obj.finished_test_run_ids)
+
+
+@Converter(TestRunSequence, ndb_models.TestRunSequence)
+def _TestRunSequenceMessageConverter(msg):
+  return ndb_models.TestRunSequence(
+      state=msg.state,
+      test_run_configs=ConvertList(msg.test_run_configs,
+                                   ndb_models.TestRunConfig),
+      finished_test_run_ids=msg.finished_test_run_ids)
+
+
 class TestPlan(messages.Message):
   """A test plan."""
   id = messages.StringField(1)
@@ -933,16 +977,12 @@ class TestPlan(messages.Message):
   cron_exp = messages.StringField(4)
   cron_exp_timezone = messages.StringField(5, default='UTC')
   test_run_configs = messages.MessageField(TestRunConfig, 6, repeated=True)
-  test_resource_pipes = messages.MessageField(
-      TestResourcePipe, 7, repeated=True)
-  before_device_action_ids = messages.StringField(
-      8, repeated=True)  # TODO: Deprecated
-  test_run_action_refs = messages.MessageField(
-      TestRunActionRef, 9, repeated=True)  # TODO: Deprecated
-  last_run_time = message_types.DateTimeField(10)
-  last_run_ids = messages.StringField(11, repeated=True)
-  last_run_error = messages.StringField(12)
-  next_run_time = message_types.DateTimeField(13)
+  test_run_sequences = messages.MessageField(
+      TestRunConfigList, 7, repeated=True)
+  last_run_time = message_types.DateTimeField(8)
+  last_run_ids = messages.StringField(9, repeated=True)
+  last_run_error = messages.StringField(10)
+  next_run_time = message_types.DateTimeField(11)
 
 
 @Converter(ndb_models.TestPlan, TestPlan)
@@ -957,13 +997,7 @@ def _TestPlanConverter(obj):
       cron_exp=obj.cron_exp,
       cron_exp_timezone=obj.cron_exp_timezone,
       test_run_configs=ConvertList(obj.test_run_configs, TestRunConfig),
-      test_resource_pipes=ConvertList(
-          obj.test_resource_pipes, TestResourcePipe),
-      before_device_action_ids=[
-          str(key.id()) for key in obj.before_device_action_keys
-      ],
-      test_run_action_refs=ConvertList(
-          obj.test_run_action_refs, TestRunActionRef),
+      test_run_sequences=ConvertList(obj.test_run_sequences, TestRunConfigList),
       last_run_time=_AddTimezone(status.last_run_time) if status else None,
       last_run_ids=([str(key.id()) for key in status.last_run_keys]
                     if status else []),
@@ -982,14 +1016,8 @@ def _TestPlanMessageConverter(msg):
       cron_exp_timezone=msg.cron_exp_timezone,
       test_run_configs=ConvertList(
           msg.test_run_configs, ndb_models.TestRunConfig),
-      test_resource_pipes=ConvertList(
-          msg.test_resource_pipes, ndb_models.TestResourcePipe),
-      before_device_action_keys=[
-          ConvertToKeyOrNone(ndb_models.DeviceAction, device_action_id)
-          for device_action_id in msg.before_device_action_ids
-      ],
-      test_run_action_refs=ConvertList(
-          msg.test_run_action_refs, ndb_models.TestRunActionRef))
+      test_run_sequences=ConvertList(
+          msg.test_run_sequences, ndb_models.TestRunConfigList))
 
 
 class TestPlanList(messages.Message):
@@ -1219,32 +1247,6 @@ class RerunContext(messages.Message):
   test_run_id = messages.StringField(1)
   context_filename = messages.StringField(2)
   context_file_url = messages.StringField(3)
-
-
-class TestRunSequence(messages.Message):
-  """A list of test run configs to run as retries."""
-  id = messages.StringField(1)
-  state = messages.EnumField(ndb_models.TestRunSequenceState, 2)
-  test_run_configs = messages.MessageField(TestRunConfig, 3, repeated=True)
-  finished_test_run_ids = messages.StringField(4, repeated=True)
-
-
-@Converter(ndb_models.TestRunSequence, TestRunSequence)
-def _TestRunSequenceConverter(obj):
-  return TestRunSequence(
-      id=str(obj.key.id()),
-      state=obj.state,
-      test_run_configs=ConvertList(obj.test_run_configs, TestRunConfig),
-      finished_test_run_ids=obj.finished_test_run_ids)
-
-
-@Converter(TestRunSequence, ndb_models.TestRunSequence)
-def _TestRunSequenceMessageConverter(msg):
-  return ndb_models.TestRunSequence(
-      state=msg.state,
-      test_run_configs=ConvertList(msg.test_run_configs,
-                                   ndb_models.TestRunConfig),
-      finished_test_run_ids=msg.finished_test_run_ids)
 
 
 class NewTestRunRequest(messages.Message):

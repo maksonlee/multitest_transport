@@ -32,10 +32,10 @@ HTTP_STATUS_400 = '400 Bad Request'
 HTTP_STATUS_404 = '404 Not Found'
 
 
-def _CreateMockTestPlan(name, cron_exp='0 * * * *', test_run_configs=None):
+def _CreateMockTestPlan(name, cron_exp='0 * * * *', test_run_sequences=None):
   """Creates a mock test plan."""
   test_plan = ndb_models.TestPlan(name=name, cron_exp=cron_exp,
-                                  test_run_configs=test_run_configs or [])
+                                  test_run_sequences=test_run_sequences or [])
   test_plan.put()
   return test_plan
 
@@ -46,12 +46,7 @@ class TestPlanApiTest(api_test_util.TestCase):
     """Verifies whether a test plan is same as the given data object."""
     self.assertEqual(data['name'], test_plan.name)
     self.assertEqual(
-        len(data['test_run_configs']), len(test_plan.test_run_configs))
-    self.assertEqual(
-        len(data['test_resource_pipes']), len(test_plan.test_resource_pipes))
-    self.assertEqual(
-        len(data['before_device_action_ids']),
-        len(test_plan.before_device_action_keys))
+        len(data['test_run_sequences']), len(test_plan.test_run_sequences))
 
   def setUp(self):
     super(TestPlanApiTest, self).setUp(test_plan_api.TestPlanApi)
@@ -79,17 +74,11 @@ class TestPlanApiTest(api_test_util.TestCase):
   @mock.patch.object(test_scheduler, 'ScheduleTestPlanCronJob', autospec=True)
   def testCreate(self, mock_schedule_test_plan_cron_job):
     """Tests test_plans.create API."""
-    data = {
-        'name': 'foo',
-        'cron_exp': '0 * * * *',
-        'test_run_configs': [
-            {
-                'test_id': self.mock_test_id,
-                'cluster': 'cluster',
-                'run_target': 'run_target',
-            }
-        ],
-        'test_resource_pipes': [
+    config = {
+        'test_id': self.mock_test_id,
+        'cluster': 'cluster',
+        'run_target': 'run_target',
+        'test_resource_objs': [
             {
                 'name': 'bar',
                 'url': self.mock_test_resource_url,
@@ -98,6 +87,11 @@ class TestPlanApiTest(api_test_util.TestCase):
         'before_device_action_ids': [
             self.mock_device_action_id,
         ]
+    }
+    data = {
+        'name': 'foo',
+        'cron_exp': '0 * * * *',
+        'test_run_sequences': [{'test_run_configs': [config]}],
     }
 
     res = self.app.post_json('/_ah/api/mtt/v1/test_plans', data)
@@ -112,9 +106,7 @@ class TestPlanApiTest(api_test_util.TestCase):
     """Tests test_plans.create API with invalid data."""
     data = {
         'name': 'foo',
-        'test_run_configs': [],
-        'test_resource_pipes': [],
-        'before_device_action_ids': []
+        'test_run_sequences': [],
     }
     test_data = dict(data)
     test_data['cron_exp'] = 'invalid'
@@ -123,19 +115,9 @@ class TestPlanApiTest(api_test_util.TestCase):
     self.assertEqual(HTTP_STATUS_400, res.status)
 
     test_data = dict(data)
-    test_data['test_run_configs'].append({'test_id': 'invalid'})
-    res = self.app.post_json(
-        '/_ah/api/mtt/v1/test_plans', test_data, expect_errors=True)
-    self.assertEqual(HTTP_STATUS_400, res.status)
-
-    test_data = dict(data)
-    test_data['test_resource_pipes'].append({'url': 'mtt://invalid'})
-    res = self.app.post_json(
-        '/_ah/api/mtt/v1/test_plans', test_data, expect_errors=True)
-    self.assertEqual(HTTP_STATUS_400, res.status)
-
-    test_data = dict(data)
-    test_data['before_device_action_ids'].append('invalid')
+    test_data['test_run_sequences'].append({
+        'test_run_configs': [{'test_id': 'invalid'}],
+    })
     res = self.app.post_json(
         '/_ah/api/mtt/v1/test_plans', test_data, expect_errors=True)
     self.assertEqual(HTTP_STATUS_400, res.status)
@@ -165,16 +147,11 @@ class TestPlanApiTest(api_test_util.TestCase):
     """Tests test_plans.update API with invalid data."""
     test_plan = _CreateMockTestPlan('foo')
     test_plan_id = test_plan.key.id()
-    data = {
-        'name': 'bar',
-        'test_run_configs': [
-            {
-                'test_id': self.mock_test_id,
-                'cluster': 'cluster',
-                'run_target': 'run_target',
-            }
-        ],
-        'test_resource_pipes': [
+    config = {
+        'test_id': self.mock_test_id,
+        'cluster': 'cluster',
+        'run_target': 'run_target',
+        'test_resource_objs': [
             {
                 'name': 'bar',
                 'url': self.mock_test_resource_url,
@@ -183,6 +160,10 @@ class TestPlanApiTest(api_test_util.TestCase):
         'before_device_action_ids': [
             self.mock_device_action_id,
         ]
+    }
+    data = {
+        'name': 'bar',
+        'test_run_sequences': [{'test_run_configs': [config]}],
     }
 
     res = self.app.put_json(
@@ -202,9 +183,7 @@ class TestPlanApiTest(api_test_util.TestCase):
     path = '/_ah/api/mtt/v1/test_plans/%s' % test_plan_id
     data = {
         'name': 'foo',
-        'test_run_configs': [],
-        'test_resource_pipes': [],
-        'before_device_action_ids': []
+        'test_run_sequences': [],
     }
     test_data = dict(data)
     test_data['cron_exp'] = 'invalid'
@@ -212,17 +191,9 @@ class TestPlanApiTest(api_test_util.TestCase):
     self.assertEqual(HTTP_STATUS_400, res.status)
 
     test_data = dict(data)
-    test_data['test_run_configs'].append({'test_id': 'invalid'})
-    res = self.app.put_json(path, test_data, expect_errors=True)
-    self.assertEqual(HTTP_STATUS_400, res.status)
-
-    test_data = dict(data)
-    test_data['test_resource_pipes'].append({'url': 'mtt://invalid'})
-    res = self.app.put_json(path, test_data, expect_errors=True)
-    self.assertEqual(HTTP_STATUS_400, res.status)
-
-    test_data = dict(data)
-    test_data['before_device_action_ids'].append('invalid')
+    test_data['test_run_sequences'].append({
+        'test_run_configs': [{'test_id': 'invalid'}],
+    })
     res = self.app.put_json(path, test_data, expect_errors=True)
     self.assertEqual(HTTP_STATUS_400, res.status)
 
@@ -249,7 +220,10 @@ class TestPlanApiTest(api_test_util.TestCase):
         cluster='cluster',
         test_key=messages.ConvertToKey(ndb_models.Test, 'test'),
         run_target='target')
-    test_plan = _CreateMockTestPlan('foo', test_run_configs=[test_run_config])
+    test_run_sequence = ndb_models.TestRunConfigList(
+        test_run_configs=[test_run_config])
+    test_plan = _CreateMockTestPlan('foo',
+                                    test_run_sequences=[test_run_sequence])
 
     self.app.post('/_ah/api/mtt/v1/test_plans/%s/run' % test_plan.key.id())
     mock_test_plan_runner.assert_called_with(test_plan.key.id())

@@ -101,23 +101,37 @@ class TestPlanKickerTest(testbed_dependent_test.TestbedDependentTest):
     test = ndb_models.Test(id='test_id')
     test_device_action = ndb_models.DeviceAction(id='test_device_action')
     test_run_action = ndb_models.TestRunAction(id='test_run_action')
+    config1 = ndb_models.TestRunConfig(
+        test_key=test.key,
+        cluster='cluster',
+        run_target='run_target',
+        before_device_action_keys=[test_device_action.key],
+        test_run_action_refs=[
+            ndb_models.TestRunActionRef(action_key=test_run_action.key),
+        ],
+        test_resource_objs=[
+            ndb_models.TestResourceObj(name='res_1', url='url_1')])
+
+    config2 = ndb_models.TestRunConfig(
+        test_key=test.key,
+        cluster='cluster2',
+        run_target='run_target2',
+        before_device_action_keys=[test_device_action.key],
+        test_run_action_refs=[
+            ndb_models.TestRunActionRef(action_key=test_run_action.key),
+        ],
+        test_resource_objs=[
+            ndb_models.TestResourceObj(name='res_2', url='url_2')])
+
+    config_list = ndb_models.TestRunConfigList(
+        test_run_configs=[config1, config2])
     # Create a test plan with multiple resources and actions
     test_plan = ndb_models.TestPlan(
         name='test_plan',
         labels=['label'],
         cron_exp='0 0 * * *',
-        test_run_configs=[
-            ndb_models.TestRunConfig(
-                test_key=test.key,
-                cluster='cluster',
-                run_target='run_target',
-                before_device_action_keys=[test_device_action.key],
-                test_run_action_refs=[
-                    ndb_models.TestRunActionRef(action_key=test_run_action.key),
-                ],
-                test_resource_objs=[
-                    ndb_models.TestResourceObj(name='res_1', url='url_1')]),
-        ])
+        test_run_sequences=[config_list]
+        )
     test_plan.put()
     # Test run will be created successfully
     test_run = ndb_models.TestRun(id='test_run_id')
@@ -130,17 +144,8 @@ class TestPlanKickerTest(testbed_dependent_test.TestbedDependentTest):
     create_test_run.assert_called_with(
         labels=['label'],
         test_plan_key=test_plan.key,
-        test_run_config=ndb_models.TestRunConfig(
-            test_key=test.key,
-            cluster='cluster',
-            run_target='run_target',
-            before_device_action_keys=[test_device_action.key],
-            test_run_action_refs=[
-                ndb_models.TestRunActionRef(action_key=test_run_action.key),
-            ],
-            test_resource_objs=[
-                ndb_models.TestResourceObj(name='res_1', url='url_1')
-            ]),
+        test_run_config=config1,
+        rerun_configs=[config2],
         )
     # Test run key is stored in the test plan status
     status = ndb_models.TestPlanStatus.query(ancestor=test_plan.key).get()
@@ -153,8 +158,10 @@ class TestPlanKickerTest(testbed_dependent_test.TestbedDependentTest):
     test = ndb_models.Test(id='test_id')
     test_run_config = ndb_models.TestRunConfig(
         test_key=test.key, cluster='cluster', run_target='run_target')
+    config_list = ndb_models.TestRunConfigList(
+        test_run_configs=[test_run_config])
     test_plan = ndb_models.TestPlan(
-        name='test_plan', test_run_configs=[test_run_config, test_run_config])
+        name='test_plan', test_run_sequences=[config_list, config_list])
     test_plan.put()
     # First test run created successfully, but second fails even with retries
     test_run = ndb_models.TestRun(id='test_run_id')
@@ -180,8 +187,10 @@ class TestPlanKickerTest(testbed_dependent_test.TestbedDependentTest):
     test = ndb_models.Test(id='test_id')
     test_run_config = ndb_models.TestRunConfig(
         test_key=test.key, cluster='cluster', run_target='run_target')
+    config_list = ndb_models.TestRunConfigList(
+        test_run_configs=[test_run_config])
     test_plan = ndb_models.TestPlan(
-        name='test_plan', test_run_configs=[test_run_config])
+        name='test_plan', test_run_sequences=[config_list])
     test_plan.put()
     # First test run creation fails, but second attempt succeeds
     test_run = ndb_models.TestRun(id='test_run_id')

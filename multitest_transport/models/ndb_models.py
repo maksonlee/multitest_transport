@@ -454,6 +454,15 @@ class TestRunConfig(ndb.Model):
   allow_partial_device_match = ndb.BooleanProperty(default=False)
 
 
+class TestRunConfigList(ndb.Model):
+  """A list of test run configs.
+
+  Attributes:
+    test_run_configs: the list of configs
+  """
+  test_run_configs = ndb.LocalStructuredProperty(TestRunConfig, repeated=True)
+
+
 class TestResourcePipe(ndb.Model):
   """A pipe which defines where to get test resources from.
 
@@ -467,6 +476,27 @@ class TestResourcePipe(ndb.Model):
   test_resource_type = ndb.EnumProperty(TestResourceType)
 
 
+class TestRunSequenceState(messages.Enum):
+  """Completion state for a TestRunSequence."""
+  RUNNING = 0
+  CANCELED = 1
+  COMPLETED = 2
+  ERROR = 3
+
+
+class TestRunSequence(ndb.Model):
+  """A list of test run configs to be scheduled as retries.
+
+  Attributes:
+    state: completion state for this sequence
+    test_run_configs: remaining retries to schedule
+    finished_test_run_ids: list of completed runs scheduled for this sequence
+  """
+  state = ndb.EnumProperty(TestRunSequenceState, required=True)
+  test_run_configs = ndb.LocalStructuredProperty(TestRunConfig, repeated=True)
+  finished_test_run_ids = ndb.StringProperty(repeated=True)
+
+
 class TestPlan(ndb.Model):
   """A test plan.
 
@@ -476,21 +506,15 @@ class TestPlan(ndb.Model):
     cron_exp: a CRON expression.
     cron_exp_timezone: timezone to use when processing cron expression.
     test_run_configs: a list of test run configs.
-    test_resource_pipes: a list of test resource pipes.
-    before_device_action_keys: common before device actions for tests.
-    test_run_action_refs: common test run actions to execute during tests.
+    test_run_sequences: a list of test run sequences triggered when running.
   """
   name = ndb.StringProperty(required=True)
   labels = ndb.StringProperty(repeated=True)
   cron_exp = ndb.StringProperty()
   cron_exp_timezone = ndb.StringProperty(default='UTC')
   test_run_configs = ndb.LocalStructuredProperty(TestRunConfig, repeated=True)
-  test_resource_pipes = ndb.LocalStructuredProperty(
-      TestResourcePipe, repeated=True)  # TODO: Deprecated
-  before_device_action_keys = ndb.KeyProperty(
-      DeviceAction, repeated=True)  # TODO: Deprecated
-  test_run_action_refs = ndb.LocalStructuredProperty(
-      TestRunActionRef, repeated=True)
+  test_run_sequences = ndb.LocalStructuredProperty(
+      TestRunConfigList, repeated=True)
 
   @classmethod
   def _post_delete_hook(cls, key, future):
@@ -785,27 +809,6 @@ class TestRunSummary(ndb.Model):
   failed_test_run_count = ndb.IntegerProperty()
   create_time = ndb.DateTimeProperty()
   update_time = ndb.DateTimeProperty()
-
-
-class TestRunSequenceState(messages.Enum):
-  """Completion state for a TestRunSequence."""
-  RUNNING = 0
-  CANCELED = 1
-  COMPLETED = 2
-  ERROR = 3
-
-
-class TestRunSequence(ndb.Model):
-  """A list of test run configs to be scheduled as retries.
-
-  Attributes:
-    state: completion state for this sequence
-    test_run_configs: remaining retries to schedule
-    finished_test_run_ids: list of completed runs scheduled for this sequence
-  """
-  state = ndb.EnumProperty(TestRunSequenceState, required=True)
-  test_run_configs = ndb.LocalStructuredProperty(TestRunConfig, repeated=True)
-  finished_test_run_ids = ndb.StringProperty(repeated=True)
 
 
 class NodeConfig(ndb.Model):

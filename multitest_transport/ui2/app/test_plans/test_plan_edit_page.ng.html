@@ -84,9 +84,10 @@
   <!-- Second step: Set Test Run Configs -->
   <mat-step [completed]="!!stepCompletionStatusMap[step.CONFIGURE_TEST_RUN]">
     <ng-template matStepLabel>Add Test Suites</ng-template>
-    <test-run-config-list
-      [(data)]="data.test_run_configs"
-    ></test-run-config-list>
+
+    <test-run-sequence-list [sequenceList]="data.test_run_sequences"
+                            (sequenceListChange)="updateConfigSequenceList($event)">
+    </test-run-sequence-list>
 
     <div>
       <button mat-stroked-button matStepperPrevious color="accent">

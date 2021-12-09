@@ -58,32 +58,28 @@ def _ValidateTestPlan(test_plan):
          'minute, hour, day of month, month, day of week.')
         % test_plan.cron_exp)
 
-  plan_device_actions = ndb.get_multi(test_plan.before_device_action_keys)
-  if not all(plan_device_actions):
-    raise endpoints.BadRequestException(
-        'Cannot find some device actions: %s -> %s' % (
-            test_plan.before_device_action_keys, plan_device_actions))
+  for sequence in test_plan.test_run_sequences:
+    for config in sequence.test_run_configs:
+      if not config.test_key.get():
+        raise endpoints.BadRequestException(
+            'Test %s does not exist' % config.test_key.id())
 
-  for config in test_plan.test_run_configs:
-    if not config.test_key.get():
-      raise endpoints.BadRequestException(
-          'test %s does not exist' % config.test_key.id())
+      config_device_actions = ndb.get_multi(
+          config.before_device_action_keys)
+      if not all(config_device_actions):
+        raise endpoints.BadRequestException(
+            'Cannot find some device actions: %s -> %s' % (
+                config.before_device_action_keys, config_device_actions))
+      test_kicker.ValidateDeviceActions(config_device_actions)
 
-    config_device_actions = ndb.get_multi(
-        config.before_device_action_keys)
-    if not all(config_device_actions):
-      raise endpoints.BadRequestException(
-          'Cannot find some device actions: %s -> %s' % (
-              config.before_device_action_keys, config_device_actions))
-    test_kicker.ValidateDeviceActions(
-        plan_device_actions + config_device_actions)
-
-  for pipe in test_plan.test_resource_pipes:
-    build_locator = build.BuildLocator.ParseUrl(pipe.url)
-    if build_locator and not mtt_messages.ConvertToKey(
-        ndb_models.BuildChannelConfig, build_locator.build_channel_id).get():
-      raise endpoints.BadRequestException('build channel %s does not exist' %
-                                          build_locator.build_channel_id)
+      for obj in config.test_resource_objs:
+        build_locator = build.BuildLocator.ParseUrl(obj.url)
+        if build_locator and not mtt_messages.ConvertToKey(
+            ndb_models.BuildChannelConfig,
+            build_locator.build_channel_id).get():
+          raise endpoints.BadRequestException(
+              'Build channel %s does not exist' %
+              build_locator.build_channel_id)
 
 
 @base.MTT_API.api_class(resource_name='test_plan', path='test_plans')
@@ -203,7 +199,7 @@ class TestPlanApi(remote.Service):
     if not test_plan:
       raise endpoints.NotFoundException('Test plan %s does not exist'
                                         % request.test_plan_id)
-    if not test_plan.test_run_configs:
+    if not test_plan.test_run_sequences:
       raise endpoints.BadRequestException(
           'No test run configs with ID %s' % request.test_plan_id)
     test_plan_kicker.KickTestPlan(test_plan.key.id())

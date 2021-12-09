@@ -32,62 +32,38 @@ class NdbUpgraderTest(ndb_test_lib.NdbWithContextTest):
     test.put()
     return test
 
-  def _CreateMockDeviceAction(self, action_id='action.id',
-                              name='device action name'):
-    """Creates a mock ndb_models.DeviceAction object."""
-    device_action = ndb_models.DeviceAction(name=name)
-    device_action.key = mtt_messages.ConvertToKey(ndb_models.DeviceAction,
-                                                  action_id)
-    device_action.put()
-    return device_action
-
-  def _CreateMockTestResourcePipe(self, name='resource_name',
-                                  url='test.resource/url'):
-    return ndb_models.TestResourcePipe(name=name, url=url)
-
-  def _CreateMockTestResourceObj(self, name='resource_name',
-                                 url='test.resource/url'):
-    return ndb_models.TestResourceObj(name=name, url=url)
-
-  def _CreateMockTestRunConfig(self, test, device_action_keys=None):
+  def _CreateMockTestRunConfig(self, test, device_action_keys=None,
+                               cluster='cluster'):
     """Creates a mock ndb_models.TestRunConfig object."""
     config = ndb_models.TestRunConfig(
         test_key=test.key, before_device_action_keys=device_action_keys,
-        cluster='cluster', run_target='run_target')
+        cluster=cluster, run_target='run_target')
     return config
 
   def _CreateMockTestPlan(self, configs, device_action_keys=None,
                           test_resource_pipes=None):
     """Creates a mock ndb_models.TestPlan object."""
     test_plan = ndb_models.TestPlan(
-        test_run_configs=configs, name='name',
-        before_device_action_keys=device_action_keys,
-        test_resource_pipes=test_resource_pipes)
+        test_run_configs=configs, name='name',)
     test_plan.put()
     return test_plan
 
   # Update function tests
-  def testUpdate12001(self):
+  def testUpdate25001(self):
     test = self._CreateMockTest()
-    config_1 = self._CreateMockTestRunConfig(test, [])
-    config_2 = self._CreateMockTestRunConfig(test, [])
-    device_action_1 = self._CreateMockDeviceAction(action_id='action.1')
-    device_action_2 = self._CreateMockDeviceAction(action_id='action.2')
-    device_action_keys = [device_action_1.key, device_action_2.key]
-    pipe_1 = self._CreateMockTestResourcePipe(name='resource_1')
-    pipe_2 = self._CreateMockTestResourcePipe(name='resource_2')
-    test_plan = self._CreateMockTestPlan(configs=[config_1, config_2],
-                                         device_action_keys=device_action_keys,
-                                         test_resource_pipes=[pipe_1, pipe_2])
+    config_1 = self._CreateMockTestRunConfig(test, [], 'cluster1')
+    config_2 = self._CreateMockTestRunConfig(test, [], 'cluster2')
+    test_plan = self._CreateMockTestPlan([config_1, config_2], [], [])
 
-    ndb_upgrader.Update12001()
+    ndb_upgrader.Update25001()
 
     updated_test_plan = test_plan.key.get()
-    obj_1 = self._CreateMockTestResourceObj(pipe_1.name)
-    obj_2 = self._CreateMockTestResourceObj(pipe_2.name)
-    for config in updated_test_plan.test_run_configs:
-      self.assertEqual(config.before_device_action_keys, device_action_keys)
-      self.assertEqual(config.test_resource_objs, [obj_1, obj_2])
+    sequences = updated_test_plan.test_run_sequences
+    self.assertEqual(len(sequences), 2)
+    self.assertEqual(len(sequences[0].test_run_configs), 1)
+    self.assertEqual(len(sequences[1].test_run_configs), 1)
+    self.assertEqual(sequences[0].test_run_configs[0].cluster, 'cluster1')
+    self.assertEqual(sequences[1].test_run_configs[0].cluster, 'cluster2')
 
 
 if __name__ == '__main__':

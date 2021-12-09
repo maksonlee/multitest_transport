@@ -290,7 +290,7 @@ export function newMockTestPackageInfo(
 
 /** Creates a new Test Plan */
 export function newMockTestPlan(id = TEST_PLAN_ID, name = TEST_PLAN_NAME) {
-  return {id, name, test_run_configs: [], labels: [], cron_exp: '* * * * *'};
+  return {id, name, test_run_sequences: [], labels: [], cron_exp: '* * * * *'};
 }
 
 /** Creates a list of new test resource def object */

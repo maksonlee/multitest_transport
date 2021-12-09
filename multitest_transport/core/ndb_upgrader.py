@@ -24,8 +24,8 @@ from multitest_transport.models import ndb_models
 
 # Database version numbers are formatted as {release number}{update number}.
 # For example, 12001 means update 001 for R12.
-CURRENT_NDB_VERSION = 12001  # Should match the latest version number
-DEFAULT_NDB_VERSION = 12000  # Version number if no host version is found
+CURRENT_NDB_VERSION = 25001  # Should match the latest version number
+DEFAULT_NDB_VERSION = 25000  # Version number if no host version is found
 
 # Stores the mapping of version numbers to the next update to apply
 # e.g. [12000] -> Update12001 means if the current host ndb version is 12000,
@@ -72,20 +72,17 @@ def VersionUpdater(update_version, previous_version):
 
 
 # Update functions (names should be formatted as 'Update#####')
-@VersionUpdater(12001, 12000)
-def Update12001():
-  """b/169169355: Move actions and resources from test plans to configs."""
+@VersionUpdater(25001, 25000)
+def Update25001():
+  """b/204861475: Convert test plans to use test run sequences."""
   query = ndb_models.TestPlan.query()
   test_plans = query.fetch()
   for test_plan in test_plans:
-    test_resources = list(map(_TestResourcePipeToObj,
-                              test_plan.test_resource_pipes))
-    device_actions = test_plan.before_device_action_keys
-    for config_index, _ in enumerate(test_plan.test_run_configs):
-      test_plan.test_run_configs[
-          config_index].test_resource_objs = test_resources
-      test_plan.test_run_configs[
-          config_index].before_device_action_keys = device_actions
+    logging.info('Updating test plan %s.', test_plan.name)
+    test_plan.test_run_sequences = []
+    for config in test_plan.test_run_configs:
+      test_plan.test_run_sequences.append(
+          ndb_models.TestRunConfigList(test_run_configs=[config]))
     test_plan.put()
     logging.info('Updated test plan %s.', test_plan.name)
 

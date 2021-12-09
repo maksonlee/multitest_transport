@@ -484,7 +484,7 @@ export function initTestPlan(): Partial<TestPlan> {
     name: '',
     labels: [],
     cron_exp: '',
-    test_run_configs: [],
+    test_run_sequences: [],
     test_resource_pipes: [],
     before_device_action_ids: [],
   };
@@ -531,7 +531,8 @@ export declare interface TestPlan {
   labels?: string[];
   cron_exp?: string;
   cron_exp_timezone?: string;
-  test_run_configs?: TestRunConfig[];
+  test_run_configs?: TestRunConfig[];  // Deprecated
+  test_run_sequences?: TestRunConfigList[];
   test_resource_pipes?: TestResourcePipe[];
   before_device_action_ids?: string[];
   test_run_action_refs?: TestRunActionRef[];
@@ -712,6 +713,11 @@ export function initTestRunConfig(test?: Test): Partial<TestRunConfig> {
   }
 
   return config;
+}
+
+/** A list of test run configs. */
+export declare interface TestRunConfigList {
+  test_run_configs: TestRunConfig[];
 }
 
 /** A list of test run configs to be scheduled as retries. */

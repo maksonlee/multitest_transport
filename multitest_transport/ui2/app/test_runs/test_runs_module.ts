@@ -45,17 +45,19 @@ import {TestRunList} from './test_run_list';
 import {TestRunListPage} from './test_run_list_page';
 import {TestRunProgress} from './test_run_progress';
 import {TestRunResults} from './test_run_results';
+import {TestRunSequenceEditor} from './test_run_sequence_editor';
+import {TestRunSequenceList} from './test_run_sequence_list';
 import {TestRunTargetPicker} from './test_run_target_picker';
 import {TestRunTreeTable} from './test_run_tree_table';
 
 const COMPONENTS = [
-  AttemptStatus,       NewTestRunPage,
-  TestPackageInfoPipe, TestResourceList,  TestModuleResultList,
-  TestRunConfigEditor, TestRunConfigList, TestRunConfigSummary,
-  TestRunConsole,      TestRunDetail,     TestRunDetailPage,
-  TestRunFailures,     TestRunList,       TestRunListPage,
-  TestRunProgress,     TestRunResults,    TestRunTargetPicker,
-  TestRunTreeTable,
+  AttemptStatus,       NewTestRunPage,        TestPackageInfoPipe,
+  TestResourceList,    TestModuleResultList,  TestRunConfigEditor,
+  TestRunConfigList,   TestRunConfigSummary,  TestRunConsole,
+  TestRunDetail,       TestRunDetailPage,     TestRunFailures,
+  TestRunList,         TestRunListPage,       TestRunProgress,
+  TestRunSequenceList, TestRunSequenceEditor, TestRunResults,
+  TestRunTargetPicker, TestRunTreeTable,
 ];
 
 @NgModule({
