@@ -86,7 +86,9 @@ describe('AppComponent', () => {
         'addEventListener', 'getDevices', 'requestDevice', 'removeEventListener'
       ]);
       spyOnProperty(window, 'navigator').and.returnValue({usb});
-      device = jasmine.createSpyObj<AoaDevice>(['isConnected', 'open']);
+      device =
+          jasmine.createSpyObj<AoaDevice>(['isConnected', 'open', 'close']);
+      usb.getDevices.and.resolveTo([device]);
 
       fixture = TestBed.createComponent(AppComponent);
       element = fixture.debugElement;
