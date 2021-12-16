@@ -15,6 +15,7 @@
 """MTT file server integration tests."""
 import logging
 import os
+import time
 import uuid
 
 from absl.testing import absltest
@@ -87,6 +88,7 @@ class FileServerIntegrationTest(integration_util.DockerContainerTest):
     # Verify that test results were parsed on completion
     self.container.SubmitCommandEvent(self.task, 'InvocationCompleted')
     self.container.WaitForState(self.test_run_id, 'COMPLETED')
+    time.sleep(10)  # Wait for test result processing to complete.
     test_run = self.container.GetTestRun(self.test_run_id)
     self.assertEqual('4', test_run['failed_test_count'])
     self.assertEqual('1', test_run['failed_test_run_count'])
