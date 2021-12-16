@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {DebugElement, SimpleChange} from '@angular/core';
+import {SimpleChange} from '@angular/core';
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
@@ -46,7 +46,6 @@ describe('TestRunConsole', () => {
 
   let fixture: ComponentFixture<TestRunConsole>;
   let console: TestRunConsole;
-  let consoleEl: DebugElement;
 
   beforeEach(() => {
     // Set default test run output.
@@ -66,7 +65,6 @@ describe('TestRunConsole', () => {
     // Configure component.
     fixture = TestBed.createComponent(TestRunConsole);
     console = fixture.componentInstance;
-    consoleEl = fixture.debugElement;
     console.testRun = newMockTestRun(newMockTest(), 'test_run_id');
     fixture.detectChanges();
 
