@@ -45,6 +45,9 @@ class FileServerProxy(flask.views.MethodView):
     # Combine target host and request URL
     target_host = env.FILE_SERVER_URL
     (scheme, host, _, _, _) = urllib.parse.urlsplit(target_host)
+    hostname = flask.request.args.get('hostname')
+    if hostname:
+      host = hostname + ':' + str(urllib.parse.urlparse(target_host).port)
     (_, _, _, query, fragment) = urllib.parse.urlsplit(flask.request.url)
     url = urllib.parse.urlunsplit((scheme, host, path, query, fragment))  
     try:

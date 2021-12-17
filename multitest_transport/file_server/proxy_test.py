@@ -95,6 +95,16 @@ class FileServerProxyTest(absltest.TestCase):
     proxy_request = self.GetProxyRequest()
     self.AssertRequest(proxy_request, url='http://localhost:8006/path/to/file')
 
+  def testProxyRequest_getWithCustomHostnameParam(self):
+    """Tests that a custom hostname can be provided."""
+    self.mock_urlopen.return_value = MockProxyResponse()
+    response = self.SendMockRequest('/fs_proxy/path/to/file?hostname=hostname')
+    self.AssertResponse(response, status=200)
+    proxy_request = self.GetProxyRequest()
+    self.AssertRequest(
+        proxy_request,
+        url='http://hostname:8006/path/to/file?hostname=hostname')
+
   def testProxyRequest_post(self):
     """Tests that a POST request can be sent."""
     self.mock_urlopen.return_value = MockProxyResponse()
