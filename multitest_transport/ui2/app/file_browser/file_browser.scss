@@ -15,6 +15,10 @@
  */
 @import 'third_party/py/multitest_transport/ui2/constants';
 
+.action-cell a {
+  color: unset;
+}
+
 .file-browser-page {
     mat-row {
       &:hover, &.selected {

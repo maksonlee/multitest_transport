@@ -72,15 +72,36 @@ describe('FileBrowser', () => {
     expect(fs.listFiles).toHaveBeenCalledWith('a/b');
   });
 
-  it('should display correct href on anchor tag for name cell', () => {
+  it('should have fs_proxy href on file name link', () => {
     initComponent('dir', [{path: 'dir/filename', type: FileType.FILE}]);
     const link = getEl<HTMLAnchorElement>(element, '.name-cell a');
     expect(link.href.endsWith('fs_proxy/file/dir/filename')).toBeTruthy();
   });
 
-  it('should display correct href on anchor tag for navigation', () => {
+  it('should have file_browser href on directory name link', () => {
     initComponent('dir', [{path: 'dir/nested', type: FileType.DIRECTORY}]);
-    const link = getEl<HTMLAnchorElement>(element, '.navigate-cell a');
+    const link = getEl<HTMLAnchorElement>(element, '.name-cell a');
+    expect(link.href.endsWith('file_browser/dir/nested')).toBeTruthy();
+  });
+
+  it('should have download href on file download link', () => {
+    initComponent('dir', [{path: 'dir/filename', type: FileType.FILE}]);
+    const link = getEl<HTMLAnchorElement>(element, '.action-cell a.download');
+    expect(link.href.endsWith('fs_proxy/file/dir/filename?download=true'))
+        .toBeTruthy();
+  });
+
+  it('should have download href on directory download link', () => {
+    initComponent('dir', [{path: 'dir/nested', type: FileType.DIRECTORY}]);
+    const link =
+        getEl<HTMLAnchorElement>(element, '.action-cell a.download-dir');
+    expect(link.href.endsWith('fs_proxy/dir/dir/nested?download=true'))
+        .toBeTruthy();
+  });
+
+  it('should have file_browser href on directory change link', () => {
+    initComponent('dir', [{path: 'dir/nested', type: FileType.DIRECTORY}]);
+    const link = getEl<HTMLAnchorElement>(element, '.action-cell a.change-dir');
     expect(link.href.endsWith('file_browser/dir/nested')).toBeTruthy();
   });
 
