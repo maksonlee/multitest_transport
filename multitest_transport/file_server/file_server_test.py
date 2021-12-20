@@ -17,14 +17,14 @@ import io
 import json
 import os
 import shutil
+import tarfile
 import tempfile
+from unittest import mock
 
 from absl.testing import absltest
 import werkzeug
 
 from multitest_transport.file_server import file_server
-
-TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
 
 class FileServerTest(absltest.TestCase):
@@ -35,8 +35,9 @@ class FileServerTest(absltest.TestCase):
     self.app = file_server.flask_app
     self.app.root_path = tempfile.mkdtemp()
     self.app.tmp_upload_dir = tempfile.mkdtemp()
-    for test_file in os.scandir(TEST_DATA_DIR):
-      shutil.copy(os.path.join(TEST_DATA_DIR, test_file), self.app.root_path)
+    # Create a text file for testing.
+    with open(self.app.root_path + '/test.txt', 'wb') as f:
+      f.write(b'hello world')
 
   def tearDown(self):
     super(FileServerTest, self).tearDown()
@@ -48,6 +49,15 @@ class FileServerTest(absltest.TestCase):
       response = client.get('/file/test.txt')
       self.assertEqual(200, response.status_code)
       self.assertEqual(b'hello world', response.data)
+
+  def testDownloadFile_asAttachment(self):
+    """Tests that files can be downloaded as attachments."""
+    with self.app.test_client() as client:
+      response = client.get('/file/test.txt?download=true')
+      self.assertEqual(200, response.status_code)
+      self.assertEqual(b'hello world', response.data)
+      self.assertEqual('attachment; filename=test.txt',
+                       response.headers.get('Content-Disposition'))
 
   def testDownloadFile_withRange(self):
     """Tests that a subset of the file can be downloaded."""
@@ -253,25 +263,47 @@ class FileServerTest(absltest.TestCase):
 
   def testListDirectory(self):
     """Tests that directory contents can be listed."""
-    # Create two directories and an additional file
-    os.mkdir(self.app.root_path + '/foo')
-    os.mkdir(self.app.root_path + '/bar')
-    os.mknod(self.app.root_path + '/empty.txt')
+    os.makedirs(self.app.root_path + '/foo/bar')
+    with open(self.app.root_path + '/foo/file.txt', 'wb') as f:
+      f.write(b'hello world')
 
     with self.app.test_client() as client:
-      response = client.get('/dir/')
+      response = client.get('/dir/foo')
       self.assertEqual(200, response.status_code)
-      # Four nodes found in the right order (bar, foo, empty.txt, test.txt)
-      data = json.loads(response.data)
-      self.assertLen(data, 4)
-      self.assertEqual('bar', data[0]['path'])
-      self.assertEqual('DIRECTORY', data[0]['type'])
-      self.assertEqual('foo', data[1]['path'])
-      self.assertEqual('DIRECTORY', data[1]['type'])
-      self.assertEqual('empty.txt', data[2]['path'])
-      self.assertEqual('FILE', data[2]['type'])
-      self.assertEqual('test.txt', data[3]['path'])
-      self.assertEqual('FILE', data[3]['type'])
+      # Two nodes found with name, path, size, type, time information.
+      self.assertEqual([{
+          'access_time': mock.ANY,
+          'name': 'bar',
+          'path': 'foo/bar',
+          'size': mock.ANY,
+          'type': 'DIRECTORY',
+          'update_time': mock.ANY,
+      }, {
+          'access_time': mock.ANY,
+          'name': 'file.txt',
+          'path': 'foo/file.txt',
+          'size': 11,
+          'type': 'FILE',
+          'update_time': mock.ANY,
+      }], json.loads(response.data))
+
+  def testListDirectory_tarArchive(self):
+    """Tests that directory contents can be downloaded as a tar archive."""
+    os.makedirs(self.app.root_path + '/foo/bar')
+    with open(self.app.root_path + '/foo/bar/file.txt', 'wb') as f:
+      f.write(b'hello world')
+
+    with self.app.test_client() as client:
+      response = client.get('/dir/foo?download=true')
+      self.assertEqual(200, response.status_code)
+      self.assertEqual('attachment; filename=foo.tar.gz',
+                       response.headers.get('Content-Disposition'))
+      with tarfile.open(fileobj=io.BytesIO(response.data), mode='r') as archive:
+        self.assertLen(archive.getmembers(), 2)
+        self.assertTrue(archive.getmember('bar').isdir())
+        self.assertTrue(archive.getmember('bar/file.txt').isfile())
+        self.assertEqual(b'hello world',
+                         archive.extractfile('bar/file.txt').read())
 
   def testListDirectory_notFound(self):
     """Tests that directory not found errors are handled."""

@@ -22,6 +22,7 @@ import os
 import re
 import shutil
 import stat
+import tarfile
 import tempfile
 from typing import List
 
@@ -50,7 +51,10 @@ def DownloadFile(path: str) -> flask.Response:
   resolved_path = flask.safe_join(flask.current_app.root_path, path)
   if not os.path.isfile(resolved_path):
     flask.abort(http.HTTPStatus.NOT_FOUND, 'File \'%s\' not found' % path)
-  return flask.send_file(resolved_path, conditional=True)
+  # Treat as attachment if the 'download' query parameter is set.
+  as_attachment = flask.request.args.get('download', default=False, type=bool)
+  return flask.send_file(
+      resolved_path, conditional=True, as_attachment=as_attachment)
 
 
 def _GetContentRange():
@@ -202,11 +206,24 @@ class FileNode(object):
 @flask_app.route('/dir', strict_slashes=False, methods=['GET'])
 @flask_app.route('/dir/<path:path>', methods=['GET'])
 def ListDirectory(path: str = '') -> flask.Response:
-  """List all nodes in a directory."""
+  """Retrieve directory contents as a list of JSON nodes or a tar archive."""
   resolved_path = flask.safe_join(flask.current_app.root_path, path)
   if not os.path.isdir(resolved_path):
     flask.abort(http.HTTPStatus.NOT_FOUND, 'Directory \'%s\' not found' % path)
-  # Convert all nested files into nodes
+
+  # Return contents as a tar archive if the 'download' query parameter is set.
+  if flask.request.args.get('download', default=False, type=bool):
+    with tempfile.NamedTemporaryFile() as tmp_file:
+      with tarfile.open(fileobj=tmp_file, mode='w:gz') as archive:
+        for filename in os.listdir(resolved_path):
+          archive.add(os.path.join(resolved_path, filename), arcname=filename)
+      tmp_file.flush()
+      return flask.send_file(
+          tmp_file.name,
+          attachment_filename=os.path.basename(path) + '.tar.gz',
+          as_attachment=True)
+
+  # Otherwise, convert nested files into a list of JSON nodes.
   nodes = []
   for filename in os.listdir(resolved_path):
     node = FileNode.FromPath(os.path.join(resolved_path, filename))

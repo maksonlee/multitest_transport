@@ -25,9 +25,6 @@ py_strict_test(
     srcs = [
         "file_server_test.py",
     ],
-    data = [
-        "test_data/test.txt",
-    ],
     python_version = "PY3",
     deps = [
         ":file_server_lib",
