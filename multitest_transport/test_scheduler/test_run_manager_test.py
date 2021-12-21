@@ -13,9 +13,9 @@
 # limitations under the License.
 
 """Unit tests for test_run_manager module."""
-from absl.testing import absltest
-import mock
+from unittest import mock
 
+from absl.testing import absltest
 from tradefed_cluster import testbed_dependent_test
 
 from multitest_transport.models import ndb_models

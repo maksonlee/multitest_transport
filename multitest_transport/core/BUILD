@@ -61,7 +61,6 @@ py_test(
         ":cron_kicker_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("absl/testing:absltest"),
-        third_party("mock"),
         third_party("webtest"),
     ],
 )
@@ -136,6 +135,5 @@ py_test(
     deps = [
         ":service_checker_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_test_lib",
-        third_party("mock"),
     ],
 )

@@ -13,10 +13,10 @@
 # limitations under the License.
 
 """Tests for test_plan_api."""
+from unittest import mock
 import uuid
 
 from absl.testing import absltest
-import mock
 from protorpc import protojson
 
 from multitest_transport.api import api_test_util

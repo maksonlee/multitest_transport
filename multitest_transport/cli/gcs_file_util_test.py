@@ -12,18 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for google3.wireless.android.test_tools.multitest_transport.cli.gcs_file_util."""
+"""Tests for gcs_file_util."""
 import datetime
 import os
 import tempfile
+from unittest import mock
 
 from absl.testing import absltest
-import mock
-import six
+from google.cloud import exceptions as cloud_exceptions
+from google.cloud import storage  import six
 from tradefed_cluster.configs import lab_config
 
-from google.cloud import exceptions as cloud_exceptions
-from google.cloud import storage  
 from multitest_transport.cli import gcs_file_util
 
 

@@ -13,8 +13,9 @@
 # limitations under the License.
 
 """Android Test Station local file server proxy tests."""
+from unittest import mock
+
 from absl.testing import absltest
-import mock
 import six
 from six.moves import http_client
 from six.moves import urllib

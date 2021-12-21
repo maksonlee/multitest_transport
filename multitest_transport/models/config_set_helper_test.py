@@ -13,8 +13,9 @@
 # limitations under the License.
 
 """Tests for config_set_helper."""
+from unittest import mock
+
 from absl.testing import absltest
-import mock
 from tradefed_cluster import testbed_dependent_test
 from tradefed_cluster.util import ndb_shim as ndb
 

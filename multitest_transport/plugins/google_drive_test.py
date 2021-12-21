@@ -13,12 +13,11 @@
 # limitations under the License.
 
 """Unit tests for google_drive."""
-
 import json
+from unittest import mock
 
 from absl.testing import absltest
 import apiclient.http
-import mock
 
 from multitest_transport.plugins import base
 from multitest_transport.plugins import google_drive

@@ -20,10 +20,10 @@ import json
 import os
 import shutil
 import tempfile
+from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
-import mock
 from tradefed_cluster.configs import lab_config
 
 from multitest_transport.cli import lab_cli

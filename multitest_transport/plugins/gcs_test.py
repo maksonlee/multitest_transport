@@ -14,10 +14,10 @@
 
 """Unit tests for gcs."""
 import datetime
+from unittest import mock
 
 from absl.testing import absltest
 import apiclient
-import mock
 
 from multitest_transport.models import event_log
 from multitest_transport.plugins import base

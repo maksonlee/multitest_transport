@@ -14,9 +14,9 @@
 
 """Tests for service_checker."""
 import subprocess
+from unittest import mock
 
 from absl.testing import absltest
-import mock
 import requests
 from tradefed_cluster.util import ndb_test_lib
 

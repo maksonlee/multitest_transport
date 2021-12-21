@@ -13,8 +13,9 @@
 # limitations under the License.
 
 """Unit tests for web_hook."""
+from unittest import mock
+
 from absl.testing import absltest
-import mock
 from six.moves import urllib
 
 from tradefed_cluster import testbed_dependent_test

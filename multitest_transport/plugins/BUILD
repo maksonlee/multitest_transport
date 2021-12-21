@@ -30,7 +30,6 @@ py_test(
     deps = [
         ":android_lib",
         third_party("absl/testing:absltest"),
-        third_party("mock"),
     ],
 )
 
@@ -58,7 +57,6 @@ py_test(
         ":file_upload_hook_lib",
         "//multitest_transport/models",
         third_party("absl/testing:absltest"),
-        third_party("mock"),
     ],
 )
 
@@ -88,7 +86,6 @@ py_test(
         ":gcs_lib",
         third_party("absl/testing:absltest"),
         third_party("apiclient"),
-        third_party("mock"),
     ],
 )
 
@@ -119,7 +116,6 @@ py_test(
         ":google_drive_lib",
         third_party("absl/testing:absltest"),
         third_party("apiclient"),
-        third_party("mock"),
     ],
 )
 
@@ -203,6 +199,5 @@ py_test(
         "//multitest_transport/models",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("absl/testing:absltest"),
-        third_party("mock"),
     ],
 )

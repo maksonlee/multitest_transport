@@ -213,7 +213,6 @@ py_test(
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
-        third_party("mock"),
     ],
 )
 
@@ -228,7 +227,6 @@ py_test(
         ":unittest_util_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
-        third_party("mock"),
     ],
 )
 
@@ -242,7 +240,6 @@ py_test(
         ":command_util_lib",
         ":ssh_util_lib",
         third_party("absl/testing:absltest"),
-        third_party("mock"),
     ],
 )
 
@@ -255,7 +252,6 @@ py_test(
     deps = [
         ":gcs_file_util_lib",
         third_party("absl/testing:absltest"),
-        third_party("mock"),
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
     ],
 )
@@ -269,7 +265,6 @@ py_test(
     deps = [
         ":google_auth_util_lib",
         third_party("absl/testing:absltest"),
-        third_party("mock"),
     ],
 )
 
@@ -284,7 +279,6 @@ py_test(
         ":ssh_util_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
-        third_party("mock"),
     ],
 )
 
@@ -298,7 +292,6 @@ py_test(
         ":control_server_util_lib",
         third_party("apiclient"),
         third_party("absl/testing:absltest"),
-        third_party("mock"),
     ],
 )
 
@@ -314,7 +307,6 @@ py_test(
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
-        third_party("mock"),
     ],
 )
 
@@ -328,7 +320,6 @@ py_test(
         ":ssh_util_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
-        third_party("mock"),
     ],
 )
 

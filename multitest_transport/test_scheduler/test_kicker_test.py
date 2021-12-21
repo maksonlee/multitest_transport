@@ -15,10 +15,10 @@
 """Unit tests for test_kicker module."""
 import json
 import os
+from unittest import mock
 import uuid
-from absl.testing import absltest
 
-import mock
+from absl.testing import absltest
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
 from tradefed_cluster import testbed_dependent_test

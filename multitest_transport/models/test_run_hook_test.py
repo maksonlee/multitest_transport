@@ -12,15 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Unit tests for run_hook."""
-from absl.testing import absltest
-import mock
+"""Unit tests for test_run_hook."""
+from unittest import mock
 
+from absl.testing import absltest
+from google.oauth2 import credentials as authorized_user
 from tradefed_cluster import testbed_dependent_test
 from tradefed_cluster.api_messages import CommandState
 from tradefed_cluster.command_task_api import CommandTask
-
-from google.oauth2 import credentials as authorized_user
 
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook

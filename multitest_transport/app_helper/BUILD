@@ -38,7 +38,6 @@ py_test(
         ":launcher_lib",
         third_party("absl/testing:absltest"),
         third_party("absl/testing:parameterized"),
-        third_party("mock"),
     ],
 )
 
@@ -66,7 +65,6 @@ py_test(
     deps = [
         ":rabbitmq_plugin_lib",
         third_party("absl/testing:absltest"),
-        third_party("mock"),
     ],
 )
 
@@ -95,7 +93,6 @@ py_test(
     deps = [
         ":rabbitmq_puller_lib",
         third_party("absl/testing:absltest"),
-        third_party("mock"),
         third_party("six"),
     ],
 )

@@ -14,9 +14,9 @@
 
 """Unit tests for tfc_event_handler module."""
 import datetime
+from unittest import mock
 
 from absl.testing import absltest
-import mock
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
 from tradefed_cluster import testbed_dependent_test

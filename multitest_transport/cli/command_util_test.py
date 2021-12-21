@@ -17,9 +17,9 @@ import getpass
 import os
 import socket
 import subprocess
+from unittest import mock
 
 from absl.testing import absltest
-import mock
 
 from multitest_transport.cli import command_util
 from multitest_transport.cli import common

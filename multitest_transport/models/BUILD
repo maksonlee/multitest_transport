@@ -29,7 +29,6 @@ py_test(
     deps = [
         ":build_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
-        third_party("mock"),
     ],
 )
 
@@ -92,7 +91,6 @@ py_test(
         ":config_set_helper_lib",
         "//multitest_transport/test_scheduler",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
-        third_party("mock"),
     ],
 )
 
@@ -238,6 +236,5 @@ py_test(
         ":test_run_hook_lib",
         "@tradefed_cluster//tradefed_cluster:command_task_api_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
-        third_party("mock"),
     ],
 )

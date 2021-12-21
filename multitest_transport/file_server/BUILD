@@ -70,7 +70,6 @@ py_test(
     deps = [
         ":proxy_lib",
         third_party("absl/testing:absltest"),
-        third_party("mock"),
         third_party("webtest"),
     ],
 )

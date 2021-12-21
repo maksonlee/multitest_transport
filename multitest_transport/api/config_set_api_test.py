@@ -13,12 +13,11 @@
 # limitations under the License.
 
 """Tests for config_set_api."""
-
-from protorpc import protojson
+from unittest import mock
 
 from absl.testing import absltest
-
-import mock
+from protorpc import protojson
+from tradefed_cluster.util import ndb_shim as ndb
 
 from multitest_transport.api import api_test_util
 from multitest_transport.api import config_set_api
@@ -27,8 +26,6 @@ from multitest_transport.models import config_set_helper
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base as plugins
-
-from tradefed_cluster.util import ndb_shim as ndb
 
 
 class GCSBuildProvider(plugins.BuildProvider):

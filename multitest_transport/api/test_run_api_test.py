@@ -14,11 +14,11 @@
 
 """Tests for test_run_api."""
 import tempfile
+from unittest import mock
 import uuid
 import zipfile
 
 from absl.testing import absltest
-import mock
 from protorpc import protojson
 from tradefed_cluster import api_messages
 from tradefed_cluster.api_messages import CommandState

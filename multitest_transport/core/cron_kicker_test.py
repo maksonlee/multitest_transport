@@ -16,9 +16,9 @@
 
 import datetime
 import os
+from unittest import mock
 
 from absl.testing import absltest
-import mock
 import pytz
 from six.moves import urllib
 from tradefed_cluster import testbed_dependent_test

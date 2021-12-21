@@ -17,9 +17,9 @@
 import base64
 import datetime
 import json
+from unittest import mock
 
 from absl.testing import absltest
-import mock
 import pika
 from six.moves import urllib
 

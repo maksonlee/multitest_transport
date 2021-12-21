@@ -16,10 +16,10 @@
 """Unit tests for the launcher module."""
 import os
 import socket
+from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
-import mock
 import requests
 
 from multitest_transport.app_helper import launcher

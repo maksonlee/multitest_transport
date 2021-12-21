@@ -14,10 +14,10 @@
 
 """Unit tests for test_scheduler module."""
 import datetime
+from unittest import mock
 import uuid
 
 from absl.testing import absltest
-import mock
 from tradefed_cluster import testbed_dependent_test
 from tradefed_cluster.util import ndb_shim as ndb
 

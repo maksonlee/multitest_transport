@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for multitest_transport.cli.control_server_util."""
-
+"""Tests for control_server_util."""
 import datetime
+from unittest import mock
 
 from absl.testing import absltest
 import apiclient.errors
-import mock
 
 from multitest_transport.cli import control_server_util
 

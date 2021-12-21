@@ -13,8 +13,9 @@
 # limitations under the License.
 
 """Unit tests for test_result_handler."""
+from unittest import mock
+
 from absl.testing import absltest
-import mock
 from tradefed_cluster import api_messages
 from tradefed_cluster import testbed_dependent_test
 from tradefed_cluster.services import task_scheduler

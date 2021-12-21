@@ -1,9 +1,9 @@
-"""Tests for multitest_transport.cli.ssh_util."""
+"""Tests for ssh_util."""
 import os
 import tempfile
+from unittest import mock
 
 from absl.testing import absltest
-import mock
 
 from multitest_transport.cli import ssh_util
 

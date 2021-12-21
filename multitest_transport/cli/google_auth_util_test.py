@@ -1,7 +1,8 @@
 """Tests for google_auth_util."""
 import datetime
+from unittest import mock
+
 from absl.testing import absltest
-import mock
 
 from multitest_transport.cli import google_auth_util
 

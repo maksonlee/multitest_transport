@@ -15,11 +15,11 @@
 """Tests for cli_util."""
 import os
 import tempfile
+from unittest import mock
 import zipfile
 
 from absl.testing import absltest
 from absl.testing import parameterized
-import mock
 import six
 
 from multitest_transport.cli import cli_util

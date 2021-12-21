@@ -11,11 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests for test_result_api."""
-from absl.testing import absltest
-import mock
-from protorpc import protojson
 
+"""Tests for test_result_api."""
+from unittest import mock
+
+from absl.testing import absltest
+from protorpc import protojson
 from tradefed_cluster import api_messages
 from tradefed_cluster.api_messages import CommandState
 

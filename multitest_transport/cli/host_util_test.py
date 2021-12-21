@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for google3.wireless.android.test_tools.multitest_transport.cli.host_util."""
+"""Tests for host_util."""
 import collections
 import getpass
 import socket
+from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
-import mock
 
 from multitest_transport.cli import host_util
 from multitest_transport.cli import ssh_util

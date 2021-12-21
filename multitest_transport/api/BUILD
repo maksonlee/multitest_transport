@@ -71,7 +71,6 @@ py_test(
         ":build_channel_api_lib",
         "@tradefed_cluster//tradefed_cluster/util:google_import_fixer",
         third_party("google/oauth2:credentials"),
-        third_party("mock"),
     ],
 )
 
@@ -99,7 +98,6 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":build_channel_provider_api_lib",
-        third_party("mock"),
     ],
 )
 
@@ -316,7 +314,6 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":test_plan_api_lib",
-        third_party("mock"),
     ],
 )
 
@@ -347,7 +344,6 @@ py_test(
         ":test_result_api_lib",
         "//multitest_transport/models",
         "//multitest_transport/util",
-        third_party("mock"),
         third_party("sqlite3"),
     ],
 )
@@ -382,7 +378,6 @@ py_test(
         ":test_run_action_api_lib",
         "@tradefed_cluster//tradefed_cluster/util:google_import_fixer",
         third_party("google/oauth2:credentials"),
-        third_party("mock"),
     ],
 )
 
@@ -416,7 +411,6 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":test_run_api_lib",
-        third_party("mock"),
     ],
 )
 

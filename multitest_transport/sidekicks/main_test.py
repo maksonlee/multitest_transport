@@ -1,7 +1,7 @@
-"""Tests for google3.third_party.py.multitest_transport.sidekicks.main."""
+"""Tests for sidekicks."""
+from unittest import mock
 
 from absl.testing import absltest
-import mock
 import webtest
 
 from multitest_transport.sidekicks import main

@@ -13,13 +13,12 @@
 # limitations under the License.
 
 """Unit tests for test_plan_kicker module."""
-
 import datetime
 import json
 import os.path
+from unittest import mock
 
 from absl.testing import absltest
-import mock
 import pytz
 from tradefed_cluster import testbed_dependent_test
 

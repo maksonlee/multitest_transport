@@ -14,10 +14,10 @@
 
 """Unit tests for android module."""
 import datetime
+from unittest import mock
 
 from absl.testing import absltest
 import apiclient
-import mock
 
 from multitest_transport.plugins import android
 from multitest_transport.util import file_util
