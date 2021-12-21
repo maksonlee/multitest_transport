@@ -253,6 +253,10 @@ export class Mtt implements OnDestroy {
               this.userService.setAdmin(false);
             });
   }
+
+  trackPageView(path: string) {
+    this.analytics.trackLocation(path);
+  }
 }
 
 /** Main module */

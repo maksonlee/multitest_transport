@@ -21,6 +21,7 @@ import {of as observableOf} from 'rxjs';
 
 import {Mtt, MttModule} from './app';
 import {MttModuleNgSummary} from './app.ngsummary';
+import {AnalyticsService} from './services/analytics_service';
 import {APP_DATA} from './services/app_data';
 import {UserService} from './services/user_service';
 import {getEl} from './testing/jasmine_util';
@@ -29,9 +30,11 @@ describe('Mtt', () => {
   let mtt: Mtt;
   let mttFixture: ComponentFixture<Mtt>;
   let el: DebugElement;
+  let analyticsServiceSpy: jasmine.SpyObj<AnalyticsService>;
   let userServiceSpy: jasmine.SpyObj<UserService>;
 
   beforeEach(() => {
+    analyticsServiceSpy = jasmine.createSpyObj(['trackLocation']);
     userServiceSpy = jasmine.createSpyObj('userService', {
       checkPermission: observableOf(true),
       setAdmin: undefined,
@@ -41,7 +44,8 @@ describe('Mtt', () => {
       imports: [MttModule, RouterTestingModule],
       aotSummaries: MttModuleNgSummary,
       providers: [
-        {provide: APP_DATA, useValue: {}},
+        {provide: APP_DATA, useValue: {netdataUrl: 'localhost:8008'}},
+        {provide: AnalyticsService, useValue: analyticsServiceSpy},
         {provide: UserService, useValue: userServiceSpy},
       ],
     });
@@ -64,5 +68,10 @@ describe('Mtt', () => {
 
   it('calls checkPermission correctly', () => {
     expect(userServiceSpy.checkPermission).toHaveBeenCalledTimes(1);
+  });
+
+  it('should track a page view when monitor button is clicked', () => {
+    getEl(el, '#monitorButton').click();
+    expect(analyticsServiceSpy.trackLocation).toHaveBeenCalledWith('netdata');
   });
 });

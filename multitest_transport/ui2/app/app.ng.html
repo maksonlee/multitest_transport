@@ -111,10 +111,12 @@
         </a>
         <a
           *ngIf="netdataUrl"
+          id="monitorButton"
           mat-list-item
           matTooltip="Monitor"
           target="_blank"
           [href]="netdataUrl"
+          (click)="trackPageView('netdata')"
         >
           <mat-icon matListIcon>monitor_heart</mat-icon>
           <span>Storage Monitor</span>
