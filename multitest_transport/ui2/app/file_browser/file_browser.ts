@@ -17,7 +17,7 @@
 import {Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MatTable} from '@angular/material/mdc-table';
 import {ActivatedRoute, Router, UrlSegment} from '@angular/router';
-import {ReplaySubject} from 'rxjs';
+import {combineLatest, ReplaySubject} from 'rxjs';
 import {filter, finalize, mergeMap, takeUntil} from 'rxjs/operators';
 
 import {FileNode, FileService, FileType, humanFileSize, PROXY_PATH} from '../services/file_service';
@@ -40,6 +40,8 @@ export class FileBrowser implements OnInit, OnDestroy {
   files: FileNode[] = [];
   // Hold information of the current directory path
   currentDirectory: string = '';
+  // Host that contains browsing files
+  hostname: string = '';
 
   // Table that displays the list of files
   @ViewChild(MatTable, {static: false}) table!: MatTable<{}>;
@@ -56,11 +58,17 @@ export class FileBrowser implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.route.url.pipe(takeUntil(this.destroy))
-        .subscribe((url: UrlSegment[]) => {
-          this.currentDirectory = url.map(u => u.path).join('/');
-          this.loadFiles();
-        });
+    combineLatest([this.route.queryParamMap, this.route.url]).subscribe(res => {
+      this.hostname = res[0].get('hostname') || '';
+      this.currentDirectory = res[1].map((u: UrlSegment) => u.path).join('/');
+      this.loadFiles();
+    });
+  }
+
+  navigateToFolder(path: string) {
+    this.router.navigate(
+        ['/file_browser/' + path],
+        {queryParams: this.hostname ? {hostname: this.hostname} : {}});
   }
 
   ngOnDestroy() {
@@ -70,7 +78,7 @@ export class FileBrowser implements OnInit, OnDestroy {
   /** Reloads the list of files in the current directory. */
   private loadFiles() {
     this.isLoading = true;
-    this.fs.listFiles(this.currentDirectory)
+    this.fs.listFiles(this.currentDirectory, this.hostname)
         .pipe(
             takeUntil(this.destroy),
             finalize(() => {
@@ -96,7 +104,7 @@ export class FileBrowser implements OnInit, OnDestroy {
         .confirm(`Do you really want to delete '${file.name}'?`, 'Delete File')
         .pipe(
             filter(x => x),
-            mergeMap(() => this.fs.deleteFile(file.path)),
+            mergeMap(() => this.fs.deleteFile(file.path, this.hostname)),
             )
         .subscribe(
             () => {

@@ -130,7 +130,8 @@ export class TestRunConfigForm extends FormChangeTracker implements OnInit,
           this.uploadProgress = event.progress;
           if (event.done) {
             this.testResultsFilename = file.name;
-            this.testResultsFileUrl = this.fs.getFileUrl(`tmp/${file.name}`);
+            this.testResultsFileUrl =
+                this.fs.getFileUrl('', `tmp/${file.name}`);
             this.updateRerunContext();
             this.liveAnnouncer.announce(`${file.name} uploaded`, 'assertive');
           }

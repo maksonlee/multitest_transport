@@ -45,6 +45,7 @@ const FAILED_TEST_COUNT = 13;
 const FILE_BROWSE_URL = '/file/browse/url';
 const FILE_OPEN_URL = '/file/open/url';
 const FILE_SERVER_ROOT = '/file/server/root';
+const HOSTNAME = 'hostname';
 const MTT_VERSION = '01012000';
 const OPTION_DEF_NAME = 'test_name';
 const PREVIOUS_TEST_RUN_ID = '12345678';
@@ -532,7 +533,8 @@ export function newMockCommand(
 export function newMockCommandAttempt(
     failedTestCount?: number, passedTestCount?: number, requestId = REQUEST_ID,
     commandId = COMMAND_ID, attemptId = ATTEMPT_ID, state = COMMAND_STATE,
-    startTime = DATE, endTime = DATE_FUTURE): tfcModels.CommandAttempt {
+    startTime = DATE, endTime = DATE_FUTURE,
+    hostname = HOSTNAME): tfcModels.CommandAttempt {
   return {
     request_id: requestId,
     command_id: commandId,
@@ -542,6 +544,7 @@ export function newMockCommandAttempt(
     passed_test_count: passedTestCount,
     start_time: startTime,
     end_time: endTime,
+    hostname,
   };
 }
 

@@ -41,9 +41,10 @@ describe('LocalFileStore', () => {
     liveAnnouncer =
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
     fs = jasmine.createSpyObj([
-      'getFileUrl', 'getRelativePath', 'listFiles', 'uploadFile', 'deleteFile'
+      'getFileUrl', 'getRelativePathAndHostname', 'listFiles', 'uploadFile',
+      'deleteFile'
     ]);
-    fs.getRelativePath.and.callFake(fileUrl => fileUrl);
+    fs.getRelativePathAndHostname.and.callFake(fileUrl => [fileUrl, '']);
     fs.listFiles.and.returnValue(observableOf([]));
     notifier = jasmine.createSpyObj('notifier', ['confirm', 'showError']);
 

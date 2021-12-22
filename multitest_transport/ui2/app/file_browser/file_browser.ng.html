@@ -20,7 +20,7 @@
   <breadcrumb
       [prefix]="'root'"
       [path]="currentDirectory"
-      (pathChange)="router.navigateByUrl('/file_browser/' + $event)">
+      (pathChange)="navigateToFolder($event)">
   </breadcrumb>
 
   <!-- Table to display the file list -->
@@ -33,11 +33,14 @@
       </mat-header-cell>
       <mat-cell class="name-cell" *matCellDef="let file" [fxFlex]="45">
          <a *ngIf="file.type === FileType.DIRECTORY"
-           [routerLink]="'/file_browser/' + file.path" aria-label="Change directory">
+           [routerLink]="'/file_browser/' + file.path"
+           [queryParams]="hostname ? {hostname: hostname}: ''"
+            aria-label="Change directory">
             {{ file.name }}
         </a>
         <a *ngIf="file.type !== FileType.DIRECTORY"
-           [href]="PROXY_PATH + '/file/' + file.path" target="_blank" aria-label="Open file">
+           [href]="PROXY_PATH + '/file/' + file.path + '?hostname=' + hostname"
+           target="_blank" aria-label="Open file" class="download">
              {{ file.name }}
         </a>
       </mat-cell>
@@ -70,12 +73,14 @@
                 fxLayoutAlign="center center">
         <!-- Directory actions (download, change) -->
         <ng-container *ngIf="file.type === FileType.DIRECTORY">
-          <a [href]="PROXY_PATH + '/dir/' + file.path + '?download=true'" class="download-dir">
+          <a [href]="PROXY_PATH + '/dir/' + file.path + '?download=true' + '&hostname=' + hostname" class="download-dir">
             <button mat-icon-button aria-label="Download directory">
               <mat-icon>file_download</mat-icon>
             </button>
           </a>
-          <a [routerLink]="'/file_browser/' + file.path" class="change-dir">
+          <a [routerLink]="'/file_browser/' + file.path"
+             [queryParams]="hostname ? {hostname: hostname}: ''"
+             class="change-dir">
             <button mat-icon-button aria-label="Change directory">
               <mat-icon>navigate_next</mat-icon>
             </button>
@@ -83,7 +88,8 @@
         </ng-container>
         <!-- File actions (download, delete) -->
         <ng-container *ngIf="file.type !== FileType.DIRECTORY">
-          <a [href]="PROXY_PATH + '/file/' + file.path + '?download=true'" class="download">
+          <a [href]="PROXY_PATH + '/file/' + file.path + '?download=true' + '&hostname=' + hostname"
+            class="download">
             <button mat-icon-button aria-label="Download file">
               <mat-icon>file_download</mat-icon>
             </button>

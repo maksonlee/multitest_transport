@@ -17,7 +17,7 @@
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
-import {ActivatedRoute, UrlSegment} from '@angular/router';
+import {ActivatedRoute, convertToParamMap, ParamMap, UrlSegment} from '@angular/router';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf, ReplaySubject} from 'rxjs';
 
@@ -37,12 +37,14 @@ describe('FileBrowser', () => {
   let fs: jasmine.SpyObj<FileService>;
   let notifier: jasmine.SpyObj<Notifier>;
   let url: ReplaySubject<UrlSegment[]>;
+  let queryParamMap: ReplaySubject<ParamMap>;
 
   beforeEach(() => {
     fs = jasmine.createSpyObj(['listFiles', 'deleteFile']);
     fs.listFiles.and.returnValue(observableOf([]));
     notifier = jasmine.createSpyObj('notifier', ['confirm', 'showError']);
     url = new ReplaySubject<UrlSegment[]>();
+    queryParamMap = new ReplaySubject<ParamMap>();
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, FileBrowserModule, RouterTestingModule],
@@ -50,7 +52,7 @@ describe('FileBrowser', () => {
       providers: [
         {provide: FileService, useValue: fs},
         {provide: Notifier, useValue: notifier},
-        {provide: ActivatedRoute, useValue: {url}},
+        {provide: ActivatedRoute, useValue: {url, queryParamMap}},
       ],
     });
   });
@@ -62,6 +64,7 @@ describe('FileBrowser', () => {
     element = fixture.debugElement;
     fs.listFiles.and.returnValue(observableOf(nodes));
     url.next([new UrlSegment(path, {})]);
+    queryParamMap.next(convertToParamMap({hostname: 'hostname'}));
     fixture.detectChanges();
   }
 
@@ -69,25 +72,28 @@ describe('FileBrowser', () => {
     initComponent('a/b');
     expect(component).toBeTruthy();
     expect(component.currentDirectory).toEqual('a/b');
-    expect(fs.listFiles).toHaveBeenCalledWith('a/b');
+    expect(fs.listFiles).toHaveBeenCalledWith('a/b', 'hostname');
   });
 
   it('should have fs_proxy href on file name link', () => {
     initComponent('dir', [{path: 'dir/filename', type: FileType.FILE}]);
     const link = getEl<HTMLAnchorElement>(element, '.name-cell a');
-    expect(link.href.endsWith('fs_proxy/file/dir/filename')).toBeTruthy();
+    expect(link.href.endsWith('fs_proxy/file/dir/filename?hostname=hostname'))
+        .toBeTruthy();
   });
 
   it('should have file_browser href on directory name link', () => {
     initComponent('dir', [{path: 'dir/nested', type: FileType.DIRECTORY}]);
     const link = getEl<HTMLAnchorElement>(element, '.name-cell a');
-    expect(link.href.endsWith('file_browser/dir/nested')).toBeTruthy();
+    expect(link.href.endsWith('file_browser/dir/nested?hostname=hostname'))
+        .toBeTruthy();
   });
 
   it('should have download href on file download link', () => {
     initComponent('dir', [{path: 'dir/filename', type: FileType.FILE}]);
     const link = getEl<HTMLAnchorElement>(element, '.action-cell a.download');
-    expect(link.href.endsWith('fs_proxy/file/dir/filename?download=true'))
+    expect(link.href.endsWith(
+               'fs_proxy/file/dir/filename?download=true&hostname=hostname'))
         .toBeTruthy();
   });
 
@@ -95,14 +101,16 @@ describe('FileBrowser', () => {
     initComponent('dir', [{path: 'dir/nested', type: FileType.DIRECTORY}]);
     const link =
         getEl<HTMLAnchorElement>(element, '.action-cell a.download-dir');
-    expect(link.href.endsWith('fs_proxy/dir/dir/nested?download=true'))
+    expect(link.href.endsWith(
+               'fs_proxy/dir/dir/nested?download=true&hostname=hostname'))
         .toBeTruthy();
   });
 
   it('should have file_browser href on directory change link', () => {
     initComponent('dir', [{path: 'dir/nested', type: FileType.DIRECTORY}]);
     const link = getEl<HTMLAnchorElement>(element, '.action-cell a.change-dir');
-    expect(link.href.endsWith('file_browser/dir/nested')).toBeTruthy();
+    expect(link.href.endsWith('file_browser/dir/nested?hostname=hostname'))
+        .toBeTruthy();
   });
 
   it('should delete file when delete button clicked', () => {
@@ -114,6 +122,6 @@ describe('FileBrowser', () => {
     // delete button will delete the file and reload the current directory
     getEl(element, 'mat-row button.delete').click();
     expect(notifier.confirm).toHaveBeenCalled();
-    expect(fs.deleteFile).toHaveBeenCalledWith('dir/filename');
+    expect(fs.deleteFile).toHaveBeenCalledWith('dir/filename', 'hostname');
   });
 });

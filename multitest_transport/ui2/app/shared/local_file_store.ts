@@ -64,7 +64,7 @@ export class LocalFileStore implements OnInit, OnDestroy {
       private readonly notifier: Notifier) {}
 
   ngOnInit() {
-    const path = this.fs.getRelativePath(this.url);
+    const path = this.fs.getRelativePathAndHostname(this.url)[0];
     const directory =
         ROOT_DIRECTORY_RE.test(path) ? getDirectoryPath(path) : ROOT_DIRECTORY;
     this.changeDirectory(directory);
@@ -102,8 +102,9 @@ export class LocalFileStore implements OnInit, OnDestroy {
         .subscribe(files => {
           this.files = files;
           // Check if selected file exists
-          const path = this.selectedFile ? this.selectedFile.path :
-                                           this.fs.getRelativePath(this.url);
+          const path = this.selectedFile ?
+              this.selectedFile.path :
+              this.fs.getRelativePathAndHostname(this.url)[0];
           const file = this.files.find(
               f => f.path === path && f.type !== FileType.DIRECTORY);
           this.selectFile(file);
@@ -116,7 +117,7 @@ export class LocalFileStore implements OnInit, OnDestroy {
    */
   selectFile(file?: FileNode) {
     this.selectedFile = file;
-    this.urlChange.emit(file ? this.fs.getFileUrl(file.path) : '');
+    this.urlChange.emit(file ? this.fs.getFileUrl('', file.path) : '');
   }
 
   /**

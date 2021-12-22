@@ -55,6 +55,7 @@ describe('TestRunProgress', () => {
       request_id: 'request_id',
       create_time: '2000-01-01T00:00:00',
       state: CommandState.COMPLETED,
+      hostname: 'hostname',
     };
 
     fs = jasmine.createSpyObj(['getTestRunFileUrl', 'getFileBrowseUrl']);

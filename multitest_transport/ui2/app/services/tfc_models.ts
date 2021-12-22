@@ -246,6 +246,8 @@ export declare interface CommandAttempt {
   readonly passed_test_count?: number;
   /** number of modules failed */
   readonly failed_test_run_count?: number;
+  /** hostname */
+  readonly hostname: string;
 }
 
 /** A list of command attempts */

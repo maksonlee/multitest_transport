@@ -40,10 +40,11 @@ describe('FileService', () => {
     const attempt = {
       command_id: 'command_id',
       attempt_id: 'attempt_id',
-      state: CommandState.RUNNING
+      state: CommandState.RUNNING,
+      hostname: 'hostname',
     } as CommandAttempt;
     const path = 'path/to/file';
-    const expected = 'file:///root/tmp/attempt_id/path/to/file';
+    const expected = 'file://hostname/root/tmp/attempt_id/path/to/file';
     expect(fs.getTestRunFileUrl(testRun, attempt, path)).toEqual(expected);
   });
 
@@ -52,7 +53,8 @@ describe('FileService', () => {
     const attempt = {
       command_id: 'command_id',
       attempt_id: 'attempt_id',
-      state: CommandState.COMPLETED
+      state: CommandState.COMPLETED,
+      hostname: 'hostname',
     } as CommandAttempt;
     const path = 'path/to/file';
     const expected = 'output_url/command_id/attempt_id/path/to/file';
@@ -61,31 +63,50 @@ describe('FileService', () => {
 
   it('can get file browse URL for absolute file URLs', () => {
     const url = 'file:///root/path/to/file';
-    const expected = `${FILE_BROWSER_PATH}/path/to/file`;
+    const expected = `${FILE_BROWSER_PATH}/path/to/file?hostname=`;
+    expect(fs.getFileBrowseUrl(url)).toEqual(expected);
+  });
+
+  it('can get correct file browse URL without hostname', () => {
+    const url = 'file:///root/path/to/file';
+    const expected = `${FILE_BROWSER_PATH}/path/to/file?hostname=`;
+    expect(fs.getFileBrowseUrl(url)).toEqual(expected);
+  });
+
+  it('can get correct file browse URL with hostname', () => {
+    const url = 'file://hostname/root/path/to/file';
+    const expected = `${FILE_BROWSER_PATH}/path/to/file?hostname=hostname`;
     expect(fs.getFileBrowseUrl(url)).toEqual(expected);
   });
 
   it('can get file browse URL for relative file paths', () => {
     const path = 'path/to/file';
-    const expected = `${FILE_BROWSER_PATH}/path/to/file`;
+    const expected = `${FILE_BROWSER_PATH}/path/to/file?hostname=`;
     expect(fs.getFileBrowseUrl(path)).toEqual(expected);
   });
 
   it('can get file open URL for absolute file URLs', () => {
     const url = 'file:///root/path/to/file';
-    const expected = `${PROXY_PATH.slice(1)}/file/path/to/file`;
+    const expected = `${PROXY_PATH.slice(1)}/file/path/to/file?hostname=`;
     expect(fs.getFileOpenUrl(url)).toEqual(expected);
   });
 
-  it('can get file open URL for http file URLs', () => {
-    const url = 'http://hostname.com:8006/file/path/to/file';
-    const expected = `${PROXY_PATH.slice(1)}/file/path/to/file`;
+  it('can get correct file open URL without hostname', () => {
+    const url = 'file:///root/path/to/file';
+    const expected = `${PROXY_PATH.slice(1)}/file/path/to/file?hostname=`;
+    expect(fs.getFileOpenUrl(url)).toEqual(expected);
+  });
+
+  it('can get correct file open URL with hostname', () => {
+    const url = 'file://hostname/root/path/to/file';
+    const expected =
+        `${PROXY_PATH.slice(1)}/file/path/to/file?hostname=hostname`;
     expect(fs.getFileOpenUrl(url)).toEqual(expected);
   });
 
   it('can get file open URL for relative file paths', () => {
     const path = 'path/to/file';
-    const expected = `${PROXY_PATH.slice(1)}/file/path/to/file`;
+    const expected = `${PROXY_PATH.slice(1)}/file/path/to/file?hostname=`;
     expect(fs.getFileOpenUrl(path)).toEqual(expected);
   });
 

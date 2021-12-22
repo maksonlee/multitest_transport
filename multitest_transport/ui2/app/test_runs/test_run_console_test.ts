@@ -37,6 +37,7 @@ function newCommandAttempt(active: boolean, id = 'attempt_id'): CommandAttempt {
     command_id: 'command_id',
     attempt_id: id,
     state: active ? CommandState.RUNNING : CommandState.COMPLETED,
+    hostname: 'hostname',
   };
 }
 

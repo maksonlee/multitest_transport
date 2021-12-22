@@ -57,11 +57,13 @@ export class FileService {
 
   /**
    * Generate an absolute file URL.
+   * @param hostname hostname of file url
    * @param parts path substrings
    * @return absolute file URL
    */
-  getFileUrl(...parts: string[]) {
-    return joinPath(`file://${this.appData.fileServerRoot || ''}`, ...parts);
+  getFileUrl(hostname: string, ...parts: string[]) {
+    return joinPath(
+        `file://${hostname}${this.appData.fileServerRoot || ''}`, ...parts);
   }
 
   /**
@@ -79,7 +81,7 @@ export class FileService {
       return joinPath(outputUrl, attempt.command_id, attempt.attempt_id, path);
     }
     // Active run files are stored in a local temporary location.
-    return this.getFileUrl('tmp', attempt.attempt_id, path);
+    return this.getFileUrl(attempt.hostname, 'tmp', attempt.attempt_id, path);
   }
 
   /**
@@ -88,8 +90,9 @@ export class FileService {
    * @return directory browse URL
    */
   getFileBrowseUrl(dirUrl: string): string {
-    const relativePath = this.getRelativePath(dirUrl);
-    return joinPath(FILE_BROWSER_PATH, relativePath);
+    const [relativePath, hostname] = this.getRelativePathAndHostname(dirUrl);
+    return joinPath(FILE_BROWSER_PATH, relativePath) +
+        `?hostname=${hostname || ''}`;
   }
 
   /**
@@ -98,8 +101,9 @@ export class FileService {
    * @return file open URL
    */
   getFileOpenUrl(fileUrl: string): string {
-    const relativePath = this.getRelativePath(fileUrl);
-    return joinPath(PROXY_PATH, 'file', relativePath);
+    const [relativePath, hostname] = this.getRelativePathAndHostname(fileUrl);
+    return joinPath(PROXY_PATH, 'file', relativePath) +
+        `?hostname=${hostname || ''}`;
   }
 
   /**
@@ -107,19 +111,30 @@ export class FileService {
    * @param fileUrl file URL to relativize
    * @return relative file path
    */
-  getRelativePath(fileUrl: string): string {
-    const fileServerRoot = `file://${this.appData.fileServerRoot || ''}`;
+  getRelativePathAndHostname(fileUrl: string): [string, string] {
+    let hostname = '';
+    try {
+      hostname = new URL(fileUrl).hostname;
+    } catch {
+    }
+
+    const fileServerRoot =
+        `file://([^/]+)?${this.appData.fileServerRoot || ''}`;
     fileUrl = fileUrl.replace(new RegExp(`^${fileServerRoot}/?`), '');
-    const fileHttpRoot = `http://[^/]+/file`;
-    return fileUrl.replace(new RegExp(`^${fileHttpRoot}/?`), '');
+    return [fileUrl, hostname];
   }
 
   /**
    * List all the files in a local directory.
    * @param path directory relative to the file server root
+   * @param hostname host of the browsing files
    * @return list of file nodes
    */
-  listFiles(path: string): Observable<FileNode[]> {
+  listFiles(path: string, hostname?: string): Observable<FileNode[]> {
+    if (hostname) {
+      return this.http.get<FileNode[]>(
+          `${PROXY_PATH}/dir/${encodePath(path)}?hostname=${hostname}`);
+    }
     return this.http.get<FileNode[]>(`${PROXY_PATH}/dir/${encodePath(path)}`);
   }
 
@@ -201,8 +216,13 @@ export class FileService {
   /**
    * Delete a file from local storage.
    * @param path path relative to the file server root
+   * @param hostname host of the browsing files
    */
-  deleteFile(path: string): Observable<void> {
+  deleteFile(path: string, hostname?: string): Observable<void> {
+    if (hostname) {
+      return this.http.delete<void>(
+          `${PROXY_PATH}/file/${encodePath(path)}?hostname=${hostname}`);
+    }
     return this.http.delete<void>(`${PROXY_PATH}/file/${encodePath(path)}`);
   }
 }
