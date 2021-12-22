@@ -21,8 +21,6 @@ py_test(
     srcs = [
         "main_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":sidekicks",
         third_party("absl/testing:absltest"),

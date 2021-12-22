@@ -90,7 +90,6 @@ pytype_strict_library(
     srcs = [
         "server.py",
     ],
-    srcs_version = "PY3",
     deps = [
         "//multitest_transport/api",
         "//multitest_transport/core:app_lib",

@@ -5,7 +5,6 @@ licenses(["notice"])
 
 pytype_strict_library(
     name = "api",
-    srcs_version = "PY3",
     visibility = ["//multitest_transport"],
     deps = [
         ":server_lib",
@@ -18,7 +17,6 @@ pytype_strict_library(
     srcs = [
         "api_test_util.py",
     ],
-    srcs_version = "PY3",
     deps = [
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         third_party("google-endpoints"),
@@ -31,7 +29,6 @@ pytype_strict_library(
     srcs = [
         "base.py",
     ],
-    srcs_version = "PY3",
     deps = [
         ":openapi_lib",
         "//multitest_transport/models",
@@ -46,7 +43,6 @@ pytype_strict_library(
     srcs = [
         "build_channel_api.py",
     ],
-    srcs_version = "PY3",
     deps = [
         ":base_lib",
         "//multitest_transport/models",
@@ -64,8 +60,6 @@ py_test(
     srcs = [
         "build_channel_api_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":build_channel_api_lib",
@@ -79,7 +73,6 @@ pytype_strict_library(
     srcs = [
         "build_channel_provider_api.py",
     ],
-    srcs_version = "PY3",
     deps = [
         ":base_lib",
         "//multitest_transport/models",
@@ -93,8 +86,6 @@ py_test(
     srcs = [
         "build_channel_provider_api_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":build_channel_provider_api_lib",
@@ -106,7 +97,6 @@ pytype_strict_library(
     srcs = [
         "config_set_api.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":base_lib",
         "//multitest_transport/models",
@@ -122,8 +112,6 @@ py_test(
     srcs = [
         "config_set_api_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":config_set_api_lib",
@@ -135,7 +123,6 @@ pytype_strict_library(
     srcs = [
         "device_action_api.py",
     ],
-    srcs_version = "PY3",
     deps = [
         ":base_lib",
         "//multitest_transport/models",
@@ -151,8 +138,6 @@ py_test(
     srcs = [
         "device_action_api_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":device_action_api_lib",
@@ -164,7 +149,6 @@ pytype_strict_library(
     srcs = [
         "node_config_api.py",
     ],
-    srcs_version = "PY3",
     deps = [
         ":base_lib",
         "//multitest_transport/models",
@@ -178,8 +162,6 @@ py_test(
     srcs = [
         "node_config_api_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":node_config_api_lib",
@@ -191,7 +173,6 @@ pytype_strict_library(
     srcs = [
         "openapi.py",
     ],
-    srcs_version = "PY3",
     deps = [
         third_party("endpoints:openapi_generator"),
     ],
@@ -202,7 +183,6 @@ pytype_strict_library(
     srcs = [
         "private_node_config_api.py",
     ],
-    srcs_version = "PY3",
     deps = [
         ":base_lib",
         "//multitest_transport/models",
@@ -217,8 +197,6 @@ py_test(
     srcs = [
         "private_node_config_api_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":private_node_config_api_lib",
@@ -233,7 +211,6 @@ pytype_strict_library(
     data = [
         "docs.html",
     ],
-    srcs_version = "PY3",
     deps = [
         ":base_lib",
         ":build_channel_api_lib",
@@ -261,7 +238,6 @@ pytype_strict_library(
     srcs = [
         "test_api.py",
     ],
-    srcs_version = "PY3",
     deps = [
         ":base_lib",
         "//multitest_transport/models",
@@ -276,8 +252,6 @@ py_test(
     srcs = [
         "test_api_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":test_api_lib",
@@ -289,7 +263,6 @@ pytype_strict_library(
     srcs = [
         "test_plan_api.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":base_lib",
         "//multitest_transport/models",
@@ -309,8 +282,6 @@ py_test(
     srcs = [
         "test_plan_api_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":test_plan_api_lib",
@@ -322,7 +293,6 @@ pytype_strict_library(
     srcs = [
         "test_result_api.py",
     ],
-    srcs_version = "PY3",
     deps = [
         ":base_lib",
         "//multitest_transport/models",
@@ -337,8 +307,6 @@ py_test(
     srcs = [
         "test_result_api_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":test_result_api_lib",
@@ -353,7 +321,6 @@ pytype_strict_library(
     srcs = [
         "test_run_action_api.py",
     ],
-    srcs_version = "PY3",
     deps = [
         ":base_lib",
         "//multitest_transport/models",
@@ -371,8 +338,6 @@ py_test(
     srcs = [
         "test_run_action_api_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":test_run_action_api_lib",
@@ -386,7 +351,6 @@ pytype_strict_library(
     srcs = [
         "test_run_api.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":base_lib",
         "//multitest_transport/models",
@@ -406,8 +370,6 @@ py_test(
     srcs = [
         "test_run_api_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":test_run_api_lib",
@@ -419,7 +381,6 @@ pytype_strict_library(
     srcs = [
         "file_cleaner_api.py",
     ],
-    srcs_version = "PY3",
     deps = [
         ":base_lib",
         "//multitest_transport/models",
@@ -432,8 +393,6 @@ py_test(
     srcs = [
         "file_cleaner_api_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":api_test_util_lib",
         ":file_cleaner_api_lib",

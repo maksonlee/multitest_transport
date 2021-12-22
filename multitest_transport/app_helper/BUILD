@@ -10,7 +10,6 @@ pytype_strict_library(
     srcs = [
         "launcher.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":rabbitmq_plugin_lib",
         "//multitest_transport/models:test_run_hook_lib",
@@ -32,8 +31,6 @@ py_test(
     srcs = [
         "launcher_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":launcher_lib",
         third_party("absl/testing:absltest"),
@@ -46,7 +43,6 @@ pytype_strict_library(
     srcs = [
         "rabbitmq_plugin.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         "@tradefed_cluster//tradefed_cluster/plugins:base_lib",
         third_party("pika"),
@@ -60,8 +56,6 @@ py_test(
     srcs = [
         "rabbitmq_plugin_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":rabbitmq_plugin_lib",
         third_party("absl/testing:absltest"),
@@ -73,7 +67,6 @@ pytype_strict_library(
     srcs = [
         "rabbitmq_puller.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         third_party("absl:app"),
         third_party("absl/flags"),
@@ -88,8 +81,6 @@ py_test(
     srcs = [
         "rabbitmq_puller_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":rabbitmq_puller_lib",
         third_party("absl/testing:absltest"),

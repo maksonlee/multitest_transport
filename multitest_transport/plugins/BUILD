@@ -8,7 +8,6 @@ pytype_strict_library(
     srcs = [
         "android.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":plugin_base",
         "//multitest_transport/util:env_lib",
@@ -25,8 +24,6 @@ py_test(
     srcs = [
         "android_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":android_lib",
         third_party("absl/testing:absltest"),
@@ -39,7 +36,6 @@ pytype_strict_library(
     srcs = [
         "file_upload_hook.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":plugin_base",
         "//multitest_transport/util",
@@ -51,8 +47,6 @@ py_test(
     srcs = [
         "file_upload_hook_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":file_upload_hook_lib",
         "//multitest_transport/models",
@@ -65,7 +59,6 @@ pytype_strict_library(
     srcs = [
         "gcs.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":file_upload_hook_lib",
         ":plugin_base",
@@ -80,8 +73,6 @@ py_test(
     srcs = [
         "gcs_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":gcs_lib",
         third_party("absl/testing:absltest"),
@@ -94,7 +85,6 @@ pytype_strict_library(
     srcs = [
         "google_drive.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":plugin_base",
         "//multitest_transport/util:env_lib",
@@ -110,8 +100,6 @@ py_test(
     srcs = [
         "google_drive_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":google_drive_lib",
         third_party("absl/testing:absltest"),
@@ -124,7 +112,6 @@ pytype_strict_library(
     srcs = [
         "__init__.py",
     ],
-    srcs_version = "PY2AND3",
     visibility = ["//multitest_transport"],
     deps = [
         ":android_lib",
@@ -142,7 +129,6 @@ pytype_strict_library(
         "base.py",
         "constant.py",
     ],
-    srcs_version = "PY2AND3",
     visibility = ["//multitest_transport"],
     deps = [
         ":registry_lib",
@@ -157,7 +143,6 @@ pytype_strict_library(
     srcs = [
         "registry.py",
     ],
-    srcs_version = "PY2AND3",
 )
 
 py_test(
@@ -165,8 +150,6 @@ py_test(
     srcs = [
         "registry_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":registry_lib",
         third_party("absl/testing:absltest"),
@@ -179,7 +162,6 @@ pytype_strict_library(
     srcs = [
         "web_hook.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":plugin_base",
         "@tradefed_cluster//tradefed_cluster/services:app_manager_lib",
@@ -192,8 +174,6 @@ py_test(
     srcs = [
         "web_hook_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":web_hook_lib",
         "//multitest_transport/models",

@@ -1,4 +1,3 @@
-# Lint as: python3
 """Gunicorn configuration and entrypoint for the production server.
 
 See Also:

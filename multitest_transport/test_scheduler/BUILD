@@ -10,7 +10,6 @@ pytype_strict_library(
     srcs = [
         "download_util.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         "//multitest_transport/models:build_lib",
         "//multitest_transport/models:event_log_lib",
@@ -27,8 +26,6 @@ py_test(
     srcs = [
         "download_util_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":download_util_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -42,7 +39,6 @@ pytype_strict_library(
     srcs = [
         "test_kicker.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":download_util_lib",
         ":test_run_manager_lib",
@@ -67,8 +63,6 @@ py_test(
     data = [
         "//multitest_transport/gae_configs",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":download_util_lib",
         ":test_kicker_lib",
@@ -95,7 +89,6 @@ pytype_strict_library(
     srcs = [
         "test_plan_kicker.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":download_util_lib",
         ":test_kicker_lib",
@@ -119,8 +112,6 @@ py_test(
     data = [
         "//multitest_transport/gae_configs",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":test_plan_kicker_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -133,7 +124,6 @@ pytype_strict_library(
     srcs = [
         "test_result_handler.py",
     ],
-    srcs_version = "PY3",
     deps = [
         "//multitest_transport/models",
         "//multitest_transport/util",
@@ -147,8 +137,6 @@ py_test(
     srcs = [
         "test_result_handler_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":test_result_handler_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -162,7 +150,6 @@ pytype_strict_library(
     srcs = [
         "test_scheduler.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":test_kicker_lib",
         ":test_plan_kicker_lib",
@@ -179,8 +166,6 @@ py_test(
     srcs = [
         "test_scheduler_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":test_scheduler_lib",
         "//third_party/py/absl/testing:absltest",
@@ -196,7 +181,6 @@ pytype_strict_library(
     srcs = [
         "tfc_event_handler.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":test_result_handler_lib",
         ":test_scheduler_lib",
@@ -216,8 +200,6 @@ py_test(
     srcs = [
         "tfc_event_handler_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":test_result_handler_lib",
         ":tfc_event_handler_lib",
@@ -231,7 +213,6 @@ pytype_strict_library(
     srcs = [
         "test_run_manager.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         "//multitest_transport/models",
         "//multitest_transport/util",
@@ -243,8 +224,6 @@ py_test(
     srcs = [
         "test_run_manager_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":test_run_manager_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -254,7 +233,6 @@ py_test(
 
 pytype_strict_library(
     name = "test_scheduler",
-    srcs_version = "PY2AND3",
     visibility = ["//multitest_transport"],
     deps = [
         ":test_kicker_lib",

@@ -22,7 +22,6 @@ py_test(
         "gen_subnets.py",
         "gen_subnets_test.py",
     ],
-    python_version = "PY3",
     deps = [
         third_party("absl/testing:absltest"),
     ],

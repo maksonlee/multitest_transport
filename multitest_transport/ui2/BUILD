@@ -148,7 +148,6 @@ pytype_strict_library(
         ":dev_mode": [":dev_sources.concat.js"],
         "//conditions:default": ["app.js"],
     }),
-    srcs_version = "PY3",
     visibility = ["//multitest_transport"],
     deps = [
         "//multitest_transport/models",

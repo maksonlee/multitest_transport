@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Utils for cli."""
-from __future__ import print_function
 import argparse
 import getpass
 import logging

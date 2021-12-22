@@ -11,7 +11,6 @@ pytype_strict_library(
     srcs = [
         "build.py",
     ],
-    srcs_version = "PY3",
     deps = [
         ":ndb_models_lib",
         "//multitest_transport/plugins:plugin_base",
@@ -24,8 +23,6 @@ py_test(
     srcs = [
         "build_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":build_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -37,7 +34,6 @@ pytype_strict_library(
     srcs = [
         "config_encoder.py",
     ],
-    srcs_version = "PY3",
     deps = [
         ":messages_lib",
         ":ndb_models_lib",
@@ -52,8 +48,6 @@ py_test(
     srcs = [
         "config_encoder_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":config_encoder_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -65,7 +59,6 @@ pytype_strict_library(
     srcs = [
         "config_set_helper.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":build_lib",
         ":config_encoder_lib",
@@ -83,8 +76,6 @@ py_test(
     srcs = [
         "config_set_helper_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":build_lib",
         ":config_encoder_lib",
@@ -97,7 +88,6 @@ py_test(
 pytype_strict_library(
     name = "event_log_lib",
     srcs = ["event_log.py"],
-    srcs_version = "PY2AND3",
     deps = [
         ":ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
@@ -109,8 +99,6 @@ py_test(
     srcs = [
         "event_log_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":event_log_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -122,7 +110,6 @@ pytype_strict_library(
     srcs = [
         "messages.py",
     ],
-    srcs_version = "PY3",
     deps = [
         ":build_lib",
         ":event_log_lib",
@@ -145,8 +132,6 @@ py_test(
     srcs = [
         "messages_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":messages_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -172,7 +157,6 @@ pytype_strict_library(
     srcs = [
         "ndb_models.py",
     ],
-    srcs_version = "PY3",
     deps = [
         "//multitest_transport/util",
         "@tradefed_cluster//tradefed_cluster:common_lib",
@@ -186,7 +170,6 @@ pytype_strict_library(
 py_library(
     name = "sql_models_lib",
     srcs = ["sql_models.py"],
-    srcs_version = "PY3",
     deps = [
         "//multitest_transport/util",
         third_party("sqlalchemy"),
@@ -198,8 +181,6 @@ py_test(
     srcs = [
         "sql_models_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":sql_models_lib",
         "//multitest_transport/util",
@@ -213,7 +194,6 @@ py_test(
 pytype_strict_library(
     name = "test_run_hook_lib",
     srcs = ["test_run_hook.py"],
-    srcs_version = "PY3",
     deps = [
         ":event_log_lib",
         ":ndb_models_lib",
@@ -230,8 +210,6 @@ py_test(
     srcs = [
         "test_run_hook_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":test_run_hook_lib",
         "@tradefed_cluster//tradefed_cluster:command_task_api_lib",

@@ -10,7 +10,6 @@ pytype_strict_library(
     srcs = [
         "config_loader.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         "//multitest_transport/models",
         third_party("yaml"),
@@ -20,7 +19,6 @@ pytype_strict_library(
 py_library(
     name = "cron_lib",
     srcs = glob(["cron/*.py"]),
-    srcs_version = "PY2AND3",
     deps = [
         third_party("antlr3:v3_1_1"),
     ],
@@ -31,7 +29,6 @@ pytype_strict_library(
     srcs = [
         "cron_kicker.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":cron_lib",
         "//multitest_transport/test_scheduler",
@@ -55,8 +52,6 @@ py_test(
     data = [
         "//multitest_transport/gae_configs",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":cron_kicker_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -70,7 +65,6 @@ pytype_strict_library(
     srcs = [
         "ndb_upgrader.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         "//multitest_transport/models",
     ],
@@ -81,8 +75,6 @@ py_test(
     srcs = [
         "ndb_upgrader_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":ndb_upgrader_lib",
         "//third_party/py/protorpc:protorpc_all",
@@ -96,7 +88,6 @@ pytype_strict_library(
     srcs = [
         "app.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         ":config_loader_lib",
         ":cron_kicker_lib",
@@ -116,7 +107,6 @@ pytype_strict_library(
     srcs = [
         "service_checker.py",
     ],
-    srcs_version = "PY2AND3",
     deps = [
         "//multitest_transport/models:sql_models_lib",
         "//multitest_transport/util",
@@ -130,8 +120,6 @@ py_test(
     srcs = [
         "service_checker_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":service_checker_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_test_lib",

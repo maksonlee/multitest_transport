@@ -8,7 +8,6 @@ licenses(["notice"])
 pytype_strict_library(
     name = "criterion_lib",
     srcs = ["criterion.py"],
-    srcs_version = "PY3",
     deps = [
         "//multitest_transport/models:messages_lib",
         "//multitest_transport/models:ndb_models_lib",
@@ -19,8 +18,6 @@ pytype_strict_library(
 py_test(
     name = "criterion_test",
     srcs = ["criterion_test.py"],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":criterion_lib",
         third_party("absl/testing:absltest"),
@@ -31,7 +28,6 @@ py_test(
 pytype_strict_library(
     name = "file_cleaner_lib",
     srcs = ["file_cleaner.py"],
-    srcs_version = "PY3",
     deps = [
         ":policy_lib",
         "//multitest_transport/models:messages_lib",
@@ -45,8 +41,6 @@ pytype_strict_library(
 py_test(
     name = "file_cleaner_test",
     srcs = ["file_cleaner_test.py"],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":file_cleaner_lib",
         "//multitest_transport/util:env_lib",
@@ -59,7 +53,6 @@ py_test(
 pytype_strict_library(
     name = "operation_lib",
     srcs = ["operation.py"],
-    srcs_version = "PY3",
     deps = [
         "//multitest_transport/models:messages_lib",
         "//multitest_transport/models:ndb_models_lib",
@@ -70,8 +63,6 @@ pytype_strict_library(
 py_test(
     name = "operation_test",
     srcs = ["operation_test.py"],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":operation_lib",
         "//multitest_transport/util:env_lib",
@@ -83,7 +74,6 @@ py_test(
 pytype_strict_library(
     name = "policy_lib",
     srcs = ["policy.py"],
-    srcs_version = "PY3",
     deps = [
         ":criterion_lib",
         ":operation_lib",
@@ -95,8 +85,6 @@ pytype_strict_library(
 py_test(
     name = "policy_test",
     srcs = ["policy_test.py"],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":policy_lib",
         "//multitest_transport/util:env_lib",

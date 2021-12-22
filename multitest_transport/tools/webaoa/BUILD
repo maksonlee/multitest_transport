@@ -160,7 +160,6 @@ pytype_strict_library(
         ":dev_mode": [":dev_sources.concat.js"],
         "//conditions:default": [":compiled"],
     }),
-    srcs_version = "PY3",
     visibility = ["//multitest_transport"],
     deps = [
         third_party("flask"),

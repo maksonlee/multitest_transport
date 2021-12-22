@@ -10,7 +10,6 @@ py_library(
         "file_server.py",
         "gunicorn_config.py",
     ],
-    srcs_version = "PY3",
     visibility = ["//multitest_transport"],
     deps = [
         third_party("absl:app"),
@@ -25,7 +24,6 @@ py_strict_test(
     srcs = [
         "file_server_test.py",
     ],
-    python_version = "PY3",
     deps = [
         ":file_server_lib",
         third_party("absl/testing:absltest"),
@@ -37,7 +35,6 @@ pytype_strict_binary(
     name = "file_server",
     srcs = ["file_server.py"],
     main = "file_server.py",
-    python_version = "PY3",
     deps = [
         ":file_server_lib",
         third_party("absl:app"),
@@ -51,7 +48,6 @@ pytype_strict_library(
     srcs = [
         "proxy.py",
     ],
-    srcs_version = "PY2AND3",
     visibility = ["//multitest_transport"],
     deps = [
         "//multitest_transport/util",
@@ -65,8 +61,6 @@ py_test(
     srcs = [
         "proxy_test.py",
     ],
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         ":proxy_lib",
         third_party("absl/testing:absltest"),
