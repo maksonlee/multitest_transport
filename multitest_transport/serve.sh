@@ -137,6 +137,13 @@ function start_datastore_emulator {
       &
 }
 
+function wait_for_datastore {
+  echo "Waiting for datastore..."
+  local status_url="http://localhost:${DATASTORE_EMULATOR_PORT}/"
+  timeout 5m \
+    bash -c "while [[ \$(curl -s ${status_url}) != \"Ok\" ]]; do sleep 1; done"
+}
+
 function start_mysql_database {
   # Skip starting DB if URI already set
   if [[ -n "${SQL_DATABASE_URI}" ]]; then return; fi
@@ -162,6 +169,9 @@ function start_mysql_database {
 }
 
 function start_main_server {
+  # ATS may fail to start (e.g. config not reloaded, cron jobs not started) if
+  # the datastore is not ready, so wait for it.
+  wait_for_datastore
   # Start Android Test Station
   echo "Starting main server..."
   PYTHONFAULTHANDLER=1 \
