@@ -109,7 +109,7 @@ class ConfigSetApi(remote.Service):
       url: URL from which to download a config file
       content: contents of a config file, only used if url is not provided
     """
-    content = (request.content if request.content else
+    content = (request.content.encode() if request.content else
                config_set_helper.ReadRemoteFile(request.url))
     return config_set_helper.Import(content)
 

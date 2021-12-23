@@ -14,10 +14,10 @@
 
 """MTT config objects and utilities for serializing/deserializing them."""
 import json
+
 from protorpc import protojson
 from protorpc.messages import Message
 from protorpc.messages import MessageField
-import six
 import yaml
 
 from multitest_transport.models import messages
@@ -102,12 +102,6 @@ def _Load(obj):
   else:
     # no existing data, create using new values
     obj.put()
-
-
-# Modify YAML serializer's treatment of unicode strings.
-def _RepresentUnicode(self, data):
-  return self.represent_str(data.encode('utf-8'))
-yaml.add_representer(six.text_type, _RepresentUnicode)
 
 
 class ConfigSet(object):

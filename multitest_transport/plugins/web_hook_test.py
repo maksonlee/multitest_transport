@@ -14,10 +14,9 @@
 
 """Unit tests for web_hook."""
 from unittest import mock
+import urllib.request
 
 from absl.testing import absltest
-from six.moves import urllib
-
 from tradefed_cluster import testbed_dependent_test
 
 from multitest_transport.models import ndb_models

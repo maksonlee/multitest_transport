@@ -13,12 +13,12 @@
 # limitations under the License.
 
 """Android Test Station local file server proxy tests."""
+import http
 from unittest import mock
+import urllib.error
+import urllib.request
 
 from absl.testing import absltest
-import six
-from six.moves import http_client
-from six.moves import urllib
 import webtest
 
 from multitest_transport.file_server import proxy
@@ -30,7 +30,7 @@ class MockProxyResponse(object):
 
   def __init__(self, status=200, data=b'', headers=None):
     self.code = status
-    self.msg = http_client.responses[status]
+    self.msg = http.HTTPStatus(status).phrase
     self.headers = headers or {}
     self.data = data
 
@@ -64,7 +64,7 @@ class FileServerProxyTest(absltest.TestCase):
                       expect_errors=False):
     """Send a request to the proxy handler and return the response."""
     request = webtest.TestRequest.blank(url, method=method, body=data)
-    for key, value in six.iteritems(headers or {}):
+    for key, value in (headers or {}).items():
       request.headers[key] = value
     return self.testapp.do_request(request, expect_errors=expect_errors)
 
@@ -78,14 +78,14 @@ class FileServerProxyTest(absltest.TestCase):
     self.assertEqual(url, request.get_full_url())
     self.assertEqual(method, request.get_method())
     self.assertEqual(data, request.data)
-    for key, value in six.iteritems(headers or {}):
+    for key, value in (headers or {}).items():
       self.assertEqual(value, request.headers[key])
 
   def AssertResponse(self, response, status=500, data=b'', headers=None):
     """Verifies the status, data, and headers of a response."""
     self.assertEqual(status, response.status_int)
     self.assertEqual(data, response.body)
-    for key, value in six.iteritems(headers or {}):
+    for key, value in (headers or {}).items():
       self.assertEqual(value, response.headers[key])
 
   def testProxyRequest_get(self):

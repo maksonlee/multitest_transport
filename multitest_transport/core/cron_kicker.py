@@ -12,19 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A module to kick cron jobs in local mode.
-
-This module parses cron.yaml and triggers cron jobs as configured there.
-"""
-
+"""Parses cron.yaml and triggers cron jobs as configured there in local mode."""
 import datetime
 import json
 import logging
 import os
+import urllib.request
 
 import flask
 import pytz
-from six.moves import urllib
 import yaml
 
 # TODO: remove this dependency.

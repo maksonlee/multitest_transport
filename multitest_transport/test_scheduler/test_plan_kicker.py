@@ -17,14 +17,11 @@ import datetime
 import functools
 import json
 import logging
-import sys
 
 import croniter
 import flask
 import pytz
 from retry import api as retry
-import six
-
 
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
@@ -150,7 +147,7 @@ def KickTestPlan(test_plan_id, task_name=None):
 
   # Schedule all test runs
   test_runs = []
-  exc_info = None
+  error = None
   try:
     for sequence in test_plan.test_run_sequences:
       test_run = retry_wrapper(
@@ -161,8 +158,8 @@ def KickTestPlan(test_plan_id, task_name=None):
               test_run_config=sequence.test_run_configs[0],
               rerun_configs=sequence.test_run_configs[1:]))
       test_runs.append(test_run)
-  except Exception:      # Record exception info and cancel all scheduled runs
-    exc_info = sys.exc_info()
+  except Exception as e:      # Record exception info and cancel all scheduled runs
+    error = e
     for test_run in test_runs:
       test_run_manager.SetTestRunState(
           test_run_id=test_run.key.id(), state=ndb_models.TestRunState.CANCELED)
@@ -170,12 +167,12 @@ def KickTestPlan(test_plan_id, task_name=None):
   # Update last run info
   test_plan_status.last_run_time = _GetCurrentTime()
   test_plan_status.last_run_keys = [test_run.key for test_run in test_runs]
-  test_plan_status.last_run_error = str(exc_info[1]) if exc_info else None
+  test_plan_status.last_run_error = str(error) if error else None
   test_plan_status.put()
 
   # Re-raise any caught exception
-  if exc_info:
-    raise six.reraise(*exc_info)
+  if error:
+    raise error
   return True
 
 

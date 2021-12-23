@@ -14,13 +14,12 @@
 
 """A base class for API handlers."""
 import functools
+import http
 import logging
 import sys
 import traceback
 
 import endpoints
-import six
-from six.moves import http_client as httplib
 from tradefed_cluster.util import ndb_shim as ndb
 
 from multitest_transport.api import openapi
@@ -56,7 +55,7 @@ def ApiMethod(request_type, response_type, **kwargs):
 
 def _BuildErrorMessage(**kwargs):
   """Builds an error message with given kwargs."""
-  return ','.join('%s=%s' % item for item in six.iteritems(kwargs))
+  return ','.join('%s=%s' % item for item in kwargs.items())
 
 
 class ApiError(endpoints.ServiceException):
@@ -64,8 +63,8 @@ class ApiError(endpoints.ServiceException):
 
   def __init__(self, cause=None, status=None, message=None, **kwargs):
     self.cause = cause
-    self.http_status = status or httplib.INTERNAL_SERVER_ERROR
-    kwargs['message'] = message or httplib.responses[self.http_status]
+    self.http_status = status or http.HTTPStatus.INTERNAL_SERVER_ERROR.value
+    kwargs['message'] = message or http.HTTPStatus(self.http_status).phrase
     kwargs['stacktrace'] = traceback.extract_tb(sys.exc_info()[2])
     super(ApiError, self).__init__(_BuildErrorMessage(**kwargs))
 

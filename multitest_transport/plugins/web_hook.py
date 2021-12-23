@@ -15,7 +15,7 @@
 """Web hook implementation."""
 import logging
 import string
-from six.moves import urllib
+import urllib.request
 
 from tradefed_cluster.services import app_manager
 

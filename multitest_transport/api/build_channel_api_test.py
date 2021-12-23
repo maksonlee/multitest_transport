@@ -16,12 +16,12 @@
 import tradefed_cluster.util.google_import_fixer  
 import datetime
 from unittest import mock
+import urllib.parse
 
 from absl.testing import absltest
-from protorpc import protojson
 from google.oauth2 import credentials as authorized_user
 from google.oauth2 import service_account
-from six.moves import urllib
+from protorpc import protojson
 
 from multitest_transport.api import api_test_util
 from multitest_transport.api import build_channel_api

@@ -489,7 +489,7 @@ class TestRunApiTest(api_test_util.TestCase):
   def testTailOutputFile_noOffset(self, mock_attempt, mock_tail, mock_read):
     # latest attempt is RUNNING and end of file returned
     mock_attempt.return_value = self._createAttempt(CommandState.RUNNING)
-    mock_tail.return_value = file_util.FileSegment(123, ['hello', 'world'])
+    mock_tail.return_value = file_util.FileSegment(123, [b'hello', b'world'])
 
     test = self._createMockTest()
     test_run = self._createMockTestRuns(test)[0]
@@ -513,7 +513,7 @@ class TestRunApiTest(api_test_util.TestCase):
   def testTailOutputFile_withOffset(self, mock_attempt, mock_tail, mock_read):
     # latest attempt is RUNNING and file read
     mock_attempt.return_value = self._createAttempt(CommandState.RUNNING)
-    mock_read.return_value = file_util.FileSegment(123, ['hello', 'world'])
+    mock_read.return_value = file_util.FileSegment(123, [b'hello', b'world'])
 
     test = self._createMockTest()
     test_run = self._createMockTestRuns(test)[0]

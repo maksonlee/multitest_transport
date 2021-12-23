@@ -13,14 +13,13 @@
 # limitations under the License.
 
 """Unit tests for cron_kicker."""
-
 import datetime
 import os
 from unittest import mock
+import urllib.request
 
 from absl.testing import absltest
 import pytz
-from six.moves import urllib
 from tradefed_cluster import testbed_dependent_test
 from tradefed_cluster.plugins import base as tfc_plugins
 import webtest

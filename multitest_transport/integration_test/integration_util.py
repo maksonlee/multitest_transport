@@ -132,9 +132,9 @@ class MttContainer(object):
   def DumpLogs(self):
     """Output the server logs for debugging."""
     output = self._delegate.logs()
-    logging.info('Logs: %s', output.decode('utf8'))
+    logging.info('Logs: %s', output.decode())
     _, output = self._delegate.exec_run(['cat', '/data/log/server/current'])
-    logging.info('Server logs: %s', output.decode('utf8'))
+    logging.info('Server logs: %s', output.decode())
 
   def CopyFile(self, src_path, dest_path):
     """Copy a file into the container."""

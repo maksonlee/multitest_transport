@@ -11,17 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""A plugin for RabbitMQ."""
 
+"""A plugin for RabbitMQ."""
 import base64
 import datetime
 import json
 import logging
+from typing import Union
 import uuid
 
 import pika
 import pytz
-import six
 
 from tradefed_cluster.plugins import base
 
@@ -43,18 +43,16 @@ def _ToEpochMillis(dt):
   return int((dt - datetime.datetime(1970, 1, 1)).total_seconds() * 1000)
 
 
-def _EncodeTaskPayload(payload):
+def _EncodeTaskPayload(payload: Union[bytes, str]) -> str:
   """Encodes a task payload.
-
-  This function is compatible with Python 2/3.
 
   Args:
     payload: a payload string.
   Returns:
     a base64 encoded payload string.
   """
-  s = base64.b64encode(six.ensure_binary(payload))
-  return six.ensure_text(s)
+  payload = payload if isinstance(payload, bytes) else payload.encode()
+  return base64.b64encode(payload).decode()
 
 
 class TaskScheduler(base.TaskScheduler):

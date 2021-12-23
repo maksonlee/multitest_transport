@@ -21,7 +21,6 @@ from unittest import mock
 from absl.testing import absltest
 import pika
 import pytz
-import six
 
 from multitest_transport.app_helper import rabbitmq_plugin
 
@@ -46,7 +45,7 @@ class TaskSchedulerTest(absltest.TestCase):
 
   def testEncodeTaskPayload(self):
     data = rabbitmq_plugin._EncodeTaskPayload(b'payload')
-    payload = base64.b64decode(six.ensure_text(data))
+    payload = base64.b64decode(data)
     self.assertEqual(b'payload', payload)
 
   @mock.patch.object(pika, 'BlockingConnection')

@@ -17,7 +17,6 @@ pytype_strict_library(
         "//multitest_transport/util:file_util_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
-        third_party("six"),
     ],
 )
 
@@ -51,7 +50,6 @@ pytype_strict_library(
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("googleapiclient"),
         third_party("protorpc"),
-        third_party("six"),
     ],
 )
 
@@ -100,7 +98,6 @@ pytype_strict_library(
         third_party("flask"),
         third_party("pytz"),
         third_party("retry"),
-        third_party("six"),
     ],
 )
 

@@ -100,14 +100,14 @@ class ConfigSetHelperTest(testbed_dependent_test.TestbedDependentTest):
     mock_get_build_channel.return_value = mock_build_channel
     mock_build_channel.ListBuildItems.return_value = (mock_build_items, None)
     mock_read_remote_file.side_effect = [
-        'info:\n'
-        '- name: FOO\n'
-        '  description: FOO_DESCRIPTION\n'
-        '  url: FOO_URL\n',
-        'info:\n'
-        '- name: BAR\n'
-        '  description: BAR_DESCRIPTION\n'
-        '  url: BAR_URL\n'
+        b'info:\n'
+        b'- name: FOO\n'
+        b'  description: FOO_DESCRIPTION\n'
+        b'  url: FOO_URL\n',
+        b'info:\n'
+        b'- name: BAR\n'
+        b'  description: BAR_DESCRIPTION\n'
+        b'  url: BAR_URL\n',
     ]
 
     infos = config_set_helper.GetRemoteConfigSetInfos()

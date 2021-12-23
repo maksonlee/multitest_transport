@@ -24,7 +24,6 @@ import uuid
 import flask
 from googleapiclient.errors import HttpError
 from protorpc import messages
-import six
 from tradefed_cluster import api_messages
 from tradefed_cluster import common
 from tradefed_cluster.services import task_scheduler
@@ -222,7 +221,7 @@ def CreateTestRun(labels,
     test_resource_map[r.name].url = r.url
     test_resource_map[r.name].cache_url = r.cache_url
   # Check every test resource has a valid URL.
-  for test_resource in six.itervalues(test_resource_map):
+  for test_resource in test_resource_map.values():
     if not test_resource.url:
       raise errors.TestResourceError(
           'No URL for test resource %s' % test_resource.name)

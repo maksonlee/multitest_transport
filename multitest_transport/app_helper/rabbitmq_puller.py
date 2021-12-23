@@ -29,11 +29,12 @@ import logging
 import socket
 import threading
 import time
+import urllib.error
+import urllib.request
 
 from absl import app
 from absl import flags
 import pika
-from six.moves import urllib
 import yaml
 
 FLAGS = flags.FLAGS

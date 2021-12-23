@@ -29,6 +29,7 @@ import os
 import socket
 import threading
 import time
+import urllib.parse
 
 from absl import app as absl_app
 from absl import flags
@@ -36,7 +37,6 @@ import attr
 import gunicorn.app.base
 from gunicorn.util import import_app
 import requests
-from six.moves import urllib
 from tradefed_cluster import common
 from tradefed_cluster import env_config
 from tradefed_cluster.plugins import base

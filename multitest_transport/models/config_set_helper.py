@@ -13,11 +13,10 @@
 # limitations under the License.
 
 """A module to provide helper functions for the config set APIs."""
-
 import hashlib
 import logging
 
-import six
+from tradefed_cluster.util import ndb_shim as ndb
 
 from multitest_transport.models import build
 from multitest_transport.models import config_encoder
@@ -26,7 +25,6 @@ from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import download_util
 from multitest_transport.util import errors
 from multitest_transport.util import file_util
-from tradefed_cluster.util import ndb_shim as ndb
 
 CONFIG_SET_BUILD_CHANNEL_IDS = ['google_cloud_storage']
 CONFIG_SET_URL = 'mtt:///google_cloud_storage/android-test-catalog/prod'
@@ -74,7 +72,7 @@ def _GetEntityKeysByPrefix(model, prefix):
       model.key < ndb.Key(model, prefix + u'ufffd')).fetch(keys_only=True)
 
 
-def _ParseConfigSet(content):
+def _ParseConfigSet(content: bytes):
   """Converts a string of data into a ConfigSet object.
 
   Args:
@@ -228,7 +226,7 @@ def GetLatestVersion(imported_info):
   return updated_message
 
 
-def Import(content):
+def Import(content: bytes):
   """Parses the content and adds all configs in the config set.
 
   Any data from an older version of the config set will be removed.
@@ -277,7 +275,7 @@ def Delete(url):
   config_set_info_key.delete()
 
 
-def ReadRemoteFile(url):
+def ReadRemoteFile(url) -> bytes:
   """Downloads a config set file and returns the contents.
 
   Args:
@@ -289,7 +287,7 @@ def ReadRemoteFile(url):
   return file_util.OpenFile(local_url).read()
 
 
-def _Hash(content):
+def _Hash(content: bytes) -> str:
   """Returns the SHA256 hash of a file.
 
   Args:
@@ -297,4 +295,4 @@ def _Hash(content):
   Returns:
     A string representing the SHA256 hash
   """
-  return hashlib.sha256(six.ensure_binary(content)).hexdigest()
+  return hashlib.sha256(content).hexdigest()

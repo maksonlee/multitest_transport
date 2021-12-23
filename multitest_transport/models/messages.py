@@ -20,7 +20,6 @@ import logging
 from protorpc import message_types
 from protorpc import messages
 import pytz
-import six
 from tradefed_cluster import api_messages
 from tradefed_cluster.util import ndb_shim as ndb
 
@@ -213,7 +212,7 @@ class FileSegment(messages.Message):
 
 @Converter(file_util.FileSegment, FileSegment)
 def _FileSegmentConverter(obj):
-  lines = [six.ensure_text(line) for line in obj.lines]
+  lines = [line.decode() for line in obj.lines]
   return FileSegment(offset=obj.offset, length=obj.length, lines=lines)
 
 

@@ -166,10 +166,10 @@ class TestPlanKickerTest(testbed_dependent_test.TestbedDependentTest):
     test_run = ndb_models.TestRun(id='test_run_id')
     create_test_run.side_effect = (
         [test_run] +
-        test_plan_kicker.MAX_RETRY_COUNT * [RuntimeError('test_run_error')])
+        test_plan_kicker.MAX_RETRY_COUNT * [RuntimeError('Test error')])
 
     # Retries a few times before canceling test run and raising exception
-    with self.assertRaises(RuntimeError):
+    with self.assertRaisesRegex(RuntimeError, 'Test error'):
       test_plan_kicker.KickTestPlan(test_plan.key.id())
     self.assertEqual(create_test_run.call_count,
                      1 + test_plan_kicker.MAX_RETRY_COUNT)
@@ -178,7 +178,7 @@ class TestPlanKickerTest(testbed_dependent_test.TestbedDependentTest):
     # Stores the canceled test run key and the error message
     status = ndb_models.TestPlanStatus.query(ancestor=test_plan.key).get()
     self.assertEqual(status.last_run_keys, [test_run.key])
-    self.assertEqual(status.last_run_error, 'test_run_error')
+    self.assertEqual(status.last_run_error, 'Test error')
 
   @mock.patch.object(test_kicker, 'CreateTestRun', autospec=True)
   def testKickTestPlan_withRetry(self, create_test_run):

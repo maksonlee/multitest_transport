@@ -134,7 +134,6 @@ pytype_strict_library(
         ":registry_lib",
         "//multitest_transport/util",
         third_party("attr"),
-        third_party("six"),
     ],
 )
 
@@ -153,7 +152,6 @@ py_test(
     deps = [
         ":registry_lib",
         third_party("absl/testing:absltest"),
-        third_party("six"),
     ],
 )
 
@@ -165,7 +163,6 @@ pytype_strict_library(
     deps = [
         ":plugin_base",
         "@tradefed_cluster//tradefed_cluster/services:app_manager_lib",
-        third_party("six"),
     ],
 )
 

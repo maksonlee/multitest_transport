@@ -22,7 +22,6 @@ pytype_strict_library(
         third_party("attr"),
         third_party("gunicorn"),
         third_party("requests"),
-        third_party("six"),
     ],
 )
 
@@ -47,7 +46,6 @@ pytype_strict_library(
         "@tradefed_cluster//tradefed_cluster/plugins:base_lib",
         third_party("pika"),
         third_party("pytz"),
-        third_party("six"),
     ],
 )
 
@@ -71,7 +69,6 @@ pytype_strict_library(
         third_party("absl:app"),
         third_party("absl/flags"),
         third_party("pika"),
-        third_party("six"),
         third_party("yaml"),
     ],
 )
@@ -84,6 +81,5 @@ py_test(
     deps = [
         ":rabbitmq_puller_lib",
         third_party("absl/testing:absltest"),
-        third_party("six"),
     ],
 )

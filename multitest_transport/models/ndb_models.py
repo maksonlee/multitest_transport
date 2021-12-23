@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Datastore model classes."""
-
 import collections
 import datetime
 import re
@@ -21,8 +20,6 @@ from typing import Optional
 import uuid
 
 from protorpc import messages
-import six
-
 from tradefed_cluster import common
 from tradefed_cluster.util import ndb_shim as ndb
 
@@ -55,7 +52,7 @@ class NameValuePair(ndb.Model):
 
   @classmethod
   def FromDict(cls, d):
-    return [cls(name=k, value=v) for k, v in six.iteritems(d)]
+    return [cls(name=k, value=v) for k, v in d.items()]
 
   @classmethod
   def ToDict(cls, pairs):
@@ -77,7 +74,7 @@ class NameMultiValuePair(ndb.Model):
 
   @classmethod
   def FromDict(cls, d):
-    return [cls(name=k, values=v) for k, v in six.iteritems(d)]
+    return [cls(name=k, values=v) for k, v in d.items()]
 
   @classmethod
   def ToDict(cls, pairs):

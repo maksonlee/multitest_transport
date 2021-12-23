@@ -52,7 +52,6 @@ pytype_strict_library(
     deps = [
         "//multitest_transport/util",
         third_party("flask"),
-        third_party("six"),
     ],
 )
 

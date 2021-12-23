@@ -19,8 +19,6 @@ import datetime
 import logging
 import time
 
-import six
-
 from tradefed_cluster import common
 from tradefed_cluster.util import ndb_shim as ndb
 
@@ -39,7 +37,7 @@ MAX_DOWNLOAD_IDLE_TIME = datetime.timedelta(minutes=10)
 MAX_CACHE_ACCESS_TIME = datetime.timedelta(days=7)
 
 
-def GetCacheUrl(url=''):
+def GetCacheUrl(url: str = '') -> str:
   """Get the cache URL for a remote resource.
 
   Args:
@@ -47,7 +45,7 @@ def GetCacheUrl(url=''):
   Returns:
     a cache URL.
   """
-  encoded_url = six.ensure_text(base64.b64encode(six.ensure_binary(url)))
+  encoded_url = base64.b64encode(url.encode()).decode()
   return file_util.GetAppStorageUrl([TEST_RESOURCE_CACHE_DIR, encoded_url])
 
 

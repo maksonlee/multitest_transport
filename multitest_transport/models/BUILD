@@ -38,7 +38,6 @@ pytype_strict_library(
         ":messages_lib",
         ":ndb_models_lib",
         third_party("protorpc"),
-        third_party("six"),
         third_party("yaml"),
     ],
 )
@@ -67,7 +66,6 @@ pytype_strict_library(
         "//multitest_transport/test_scheduler:download_util_lib",
         "//multitest_transport/util",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
-        third_party("six"),
     ],
 )
 
@@ -123,7 +121,6 @@ pytype_strict_library(
         third_party("google/oauth2:service_account"),
         third_party("protorpc"),
         third_party("pytz"),
-        third_party("six"),
     ],
 )
 
@@ -162,7 +159,6 @@ pytype_strict_library(
         "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("protorpc"),
-        third_party("six"),
     ],
 )
 
@@ -201,7 +197,6 @@ pytype_strict_library(
         "//multitest_transport/util",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster/plugins:base_lib",
-        third_party("six"),
     ],
 )
 

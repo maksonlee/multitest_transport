@@ -18,12 +18,12 @@ import tradefed_cluster.util.google_import_fixer
 import collections
 import json
 import os
+import urllib.parse
 
 import endpoints
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
-from six.moves import urllib
 
 from google.oauth2 import service_account
 

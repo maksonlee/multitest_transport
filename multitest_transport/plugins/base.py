@@ -19,7 +19,6 @@ import logging
 import re
 
 import attr
-import six
 
 from multitest_transport.plugins.registry import PluginRegistry
 
@@ -58,7 +57,7 @@ class BuildProviderOptions(object):
   def __init__(self, option_def_map):
     self._option_def_map = option_def_map
     # Fill default values
-    for name, option_def in six.iteritems(self._option_def_map):
+    for name, option_def in self._option_def_map.items():
       self.__dict__[name] = option_def.default
 
   def Update(self, **kwargs):
@@ -69,7 +68,7 @@ class BuildProviderOptions(object):
     Raises:
       ValueError: if an option is not defined.
     """
-    for name, value in six.iteritems(kwargs):
+    for name, value in kwargs.items():
       option_def = self._option_def_map.get(name)
       if not option_def:
         logging.warning('Unsupported option name %s; ignoring', name)
@@ -77,8 +76,7 @@ class BuildProviderOptions(object):
       self.__dict__[name] = option_def.value_type(value)
 
 
-class BuildProvider(
-    six.with_metaclass(BUILD_PROVIDER_REGISTRY.GetMetaclass(), object)):
+class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):
   """A base class for a build provider."""
 
   name = None
@@ -251,8 +249,7 @@ class TestRunTask(object):
   extra_options = attr.ib()  # dict of extra options to pass to runner
 
 
-class TestRunHook(
-    six.with_metaclass(TEST_RUN_HOOK_REGISTRY.GetMetaclass(), object)):
+class TestRunHook(metaclass=TEST_RUN_HOOK_REGISTRY.GetMetaclass()):
   """Base class for all test run hooks."""
 
   def Execute(self, context):

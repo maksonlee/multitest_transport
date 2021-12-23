@@ -13,13 +13,14 @@
 # limitations under the License.
 
 """Android Test Station local file server proxy."""
+import http
 import logging
+import urllib.error
+import urllib.parse
+import urllib.request
 
 import flask
 import flask.views
-import six
-from six.moves import http_client
-from six.moves import urllib
 
 from multitest_transport.util import env
 
@@ -54,12 +55,8 @@ class FileServerProxy(flask.views.MethodView):
       # Create and send request with body and header
       data = flask.request.get_data()
       headers = {}
-      # urllib in python2.7 can only handle 'str' (binary).
-      # We make sure they are binary before passing it to urllib.
-      url = str(url)
       for key, value in flask.request.headers.items():
         headers[str(key)] = str(value)
-      data = six.ensure_binary(data)
       request = urllib.request.Request(url=url, data=data, headers=headers)
       request.get_method = lambda: method
       response = urllib.request.urlopen(request)
@@ -71,7 +68,7 @@ class FileServerProxy(flask.views.MethodView):
       return r
     except urllib.error.URLError:
       logging.exception('Error during proxy request %s', url)
-      return flask.Response(status=http_client.INTERNAL_SERVER_ERROR)
+      return flask.Response(status=http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
 
     r = flask.Response(response.read(), headers=dict(response.headers))
     r.status = getattr(response, 'msg')

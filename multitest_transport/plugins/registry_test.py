@@ -14,7 +14,6 @@
 
 """Unit tests for registry."""
 from absl.testing import absltest
-import six
 
 from multitest_transport.plugins.registry import PluginRegistry
 
@@ -48,7 +47,7 @@ class RegistryTest(absltest.TestCase):
 
   def testMetaclass(self):
     # Register a mock plugin using the registry metaclass
-    class MockPlugin(six.with_metaclass(self.registry.GetMetaclass(), object)):        name = 'metaclass'
+    class MockPlugin(metaclass=self.registry.GetMetaclass()):        name = 'metaclass'
     # Verify that it is in the registry
     self.assertEqual(self.registry.ListPluginNames(), ['metaclass'])
     self.assertEqual(self.registry.GetPluginClass('metaclass'), MockPlugin)

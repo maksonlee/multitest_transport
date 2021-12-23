@@ -13,14 +13,12 @@
 # limitations under the License.
 
 """A module that defines build channel classes."""
-
 import fnmatch
 import logging
 import os
 import re
+import urllib.parse
 import uuid
-
-from six.moves.urllib import parse
 
 from multitest_transport.plugins import base as plugins
 from multitest_transport.models import ndb_models
@@ -64,11 +62,11 @@ class BuildLocator(object):
     idx = path.rfind('/')
     if idx == -1:
       # Only filename remain
-      filename = parse.unquote(path)
+      filename = urllib.parse.unquote(path)
       path = filename
     else:
       directory = path[:idx]
-      filename = parse.unquote(path[idx + 1:])
+      filename = urllib.parse.unquote(path[idx + 1:])
       path = os.path.join(directory, filename)
     return BuildLocator(build_channel_id, directory, filename, path)
 
@@ -383,7 +381,7 @@ def BuildUrl(build_channel_id, build_item):
   filename = build_item.name
   if not filename:
     return 'mtt:///%s/%s' % (build_channel_id, path)
-  encoded_filename = parse.quote(filename.encode('utf-8'), safe='')
+  encoded_filename = urllib.parse.quote(filename.encode('utf-8'), safe='')
   if not path:
     return 'mtt:///%s/%s' % (build_channel_id, encoded_filename)
   else:

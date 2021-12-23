@@ -39,7 +39,6 @@ pytype_strict_library(
         third_party("antlr3:v3_1_1"),
         third_party("flask"),
         third_party("pytz"),
-        third_party("six"),
         third_party("yaml"),
     ],
 )
