@@ -17,8 +17,11 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MatAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatOptionSelectionChange} from '@angular/material/core';
+import {ConnectableObservable, Observable, of as observableOf, ReplaySubject, Subject} from 'rxjs';
+import {map, publishBehavior, switchMap, switchMapTo, takeUntil, throttleTime} from 'rxjs/operators';
 
-import {DeviceType} from '../services/tfc_models';
+import {TfcClient} from '../services/tfc_client';
+import {DeviceType, FilterHintList, FilterHintType} from '../services/tfc_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
 
 declare interface AutocompleteOption {
@@ -50,22 +53,64 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
       new EventEmitter<boolean>();
 
   manualDeviceSpecs = false;
+  // The options displayed on the UI.
   deviceSpecsAutocompleteOptions: AutocompleteOption[] = [];
+  // The trigger for updating deviceSpecsAutocompleteOptions.
+  private readonly deviceSpecsAutocompleteSubject = new Subject<string>();
+  private readonly destroy = new ReplaySubject(1);
+  // The values are either constant arrays or responses from TFC. For the
+  // former, the query property is undefined. For the latter, the query property
+  // is set to a subject that triggers tfcClient. It is triggered when the
+  // autocomplete panel needs to display the values.
+  // TODO: Query TFC for products and variants.
+  private readonly deviceSpecSuggestion:
+      {[key: string]: {values: Observable<string[]>, query?: Subject<void>}} = {
+        device_serial: {values: observableOf([])},
+        device_type: {
+          values: observableOf([DeviceType.PHYSICAL, DeviceType.LOCAL_VIRTUAL])
+        },
+        hostname: {values: observableOf([])},
+        product: {values: observableOf([])},
+        product_variant: {values: observableOf([])},
+        sim_state: {values: observableOf(['ABSENT', 'READY'])},
+      };
+  private readonly FILTER_HINTS_MIN_INTERVAL_MSEC = 30000;
 
-  // TODO: Query TFC for possible values.
-  private readonly DEVICE_SPEC_SUGGESTION: {[key: string]: string[]} = {
-    device_serial: [],
-    // List only the types supported by ATS.
-    device_type: [DeviceType.PHYSICAL, DeviceType.LOCAL_VIRTUAL],
-    hostname: [],
-    product: [],
-    product_variant: [],
-    sim_state: ['ABSENT', 'READY'],
-  };
+  constructor(private readonly tfcClient: TfcClient) {
+    super();
+    this.deviceSpecSuggestion['hostname'].query = new Subject<void>();
+    this.deviceSpecSuggestion['hostname'].values =
+        this.createAutocompleteOptionObservable(
+            this.deviceSpecSuggestion['hostname'].query, FilterHintType.HOST);
+
+    this.deviceSpecsAutocompleteSubject
+        .pipe(
+            switchMap(value => this.getDeviceSpecsAutocompleteOptions(value)),
+            takeUntil(this.destroy))
+        .subscribe(options => {
+          this.deviceSpecsAutocompleteOptions = options;
+        });
+  }
 
   ngOnInit() {
-    this.deviceSpecsAutocompleteOptions =
-        this.getDeviceSpecsAutocompleteOptions(this.getDeviceSpecsString());
+    this.deviceSpecsAutocompleteSubject.next(this.getDeviceSpecsString());
+  }
+
+  ngOnDestroy() {
+    this.destroy.next();
+  }
+
+  private createAutocompleteOptionObservable(
+      query: Subject<void>, queryType: FilterHintType): Observable<string[]> {
+    const observable = query.pipe(
+        throttleTime(this.FILTER_HINTS_MIN_INTERVAL_MSEC),
+        switchMapTo<FilterHintList>(
+            this.tfcClient.getFilterHintList(queryType)),
+        map(filterHintList => (filterHintList.filter_hints ||
+                               []).map(filterHint => filterHint.value)),
+        takeUntil(this.destroy), publishBehavior([] as string[]));
+    (observable as ConnectableObservable<string[]>).connect();
+    return observable;
   }
 
   getDeviceSerials(): string[] {
@@ -87,7 +132,8 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
    * partial key or a partial value, and then filters the options by the suffix.
    * When the user selects any option, it is appended to the input field.
    */
-  getDeviceSpecsAutocompleteOptions(specs: string): AutocompleteOption[] {
+  getDeviceSpecsAutocompleteOptions(specs: string):
+      Observable<AutocompleteOption[]> {
     const keyBegin =
         Math.max(0, specs.lastIndexOf(' ') + 1, specs.lastIndexOf(';') + 1);
     const colon = specs.indexOf(':', keyBegin);
@@ -95,31 +141,36 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
       // The suffix is a key.
       const prefix = specs.slice(0, keyBegin);
       const partialKey = specs.slice(keyBegin);
-      return Object.keys(this.DEVICE_SPEC_SUGGESTION)
-          .filter(key => key.toLowerCase().includes(partialKey.toLowerCase()))
-          .map(key => ({
-                 value: prefix + key + ':',
-                 displayedValue: key,
-                 reopenPanel: true
-               }));
+      return observableOf(
+          Object.keys(this.deviceSpecSuggestion)
+              .filter(
+                  key => key.toLowerCase().includes(partialKey.toLowerCase()))
+              .map(key => ({
+                     value: prefix + key + ':',
+                     displayedValue: key,
+                     reopenPanel: true
+                   })));
     } else {
       // The suffix is a value.
       const key = specs.slice(keyBegin, colon);
-      if (this.DEVICE_SPEC_SUGGESTION[key]) {
+      const suggestion = this.deviceSpecSuggestion[key];
+      if (suggestion) {
+        suggestion.query?.next();
         const prefix = specs.slice(0, colon + 1);
         const partialValue = specs.slice(colon + 1);
-        return this.DEVICE_SPEC_SUGGESTION[key]
-            .filter(
-                value =>
-                    value.toLowerCase().includes(partialValue.toLowerCase()))
-            .map(value => ({
-                   value: prefix + value,
-                   displayedValue: value,
-                   reopenPanel: false
-                 }));
+        return suggestion.values.pipe(
+            map(values => values
+                              .filter(
+                                  value => value.toLowerCase().includes(
+                                      partialValue.toLowerCase()))
+                              .map(value => ({
+                                     value: prefix + value,
+                                     displayedValue: value,
+                                     reopenPanel: false
+                                   }))));
       }
     }
-    return [];
+    return observableOf<AutocompleteOption[]>([]);
   }
 
   getDeviceSpecsString(): string {
@@ -132,8 +183,7 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
   }
 
   onDeviceSpecsModelChange(deviceSpecsString: string) {
-    this.deviceSpecsAutocompleteOptions =
-        this.getDeviceSpecsAutocompleteOptions(deviceSpecsString);
+    this.deviceSpecsAutocompleteSubject.next(deviceSpecsString);
   }
 
   onDeviceSpecsAutocomplete(
@@ -153,8 +203,7 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
   onDeviceListSelectionChange(deviceSerials: string[]) {
     if (!this.manualDeviceSpecs) {
       this.deviceSpecs = deviceSerials.map(serial => `device_serial:${serial}`);
-      this.deviceSpecsAutocompleteOptions =
-          this.getDeviceSpecsAutocompleteOptions(this.getDeviceSpecsString());
+      this.deviceSpecsAutocompleteSubject.next(this.getDeviceSpecsString());
       this.deviceSpecsChange.emit(this.deviceSpecs);
       this.shardCount = deviceSerials.length;
       this.shardCountChange.emit(this.shardCount);
