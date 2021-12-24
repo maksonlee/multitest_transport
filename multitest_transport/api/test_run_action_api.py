@@ -14,7 +14,6 @@
 
 """Test run action APIs."""
 # Non-standard docstrings are used to generate the API documentation.
-import tradefed_cluster.util.google_import_fixer  
 import json
 
 import endpoints

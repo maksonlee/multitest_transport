@@ -14,7 +14,6 @@
 
 """A module to provide build channel APIs."""
 # Non-standard docstrings are used to generate the API documentation.
-import tradefed_cluster.util.google_import_fixer  
 import collections
 import json
 import os

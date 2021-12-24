@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Tests for test_run_action_api."""
-import tradefed_cluster.util.google_import_fixer  
 from unittest import mock
 
 from absl.testing import absltest

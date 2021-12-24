@@ -46,7 +46,6 @@ pytype_strict_library(
         ":base_lib",
         "//multitest_transport/models",
         "//multitest_transport/util",
-        "@tradefed_cluster//tradefed_cluster/util:google_import_fixer",
         third_party("google/oauth2:service_account"),
         third_party("google-endpoints"),
         third_party("protorpc"),
@@ -61,7 +60,6 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":build_channel_api_lib",
-        "@tradefed_cluster//tradefed_cluster/util:google_import_fixer",
         third_party("google/oauth2:credentials"),
     ],
 )
@@ -322,7 +320,6 @@ pytype_strict_library(
         ":base_lib",
         "//multitest_transport/models",
         "//multitest_transport/util",
-        "@tradefed_cluster//tradefed_cluster/util:google_import_fixer",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("google/oauth2:service_account"),
         third_party("google-endpoints"),
@@ -338,7 +335,6 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":test_run_action_api_lib",
-        "@tradefed_cluster//tradefed_cluster/util:google_import_fixer",
         third_party("google/oauth2:credentials"),
     ],
 )

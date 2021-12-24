@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Tests for build_channel_api."""
-import tradefed_cluster.util.google_import_fixer  
 import datetime
 from unittest import mock
 import urllib.parse
