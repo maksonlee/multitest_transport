@@ -177,13 +177,10 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
     return (this.deviceSpecs || []).join(';');
   }
 
-  onDeviceSpecsStringChange(deviceSpecsString: string) {
-    this.deviceSpecs = (deviceSpecsString || '').split(';');
-    this.deviceSpecsChange.emit(this.deviceSpecs);
-  }
-
   onDeviceSpecsModelChange(deviceSpecsString: string) {
+    this.deviceSpecs = (deviceSpecsString || '').split(';');
     this.deviceSpecsAutocompleteSubject.next(deviceSpecsString);
+    this.deviceSpecsChange.emit(this.deviceSpecs);
   }
 
   onDeviceSpecsAutocomplete(
