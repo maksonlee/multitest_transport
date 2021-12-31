@@ -163,6 +163,8 @@ def _GetMttServerPublicPorts(control_server_port):
   """
   return (
       control_server_port,
+      # TODO: Remove legacy FILE_BROWSER_PORT after a few releases.
+      control_server_port + 5,  # FILE_BROWSER_PORT (backwards compatibility)
       control_server_port + 6,  # FILE_SERVER_PORT
   )
 
