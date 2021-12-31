@@ -361,11 +361,10 @@ export class BuildPicker implements OnInit, OnDestroy {
    */
   onScrollLoad(event: InfiniteScrollLoadEvent) {
     // To avoid double loading, we only load if previous load finished.
-    if (this.isLoadingBuildItems) {
-      return;
+    if (!this.isLoadingBuildItems) {
+      this.loadBuildList(this.nextPageToken);
     }
-    this.loadBuildList(this.nextPageToken);
-    event.completed = Promise.resolve(this.nextPageToken.length > 0);
+    event.completed = Promise.resolve(!!this.nextPageToken);
   }
 
   /**
