@@ -21,7 +21,7 @@ import {ConnectableObservable, Observable, of as observableOf, ReplaySubject, Su
 import {map, publishBehavior, switchMap, switchMapTo, takeUntil, throttleTime} from 'rxjs/operators';
 
 import {TfcClient} from '../services/tfc_client';
-import {DeviceType, FilterHintList, FilterHintType} from '../services/tfc_models';
+import {DeviceType, FilterHintType} from '../services/tfc_models';
 import {FormChangeTracker} from '../shared/can_deactivate';
 
 declare interface AutocompleteOption {
@@ -104,8 +104,7 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
       query: Subject<void>, queryType: FilterHintType): Observable<string[]> {
     const observable = query.pipe(
         throttleTime(this.FILTER_HINTS_MIN_INTERVAL_MSEC),
-        switchMapTo<FilterHintList>(
-            this.tfcClient.getFilterHintList(queryType)),
+        switchMapTo(this.tfcClient.getFilterHintList(queryType)),
         map(filterHintList => (filterHintList.filter_hints ||
                                []).map(filterHint => filterHint.value)),
         takeUntil(this.destroy), publishBehavior([] as string[]));
