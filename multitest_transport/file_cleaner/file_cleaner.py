@@ -80,9 +80,9 @@ def CleanUp():
     try:
       for directory in config.directories:
         for policy_name in config.policy_names:
-          policies[policy_name].Apply(directory)
-          logging.info('[File Cleaner] Applied %s to %s', policy_name,
+          logging.info('[File Cleaner] Applying %s to %s', policy_name,
                        directory)
+          policies[policy_name].Apply(directory)
     except Exception:        logging.exception('[File Cleaner] Config %s failed:', config.name)
 
 

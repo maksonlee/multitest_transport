@@ -25,6 +25,7 @@ YAML config example:
     type: DELETE
 """
 import distutils.util
+import logging
 import pathlib
 
 from multitest_transport.models import messages
@@ -52,6 +53,7 @@ class Archive(Operation):
     self.remove_file = distutils.util.strtobool(remove_file)
 
   def Apply(self, path: str):
+    logging.info('Archiving %s', path)
     file_handle = file_util.FileHandle.Get(pathlib.Path(path).as_uri())
     file_handle.Archive(self.remove_file)
 
@@ -60,6 +62,7 @@ class Delete(Operation):
   """Delete operation."""
 
   def Apply(self, path: str):
+    logging.info('Deleting %s', path)
     file_handle = file_util.FileHandle.Get(pathlib.Path(path).as_uri())
     info = file_handle.Info()
     if info:
