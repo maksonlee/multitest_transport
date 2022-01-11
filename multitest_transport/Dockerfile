@@ -27,6 +27,7 @@ RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries
 #                    3.8.2-0ubuntu1.1 takes one minute to start.
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y \
         apt-utils \
+        cec-utils \
         cron \
         daemontools \
         fuse-zip \
