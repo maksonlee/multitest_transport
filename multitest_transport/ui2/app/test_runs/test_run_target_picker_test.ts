@@ -17,7 +17,7 @@
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
-import {of as observableOf} from 'rxjs';
+import {of as observableOf, throwError} from 'rxjs';
 
 import {APP_DATA} from '../services';
 import {TfcClient} from '../services/tfc_client';
@@ -43,6 +43,9 @@ describe('TestRunTargetPicker', () => {
     tfcClient.getFilterHintList.and.callFake(filterHintType => {
       if (filterHintType === FilterHintType.HOST) {
         return hostnameFilterHints;
+      }
+      if (filterHintType === FilterHintType.PRODUCT_VARIANT) {
+        return throwError(new Error('TFC error'));
       }
       return observableOf({filter_hints: []});
     });
@@ -210,6 +213,14 @@ describe('TestRunTargetPicker', () => {
        tick(30000);
        subscription.unsubscribe();
      }));
+
+  it('can handle query errors for autocomplete device spec values', done => {
+    testRunTargetPicker.getDeviceSpecsAutocompleteOptions('product_variant:')
+        .subscribe(result => {
+          expect(result).toEqual([]);
+          done();
+        });
+  });
 
   it('can autocomplete case-insensitive device spec values', done => {
     testRunTargetPicker

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
 import {MatAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatOptionSelectionChange} from '@angular/material/core';
 import {ConnectableObservable, Observable, of as observableOf, ReplaySubject, Subject} from 'rxjs';
-import {map, publishBehavior, switchMap, switchMapTo, takeUntil, throttleTime} from 'rxjs/operators';
+import {catchError, map, publishBehavior, retry, switchMap, switchMapTo, takeUntil, throttleTime} from 'rxjs/operators';
 
 import {TfcClient} from '../services/tfc_client';
 import {DeviceType, FilterHintType} from '../services/tfc_models';
@@ -41,7 +41,8 @@ declare interface AutocompleteOption {
   providers: [{provide: FormChangeTracker, useExisting: TestRunTargetPicker}]
 
 })
-export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
+export class TestRunTargetPicker extends FormChangeTracker implements
+    OnInit, OnDestroy {
   @Input() deviceSpecs: string[] = [];
   @Input() shardCount = 0;
   @Input() autoUpdate = false;
@@ -83,6 +84,17 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
         this.createAutocompleteOptionObservable(
             this.deviceSpecSuggestion['hostname'].query, FilterHintType.HOST);
 
+    this.deviceSpecSuggestion['product'].query = new Subject<void>();
+    this.deviceSpecSuggestion['product'].values =
+        this.createAutocompleteOptionObservable(
+            this.deviceSpecSuggestion['product'].query, FilterHintType.PRODUCT);
+
+    this.deviceSpecSuggestion['product_variant'].query = new Subject<void>();
+    this.deviceSpecSuggestion['product_variant'].values =
+        this.createAutocompleteOptionObservable(
+            this.deviceSpecSuggestion['product_variant'].query,
+            FilterHintType.PRODUCT_VARIANT);
+
     this.deviceSpecsAutocompleteSubject
         .pipe(
             switchMap(value => this.getDeviceSpecsAutocompleteOptions(value)),
@@ -104,7 +116,8 @@ export class TestRunTargetPicker extends FormChangeTracker implements OnInit {
       query: Subject<void>, queryType: FilterHintType): Observable<string[]> {
     const observable = query.pipe(
         throttleTime(this.FILTER_HINTS_MIN_INTERVAL_MSEC),
-        switchMapTo(this.tfcClient.getFilterHintList(queryType)),
+        switchMapTo(this.tfcClient.getFilterHintList(queryType).pipe(
+            retry(2), catchError(() => observableOf()))),
         map(filterHintList => (filterHintList.filter_hints ||
                                []).map(filterHint => filterHint.value)),
         takeUntil(this.destroy), publishBehavior([] as string[]));

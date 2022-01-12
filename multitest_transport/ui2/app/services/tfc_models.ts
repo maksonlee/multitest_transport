@@ -595,6 +595,8 @@ export enum FilterHintType {
   HOST_STATE = 'HOST_STATE',
   HOST_GROUP = 'HOST_GROUP',
   UPDATE_STATE = 'UPDATE_STATE',
+  PRODUCT = 'PRODUCT',
+  PRODUCT_VARIANT = 'PRODUCT_VARIANT',
 }
 
 /** Info for a single hint. */
