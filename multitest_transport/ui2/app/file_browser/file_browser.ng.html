@@ -16,6 +16,19 @@
 
 <div class="page file-browser-page">
 
+  <mat-toolbar>
+    <mat-toolbar-row fxLayoutAlign="space-between center">
+      <h1>File Browser</h1>
+      <!-- upload button -->
+      <!-- TODO: Add upload progress bar -->
+      <input type="file" #fileUploadInput
+           (change)="uploadFile($event.target.files[0]); fileUploadInput.value = ''" />
+      <button mat-flat-button color="accent" *ngIf="!isUploading" (click)="fileUploadInput.click()">
+        Upload File
+      </button>
+    </mat-toolbar-row>
+  </mat-toolbar>
+
   <!-- Breadcrumb -->
   <breadcrumb
       [prefix]="'root'"

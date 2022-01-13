@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
+import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MatTable} from '@angular/material/mdc-table';
 import {ActivatedRoute, Router, UrlSegment} from '@angular/router';
 import {combineLatest, ReplaySubject} from 'rxjs';
 import {filter, finalize, mergeMap, takeUntil} from 'rxjs/operators';
 
-import {FileNode, FileService, FileType, humanFileSize, PROXY_PATH} from '../services/file_service';
+import {FileNode, FileService, FileType, humanFileSize, joinPath, PROXY_PATH} from '../services/file_service';
 import {Notifier} from '../services/notifier';
-import {buildApiErrorMessage} from '../shared/util';
+import {buildApiErrorMessage, noAwait} from '../shared/util';
 
 /** A component for file browsing */
 @Component({
@@ -36,6 +37,8 @@ export class FileBrowser implements OnInit, OnDestroy {
   readonly PROXY_PATH = PROXY_PATH;
 
   isLoading = false;
+  // True if currently uploading a file
+  isUploading = false;
   // Hold list of files when navigate to or load a directory
   files: FileNode[] = [];
   // Hold information of the current directory path
@@ -53,6 +56,7 @@ export class FileBrowser implements OnInit, OnDestroy {
   constructor(
       private readonly fs: FileService,
       private readonly route: ActivatedRoute,
+      private readonly liveAnnouncer: LiveAnnouncer,
       readonly router: Router,
       private readonly notifier: Notifier,
   ) {}
@@ -63,6 +67,39 @@ export class FileBrowser implements OnInit, OnDestroy {
       this.currentDirectory = res[1].map((u: UrlSegment) => u.path).join('/');
       this.loadFiles();
     });
+  }
+
+  /**
+   * Uploads a file to the local file store, and reload content.
+   * @param file file to upload
+   */
+  async uploadFile(file?: File) {
+    if (!file) {
+      return;
+    }
+
+    this.isUploading = true;
+    noAwait(this.liveAnnouncer.announce(`Uploading ${file.name}`, 'polite'));
+    this.fs.uploadFile(file, joinPath(this.currentDirectory, file.name))
+        .pipe(
+            takeUntil(this.destroy),
+            finalize(() => {
+              this.isUploading = false;
+            }),
+            )
+        .subscribe(
+            event => {
+              if (event.done) {
+                this.liveAnnouncer.announce(
+                    `${file.name} uploaded`, 'assertive');
+                this.loadFiles();
+              }
+            },
+            error => {
+              this.notifier.showError(
+                  `Failed to upload '${file.name}'.`,
+                  buildApiErrorMessage(error));
+            });
   }
 
   navigateToFolder(path: string) {

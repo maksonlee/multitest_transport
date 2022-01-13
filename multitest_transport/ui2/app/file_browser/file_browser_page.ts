@@ -16,7 +16,6 @@
 
 import {Component, OnInit} from '@angular/core';
 import {Title} from '@angular/platform-browser';
-
 import {APPLICATION_NAME} from '../shared/shared_module';
 
 /** A component for file browser page  */
@@ -25,11 +24,9 @@ import {APPLICATION_NAME} from '../shared/shared_module';
   templateUrl: './file_browser_page.ng.html',
 })
 export class FileBrowserPage implements OnInit {
-  headerTitle = 'File Browser';
-
   constructor(private readonly title: Title) {}
 
   ngOnInit() {
-    this.title.setTitle(`${APPLICATION_NAME} - ${this.headerTitle}`);
+    this.title.setTitle(`${APPLICATION_NAME} - File Browser`);
   }
 }

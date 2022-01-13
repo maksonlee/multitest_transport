@@ -22,6 +22,7 @@ ng_module(
     ],
     visibility = ["//multitest_transport"],
     deps = [
+        third_party_js("angular2:cdk_a11y"),
         third_party_js("angular2:core"),
         third_party_js("angular2:platform_browser"),
         third_party_js("angular2:router"),

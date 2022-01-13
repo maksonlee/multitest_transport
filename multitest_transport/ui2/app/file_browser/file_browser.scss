@@ -15,6 +15,10 @@
  */
 @import 'third_party/py/multitest_transport/ui2/constants';
 
+input[type='file'] {
+  display: none;
+}
+
 .action-cell a {
   color: unset;
 }
