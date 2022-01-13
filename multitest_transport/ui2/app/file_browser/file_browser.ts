@@ -18,7 +18,7 @@ import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MatTable} from '@angular/material/mdc-table';
 import {ActivatedRoute, Router, UrlSegment} from '@angular/router';
-import {combineLatest, ReplaySubject} from 'rxjs';
+import {combineLatest, ReplaySubject, Subject} from 'rxjs';
 import {filter, finalize, mergeMap, takeUntil} from 'rxjs/operators';
 
 import {FileNode, FileService, FileType, humanFileSize, joinPath, PROXY_PATH} from '../services/file_service';
@@ -39,6 +39,8 @@ export class FileBrowser implements OnInit, OnDestroy {
   isLoading = false;
   // True if currently uploading a file
   isUploading = false;
+  /** File upload completion percentage (0 to 100). */
+  uploadProgress = 0;
   // Hold list of files when navigate to or load a directory
   files: FileNode[] = [];
   // Hold information of the current directory path
@@ -52,6 +54,8 @@ export class FileBrowser implements OnInit, OnDestroy {
 
   /** Notified when the component is destroyed. */
   private readonly destroy = new ReplaySubject<void>();
+  /** Notified when the cancel upload button is pressed. */
+  readonly cancel = new Subject();
 
   constructor(
       private readonly fs: FileService,
@@ -83,12 +87,15 @@ export class FileBrowser implements OnInit, OnDestroy {
     this.fs.uploadFile(file, joinPath(this.currentDirectory, file.name))
         .pipe(
             takeUntil(this.destroy),
+            takeUntil(this.cancel),
             finalize(() => {
               this.isUploading = false;
+              this.uploadProgress = 0;
             }),
             )
         .subscribe(
             event => {
+              this.uploadProgress = event.progress;
               if (event.done) {
                 this.liveAnnouncer.announce(
                     `${file.name} uploaded`, 'assertive');

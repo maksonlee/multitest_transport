@@ -15,6 +15,16 @@
  */
 @import 'third_party/py/multitest_transport/ui2/constants';
 
+div.progress {
+  width: 300px;
+  align-items: center;
+  display: flex;
+
+  mat-icon {
+    color: $icon-danger;
+  }
+}
+
 input[type='file'] {
   display: none;
 }
