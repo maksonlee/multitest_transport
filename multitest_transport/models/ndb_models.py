@@ -982,17 +982,24 @@ DEFAULT_FILE_CLEANER_SETTINGS = FileCleanerSettings(
             target=FileCleanerTargetType.DIRECTORY,
             operation=FileCleanerOperation(
                 type=FileCleanerOperationType.ARCHIVE),
-            criteria=[FileCleanerCriterion(
-                type=FileCleanerCriterionType.LAST_MODIFIED_TIME,
-                params=[NameValuePair(name='ttl', value='7 days')])]),
+            criteria=[
+                FileCleanerCriterion(
+                    type=FileCleanerCriterionType.LAST_MODIFIED_TIME,
+                    params=[NameValuePair(name='ttl', value='7 days')])
+            ]),
         FileCleanerPolicy(
-            name='Delete files not modified',
-            target=FileCleanerTargetType.FILE,
+            name='Delete directories not modified and accessed',
+            target=FileCleanerTargetType.DIRECTORY,
             operation=FileCleanerOperation(
                 type=FileCleanerOperationType.DELETE),
-            criteria=[FileCleanerCriterion(
-                type=FileCleanerCriterionType.LAST_MODIFIED_TIME,
-                params=[NameValuePair(name='ttl', value='7 days')])])
+            criteria=[
+                FileCleanerCriterion(
+                    type=FileCleanerCriterionType.LAST_MODIFIED_TIME,
+                    params=[NameValuePair(name='ttl', value='7 days')]),
+                FileCleanerCriterion(
+                    type=FileCleanerCriterionType.LAST_ACCESS_TIME,
+                    params=[NameValuePair(name='ttl', value='7 days')])
+            ])
     ],
     configs=[
         FileCleanerConfig(
@@ -1006,7 +1013,7 @@ DEFAULT_FILE_CLEANER_SETTINGS = FileCleanerSettings(
             name='Clean up test work files',
             description='Clean up test work files',
             directories=['{}/tmp'.format(env.STORAGE_PATH)],
-            policy_names=['Delete files not modified'])
+            policy_names=['Delete directories not modified and accessed'])
     ])
 
 
