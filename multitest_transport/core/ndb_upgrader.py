@@ -25,7 +25,9 @@ from multitest_transport.models import ndb_models
 # Database version numbers are formatted as {release number}{update number}.
 # For example, 12001 means update 001 for R12.
 CURRENT_NDB_VERSION = 25001  # Should match the latest version number
-DEFAULT_NDB_VERSION = 25000  # Version number if no host version is found
+# Version number if no host version is found, should be set to the version
+# number of the last update
+DEFAULT_NDB_VERSION = 12001
 
 # Stores the mapping of version numbers to the next update to apply
 # e.g. [12000] -> Update12001 means if the current host ndb version is 12000,
@@ -72,7 +74,7 @@ def VersionUpdater(update_version, previous_version):
 
 
 # Update functions (names should be formatted as 'Update#####')
-@VersionUpdater(25001, 25000)
+@VersionUpdater(25001, 12001)
 def Update25001():
   """b/204861475: Convert test plans to use test run sequences."""
   query = ndb_models.TestPlan.query()
