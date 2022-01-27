@@ -111,7 +111,7 @@ class CloudNdbMiddleware(object):
 
   def __call__(self, environ, start_response):
     """Wraps each request call inside an NDB context."""
-    with self.client.context():
+    with self.client.context(legacy_data=False):
       return self.app(environ, start_response)
 
 

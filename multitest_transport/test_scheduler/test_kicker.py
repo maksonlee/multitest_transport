@@ -353,12 +353,12 @@ def _PrepareTestResources(test_run_id):
   # and still up-to-date, this will simply return its cache URL.
   cache_urls = download_util.DownloadResources(resource_urls, test_run=test_run)
   # Update all the test resource URLs and the test package information
+  test_package_info = None
   for r in test_run.test_resources:
-    cache_url = cache_urls[r.url]
-    test_package_info = None
     if r.test_resource_type == ndb_models.TestResourceType.TEST_PACKAGE:
-      test_package_info = _GetTestPackageInfo(cache_url)
-    _UpdateTestResource(test_run_id, r.name, cache_url, test_package_info)
+      test_package_info = _GetTestPackageInfo(cache_urls[r.url])
+      break
+  _UpdateTestResources(test_run_id, cache_urls, test_package_info)
   logging.info('Done preparing test resources for test run %s', test_run_id)
 
 
@@ -376,14 +376,13 @@ def _GetTestPackageInfo(cache_url):
 
 
 @ndb.transactional()
-def _UpdateTestResource(test_run_id, resource_name, cache_url,
-                        test_package_info):
-  """Update a test resource to persist its cache URL and test package info."""
+def _UpdateTestResources(test_run_id, cache_urls, test_package_info):
+  """Update test resource cache URLs and test package info."""
   test_run = ndb_models.TestRun.get_by_id(test_run_id)
   if not test_run or test_run.state != ndb_models.TestRunState.PENDING:
     return
-  resource = next(r for r in test_run.test_resources if r.name == resource_name)
-  resource.cache_url = cache_url
+  for r in test_run.test_resources:
+    r.cache_url = cache_urls[r.url]
   if test_package_info:
     test_run.test_package_info = test_package_info
   test_run.put()
