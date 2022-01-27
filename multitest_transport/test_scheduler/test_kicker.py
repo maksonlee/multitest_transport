@@ -406,7 +406,7 @@ def _CreateTFCRequest(test_run_id):
   Args:
     test_run_id: a test run ID.
   """
-  test_run = ndb_models.TestRun.get_by_id(test_run_id)
+  test_run = ndb_models.TestRun.get_by_id(test_run_id, use_cache=False)
   if test_run.state == ndb_models.TestRunState.CANCELED:
     logging.info(
         'Test run %s is CANCELED; aborting _CreateTFCRequest()',
@@ -417,8 +417,8 @@ def _CreateTFCRequest(test_run_id):
   logging.info(
       'Creating a TFC request: test=%s, test_run_config=%s',
       test_run.test, test_run.test_run_config)
-  test_run.output_path = TEST_RUN_OUTPUT_PATH_FORMAT % test_run_id
-  test_run.output_url = file_util.GetAppStorageUrl([test_run.output_path])
+  output_path = TEST_RUN_OUTPUT_PATH_FORMAT % test_run_id
+  output_url = file_util.GetAppStorageUrl([output_path])
 
   # Construct command
   if test_run.test_run_config.command:
@@ -570,8 +570,7 @@ def _CreateTFCRequest(test_run_id):
               for p in test_run.test.env_vars
           ],
           setup_scripts=test_run.test.setup_scripts,
-          output_file_upload_url=file_util.GetWorkerAccessibleUrl(
-              test_run.output_url),
+          output_file_upload_url=file_util.GetWorkerAccessibleUrl(output_url),
           output_file_patterns=test_run.test.output_file_patterns,
           use_subprocess_reporting=True,
           invocation_timeout_millis=(
@@ -596,9 +595,18 @@ def _CreateTFCRequest(test_run_id):
   logging.debug('new_request_msg=%s', new_request_msg)
   request = tfc_client.NewRequest(new_request_msg)
   logging.info('TFC request %s is created', request.id)
-  test_run.request_id = request.id
-  test_run.state = ndb_models.TestRunState.QUEUED
-  test_run.put()
+  # Update test run to QUEUED and store TFC request ID.
+  def _Txn():
+    txn_test_run = ndb_models.TestRun.get_by_id(test_run_id)
+    if (not txn_test_run or
+        txn_test_run.state != ndb_models.TestRunState.PENDING):
+      return
+    txn_test_run.output_path = output_path
+    txn_test_run.output_url = output_url
+    txn_test_run.request_id = request.id
+    txn_test_run.state = ndb_models.TestRunState.QUEUED
+    txn_test_run.put()
+  ndb.transaction(_Txn)
 
 
 def _DeviceSpecsToTFCTestBench(

@@ -602,7 +602,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertTrue(test_run.test_run_config.allow_partial_device_match)
 
     # metrics tracked
-    mock_track_test_run.assert_called_with(test_run)
+    mock_track_test_run.assert_called_once()
 
   @mock.patch.object(tfc_client, 'NewRequest', autospec=True)
   @mock.patch.object(download_util, 'DownloadResources', autospec=True)
