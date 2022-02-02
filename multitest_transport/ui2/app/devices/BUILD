@@ -38,6 +38,7 @@ ng_module(
         "device_list_table.ng.html",
         "simple_device_list.ng.html",
     ],
+    strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular2:cdk_a11y"),

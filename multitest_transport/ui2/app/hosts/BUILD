@@ -65,6 +65,7 @@ ng_module(
         "offline_host_assignments_page.ng.html",
         "unassigned_offline_host_list.ng.html",
     ],
+    strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular2:cdk_a11y"),

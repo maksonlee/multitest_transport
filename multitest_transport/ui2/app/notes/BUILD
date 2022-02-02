@@ -32,6 +32,7 @@ ng_module(
         "predefined_message_list.ng.html",
         "predefined_messages_editor.ng.html",
     ],
+    strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular2:cdk_a11y"),

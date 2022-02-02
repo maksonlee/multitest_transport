@@ -20,6 +20,7 @@ ng_module(
         ":styles",
         "login_button.ng.html",
     ],
+    strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular2:core"),

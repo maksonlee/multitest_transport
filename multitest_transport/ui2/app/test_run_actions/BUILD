@@ -20,6 +20,7 @@ ng_module(
         "test_run_action_list.ng.html",
         "test_run_action_picker.ng.html",
     ],
+    strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular2:cdk_a11y"),

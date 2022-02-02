@@ -27,6 +27,7 @@ ng_module(
         "file_cleaner_policy_edit_page.ng.html",
         "file_cleaner_setting_list.ng.html",
     ],
+    strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular2:core"),

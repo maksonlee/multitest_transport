@@ -29,6 +29,7 @@ ng_module(
         "recovery_page.ng.html",
         "recovery_setting_page.ng.html",
     ],
+    strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular2:cdk_a11y"),

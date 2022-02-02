@@ -20,6 +20,7 @@ ng_module(
         "config_set_list.ng.html",
         "config_set_picker.ng.html",
     ],
+    strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular2:cdk_a11y"),

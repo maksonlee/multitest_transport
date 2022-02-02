@@ -25,6 +25,7 @@ ng_module(
         "test_list.ng.html",
         "test_list_page.ng.html",
     ],
+    strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular2:cdk_a11y"),

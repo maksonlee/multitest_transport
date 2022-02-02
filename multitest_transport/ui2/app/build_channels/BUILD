@@ -27,6 +27,7 @@ ng_module(
         "build_picker.ng.html",
         "test_resource_form.ng.html",
     ],
+    strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular2:cdk_a11y"),

@@ -28,6 +28,7 @@ ng_module(
         "setup_wizard_stepper.ng.html",
         "wifi_setup.ng.html",
     ],
+    strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular2:cdk_a11y"),
