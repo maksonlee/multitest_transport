@@ -30,7 +30,6 @@ import {FindDeviceDialog} from '../device/find_device_dialog';
 import {BackAction, ClickAction, HomeAction, KeyAction, SleepAction, WakeAction, WriteAction} from './action';
 import {AoaActionEditor, AoaActionEditorResult} from './action_editor';
 import {EditorModule} from './editor_module';
-import {EditorModuleNgSummary} from './editor_module.ngsummary';
 import {ExecutionWakeLock} from './wake_lock';
 import {ACTION_DELAY_MILLIS, MAX_KEY_COMBINATION_MILLIS, WorkflowEditor} from './workflow_editor';
 
@@ -61,7 +60,6 @@ describe('WorkflowEditor', () => {
 
     TestBed.configureTestingModule({
       imports: [EditorModule],
-      aotSummaries: EditorModuleNgSummary,
       providers: [
         {provide: Clipboard, useValue: clipboard},
         {provide: MatDialog, useValue: dialog},

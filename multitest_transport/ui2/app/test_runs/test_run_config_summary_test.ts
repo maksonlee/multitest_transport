@@ -28,7 +28,6 @@ import {newMockDeviceAction, newMockTest, newMockTestRunConfig} from '../testing
 
 import {TestRunConfigSummary} from './test_run_config_summary';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('TestRunConfigSummary', () => {
   let testRunConfig: TestRunConfig;
@@ -70,8 +69,7 @@ describe('TestRunConfigSummary', () => {
         {provide: APP_DATA, useValue: {}},
         {provide: MttObjectMapService, useValue: mttObjectMapService},
       ],
-      aotSummaries: TestRunsModuleNgSummary,
-    });
+      });
 
     testRunConfigSummaryFixture = TestBed.createComponent(TestRunConfigSummary);
     el = testRunConfigSummaryFixture.debugElement;

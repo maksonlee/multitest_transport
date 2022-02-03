@@ -31,7 +31,6 @@ import {newMockTest, newMockTestRunConfig} from '../testing/mtt_mocks';
 import {TestRunConfigEditor, TestRunConfigEditorData} from './test_run_config_editor';
 import {TestRunConfigList} from './test_run_config_list';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('TestRunConfigList', () => {
   let testRunConfigs: TestRunConfig[];
@@ -68,8 +67,7 @@ describe('TestRunConfigList', () => {
         {provide: APP_DATA, useValue: {}},
         {provide: MttObjectMapService, useValue: mttObjectMapService},
       ],
-      aotSummaries: TestRunsModuleNgSummary,
-    });
+      });
 
     testRunConfigListFixture = TestBed.createComponent(TestRunConfigList);
     el = testRunConfigListFixture.debugElement;

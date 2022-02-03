@@ -27,7 +27,6 @@ import {getEl, getEls, hasEl} from '../testing/jasmine_util';
 
 import {TestRunActionList} from './test_run_action_list';
 import {TestRunActionsModule} from './test_run_actions_module';
-import {TestRunActionsModuleNgSummary} from './test_run_actions_module.ngsummary';
 
 describe('TestRunActionList', () => {
   let liveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
@@ -53,7 +52,6 @@ describe('TestRunActionList', () => {
 
     TestBed.configureTestingModule({
       imports: [TestRunActionsModule, NoopAnimationsModule],
-      aotSummaries: TestRunActionsModuleNgSummary,
       providers: [
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: Notifier, useValue: notifier},

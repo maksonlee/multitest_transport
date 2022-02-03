@@ -21,7 +21,6 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {getTextContent} from '../testing/jasmine_util';
 import {FormErrorInfo} from './form_error_info';
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 
 describe('FormErrorInfo', () => {
   let formErrorInfo: FormErrorInfo;
@@ -35,8 +34,7 @@ describe('FormErrorInfo', () => {
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
     formErrorInfoFixture = TestBed.createComponent(FormErrorInfo);
     el = formErrorInfoFixture.debugElement;
     formErrorInfo = formErrorInfoFixture.componentInstance;

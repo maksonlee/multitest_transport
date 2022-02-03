@@ -27,7 +27,6 @@ import {newMockDeviceAction} from '../testing/mtt_mocks';
 
 import {DeviceActionEditPage} from './device_action_edit_page';
 import {DeviceActionsModule} from './device_actions_module';
-import {DeviceActionsModuleNgSummary} from './device_actions_module.ngsummary';
 
 describe('DeviceActionEditPage', () => {
   let deviceActionEditPage: DeviceActionEditPage;
@@ -44,7 +43,6 @@ describe('DeviceActionEditPage', () => {
 
     TestBed.configureTestingModule({
       imports: [DeviceActionsModule, RouterTestingModule, NoopAnimationsModule],
-      aotSummaries: DeviceActionsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
         {

@@ -28,7 +28,6 @@ import * as mttMocks from '../testing/mtt_mocks';
 
 import {DeviceActionList} from './device_action_list';
 import {DeviceActionsModule} from './device_actions_module';
-import {DeviceActionsModuleNgSummary} from './device_actions_module.ngsummary';
 
 const FACTORY_RESET_ACTION =
     mttMocks.newMockDeviceAction('reset', 'Factory Reset');
@@ -60,7 +59,6 @@ describe('DeviceActionList', () => {
 
     TestBed.configureTestingModule({
       imports: [DeviceActionsModule, NoopAnimationsModule, RouterTestingModule],
-      aotSummaries: DeviceActionsModuleNgSummary,
       providers: [
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: MttClient, useValue: mttClient},

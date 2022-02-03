@@ -22,7 +22,6 @@ import {getEl, getTextContent} from '../testing/jasmine_util';
 import {newMockDeviceInfo} from '../testing/mtt_lab_mocks';
 
 import {DevicesModule} from './devices_module';
-import {DevicesModuleNgSummary} from './devices_module.ngsummary';
 import {SimpleDeviceList} from './simple_device_list';
 
 describe('SimpleDeviceList', () => {
@@ -37,8 +36,7 @@ describe('SimpleDeviceList', () => {
 
     TestBed.configureTestingModule({
       imports: [DevicesModule],
-      aotSummaries: DevicesModuleNgSummary,
-    });
+      });
 
     simpleDeviceListFixture = TestBed.createComponent(SimpleDeviceList);
     el = simpleDeviceListFixture.debugElement;

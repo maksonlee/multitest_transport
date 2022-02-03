@@ -27,7 +27,6 @@ import {newMockTestPlan} from '../testing/mtt_mocks';
 
 import {TestPlanList} from './test_plan_list';
 import {TestPlansModule} from './test_plans_module';
-import {TestPlansModuleNgSummary} from './test_plans_module.ngsummary';
 
 describe('TestPlanList', () => {
   const TEST_PLANS = {
@@ -58,7 +57,6 @@ describe('TestPlanList', () => {
         TestPlansModule,
         RouterTestingModule,
       ],
-      aotSummaries: TestPlansModuleNgSummary,
       providers: [
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: MttClient, useValue: mttClient},

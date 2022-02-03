@@ -20,7 +20,6 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {Breadcrumb} from './breadcrumb';
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 
 describe('Breadcrumb', () => {
   let breadcrumb: Breadcrumb;
@@ -29,8 +28,7 @@ describe('Breadcrumb', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
     breadcrumbFixture = TestBed.createComponent(Breadcrumb);
     el = breadcrumbFixture.debugElement;
     breadcrumb = breadcrumbFixture.componentInstance;

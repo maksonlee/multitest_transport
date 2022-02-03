@@ -27,7 +27,6 @@ import {newMockTestCaseResult, newMockTestModuleResult} from '../testing/mtt_moc
 
 import {TestModuleResultList} from './test_module_result_list';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('TestModuleResultList', () => {
   let testResultModuleList: TestModuleResultList;
@@ -72,7 +71,6 @@ describe('TestModuleResultList', () => {
 
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule],
-      aotSummaries: TestRunsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: {testResults: client}},
         {provide: Notifier, useValue: notifier},

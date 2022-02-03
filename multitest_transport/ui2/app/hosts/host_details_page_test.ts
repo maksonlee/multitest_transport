@@ -30,7 +30,6 @@ import {newMockAppData, newMockLabHostInfo} from '../testing/mtt_lab_mocks';
 import {HostDetails, HostDetailsDialogParams} from './host_details';
 import {HostDetailsPage} from './host_details_page';
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 
 describe('HostDetailsPage', () => {
   const hostname = 'AndroidEngProdApiClusterClientFuncTest';
@@ -69,7 +68,6 @@ describe('HostDetailsPage', () => {
         HostsModule,
         NoopAnimationsModule,
       ],
-      aotSummaries: HostsModuleNgSummary,
       providers: [
         Title,
         {

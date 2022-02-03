@@ -24,7 +24,6 @@ import {newMockPrivateNodeConfig} from '../testing/mtt_mocks';
 
 import {SetupWizardDialog} from './setup_wizard_dialog';
 import {SetupWizardModule} from './setup_wizard_module';
-import {SetupWizardModuleNgSummary} from './setup_wizard_module.ngsummary';
 
 
 describe('SetupWizardDialog', () => {
@@ -43,7 +42,6 @@ describe('SetupWizardDialog', () => {
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SetupWizardModule],
-      aotSummaries: SetupWizardModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
       ],

@@ -27,7 +27,6 @@ import {getEl} from '../testing/jasmine_util';
 
 import {FileBrowser} from './file_browser';
 import {FileBrowserModule} from './file_browser_module';
-import {FileBrowserModuleNgSummary} from './file_browser_module.ngsummary';
 
 describe('FileBrowser', () => {
   let fixture: ComponentFixture<FileBrowser>;
@@ -48,7 +47,6 @@ describe('FileBrowser', () => {
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, FileBrowserModule, RouterTestingModule],
-      aotSummaries: FileBrowserModuleNgSummary,
       providers: [
         {provide: FileService, useValue: fs},
         {provide: Notifier, useValue: notifier},

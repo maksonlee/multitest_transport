@@ -35,7 +35,6 @@ import {newMockAppData, newMockFilterHintList, newMockLabHostInfo} from '../test
 
 import {HostList} from './host_list';
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 
 describe('HostList', () => {
   let feedbackService: jasmine.SpyObj<FeedbackService>;
@@ -98,8 +97,7 @@ describe('HostList', () => {
         {provide: TfcClient, useValue: tfcClient},
         {provide: ActivatedRoute, useValue: activatedRouteSpy},
       ],
-      aotSummaries: HostsModuleNgSummary,
-    });
+      });
     hostListFixture = TestBed.createComponent(HostList);
     hostListFixture.detectChanges();
     el = hostListFixture.debugElement;

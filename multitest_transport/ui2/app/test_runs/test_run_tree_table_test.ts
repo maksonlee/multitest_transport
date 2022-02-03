@@ -24,7 +24,6 @@ import {newMockTest, newMockTestRun} from '../testing/mtt_mocks';
 
 import {TestRunTreeTable} from './test_run_tree_table';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('TestRunTreeTable', () => {
   let testRunTreeTable: TestRunTreeTable;
@@ -40,8 +39,7 @@ describe('TestRunTreeTable', () => {
 
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule],
-      aotSummaries: TestRunsModuleNgSummary,
-    });
+      });
 
     testRunTreeTableFixture = TestBed.createComponent(TestRunTreeTable);
     testRunTreeTable = testRunTreeTableFixture.componentInstance;

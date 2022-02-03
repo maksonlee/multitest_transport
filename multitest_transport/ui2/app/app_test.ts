@@ -20,7 +20,6 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
 
 import {Mtt, MttModule} from './app';
-import {MttModuleNgSummary} from './app.ngsummary';
 import {AnalyticsService} from './services/analytics_service';
 import {APP_DATA} from './services/app_data';
 import {UserService} from './services/user_service';
@@ -42,7 +41,6 @@ describe('Mtt', () => {
 
     TestBed.configureTestingModule({
       imports: [MttModule, RouterTestingModule],
-      aotSummaries: MttModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: {netdataUrl: 'localhost:8008'}},
         {provide: AnalyticsService, useValue: analyticsServiceSpy},

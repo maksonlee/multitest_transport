@@ -29,7 +29,6 @@ import {getTextContent} from '../testing/jasmine_util';
 import {newMockLabInfosResponse, newMockOfflineHostInfosByLabResponse} from '../testing/mtt_lab_mocks';
 
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 import {OfflineHostList} from './offline_host_list';
 import {OfflineHostListPage} from './offline_host_list_page';
 
@@ -70,7 +69,6 @@ describe('OfflineHostListPage', () => {
         HostsModule,
         NoopAnimationsModule,
       ],
-      aotSummaries: HostsModuleNgSummary,
       providers: [
         Title,
         {

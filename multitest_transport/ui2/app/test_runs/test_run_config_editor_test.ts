@@ -35,7 +35,6 @@ import {newMockDeviceAction, newMockTest, newMockTestRunConfig} from '../testing
 
 import {TestRunConfigEditor} from './test_run_config_editor';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('TestRunConfigEditor', () => {
   let testRunConfigEditor: TestRunConfigEditor;
@@ -81,7 +80,6 @@ describe('TestRunConfigEditor', () => {
         HttpClientTestingModule, NoopAnimationsModule, RouterTestingModule,
         TestRunsModule
       ],
-      aotSummaries: TestRunsModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: {isAtsLabInstance: false}},
         {provide: MttClient, useValue: mttClient},

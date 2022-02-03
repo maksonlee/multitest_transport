@@ -26,7 +26,6 @@ import {getEl, getEls, getTextContent} from 'google3/third_party/py/multitest_tr
 import {newMockAppData} from '../testing/mtt_lab_mocks';
 
 import {RecoveryModule} from './recovery_module';
-import {RecoveryModuleNgSummary} from './recovery_module.ngsummary';
 import {RecoveryPage} from './recovery_page';
 
 describe('RecoveryPage', () => {
@@ -58,8 +57,7 @@ describe('RecoveryPage', () => {
           useValue: activatedRouteSpy,
         },
       ],
-      aotSummaries: RecoveryModuleNgSummary,
-    });
+      });
     recoveryPageFixture = TestBed.createComponent(RecoveryPage);
     recoveryPageFixture.detectChanges();
     el = recoveryPageFixture.debugElement;

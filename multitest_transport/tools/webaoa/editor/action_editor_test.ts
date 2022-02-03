@@ -26,7 +26,6 @@ import {Point} from '../device/device';
 import {ClickAction} from './action';
 import {AoaActionEditor} from './action_editor';
 import {EditorModule} from './editor_module';
-import {EditorModuleNgSummary} from './editor_module.ngsummary';
 
 describe('AoaActionEditor', () => {
   let dialogRef: jasmine.SpyObj<MatDialogRef<AoaActionEditor>>;
@@ -41,7 +40,6 @@ describe('AoaActionEditor', () => {
 
     TestBed.configureTestingModule({
       imports: [EditorModule, NoopAnimationsModule],
-      aotSummaries: EditorModuleNgSummary,
       providers: [
         {provide: MatDialogRef, useValue: dialogRef},
         {provide: MAT_DIALOG_DATA, useFactory: () => dialogData},

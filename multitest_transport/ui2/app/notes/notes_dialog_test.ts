@@ -28,7 +28,6 @@ import {newMockAppData} from '../testing/mtt_lab_mocks';
 
 import {NoteDialogState, NotesDialog} from './notes_dialog';
 import {NotesModule} from './notes_module';
-import {NotesModuleNgSummary} from './notes_module.ngsummary';
 
 describe('NotesDialog', () => {
   const serial1 = 'serial1';
@@ -62,7 +61,6 @@ describe('NotesDialog', () => {
         NotesModule,
         HttpClientTestingModule,
       ],
-      aotSummaries: NotesModuleNgSummary,
       providers: [
         {provide: MAT_DIALOG_DATA, useValue: noteDialogParams},
         {provide: APP_DATA, useValue: newMockAppData()},

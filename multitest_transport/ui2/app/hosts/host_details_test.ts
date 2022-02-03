@@ -32,7 +32,6 @@ import {newMockAppData, newMockDeviceInfosResponse, newMockLabHostInfo} from '..
 
 import {HostDetails} from './host_details';
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 
 describe('HostDetails', () => {
   let feedbackService: jasmine.SpyObj<FeedbackService>;
@@ -95,8 +94,7 @@ describe('HostDetails', () => {
         {provide: Router, useValue: routerSpy},
         {provide: TfcClient, useValue: tfcClient},
       ],
-      aotSummaries: HostsModuleNgSummary,
-    });
+      });
     hostDetailsFixture = TestBed.createComponent(HostDetails);
     hostDetailsFixture.detectChanges();
     el = hostDetailsFixture.debugElement;

@@ -26,7 +26,6 @@ import {PredefinedMessageType} from '../services/tfc_models';
 import {newMockPredefinedMessage} from '../testing/mtt_lab_mocks';
 
 import {NotesModule} from './notes_module';
-import {NotesModuleNgSummary} from './notes_module.ngsummary';
 import {PredefinedMessagesEditor, PredefinedMessagesEditorAction, PredefinedMessagesEditorDialogParams} from './predefined_messages_editor';
 
 
@@ -60,7 +59,6 @@ describe('PredefinedMessagesEditor', () => {
         NoopAnimationsModule,
         NotesModule,
       ],
-      aotSummaries: NotesModuleNgSummary,
       providers: [
         {provide: MAT_DIALOG_DATA, useValue: {...dialogParams}},
         {provide: MatDialogRef, useValue: dialogRefSpy},

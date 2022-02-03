@@ -30,7 +30,6 @@ import {newMockAppData, newMockLabDeviceInfo} from '../testing/mtt_lab_mocks';
 import {DeviceDetails, DeviceDetailsDialogParams} from './device_details';
 import {DeviceDetailsPage} from './device_details_page';
 import {DevicesModule} from './devices_module';
-import {DevicesModuleNgSummary} from './devices_module.ngsummary';
 
 describe('DeviceDetailsPage', () => {
   const serial = 'serial';
@@ -66,7 +65,6 @@ describe('DeviceDetailsPage', () => {
         NoopAnimationsModule,
         RouterTestingModule,
       ],
-      aotSummaries: DevicesModuleNgSummary,
       providers: [
         Title,
         {

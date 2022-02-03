@@ -26,7 +26,6 @@ import {getEl} from '../testing/jasmine_util';
 
 import {LocalFileStore} from './local_file_store';
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 
 describe('LocalFileStore', () => {
   let fixture: ComponentFixture<LocalFileStore>;
@@ -50,7 +49,6 @@ describe('LocalFileStore', () => {
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
-      aotSummaries: SharedModuleNgSummary,
       providers: [
         {provide: FileService, useValue: fs},
         {provide: Notifier, useValue: notifier},

@@ -23,7 +23,6 @@ import {MttClient} from '../services/mtt_client';
 
 import {SettingPage} from './setting_page';
 import {SettingsModule} from './settings_module';
-import {SettingsModuleNgSummary} from './settings_module.ngsummary';
 
 describe('SettingPage', () => {
   let settingPage: SettingPage;
@@ -41,7 +40,6 @@ describe('SettingPage', () => {
         observableOf({device_actions: []}));
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SettingsModule, RouterTestingModule],
-      aotSummaries: SettingsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
       ],

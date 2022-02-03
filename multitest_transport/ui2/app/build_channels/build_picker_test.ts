@@ -25,7 +25,6 @@ import {AuthorizationMethod, AuthorizationState, BuildChannel} from '../services
 import {getEl, getEls, hasEl} from '../testing/jasmine_util';
 
 import {BuildChannelsModule} from './build_channels_module';
-import {BuildChannelsModuleNgSummary} from './build_channels_module.ngsummary';
 import {BuildPicker, BuildPickerData, BuildPickerMode} from './build_picker';
 
 describe('BuildPicker', () => {
@@ -44,7 +43,6 @@ describe('BuildPicker', () => {
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, BuildChannelsModule],
-      aotSummaries: BuildChannelsModuleNgSummary,
       providers: [
         {provide: MatDialogRef, useValue: dialogRef},
         {provide: MAT_DIALOG_DATA, useFactory: () => dialogData},

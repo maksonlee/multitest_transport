@@ -22,7 +22,6 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {getEl} from '../testing/jasmine_util';
 import {InfiniteScrollLoadEvent} from './infinite_scroll';
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 
 const DEBOUNCE_TIME_MS = 100;
 
@@ -36,8 +35,7 @@ describe('InfiniteScroll', () => {
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
       declarations: [TestComponent],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
     testComponentFixture = TestBed.createComponent(TestComponent);
     el = testComponentFixture.debugElement;
     testComponent = testComponentFixture.componentInstance;

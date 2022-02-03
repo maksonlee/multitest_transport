@@ -21,7 +21,6 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {getTextContent} from '../testing/jasmine_util';
 
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 import {TreeNode, TreeTable, TreeTableColumn} from './tree_table';
 
 describe('TreeTable', () => {
@@ -38,8 +37,7 @@ describe('TreeTable', () => {
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
     treeTableFixture = TestBed.createComponent(TreeTable);
     el = treeTableFixture.debugElement;
     treeTable = treeTableFixture.componentInstance;

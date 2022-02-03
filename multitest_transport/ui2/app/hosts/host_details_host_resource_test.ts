@@ -27,7 +27,6 @@ import {newMockHostResource} from '../testing/mtt_lab_mocks';
 
 import {HostDetailsHostResource} from './host_details_host_resource';
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 import {convertToLabHostResource} from '../services/mtt_lab_models';
 
 
@@ -51,7 +50,6 @@ describe('HostDetailsHostResource', () => {
         NoopAnimationsModule,
         RouterTestingModule,
       ],
-      aotSummaries: HostsModuleNgSummary,
       providers: [
         {provide: TfcClient, useValue: tfcClient},
       ],

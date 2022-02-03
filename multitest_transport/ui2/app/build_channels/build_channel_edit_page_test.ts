@@ -26,7 +26,6 @@ import {newMockBuildChannelConfig, newMockBuildChannelProviderList} from '../tes
 
 import {BuildChannelEditPage} from './build_channel_edit_page';
 import {BuildChannelsModule} from './build_channels_module';
-import {BuildChannelsModuleNgSummary} from './build_channels_module.ngsummary';
 
 describe('BuildChannelEditPage', () => {
   const BUILD_CHANNEL_CONFIG = newMockBuildChannelConfig();
@@ -51,7 +50,6 @@ describe('BuildChannelEditPage', () => {
 
     TestBed.configureTestingModule({
       imports: [BuildChannelsModule, NoopAnimationsModule, RouterTestingModule],
-      aotSummaries: BuildChannelsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
         {

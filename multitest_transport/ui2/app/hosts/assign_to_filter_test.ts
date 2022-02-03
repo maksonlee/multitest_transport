@@ -23,7 +23,6 @@ import {Notifier} from '../services/notifier';
 
 import {AssignToFilter} from './assign_to_filter';
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 
 describe('AssignToFilter', () => {
   let assignToFilter: AssignToFilter;
@@ -41,7 +40,6 @@ describe('AssignToFilter', () => {
         HostsModule,
         NoopAnimationsModule,
       ],
-      aotSummaries: HostsModuleNgSummary,
       providers: [
         {provide: Notifier, useValue: notifierSpy},
       ],

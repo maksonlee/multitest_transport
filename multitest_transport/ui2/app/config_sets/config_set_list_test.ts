@@ -27,7 +27,6 @@ import * as testUtil from '../testing/mtt_mocks';
 
 import {ConfigSetList} from './config_set_list';
 import {ConfigSetsModule} from './config_sets_module';
-import {ConfigSetsModuleNgSummary} from './config_sets_module.ngsummary';
 
 
 describe('ConfigSetList', () => {
@@ -60,7 +59,6 @@ describe('ConfigSetList', () => {
 
     TestBed.configureTestingModule({
       imports: [ConfigSetsModule, NoopAnimationsModule, RouterTestingModule],
-      aotSummaries: ConfigSetsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
       ],

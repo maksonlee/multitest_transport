@@ -29,7 +29,6 @@ import {newMockAppData, newMockLabDeviceInfo} from '../testing/mtt_lab_mocks';
 
 import {DeviceDetailsSummary} from './device_details_summary';
 import {DevicesModule} from './devices_module';
-import {DevicesModuleNgSummary} from './devices_module.ngsummary';
 
 describe('DeviceDetailsSummary', () => {
   let deviceDetailsSummary: DeviceDetailsSummary;
@@ -60,7 +59,6 @@ describe('DeviceDetailsSummary', () => {
         NoopAnimationsModule,
         RouterTestingModule,
       ],
-      aotSummaries: DevicesModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: newMockAppData()},
         {provide: Notifier, useValue: notifierSpy},

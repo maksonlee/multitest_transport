@@ -31,7 +31,6 @@ import {newMockAppData, newMockDeviceNoteList, newMockLabDeviceInfosResponse} fr
 
 import {HostDetailsDeviceList} from './host_details_device_list';
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 
 describe('HostDetailsDeviceList', () => {
   let hostDetailsDeviceList: HostDetailsDeviceList;
@@ -64,7 +63,6 @@ describe('HostDetailsDeviceList', () => {
         NoopAnimationsModule,
         RouterTestingModule,
       ],
-      aotSummaries: HostsModuleNgSummary,
       providers: [
         {
           provide: APP_DATA,

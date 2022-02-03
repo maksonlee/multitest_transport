@@ -28,7 +28,6 @@ import {newMockDeviceNote, newMockHostNote, newMockPredefinedMessage, newMockPre
 import {NoteDialogParams, NoteDialogState} from './notes_dialog';
 import {NotesEditor} from './notes_editor';
 import {NotesModule} from './notes_module';
-import {NotesModuleNgSummary} from './notes_module.ngsummary';
 
 describe('NotesEditor', () => {
   const offlineReasonValue = 'offline1';
@@ -55,7 +54,6 @@ describe('NotesEditor', () => {
         NoopAnimationsModule,
         NotesModule,
       ],
-      aotSummaries: NotesModuleNgSummary,
       providers: [
         {provide: FeedbackService, useValue: feedbackService},
         {provide: TfcClient, useValue: tfcClient},

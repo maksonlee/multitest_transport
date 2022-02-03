@@ -26,7 +26,6 @@ import {getTextContent} from '../testing/jasmine_util';
 import {newMockNodeConfig, newMockPrivateNodeConfig} from '../testing/mtt_mocks';
 import {SettingForm} from './setting_form';
 import {SettingsModule} from './settings_module';
-import {SettingsModuleNgSummary} from './settings_module.ngsummary';
 
 describe('SettingForm', () => {
   const nodeConfig = newMockNodeConfig();
@@ -51,7 +50,6 @@ describe('SettingForm', () => {
         NoopAnimationsModule,
         SettingsModule,
       ],
-      aotSummaries: SettingsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},

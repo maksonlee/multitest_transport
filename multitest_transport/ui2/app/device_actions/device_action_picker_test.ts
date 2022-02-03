@@ -23,7 +23,6 @@ import {newMockDeviceActionList} from '../testing/mtt_mocks';
 
 import {DeviceActionPicker} from './device_action_picker';
 import {DeviceActionsModule} from './device_actions_module';
-import {DeviceActionsModuleNgSummary} from './device_actions_module.ngsummary';
 
 describe('DeviceActionPicker', () => {
   let deviceActionPicker: DeviceActionPicker;
@@ -32,8 +31,7 @@ describe('DeviceActionPicker', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, DeviceActionsModule],
-      aotSummaries: DeviceActionsModuleNgSummary,
-    });
+      });
     deviceActionPickerFixture = TestBed.createComponent(DeviceActionPicker);
     el = deviceActionPickerFixture.debugElement;
     deviceActionPicker = deviceActionPickerFixture.componentInstance;

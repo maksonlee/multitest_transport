@@ -28,7 +28,6 @@ import {newMockTest} from '../testing/mtt_mocks';
 
 import {TestEditPage} from './test_edit_page';
 import {TestModule} from './test_module';
-import {TestModuleNgSummary} from './test_module.ngsummary';
 
 describe('TestEditPage', () => {
   const TEST = newMockTest('testId', 'testName');
@@ -49,7 +48,6 @@ describe('TestEditPage', () => {
         TestModule,
         RouterTestingModule,
       ],
-      aotSummaries: TestModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
         {

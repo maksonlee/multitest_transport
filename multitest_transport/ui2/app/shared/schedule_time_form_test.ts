@@ -20,7 +20,6 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {getPeriodicType, PeriodicType, ScheduleTimeForm, ScheduleType} from './schedule_time_form';
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 
 describe('PeriodicType', () => {
   it('can detect hourly expressions', () => {
@@ -56,8 +55,7 @@ describe('ScheduleTimeForm', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
 
     fixture = TestBed.createComponent(ScheduleTimeForm);
     component = fixture.componentInstance;

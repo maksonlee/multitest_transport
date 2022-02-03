@@ -20,7 +20,6 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {MultiSelect} from './multi_select';
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 
 describe('MultiSelect', () => {
   let multiSelect: MultiSelect;
@@ -31,8 +30,7 @@ describe('MultiSelect', () => {
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
       declarations: [MultiSelect],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
     multiSelectFixture = TestBed.createComponent(MultiSelect);
     el = multiSelectFixture.debugElement;
     multiSelect = multiSelectFixture.componentInstance;

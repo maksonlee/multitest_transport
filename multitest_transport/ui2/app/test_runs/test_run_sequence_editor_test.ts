@@ -28,7 +28,6 @@ import {newMockDeviceAction, newMockTest, newMockTestRunConfig} from '../testing
 
 import {TestRunSequenceEditor} from './test_run_sequence_editor';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('TestRunSequenceEditor', () => {
   let testRunConfig: TestRunConfig;
@@ -78,8 +77,7 @@ describe('TestRunSequenceEditor', () => {
         {provide: APP_DATA, useValue: {}},
         {provide: MttObjectMapService, useValue: mttObjectMapService},
       ],
-      aotSummaries: TestRunsModuleNgSummary,
-    });
+      });
 
     testRunSequenceEditorFixture =
         TestBed.createComponent(TestRunSequenceEditor);

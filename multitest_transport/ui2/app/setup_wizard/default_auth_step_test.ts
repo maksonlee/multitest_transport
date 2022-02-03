@@ -28,7 +28,6 @@ import {newMockCredentialsInfo, newMockPrivateNodeConfig} from '../testing/mtt_m
 
 import {DefaultAuthStep} from './default_auth_step';
 import {SetupWizardModule} from './setup_wizard_module';
-import {SetupWizardModuleNgSummary} from './setup_wizard_module.ngsummary';
 
 describe('DefaultAuthButton', () => {
   let mttApiClient: jasmine.SpyObj<MttClient>;
@@ -52,7 +51,6 @@ describe('DefaultAuthButton', () => {
 
     TestBed.configureTestingModule({
       imports: [SetupWizardModule, NoopAnimationsModule, RouterTestingModule],
-      aotSummaries: SetupWizardModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttApiClient},
         {provide: Notifier, useValue: notifier},

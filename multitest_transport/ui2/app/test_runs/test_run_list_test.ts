@@ -32,7 +32,6 @@ import {newMockTestPackageInfo, toTitleCase} from '../testing/mtt_mocks';
 
 import {TestRunList} from './test_run_list';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('TestRunList', () => {
   let testRunList: TestRunList;
@@ -78,7 +77,6 @@ describe('TestRunList', () => {
 
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
-      aotSummaries: TestRunsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
         {provide: Notifier, useValue: notifier},

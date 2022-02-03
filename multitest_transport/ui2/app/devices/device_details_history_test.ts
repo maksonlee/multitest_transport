@@ -31,7 +31,6 @@ import {newMockAppData, newMockDeviceInfoHistoryList, newMockDeviceNoteList} fro
 
 import {DeviceDetailsHistory} from './device_details_history';
 import {DevicesModule} from './devices_module';
-import {DevicesModuleNgSummary} from './devices_module.ngsummary';
 
 describe('DeviceDetailsHistory', () => {
   const serial = 'device1';
@@ -64,7 +63,6 @@ describe('DeviceDetailsHistory', () => {
         DevicesModule,
         NoopAnimationsModule,
       ],
-      aotSummaries: DevicesModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: newMockAppData()},
         {provide: Router, useValue: routerSpy},

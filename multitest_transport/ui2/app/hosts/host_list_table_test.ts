@@ -30,7 +30,6 @@ import {getMockLabHostInfo, newMockAppData, newMockLabHostInfosResponse} from '.
 
 import {HostListTable} from './host_list_table';
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 
 describe('HostListTable', () => {
   let hostListTable: HostListTable;
@@ -56,7 +55,6 @@ describe('HostListTable', () => {
         HostsModule,
         NoopAnimationsModule,
       ],
-      aotSummaries: HostsModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: mockAppData},
         {provide: Router, useValue: routerSpy},

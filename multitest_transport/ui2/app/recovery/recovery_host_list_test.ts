@@ -34,7 +34,6 @@ import {newMockAppData, newMockLabHostInfo, newMockLabHostInfosResponse} from '.
 
 import {RecoveryHostList} from './recovery_host_list';
 import {RecoveryModule} from './recovery_module';
-import {RecoveryModuleNgSummary} from './recovery_module.ngsummary';
 
 describe('RecoveryHostList', () => {
   const hostInfosResponse = newMockLabHostInfosResponse();
@@ -69,7 +68,6 @@ describe('RecoveryHostList', () => {
         NoopAnimationsModule,
         RouterTestingModule,
       ],
-      aotSummaries: RecoveryModuleNgSummary,
       providers: [
         {provide: ActivatedRoute, useValue: activatedRouteSpy},
         {provide: APP_DATA, useValue: newMockAppData()},

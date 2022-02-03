@@ -19,7 +19,6 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {getEls} from 'google3/third_party/py/multitest_transport/ui2/app/testing/jasmine_util';
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 import {TimeFilterOperator, TimeInputFilter} from './time_input_filter';
 
 describe('TimeInputFilter', () => {
@@ -33,8 +32,7 @@ describe('TimeInputFilter', () => {
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
       declarations: [TimeInputFilter],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
     timeInputFilterFixture = TestBed.createComponent(TimeInputFilter);
     el = timeInputFilterFixture.debugElement;
     timeInputFilter = timeInputFilterFixture.componentInstance;

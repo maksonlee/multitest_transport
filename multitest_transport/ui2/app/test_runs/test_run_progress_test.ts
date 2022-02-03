@@ -27,7 +27,6 @@ import {getEl, getEls, hasEl} from '../testing/jasmine_util';
 
 import {TestRunProgress} from './test_run_progress';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('TestRunProgress', () => {
   let fs: jasmine.SpyObj<FileService>;
@@ -79,7 +78,6 @@ describe('TestRunProgress', () => {
 
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule],
-      aotSummaries: TestRunsModuleNgSummary,
       providers: [
         {provide: FileService, useValue: fs},
         {provide: TfcClient, useValue: tfcClient},

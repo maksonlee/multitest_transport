@@ -23,7 +23,6 @@ import {getEl, getTextContent} from '../testing/jasmine_util';
 
 import {TestRunFailures} from './test_run_failures';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('TestRunFailures', () => {
   let testRunFailures: TestRunFailures;
@@ -36,8 +35,7 @@ describe('TestRunFailures', () => {
         TestRunsModule,
         NoopAnimationsModule,
       ],
-      aotSummaries: TestRunsModuleNgSummary,
-    });
+      });
     testRunFailuresFixture = TestBed.createComponent(TestRunFailures);
     el = testRunFailuresFixture.debugElement;
     testRunFailures = testRunFailuresFixture.componentInstance;

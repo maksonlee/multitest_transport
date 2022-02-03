@@ -28,7 +28,6 @@ import {newMockAppData} from '../testing/mtt_lab_mocks';
 
 import {HostListPage} from './host_list_page';
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 
 describe('HostListPage', () => {
   let hostListPage: HostListPage;
@@ -50,7 +49,6 @@ describe('HostListPage', () => {
         NoopAnimationsModule,
         RouterTestingModule,
       ],
-      aotSummaries: HostsModuleNgSummary,
       providers: [
         Title,
         {provide: APP_DATA, useValue: newMockAppData()},

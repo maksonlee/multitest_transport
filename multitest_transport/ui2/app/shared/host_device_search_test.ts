@@ -28,7 +28,6 @@ import {newMockLabDeviceInfo, newMockLabHostInfo} from '../testing/mtt_lab_mocks
 
 import {HostDeviceSearch} from './host_device_search';
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 
 describe('HostDeviceSearch', () => {
   const serial = 'device1';
@@ -55,7 +54,6 @@ describe('HostDeviceSearch', () => {
         SharedModule,
         RouterTestingModule,
       ],
-      aotSummaries: SharedModuleNgSummary,
       providers: [
         {provide: FeedbackService, useValue: feedbackService},
         {provide: Router, useValue: routerSpy},

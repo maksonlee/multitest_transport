@@ -23,7 +23,6 @@ import {getTextContent} from '../testing/jasmine_util';
 import {newMockDeviceInfo} from '../testing/mtt_lab_mocks';
 
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 import {StatusButton} from './status_button';
 
 describe('DeviceState', () => {
@@ -41,8 +40,7 @@ describe('DeviceState', () => {
         SharedModule,
         NoopAnimationsModule,
       ],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
 
     statusButtonixture = TestBed.createComponent(StatusButton);
     el = statusButtonixture.debugElement;

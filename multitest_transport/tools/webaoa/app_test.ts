@@ -22,7 +22,6 @@ import {getEl, hasEl} from 'google3/third_party/py/multitest_transport/ui2/app/t
 
 import {AppComponent} from './app';
 import {AppModule} from './app_module';
-import {AppModuleNgSummary} from './app_module.ngsummary';
 import {AoaDevice} from './device/device';
 
 describe('AppComponent', () => {
@@ -33,8 +32,7 @@ describe('AppComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [AppModule],
-      aotSummaries: AppModuleNgSummary,
-    });
+      });
   });
 
   /** Checks whether an element is visible. */

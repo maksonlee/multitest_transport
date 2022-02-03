@@ -24,7 +24,6 @@ import {getTextContent} from '../testing/jasmine_util';
 import {newMockTest, newMockTestResourceObj, newMockTestRun} from '../testing/mtt_mocks';
 import {TestResourceList} from './test_resource_list';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('TestResourceList', () => {
   let testResourceList: TestResourceList;
@@ -47,7 +46,6 @@ describe('TestResourceList', () => {
 
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule],
-      aotSummaries: TestRunsModuleNgSummary,
       providers: [
         {provide: FileService, useValue: fs},
       ],

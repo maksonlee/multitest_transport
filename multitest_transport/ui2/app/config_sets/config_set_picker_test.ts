@@ -26,7 +26,6 @@ import * as testUtil from '../testing/mtt_mocks';
 
 import {ConfigSetPicker} from './config_set_picker';
 import {ConfigSetsModule} from './config_sets_module';
-import {ConfigSetsModuleNgSummary} from './config_sets_module.ngsummary';
 
 
 describe('ConfigSetPicker', () => {
@@ -51,7 +50,6 @@ describe('ConfigSetPicker', () => {
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, ConfigSetsModule],
-      aotSummaries: ConfigSetsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
       ],

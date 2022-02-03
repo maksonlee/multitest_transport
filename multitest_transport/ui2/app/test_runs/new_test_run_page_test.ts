@@ -32,7 +32,6 @@ import {newMockDeviceAction, newMockNodeConfig, newMockTest, newMockTestRun} fro
 
 import {NewTestRunPage} from './new_test_run_page';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 @Component({selector: 'device-list', template: ''})
 class DeviceListStubComponent {
@@ -66,7 +65,6 @@ describe('NewTestRunPage', () => {
     TestBed.configureTestingModule({
       declarations: [DeviceListStubComponent],
       imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
-      aotSummaries: TestRunsModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: {}},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},

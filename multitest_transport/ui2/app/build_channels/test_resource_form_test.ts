@@ -25,7 +25,6 @@ import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
 import {newMockBuildItem, newMockTestResourceDef, newMockTestResourceDefs} from '../testing/mtt_mocks';
 
 import {BuildChannelsModule} from './build_channels_module';
-import {BuildChannelsModuleNgSummary} from './build_channels_module.ngsummary';
 import {TestResourceClassType, TestResourceForm} from './test_resource_form';
 
 describe('TestResourceForm', () => {
@@ -42,7 +41,6 @@ describe('TestResourceForm', () => {
     mttClient.lookupBuildItem.and.returnValue(of(BUILD_ITEM));
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, BuildChannelsModule],
-      aotSummaries: BuildChannelsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
       ],

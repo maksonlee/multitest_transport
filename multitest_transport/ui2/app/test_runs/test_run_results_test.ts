@@ -23,7 +23,6 @@ import {getTextContent} from '../testing/jasmine_util';
 import {newMockInvocationStatus} from '../testing/mtt_mocks';
 import {TestRunResults} from './test_run_results';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('TestRunResults', () => {
   let testRunResults: TestRunResults;
@@ -36,8 +35,7 @@ describe('TestRunResults', () => {
     invocationStatus = newMockInvocationStatus();
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule],
-      aotSummaries: TestRunsModuleNgSummary,
-    });
+      });
     testRunResultsFixture = TestBed.createComponent(TestRunResults);
     testRunResults = testRunResultsFixture.componentInstance;
     el = testRunResultsFixture.debugElement;

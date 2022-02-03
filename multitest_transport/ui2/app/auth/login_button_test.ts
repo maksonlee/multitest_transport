@@ -28,7 +28,6 @@ import {getEl, getTextContent, hasEl} from '../testing/jasmine_util';
 import {newMockCredentialsInfo, newMockPrivateNodeConfig} from '../testing/mtt_mocks';
 
 import {AuthModule} from './auth_module';
-import {AuthModuleNgSummary} from './auth_module.ngsummary';
 import {LoginButton} from './login_button';
 
 describe('LoginButton', () => {
@@ -55,7 +54,6 @@ describe('LoginButton', () => {
 
     TestBed.configureTestingModule({
       imports: [AuthModule, NoopAnimationsModule, RouterTestingModule],
-      aotSummaries: AuthModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttApiClient},
         {provide: Notifier, useValue: notifier},

@@ -24,7 +24,6 @@ import {AoaDevice} from './device';
 import {DeviceList} from './device_list';
 import {DeviceManager} from './device_manager';
 import {DeviceModule} from './device_module';
-import {DeviceModuleNgSummary} from './device_module.ngsummary';
 
 /** Creates a fake AOA device for testing. */
 function createMockAoaDevice(
@@ -56,7 +55,6 @@ describe('DeviceList', () => {
 
     TestBed.configureTestingModule({
       imports: [DeviceModule],
-      aotSummaries: DeviceModuleNgSummary,
       providers: [{provide: DeviceManager, useValue: deviceManager}],
     });
 

@@ -21,7 +21,6 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {getTextContent} from '../testing/jasmine_util';
 import {OverflowList, OverflowListType} from './overflow_list';
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 
 describe('OverflowList', () => {
   let overflowList: OverflowList;
@@ -34,8 +33,7 @@ describe('OverflowList', () => {
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
       declarations: [OverflowList],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
     overflowListFixture = TestBed.createComponent(OverflowList);
     el = overflowListFixture.debugElement;
     overflowList = overflowListFixture.componentInstance;

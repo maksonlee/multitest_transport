@@ -26,7 +26,6 @@ import {getTextContent} from '../testing/jasmine_util';
 
 import {BuildChannelSetup} from './build_channel_setup';
 import {SetupWizardModule} from './setup_wizard_module';
-import {SetupWizardModuleNgSummary} from './setup_wizard_module.ngsummary';
 
 describe('BuildChannelSetup', () => {
   const BUILD_CHANNELS = [
@@ -62,7 +61,6 @@ describe('BuildChannelSetup', () => {
 
     TestBed.configureTestingModule({
       imports: [SetupWizardModule, NoopAnimationsModule, RouterTestingModule],
-      aotSummaries: SetupWizardModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
       ],

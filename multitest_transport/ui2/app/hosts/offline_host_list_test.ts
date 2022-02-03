@@ -32,7 +32,6 @@ import {getEl} from '../testing/jasmine_util';
 import {getMockLabHostInfo, newMockAppData, newMockLabInfosResponse, newMockLabOfflineHostInfosByLabResponse} from '../testing/mtt_lab_mocks';
 
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 import {OfflineHostList} from './offline_host_list';
 
 describe('OfflineHostList', () => {
@@ -90,7 +89,6 @@ describe('OfflineHostList', () => {
           HostsModule,
           NoopAnimationsModule,
         ],
-        aotSummaries: HostsModuleNgSummary,
         providers: [
           {provide: Router, useValue: routerSpy},
           {provide: TfcClient, useValue: tfcClientSpy},
@@ -372,7 +370,6 @@ describe('OfflineHostList', () => {
           NoopAnimationsModule,
           HostsModule,
         ],
-        aotSummaries: HostsModuleNgSummary,
         providers: [
           {provide: Router, useValue: routerSpy},
           {provide: TfcClient, useValue: tfcClientSpy},

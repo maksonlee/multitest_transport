@@ -22,7 +22,6 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {NoteDialogState, NotesDialog} from '../notes/notes_dialog';
 import {AddNotesButton} from './add_notes_button';
 import {NotesModule} from './notes_module';
-import {NotesModuleNgSummary} from './notes_module.ngsummary';
 
 describe('AddNotesButton', () => {
   let addNotesButton: AddNotesButton;
@@ -35,8 +34,7 @@ describe('AddNotesButton', () => {
         NotesModule,
         NoopAnimationsModule,
       ],
-      aotSummaries: NotesModuleNgSummary,
-    });
+      });
 
     addNotesButtonFixture = TestBed.createComponent(AddNotesButton);
     el = addNotesButtonFixture.debugElement;

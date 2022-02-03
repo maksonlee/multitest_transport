@@ -24,7 +24,6 @@ import {HostState} from '../services/tfc_models';
 
 import {RecoveryHostStatus} from './recovery_host_status';
 import {RecoveryModule} from './recovery_module';
-import {RecoveryModuleNgSummary} from './recovery_module.ngsummary';
 
 describe('RecoveryHostStatus', () => {
   let recoveryHostStatus: RecoveryHostStatus;
@@ -37,8 +36,7 @@ describe('RecoveryHostStatus', () => {
         RecoveryModule,
         NoopAnimationsModule,
       ],
-      aotSummaries: RecoveryModuleNgSummary,
-    });
+      });
     recoveryHostStatusFixture = TestBed.createComponent(RecoveryHostStatus);
     el = recoveryHostStatusFixture.debugElement;
     recoveryHostStatus = recoveryHostStatusFixture.componentInstance;

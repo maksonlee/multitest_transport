@@ -18,7 +18,6 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {RouterTestingModule} from '@angular/router/testing';
 
 import {RecoveryModule} from './recovery_module';
-import {RecoveryModuleNgSummary} from './recovery_module.ngsummary';
 import {RecoverySettingPage} from './recovery_setting_page';
 
 describe('SettingPage', () => {
@@ -31,8 +30,7 @@ describe('SettingPage', () => {
         RouterTestingModule,
         RecoveryModule,
       ],
-      aotSummaries: RecoveryModuleNgSummary,
-    });
+      });
     recoverySettingPageFixture = TestBed.createComponent(RecoverySettingPage);
     recoverySettingPage = recoverySettingPageFixture.componentInstance;
     recoverySettingPageFixture.detectChanges();

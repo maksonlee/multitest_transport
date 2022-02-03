@@ -23,7 +23,6 @@ import {getTextContent} from '../testing/jasmine_util';
 
 import {HostDetailsExtraInfos} from './host_details_extra_infos';
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 import {newMockLabHostExtraInfo} from '../testing/mtt_lab_mocks';
 
 
@@ -39,7 +38,6 @@ describe('HostDetailsExtraInfos', () => {
         NoopAnimationsModule,
         RouterTestingModule,
       ],
-      aotSummaries: HostsModuleNgSummary,
       providers: [],
     });
 

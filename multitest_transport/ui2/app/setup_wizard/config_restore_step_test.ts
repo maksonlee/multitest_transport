@@ -25,7 +25,6 @@ import {getTextContent} from '../testing/jasmine_util';
 
 import {ConfigRestoreStep} from './config_restore_step';
 import {SetupWizardModule} from './setup_wizard_module';
-import {SetupWizardModuleNgSummary} from './setup_wizard_module.ngsummary';
 
 
 describe('ConfigRestoreStep', () => {
@@ -43,7 +42,6 @@ describe('ConfigRestoreStep', () => {
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SetupWizardModule],
-      aotSummaries: SetupWizardModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},

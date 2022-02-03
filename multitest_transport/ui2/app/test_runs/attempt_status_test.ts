@@ -26,7 +26,6 @@ import {getTextContent} from '../testing/jasmine_util';
 import {newMockCommandAttempt, newMockTest, newMockTestRun} from '../testing/mtt_mocks';
 import {newMockAppData} from '../testing/mtt_lab_mocks';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('AttemptStatus', () => {
   let attemptStatus: AttemptStatus;
@@ -45,7 +44,6 @@ describe('AttemptStatus', () => {
     attempt = newMockCommandAttempt();
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule],
-      aotSummaries: TestRunsModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: appData},
       ]

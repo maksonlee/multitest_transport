@@ -23,7 +23,6 @@ import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
 import {newMockNameValuePairList} from '../testing/mtt_mocks';
 import {NameValuePairListForm} from './name_value_pair_list_form';
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 
 describe('NameValuePairListForm', () => {
   let nameValuePairListForm: NameValuePairListForm;
@@ -32,8 +31,7 @@ describe('NameValuePairListForm', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
     nameValuePairListFormFixture =
         TestBed.createComponent(NameValuePairListForm);
     el = nameValuePairListFormFixture.debugElement;

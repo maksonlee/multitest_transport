@@ -23,7 +23,6 @@ import {Notifier} from '../services/notifier';
 
 import {FormChangeTracker, UnsavedChangeGuard} from './can_deactivate';
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 
 class FalseTracker extends FormChangeTracker {
   override isFormDirty() {
@@ -105,8 +104,7 @@ describe('FormChangeTracker', () => {
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
       declarations: [TestComponent, TestComponentChild],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
     testComponentFixture = TestBed.createComponent(TestComponent);
     testComponent = testComponentFixture.componentInstance;
     el = testComponentFixture.debugElement;

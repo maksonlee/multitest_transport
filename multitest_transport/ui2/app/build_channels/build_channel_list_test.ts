@@ -27,7 +27,6 @@ import {getTextContent} from '../testing/jasmine_util';
 
 import {BuildChannelList} from './build_channel_list';
 import {BuildChannelsModule} from './build_channels_module';
-import {BuildChannelsModuleNgSummary} from './build_channels_module.ngsummary';
 
 describe('BuildChannelList', () => {
   const BUILD_CHANNELS = [
@@ -55,7 +54,6 @@ describe('BuildChannelList', () => {
 
     TestBed.configureTestingModule({
       imports: [BuildChannelsModule, NoopAnimationsModule, RouterTestingModule],
-      aotSummaries: BuildChannelsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},

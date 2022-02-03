@@ -33,7 +33,6 @@ import {getTextContent} from '../testing/jasmine_util';
 import {newMockAppData, newMockLabAssignedHostInfosByLabResponse, newMockLabInfosResponse, newMockLabOfflineHostInfosByLabResponse} from '../testing/mtt_lab_mocks';
 
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 import {OfflineHostAssignmentsPage} from './offline_host_assignments_page';
 
 describe('OfflineHostAssignmentsPage', () => {
@@ -92,7 +91,6 @@ describe('OfflineHostAssignmentsPage', () => {
           HostsModule,
           NoopAnimationsModule,
         ],
-        aotSummaries: HostsModuleNgSummary,
         providers: [
           Title,
           {provide: ActivatedRoute, useValue: activatedRouteSpy},

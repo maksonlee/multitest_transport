@@ -25,7 +25,6 @@ import {HostRecoveryStateRequest, RecoveryState} from '../services/tfc_models';
 import {getMockLabHostInfo, newMockAppData} from '../testing/mtt_lab_mocks';
 
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 import {MarkHostAsFixedButton} from './mark_host_as_fixed_button';
 
 describe('MarkHostAsFixedButton', () => {
@@ -45,7 +44,6 @@ describe('MarkHostAsFixedButton', () => {
         HostsModule,
         NoopAnimationsModule,
       ],
-      aotSummaries: HostsModuleNgSummary,
       providers: [
         {
           provide: APP_DATA,

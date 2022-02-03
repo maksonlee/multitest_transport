@@ -5,7 +5,6 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {getTextContent} from 'google3/third_party/py/multitest_transport/ui2/app/testing/jasmine_util';
 import {DeviceDetailsExtraInfos} from './device_details_extra_infos';
 import {DevicesModule} from './devices_module';
-import {DevicesModuleNgSummary} from './devices_module.ngsummary';
 import {newMockLabDeviceExtraInfo} from '../testing/mtt_lab_mocks';
 
 describe('DeviceDetailsExtraInfos', () => {
@@ -19,7 +18,6 @@ describe('DeviceDetailsExtraInfos', () => {
         NoopAnimationsModule,
         RouterTestingModule,
       ],
-      aotSummaries: DevicesModuleNgSummary,
       providers: [],
     });
     deviceDetailsExtraInfosFixture =

@@ -24,7 +24,6 @@ import {getTextContent} from '../testing/jasmine_util';
 import {newMockNameValuePair} from '../testing/mtt_mocks';
 
 import {SetupWizardModule} from './setup_wizard_module';
-import {SetupWizardModuleNgSummary} from './setup_wizard_module.ngsummary';
 import {WifiSetup} from './wifi_setup';
 
 
@@ -43,7 +42,6 @@ describe('WiFi Setup', () => {
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SetupWizardModule],
-      aotSummaries: SetupWizardModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
       ],

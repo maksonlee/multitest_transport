@@ -36,7 +36,6 @@ import {newMockDeviceNoteList, newMockHostNoteList} from '../testing/mtt_lab_moc
 import {NoteList} from './note_list';
 import {NoteDialogParams, NoteDialogState} from './notes_dialog';
 import {NotesModule} from './notes_module';
-import {NotesModuleNgSummary} from './notes_module.ngsummary';
 
 describe('Device noteList', () => {
   const id = 'serial01';
@@ -79,7 +78,6 @@ describe('Device noteList', () => {
         NoopAnimationsModule,
         RouterTestingModule,
       ],
-      aotSummaries: NotesModuleNgSummary,
       providers: [
         {provide: TfcClient, useValue: tfcClient},
         {provide: Router, useValue: routerSpy},
@@ -227,7 +225,6 @@ describe('Host noteList', () => {
         NoopAnimationsModule,
         RouterTestingModule,
       ],
-      aotSummaries: NotesModuleNgSummary,
       providers: [
         {provide: ActivatedRoute, useValue: activatedRouteSpy},
         {provide: Notifier, useValue: notifierSpy},

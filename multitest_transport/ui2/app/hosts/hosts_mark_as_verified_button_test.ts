@@ -27,7 +27,6 @@ import {newMockAppData} from '../testing/mtt_lab_mocks';
 
 import {HostsMarkAsVerifiedButton} from './hosts_mark_as_verified_button';
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 
 describe('HostsMarkAsVerifiedButton', () => {
   let hostsMarkAsVerifiedButton: HostsMarkAsVerifiedButton;
@@ -47,7 +46,6 @@ describe('HostsMarkAsVerifiedButton', () => {
         HostsModule,
         NoopAnimationsModule,
       ],
-      aotSummaries: HostsModuleNgSummary,
       providers: [
         {
           provide: APP_DATA,

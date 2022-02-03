@@ -28,7 +28,6 @@ import {PredefinedMessageType} from '../services/tfc_models';
 import {newMockLabInfosResponse, newMockPredefinedMessage, newMockPredefinedMessagesResponse} from '../testing/mtt_lab_mocks';
 
 import {NotesModule} from './notes_module';
-import {NotesModuleNgSummary} from './notes_module.ngsummary';
 import {FilterParams, PredefinedMessageList} from './predefined_message_list';
 
 describe('Predefined Message List', () => {
@@ -68,8 +67,7 @@ describe('Predefined Message List', () => {
         {provide: Notifier, useValue: notifierSpy},
         {provide: TfcClient, useValue: tfcClientSpy},
       ],
-      aotSummaries: NotesModuleNgSummary,
-
+      
     });
     predefinedMessageListFixture =
         TestBed.createComponent(PredefinedMessageList);

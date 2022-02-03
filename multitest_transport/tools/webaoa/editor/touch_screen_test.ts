@@ -23,7 +23,6 @@ import {Point} from '../device/device';
 
 import {ClickAction, SwipeAction} from './action';
 import {EditorModule} from './editor_module';
-import {EditorModuleNgSummary} from './editor_module.ngsummary';
 import {TouchScreen} from './touch_screen';
 
 /**
@@ -46,8 +45,7 @@ describe('TouchScreen', () => {
 
     TestBed.configureTestingModule({
       imports: [EditorModule],
-      aotSummaries: EditorModuleNgSummary,
-    });
+      });
 
     fixture = TestBed.createComponent(TouchScreen);
     element = fixture.debugElement;

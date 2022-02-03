@@ -26,7 +26,6 @@ import {newMockLabHostInfo} from '../testing/mtt_lab_mocks';
 
 import {HostDetailsDeviceCountSummaries} from './host_details_device_count_summaries';
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 
 describe('HostDetailsDeviceCountSummaries', () => {
   let hostDetailsDeviceCountSummaries: HostDetailsDeviceCountSummaries;
@@ -48,7 +47,6 @@ describe('HostDetailsDeviceCountSummaries', () => {
         NoopAnimationsModule,
         RouterTestingModule,
       ],
-      aotSummaries: HostsModuleNgSummary,
       providers: [
         {provide: TfcClient, useValue: tfcClient},
       ],

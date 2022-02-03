@@ -23,7 +23,6 @@ import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
 import {newMockNameMultiValuePairList} from '../testing/mtt_mocks';
 
 import {DeviceActionsModule} from './device_actions_module';
-import {DeviceActionsModuleNgSummary} from './device_actions_module.ngsummary';
 import {TradefedConfigOptionForm} from './tradefed_config_option_form';
 
 describe('TradefedConfigOptionForm', () => {
@@ -35,8 +34,7 @@ describe('TradefedConfigOptionForm', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, DeviceActionsModule],
-      aotSummaries: DeviceActionsModuleNgSummary,
-    });
+      });
 
     tradefedConfigOptionFormFixture =
         TestBed.createComponent(TradefedConfigOptionForm);

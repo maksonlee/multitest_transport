@@ -26,7 +26,6 @@ import {newMockAppData} from '../testing/mtt_lab_mocks';
 
 import {TestRunTargetPicker} from './test_run_target_picker';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 describe('TestRunTargetPicker', () => {
   let testRunTargetPicker: TestRunTargetPicker;
@@ -52,7 +51,6 @@ describe('TestRunTargetPicker', () => {
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, RouterTestingModule, TestRunsModule],
-      aotSummaries: TestRunsModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: appData},
         {provide: TfcClient, useValue: tfcClient},

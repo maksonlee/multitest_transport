@@ -34,7 +34,6 @@ import {newMockAppData, newMockDeviceNote, newMockFilterHintList, newMockLabDevi
 
 import {DeviceList} from './device_list';
 import {DevicesModule} from './devices_module';
-import {DevicesModuleNgSummary} from './devices_module.ngsummary';
 
 describe('DeviceList', () => {
   let deviceList: DeviceList;
@@ -92,8 +91,7 @@ describe('DeviceList', () => {
         {provide: Router, useValue: routerSpy},
         {provide: TfcClient, useValue: tfcClient},
       ],
-      aotSummaries: DevicesModuleNgSummary,
-    });
+      });
     deviceListFixture = TestBed.createComponent(DeviceList);
     deviceListFixture.detectChanges();
     el = deviceListFixture.debugElement;
@@ -818,8 +816,7 @@ describe('DeviceList in ATS instance', () => {
           useValue: activatedRouteSpy,
         },
       ],
-      aotSummaries: DevicesModuleNgSummary,
-    });
+      });
     deviceListFixture = TestBed.createComponent(DeviceList);
     deviceListFixture.detectChanges();
     deviceList = deviceListFixture.componentInstance;

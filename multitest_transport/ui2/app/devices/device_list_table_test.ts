@@ -32,7 +32,6 @@ import {newMockAppData, newMockLabDeviceInfo, newMockLabDeviceInfosResponse} fro
 
 import {DeviceListTable} from './device_list_table';
 import {DevicesModule} from './devices_module';
-import {DevicesModuleNgSummary} from './devices_module.ngsummary';
 
 describe('DeviceListTable', () => {
   let deviceListTable: DeviceListTable;
@@ -73,7 +72,6 @@ describe('DeviceListTable', () => {
         DevicesModule,
         NoopAnimationsModule,
       ],
-      aotSummaries: DevicesModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: newMockAppData()},
         {provide: Notifier, useValue: notifierSpy},

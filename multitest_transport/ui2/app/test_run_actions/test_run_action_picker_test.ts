@@ -23,7 +23,6 @@ import {getEl, getEls, hasEl} from '../testing/jasmine_util';
 
 import {TestRunActionPicker} from './test_run_action_picker';
 import {TestRunActionsModule} from './test_run_actions_module';
-import {TestRunActionsModuleNgSummary} from './test_run_actions_module.ngsummary';
 
 describe('TestRunActionPicker', () => {
   let fixture: ComponentFixture<TestRunActionPicker>;
@@ -33,8 +32,7 @@ describe('TestRunActionPicker', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, TestRunActionsModule],
-      aotSummaries: TestRunActionsModuleNgSummary,
-    });
+      });
 
     fixture = TestBed.createComponent(TestRunActionPicker);
     element = fixture.debugElement;

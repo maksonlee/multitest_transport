@@ -28,7 +28,6 @@ import {newMockCredentialsInfo} from '../testing/mtt_mocks';
 
 import {BuildChannelItem} from './build_channel_item';
 import {BuildChannelsModule} from './build_channels_module';
-import {BuildChannelsModuleNgSummary} from './build_channels_module.ngsummary';
 
 describe('BuildChannelItem', () => {
   let mtt: jasmine.SpyObj<MttClient>;
@@ -47,7 +46,6 @@ describe('BuildChannelItem', () => {
 
     TestBed.configureTestingModule({
       imports: [BuildChannelsModule, NoopAnimationsModule, RouterTestingModule],
-      aotSummaries: BuildChannelsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mtt},
         {provide: Notifier, useValue: notifier},

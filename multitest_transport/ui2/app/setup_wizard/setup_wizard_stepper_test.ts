@@ -25,7 +25,6 @@ import {getTextContent} from '../testing/jasmine_util';
 import {newMockBuildChannel, newMockNotImportedConfigSetInfo} from '../testing/mtt_mocks';
 
 import {SetupWizardModule} from './setup_wizard_module';
-import {SetupWizardModuleNgSummary} from './setup_wizard_module.ngsummary';
 import {SetupWizardStepper} from './setup_wizard_stepper';
 
 
@@ -59,7 +58,6 @@ describe('SetupWizardStepper', () => {
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SetupWizardModule],
-      aotSummaries: SetupWizardModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
       ],

@@ -31,7 +31,6 @@ import {newMockAppData, newMockDeviceInfosResponse, newMockDeviceNote, newMockDe
 
 import {RecoveryDeviceList} from './recovery_device_list';
 import {RecoveryModule} from './recovery_module';
-import {RecoveryModuleNgSummary} from './recovery_module.ngsummary';
 
 describe('RecoveryDeviceList', () => {
   const hostName = 'host1';
@@ -64,7 +63,6 @@ describe('RecoveryDeviceList', () => {
         NoopAnimationsModule,
         RouterTestingModule,
       ],
-      aotSummaries: RecoveryModuleNgSummary,
       providers: [
         {provide: ActivatedRoute, useValue: activatedRouteSpy},
         {provide: FeedbackService},

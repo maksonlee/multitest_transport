@@ -28,7 +28,6 @@ import {newMockAppData, newMockLabHostInfosResponse} from '../testing/mtt_lab_mo
 
 import {AssignedMeOfflineHostList} from './assigned_me_offline_host_list';
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 
 describe('AssignedMeOfflineHostList', () => {
   let appDataSpy: AppData;
@@ -50,7 +49,6 @@ describe('AssignedMeOfflineHostList', () => {
         NoopAnimationsModule,
         RouterTestingModule,
       ],
-      aotSummaries: HostsModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: appDataSpy},
         {provide: FeedbackService, useValue: feedbackService},

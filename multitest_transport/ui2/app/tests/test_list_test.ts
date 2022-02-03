@@ -30,7 +30,6 @@ import * as mttMocks from '../testing/mtt_mocks';
 
 import {TestList} from './test_list';
 import {TestModule} from './test_module';
-import {TestModuleNgSummary} from './test_module.ngsummary';
 
 describe('TestList', () => {
   const TEST_MAP = {
@@ -77,7 +76,6 @@ describe('TestList', () => {
         TestModule,
         RouterTestingModule,
       ],
-      aotSummaries: TestModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mttClient},
         {provide: MttObjectMapService, useValue: mttObjectMapService},

@@ -30,7 +30,6 @@ import {newMockAppData, newMockLabHostInfoHistoryList} from '../testing/mtt_lab_
 
 import {HostDetailsHistory} from './host_details_history';
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 
 describe('HostDetailsHistory', () => {
   const hostInfoHistoryList = newMockLabHostInfoHistoryList();
@@ -60,7 +59,6 @@ describe('HostDetailsHistory', () => {
         NoopAnimationsModule,
         RouterTestingModule,
       ],
-      aotSummaries: HostsModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: newMockAppData()},
         {provide: TfcClient, useValue: tfcClient},

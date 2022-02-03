@@ -28,7 +28,6 @@ import {newMockRequest, newMockTest, newMockTestRun, newMockTestRunOutput} from 
 
 import {MAX_CONSOLE_LENGTH, POLL_INTERVAL, TestRunConsole} from './test_run_console';
 import {TestRunsModule} from './test_runs_module';
-import {TestRunsModuleNgSummary} from './test_runs_module.ngsummary';
 
 /** Constructs an active or inactive command attempt. */
 function newCommandAttempt(active: boolean, id = 'attempt_id'): CommandAttempt {
@@ -56,7 +55,6 @@ describe('TestRunConsole', () => {
 
     TestBed.configureTestingModule({
       imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
-      aotSummaries: TestRunsModuleNgSummary,
       providers: [
         {provide: MttClient, useValue: mtt},
         {provide: FileService, useValue: {}},

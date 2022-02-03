@@ -23,7 +23,6 @@ import {getEl, getTextContent} from '../testing/jasmine_util';
 
 import {ListForm} from './list_form';
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 
 describe('ListForm', () => {
   let listForm: ListForm;
@@ -32,8 +31,7 @@ describe('ListForm', () => {
   beforeEach(async () => {
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
     listFormFixture = TestBed.createComponent(ListForm);
     el = listFormFixture.debugElement;
     listForm = listFormFixture.componentInstance;

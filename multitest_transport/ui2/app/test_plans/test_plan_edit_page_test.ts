@@ -31,7 +31,6 @@ import {newMockTestPlan} from '../testing/mtt_mocks';
 
 import {TestPlanEditPage} from './test_plan_edit_page';
 import {TestPlansModule} from './test_plans_module';
-import {TestPlansModuleNgSummary} from './test_plans_module.ngsummary';
 
 describe('TestPlanEditPage', () => {
   const testPlan = newMockTestPlan('test_plan_id_1', 'test_plan_name_1');
@@ -66,7 +65,6 @@ describe('TestPlanEditPage', () => {
         RouterTestingModule,
         TestPlansModule,
       ],
-      aotSummaries: TestPlansModuleNgSummary,
       providers: [
         {provide: APP_DATA, useValue: {}},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},

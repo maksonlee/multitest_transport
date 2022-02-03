@@ -3,7 +3,6 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 import {ViewColumnsButton} from './view_columns_button';
 
 describe('ViewColumnsButton', () => {
@@ -17,8 +16,7 @@ describe('ViewColumnsButton', () => {
         SharedModule,
         NoopAnimationsModule,
       ],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
 
     viewColumnsButtonFixture = TestBed.createComponent(ViewColumnsButton);
     el = viewColumnsButtonFixture.debugElement;

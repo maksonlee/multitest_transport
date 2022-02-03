@@ -30,7 +30,6 @@ import {newMockAppData} from '../testing/mtt_lab_mocks';
 
 import {DeviceDetails} from './device_details';
 import {DevicesModule} from './devices_module';
-import {DevicesModuleNgSummary} from './devices_module.ngsummary';
 
 describe('DeviceDetails', () => {
   let deviceDetails: DeviceDetails;
@@ -76,8 +75,7 @@ describe('DeviceDetails', () => {
         },
         {provide: MAT_DIALOG_DATA, useValue: {}},
       ],
-      aotSummaries: DevicesModuleNgSummary,
-    });
+      });
     deviceDetailsFixture = TestBed.createComponent(DeviceDetails);
     deviceDetailsFixture.detectChanges();
     el = deviceDetailsFixture.debugElement;

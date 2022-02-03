@@ -21,7 +21,6 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {Paginator} from './paginator';
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 
 describe('Paginator', () => {
   let fixture: ComponentFixture<Paginator>;
@@ -34,8 +33,7 @@ describe('Paginator', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, SharedModule],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
 
     // configure component
     fixture = TestBed.createComponent(Paginator);

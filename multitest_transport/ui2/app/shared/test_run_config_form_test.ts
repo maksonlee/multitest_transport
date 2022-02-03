@@ -27,7 +27,6 @@ import {Notifier} from '../services/notifier';
 import {newMockTest, newMockTestRunConfig} from '../testing/mtt_mocks';
 
 import {SharedModule} from './shared_module';
-import {SharedModuleNgSummary} from './shared_module.ngsummary';
 import {TestRunConfigForm} from './test_run_config_form';
 
 describe('TestRunConfigForm', () => {
@@ -62,8 +61,7 @@ describe('TestRunConfigForm', () => {
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: Notifier, useValue: notifier},
       ],
-      aotSummaries: SharedModuleNgSummary,
-    });
+      });
 
     fixture = TestBed.createComponent(TestRunConfigForm);
     debugEl = fixture.debugElement;

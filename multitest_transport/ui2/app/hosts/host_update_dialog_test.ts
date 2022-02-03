@@ -32,7 +32,6 @@ import {newMockAppData, newMockHostConfig, newMockHostConfigList, newMockHostUpd
 
 import {HostUpdateDialog, HostUpdateDialogData, UpdateMode} from './host_update_dialog';
 import {HostsModule} from './hosts_module';
-import {HostsModuleNgSummary} from './hosts_module.ngsummary';
 
 describe('HostUpdateDialog', () => {
   let routerSpy: jasmine.SpyObj<Router>;
@@ -87,7 +86,6 @@ describe('HostUpdateDialog', () => {
         HostsModule,
         HttpClientTestingModule,
       ],
-      aotSummaries: HostsModuleNgSummary,
       providers: [
         {provide: MAT_DIALOG_DATA, useValue: dialogData},
         {provide: APP_DATA, useValue: newMockAppData()},
