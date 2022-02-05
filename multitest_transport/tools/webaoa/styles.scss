@@ -29,20 +29,21 @@ $theme: mat.define-light-theme(
     ),
   )
 );
-$typography: mat.define-typography-config();
-
 @include mat.all-component-themes($theme);
 @include mat.mdc-checkbox-theme($theme);
 @include mat.mdc-dialog-theme($theme);
 @include mat.mdc-tooltip-theme($theme);
-@include mat.mdc-button-theme($theme);
 @include mat.mdc-snack-bar-theme($theme);
 @include mat.mdc-table-theme($theme);
 @include mat.mdc-progress-spinner-theme($theme);
 @include mat.mdc-progress-bar-theme($theme);
 
+// Typography
+$typography: mat.define-typography-config();
 @include mat.mdc-checkbox-typography($typography);
 @include mat.mdc-dialog-typography($typography);
+@include mat.mdc-fab-typography($typography);
+@include mat.mdc-icon-button-typography($typography);
 @include mat.mdc-tooltip-typography($typography);
 @include mat.mdc-button-typography($typography);
 @include mat.mdc-snack-bar-typography($typography);
@@ -54,7 +55,9 @@ $typography: mat.define-typography-config();
 $button-primary: mat.define-palette(mat.$grey-palette);
 $button-accent: mat.define-palette(mat.$blue-palette, 700);
 $button-theme: mat.define-light-theme($button-primary, $button-accent);
-@include mat.button-theme($button-theme);
+@include mat.mdc-button-theme($button-theme);
+@include mat.mdc-fab-theme($button-theme);
+@include mat.mdc-icon-button-theme($button-theme);
 
 // General styles
 * {
