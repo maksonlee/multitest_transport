@@ -92,13 +92,12 @@ class ConfigSetHelperTest(testbed_dependent_test.TestbedDependentTest):
   @mock.patch.object(build, 'GetBuildChannel')
   def testGetRemoteConfigSetInfos(
       self, mock_get_build_channel, mock_read_remote_file):
-    mock_build_items = [
-        build.BuildItem(name='foo.yaml', path='foo.yaml', is_file=True),
-        build.BuildItem(name='bar.yaml', path='bar.yaml', is_file=True),
-    ]
+    item_1 = build.BuildItem(name='foo.yaml', path='foo.yaml', is_file=True)
+    item_2 = build.BuildItem(name='bar.yaml', path='bar.yaml', is_file=True)
     mock_build_channel = mock.MagicMock()
     mock_get_build_channel.return_value = mock_build_channel
-    mock_build_channel.ListBuildItems.return_value = (mock_build_items, None)
+    mock_build_channel.ListBuildItems.side_effect = [([item_1], 'page_token'),
+                                                     ([item_2], None)]
     mock_read_remote_file.side_effect = [
         b'info:\n'
         b'- name: FOO\n'

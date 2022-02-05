@@ -159,7 +159,14 @@ def GetRemoteConfigSetInfos():
     return []
 
   try:
-    build_items, _ = build_channel.ListBuildItems(path=locator.path)
+    build_items = []
+    page_token = None
+    while True:
+      page_items, page_token = build_channel.ListBuildItems(
+          path=locator.path, page_token=page_token)
+      build_items.extend(page_items)
+      if not page_token:
+        break
   except errors.FilePermissionError as err:
     logging.info('No permission to access %s: %s', CONFIG_SET_URL, err)
     return []
