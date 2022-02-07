@@ -12,37 +12,57 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Base classes for MTT plugins."""
+"""Base classes and utility methods for ATS plugins."""
 import collections
+import dataclasses
+import datetime
 import enum
 import logging
 import re
+from typing import Dict, Generic, List, Optional, Tuple, Type, TypeVar
 
-import attr
+from google.auth import credentials as ga_credentials
+from tradefed_cluster import api_messages as tfc_messages
 
+from multitest_transport.models import ndb_models
 from multitest_transport.plugins.registry import PluginRegistry
+from multitest_transport.util import oauth2_util
 
 BUILD_PROVIDER_REGISTRY = PluginRegistry()
 TEST_RUN_HOOK_REGISTRY = PluginRegistry()
 
-OptionDef = collections.namedtuple(
-    'OptionDef', ['name', 'value_type', 'choices', 'default'])
+# Re-export commonly used values for convenience.
+AuthorizationMethod = ndb_models.AuthorizationMethod
 
-BuildItem = collections.namedtuple('BuildItem', [
-    'name', 'path', 'is_file', 'size', 'timestamp', 'description'
-])
-BuildItem.__new__.__defaults__ = (False, None, None, None, None)
-
-# A URL pattern that can be handled by a build provider.
-UrlPattern = collections.namedtuple(
-    'UrlPattern',
-    ['url', 'path'])
+# Supported option value types.
+OptionValue = TypeVar('OptionValue', str, int)
 
 
-class AuthorizationMethod(enum.Enum):
-  """Authorization methods."""
-  OAUTH2_AUTHORIZATION_CODE = 1
-  OAUTH2_SERVICE_ACCOUNT = 2
+@dataclasses.dataclass(frozen=True)
+class OptionDef(Generic[OptionValue]):
+  """Option definition."""
+  name: str
+  value_type: Type[OptionValue]
+  choices: Optional[List[OptionValue]] = None
+  default: Optional[OptionValue] = None
+
+
+@dataclasses.dataclass(frozen=True)
+class BuildItem:
+  """File returned by a build provider."""
+  name: str
+  path: str
+  is_file: bool = False
+  size: Optional[int] = None
+  timestamp: Optional[datetime.datetime] = None
+  description: Optional[str] = None
+
+
+@dataclasses.dataclass(frozen=True)
+class UrlPattern:
+  """URL pattern that can be handled by a build provider."""
+  url: str
+  path: str
 
 
 class BuildItemType(enum.Enum):
@@ -51,20 +71,21 @@ class BuildItemType(enum.Enum):
   DIRECTORY = 2
 
 
-class BuildProviderOptions(object):
+class BuildProviderOptions:
   """A class to store parsed build provider options."""
 
-  def __init__(self, option_def_map):
+  def __init__(self, option_def_map: Dict[str, OptionDef]):
     self._option_def_map = option_def_map
     # Fill default values
     for name, option_def in self._option_def_map.items():
-      self.__dict__[name] = option_def.default
+      self.__dict__[name] = option_def.value_type(option_def.default)
 
   def Update(self, **kwargs):
     """Updates options values.
 
     Args:
       **kwargs: option name/value pairs to update.
+
     Raises:
       ValueError: if an option is not defined.
     """
@@ -78,19 +99,22 @@ class BuildProviderOptions(object):
 
 class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):
   """A base class for a build provider."""
-
-  name = None
-  auth_methods = []
-  oauth2_config = None
-  url_patterns = []
+  name: str
+  auth_methods: List[AuthorizationMethod] = []
+  oauth2_config: Optional[oauth2_util.OAuth2Config] = None
+  url_patterns: List[UrlPattern] = []
 
   def __init__(self):
-    """ctor."""
+    super().__init__()
     self._option_def_map = collections.OrderedDict()
     self._options = None
     self._credentials = None
 
-  def AddOptionDef(self, name, value_type=str, choices=None, default=None):
+  def AddOptionDef(self,
+                   name: str,
+                   value_type: Type[OptionValue] = str,
+                   choices: Optional[List[OptionValue]] = None,
+                   default: Optional[OptionValue] = None):
     """Adds a new option definition.
 
     Option definitions are used to validate user-provided options and render UI.
@@ -100,6 +124,7 @@ class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):
       value_type: a value type.
       choices: a list of possible values (optional).
       default: a default value (optional).
+
     Raises:
       ValueError: if an option is already defined.
     """
@@ -110,7 +135,7 @@ class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):
   def GetOptionDefs(self):
     return self._option_def_map.values()
 
-  def GetOptions(self):
+  def GetOptions(self) -> BuildProviderOptions:
     if not self._options:
       self._options = BuildProviderOptions(self._option_def_map)
     return self._options
@@ -124,7 +149,7 @@ class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):
     options = self.GetOptions()
     options.Update(**kwargs)
 
-  def GetCredentials(self):
+  def GetCredentials(self) -> Optional[ga_credentials.Credentials]:
     """Returns stored credentials.
 
     Returns:
@@ -132,7 +157,7 @@ class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):
     """
     return self._credentials
 
-  def UpdateCredentials(self, credentials):
+  def UpdateCredentials(self, credentials: ga_credentials.Credentials):
     """Updates stored credentials for a provider.
 
     Args:
@@ -140,7 +165,7 @@ class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):
     """
     self._credentials = credentials
 
-  def GetOAuth2Config(self):
+  def GetOAuth2Config(self) -> Optional[oauth2_util.OAuth2Config]:
     """Returns OAuth2Config object.
 
     This must be implemented by a child build provider. If it returns None,
@@ -151,29 +176,36 @@ class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):
     """
     return None
 
-  def ListBuildItems(self, path=None, page_token=None, item_type=None):
-    """List build items in a given path.
+  def ListBuildItems(
+      self,
+      path: Optional[str] = None,
+      page_token: Optional[str] = None,
+      item_type: Optional[BuildItemType] = None
+  ) -> Tuple[List[BuildItem], Optional[str]]:
+    """List build items under a given path.
 
     Args:
       path: a path within a build channel.
       page_token: an optional page token.
       item_type: a type of build items to list. Returns all types if None.
+
     Returns:
       (a list of BuildItem object, a next page token)
     """
     raise NotImplementedError('ListBuildItems() is not implemented.')
 
-  def GetBuildItem(self, path):
+  def GetBuildItem(self, path: str) -> Optional[BuildItem]:
     """Get a build item.
 
     Args:
       path: a build item path.
+
     Returns:
       a BuildItem object. None if the build item does not exist.
     """
     raise NotImplementedError('GetBuildItem() is not implemented.')
 
-  def DeleteBuildItem(self, path):
+  def DeleteBuildItem(self, path: str):
     """Delete a build item.
 
     Args:
@@ -181,12 +213,13 @@ class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):
     """
     raise NotImplementedError('DeleteBuildItem() is not implemented.')
 
-  def DownloadFile(self, path, offset=0):
+  def DownloadFile(self, path: str, offset: int = 0):
     """Download a build file.
 
     Args:
       path: a build file path
       offset: byte offset to read from
+
     Yields:
       content: chunk of data read
       offset: current position in file
@@ -194,7 +227,7 @@ class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):
     """
     raise NotImplementedError('DownloadFile() is not implemented.')
 
-  def FindBuildItemPath(self, url):
+  def FindBuildItemPath(self, url: str) -> Optional[str]:
     """Find a build item by a URL.
 
     If a URL matches any known URL patterns, it will return a corresponding
@@ -202,6 +235,7 @@ class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):
 
     Args:
       url: a URL.
+
     Returns:
       a build item path if a URL belongs to this build channel. None otherwise.
     """
@@ -209,23 +243,22 @@ class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):
       m = re.match(url_pattern.url, url)
       if not m:
         continue
-      path = url_pattern.path.format(**m.groupdict())
-      return path
+      return url_pattern.path.format(**m.groupdict())
     return None
 
 
-def GetBuildProviderClass(name):
+def GetBuildProviderClass(name: str) -> Optional[Type[BuildProvider]]:
   """Retrieves a registered build provider class by its name."""
   return BUILD_PROVIDER_REGISTRY.GetPluginClass(name)
 
 
-def ListBuildProviderNames():
+def ListBuildProviderNames() -> List[str]:
   """Lists all registered build provider names."""
   return BUILD_PROVIDER_REGISTRY.ListPluginNames()
 
 
-@attr.s(frozen=True)
-class TestRunHookContext(object):
+@dataclasses.dataclass(frozen=True)
+class TestRunHookContext:
   """Test run hook execution context.
 
   Attributes:
@@ -234,25 +267,35 @@ class TestRunHookContext(object):
     latest_attempt: optional latest finished attempt
     next_task: optional next task to be executed
   """
-  test_run = attr.ib()
-  phase = attr.ib()
-  latest_attempt = attr.ib(default=None)
-  next_task = attr.ib(default=None)
+  test_run: ndb_models.TestRun
+  phase: ndb_models.TestRunPhase
+  latest_attempt: Optional[tfc_messages.CommandAttemptMessage] = None
+  next_task: Optional['TestRunTask'] = None
 
 
-@attr.s
-class TestRunTask(object):
-  """Mutable test run attempt not yet sent to the runner."""
-  task_id = attr.ib()  # task ID
-  command_line = attr.ib()  # command line to execute
-  device_serials = attr.ib()  # list of device serials
-  extra_options = attr.ib()  # dict of extra options to pass to runner
+@dataclasses.dataclass()
+class TestRunTask:
+  """Mutable test run attempt not yet sent to the runner.
+
+  Attributes:
+    task_id: task ID
+    command_line: command line to execute
+    extra_options: dict of extra options to pass to runner
+  """
+  task_id: str
+  command_line: str
+  extra_options: Dict[str, List[str]]
 
 
 class TestRunHook(metaclass=TEST_RUN_HOOK_REGISTRY.GetMetaclass()):
   """Base class for all test run hooks."""
+  name: str
+  oauth2_config: Optional[oauth2_util.OAuth2Config]
 
-  def Execute(self, context):
+  def __init__(self, **_):
+    super().__init__()
+
+  def Execute(self, context: TestRunHookContext):
     """Execute the hook.
 
     Args:
@@ -261,6 +304,6 @@ class TestRunHook(metaclass=TEST_RUN_HOOK_REGISTRY.GetMetaclass()):
     raise NotImplementedError()
 
 
-def GetTestRunHookClass(name):
+def GetTestRunHookClass(name: str) -> Optional[Type[TestRunHook]]:
   """Retrieve a run hook class by its name."""
   return TEST_RUN_HOOK_REGISTRY.GetPluginClass(name)

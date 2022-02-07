@@ -49,7 +49,7 @@ def ExecuteHooks(test_run_id, phase, attempt_id=None, task=None):
   latest_attempt = _GetLatestAttempt(test_run, attempt_id)
   hook_context = plugins.TestRunHookContext(
       test_run=test_run,
-      phase=phase,
+      phase=ndb_models.TestRunPhase(phase),
       latest_attempt=latest_attempt,
       next_task=task)
   for action in test_run.test_run_actions:
@@ -92,7 +92,7 @@ def _ExecuteHook(action, hook_context):
         analytics.TEST_RUN_ACTION_CATEGORY,
         analytics.EXECUTE_ACTION,
         label=action.hook_class_name,
-        value=hook_context.phase.number)
+        value=int(hook_context.phase))
     hook.Execute(hook_context)
   except Exception as e:      logging.exception('Failed to execute action %s', action)
     event_log.Error(hook_context.test_run,
@@ -139,7 +139,6 @@ class TfcTaskInterceptor(tfc_plugins.Plugin):
     return plugins.TestRunTask(
         task_id=command_task.task_id,
         command_line=command_task.command_line,
-        device_serials=list(command_task.device_serials),
         extra_options=api_messages.KeyMultiValuePairMessagesToMap(
             command_task.extra_options))
 

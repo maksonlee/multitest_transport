@@ -27,7 +27,7 @@ class RegistryTest(absltest.TestCase):
 
   def testRegisterPlugin(self):
     # Register a mock plugin explicitly
-    class MockPlugin(object):        name = 'mock'
+    class MockPlugin:        name = 'mock'
     self.registry.RegisterPlugin(MockPlugin)
     # Verify that it is in the registry
     self.assertEqual(self.registry.ListPluginNames(), ['mock'])
@@ -35,13 +35,13 @@ class RegistryTest(absltest.TestCase):
 
   def testRegisterPlugin_noName(self):
     # Register a mock plugin with no name explicitly
-    class MockPlugin(object):        pass
+    class MockPlugin:        pass
     self.registry.RegisterPlugin(MockPlugin)
     self.assertEmpty(self.registry.ListPluginNames())  # Not registered
 
   def testRegisterPlugin_abstract(self):
     # Register an abstract mock plugin explicitly
-    class AbstractMockPlugin(object):        name = 'mock'
+    class AbstractMockPlugin:        name = 'mock'
     self.registry.RegisterPlugin(AbstractMockPlugin)
     self.assertEmpty(self.registry.ListPluginNames())  # Not registered
 

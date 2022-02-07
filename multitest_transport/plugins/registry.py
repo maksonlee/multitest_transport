@@ -16,7 +16,7 @@
 import logging
 
 
-class PluginRegistry(object):
+class PluginRegistry:
   """Holds a reference to all the plugin implementations."""
 
   def __init__(self):

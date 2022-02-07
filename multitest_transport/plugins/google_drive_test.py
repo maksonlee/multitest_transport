@@ -17,7 +17,7 @@ import json
 from unittest import mock
 
 from absl.testing import absltest
-import apiclient.http
+import apiclient
 
 from multitest_transport.plugins import base
 from multitest_transport.plugins import google_drive

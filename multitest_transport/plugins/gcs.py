@@ -152,7 +152,7 @@ class GCSBuildProvider(base.BuildProvider):
     bucket, object_name = _ParsePath(path)
     # If an object name is not given, return a root directory.
     if not object_name:
-      return base.BuildItem(name=None, is_file=False, path=path)
+      return base.BuildItem(name='', is_file=False, path=path)
     response = self._GetGCSObject(bucket, object_name)
     if not response and not object_name.endswith(_PATH_DELIMITER):
       # Because directory passed in don't have a trailing slash, need

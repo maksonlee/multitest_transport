@@ -181,15 +181,13 @@ class BuildChannel(object):
     """Supported authorization methods."""
     if not self.is_valid:
       return []
-    # Convert plugins.AuthorizationMethods to ndb_models.AuthorizationMethod.
-    NdbAuthorizationMethod = ndb_models.AuthorizationMethod      auth_methods = [
-        getattr(NdbAuthorizationMethod, x.name)
-        for x in self._provider.auth_methods
-    ]
-    if NdbAuthorizationMethod.OAUTH2_AUTHORIZATION_CODE in auth_methods:
-      if not (self.oauth2_config and self.oauth2_config.is_valid):
-        # Remove OAUTH2_AUTHORIZATION_CODE if oauth2_config is not valid.
-        auth_methods.remove(NdbAuthorizationMethod.OAUTH2_AUTHORIZATION_CODE)
+    auth_methods = self._provider.auth_methods
+    # Disable OAuth2 authentication if the OAuth2 config is not valid.
+    oauth2_method = ndb_models.AuthorizationMethod(
+        ndb_models.AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE)
+    if (oauth2_method in auth_methods and
+        not (self.oauth2_config and self.oauth2_config.is_valid)):
+      auth_methods.remove(oauth2_method)
     return auth_methods
 
   @property
@@ -448,7 +446,7 @@ def FindFile(build_channel_id, path, filename=None):
     # Path can be none when file are at first level into the build channel
     # e.g. mtt:///google_drive/file.txt, in this case google_drive in the
     # id, and file.txt is filename, but path is none.
-    build_item = plugins.BuildItem(name=None, path=None, is_file=False)
+    build_item = plugins.BuildItem(name='', path='', is_file=False)
   if not filename:
     return build_item
 

@@ -88,7 +88,7 @@ class GCSBuildProviderTest(absltest.TestCase):
     """Tests that the root dir is returned if no object name is provided."""
     build_item = self.provider.GetBuildItem('bucket')
     self.assertEqual(build_item,
-                     base.BuildItem(name=None, path='bucket', is_file=False))
+                     base.BuildItem(name='', path='bucket', is_file=False))
 
   def testListBuildItems(self):
     """Tests that GCS files and directories can be listed."""

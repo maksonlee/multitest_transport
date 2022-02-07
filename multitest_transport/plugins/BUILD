@@ -132,8 +132,10 @@ pytype_strict_library(
     visibility = ["//multitest_transport"],
     deps = [
         ":registry_lib",
+        "//multitest_transport/models:ndb_models_lib",
         "//multitest_transport/util",
-        third_party("attr"),
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+        third_party("google/auth:credentials"),
     ],
 )
 
