@@ -63,9 +63,9 @@ export class TestRunTargetPicker extends FormChangeTracker implements
   // former, the query property is undefined. For the latter, the query property
   // is set to a subject that triggers tfcClient. It is triggered when the
   // autocomplete panel needs to display the values.
-  // TODO: Query TFC for products and variants.
   private readonly deviceSpecSuggestion:
       {[key: string]: {values: Observable<string[]>, query?: Subject<void>}} = {
+        build_id: {values: observableOf([])},
         device_serial: {values: observableOf([])},
         device_type: {
           values: observableOf([DeviceType.PHYSICAL, DeviceType.LOCAL_VIRTUAL])
