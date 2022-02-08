@@ -58,3 +58,16 @@ class FileCleanerApi(remote.Service):
           filter(lambda name: name in policy_name_set, config.policy_names))
     settings.put()
     return messages.Convert(settings, messages.FileCleanerSettings)
+
+  @base.ApiMethod(
+      message_types.VoidMessage,
+      messages.FileCleanerSettings,
+      http_method='DELETE',
+      path='/file_cleaner/settings',
+      name='reset')
+  def Reset(self, request):
+    """Resets the server's file cleaner settings."""
+    settings = ndb_models.GetFileCleanerSettings()
+    if settings.key:
+      settings.key.delete()
+    return messages.Convert(settings, messages.FileCleanerSettings)

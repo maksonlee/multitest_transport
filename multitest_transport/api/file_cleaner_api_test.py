@@ -122,6 +122,20 @@ class FileCleanerApiTest(api_test_util.TestCase):
         self._CreateFileCleanerSettings(expected_data),
         ndb_models.GetFileCleanerSettings())
 
+  def testReset(self):
+    """Tests that the file cleaner settings can be reset."""
+    self._CreateFileCleanerSettings({'policies': [], 'configs': []}).put()
+    self.assertNotEqual(ndb_models.GetFileCleanerSettings(),
+                        ndb_models.DEFAULT_FILE_CLEANER_SETTINGS)
+    # Delete request should reset settings to default.
+    self.app.delete('/_ah/api/mtt/v1/file_cleaner/settings')
+    self.assertEqual(ndb_models.GetFileCleanerSettings(),
+                     ndb_models.DEFAULT_FILE_CLEANER_SETTINGS)
+    # Further delete requests are no-ops.
+    self.app.delete('/_ah/api/mtt/v1/file_cleaner/settings')
+    self.assertEqual(ndb_models.GetFileCleanerSettings(),
+                     ndb_models.DEFAULT_FILE_CLEANER_SETTINGS)
+
 
 if __name__ == '__main__':
   absltest.main()
