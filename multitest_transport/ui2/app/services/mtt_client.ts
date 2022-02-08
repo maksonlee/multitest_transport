@@ -412,6 +412,11 @@ export class MttClient {
     return this.http.put(
         `${MTT_API_URL}/file_cleaner/settings`, settings, {context});
   }
+
+  resetFileCleanerSettings() {
+    const context = AnalyticsContext.create('file_cleaner', 'reset');
+    return this.http.delete(`${MTT_API_URL}/file_cleaner/settings`, {context});
+  }
 }
 
 /** Provides access to the config set API. */

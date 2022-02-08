@@ -44,11 +44,15 @@ describe('FileCleanerSettingList', () => {
   beforeEach(() => {
     liveAnnouncer = jasmine.createSpyObj(['announce', 'clear']);
     notifier = jasmine.createSpyObj(['confirm', 'showError', 'showMessage']);
-    client = jasmine.createSpyObj(
-        ['getFileCleanerSettings', 'updateFileCleanerSettings']);
+    client = jasmine.createSpyObj([
+      'getFileCleanerSettings',
+      'updateFileCleanerSettings',
+      'resetFileCleanerSettings',
+    ]);
     client.getFileCleanerSettings.and.returnValue(observableOf(EMPTY_SETTINGS));
     client.updateFileCleanerSettings.and.returnValue(
         observableOf(EMPTY_SETTINGS));
+    client.resetFileCleanerSettings.and.returnValue(observableOf(null));
 
     TestBed.configureTestingModule({
       imports: [FileCleanerModule, NoopAnimationsModule, RouterTestingModule],
@@ -224,5 +228,38 @@ describe('FileCleanerSettingList', () => {
     expect(client.updateFileCleanerSettings)
         .toHaveBeenCalledWith(EMPTY_SETTINGS);
     expect(notifier.showError).toHaveBeenCalled();
+  });
+
+  it('can reset settings', () => {
+    notifier.confirm.and.returnValue(observableOf(true));  // confirm reset
+    getEl(element, '.reset-button').click();
+    fixture.detectChanges();
+
+    expect(client.resetFileCleanerSettings).toHaveBeenCalled();
+    expect(notifier.showMessage)
+        .toHaveBeenCalledWith('File Cleaner settings reset.');
+    expect(notifier.showError).not.toHaveBeenCalled();
+  });
+
+  it('can cancel resetting settings', () => {
+    notifier.confirm.and.returnValue(observableOf(false));  // cancel reset
+    getEl(element, '.reset-button').click();
+    fixture.detectChanges();
+
+    expect(client.resetFileCleanerSettings).not.toHaveBeenCalled();
+    expect(notifier.showMessage).not.toHaveBeenCalled();
+    expect(notifier.showError).not.toHaveBeenCalled();
+  });
+
+  it('can handle errors when resetting settings', () => {
+    notifier.confirm.and.returnValue(observableOf(true));  // confirm reset
+    client.resetFileCleanerSettings.and.returnValue(throwError('reset failed'));
+    getEl(element, '.reset-button').click();
+    fixture.detectChanges();
+
+    expect(notifier.showMessage).not.toHaveBeenCalled();
+    expect(notifier.showError)
+        .toHaveBeenCalledWith(
+            'Failed to reset File Cleaner settings', jasmine.any(Object));
   });
 });

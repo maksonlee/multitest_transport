@@ -136,4 +136,29 @@ export class FileCleanerSettingList implements OnInit, OnDestroy {
               );
         });
   }
+
+  /** Reset file cleaner settings after confirmation. */
+  resetSettings() {
+    this.notifier
+        .confirm(
+            'Do you really want to reset the File Cleaner settings to their' +
+                ' default values?',
+            'Reset settings')
+        .subscribe(result => {
+          if (!result) {
+            return;
+          }
+          this.mtt.resetFileCleanerSettings().subscribe(
+              () => {
+                this.load();
+                this.notifier.showMessage('File Cleaner settings reset.');
+              },
+              error => {
+                this.notifier.showError(
+                    'Failed to reset File Cleaner settings',
+                    buildApiErrorMessage(error));
+              },
+          );
+        });
+  }
 }

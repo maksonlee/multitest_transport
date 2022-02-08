@@ -676,6 +676,15 @@ describe('MttClient', () => {
       });
     });
   });
+
+  describe('resetFileCleanerSettings', () => {
+    it('calls API and parses response correctly', () => {
+      mttClient.resetFileCleanerSettings();
+      expect(httpClientSpy.delete)
+          .toHaveBeenCalledOnceWith(
+              `${MTT_API_URL}/file_cleaner/settings`, jasmine.any(Object));
+    });
+  });
 });
 
 describe('TestRunActionClient', () => {
