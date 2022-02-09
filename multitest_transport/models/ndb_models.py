@@ -255,7 +255,7 @@ class Test(ndb.Model):
   name = ndb.StringProperty(required=True)
   description = ndb.StringProperty()
   test_resource_defs = ndb.StructuredProperty(TestResourceDef, repeated=True)
-  command = ndb.StringProperty(required=True)
+  command = ndb.TextProperty(required=True)
   env_vars = ndb.StructuredProperty(NameValuePair, repeated=True)
   output_file_patterns = ndb.StringProperty(repeated=True)
   result_file = ndb.StringProperty()
@@ -264,7 +264,7 @@ class Test(ndb.Model):
   java_properties = ndb.StructuredProperty(NameValuePair, repeated=True)
   context_file_dir = ndb.StringProperty()
   context_file_pattern = ndb.StringProperty()
-  retry_command_line = ndb.StringProperty()
+  retry_command_line = ndb.TextProperty()
   runner_sharding_args = ndb.StringProperty()
   default_test_run_parameters = ndb.LocalStructuredProperty(TestRunParameter)
   module_config_pattern = ndb.StringProperty()
@@ -425,8 +425,8 @@ class TestRunConfig(ndb.Model):
   """
   test_key = ndb.KeyProperty(kind=Test, required=True)
   cluster = ndb.StringProperty(required=True)
-  command = ndb.StringProperty(required=True, default='')
-  retry_command = ndb.StringProperty(required=True, default='')
+  command = ndb.TextProperty(required=True, default='')
+  retry_command = ndb.TextProperty(required=True, default='')
   device_specs = ndb.StringProperty(repeated=True)
   run_target = ndb.StringProperty()
   run_count = ndb.IntegerProperty(required=True, default=1)
@@ -556,7 +556,7 @@ class TestContextObj(ndb.Model):
     env_vars: environment variables.
     test_resources: a list of TestResourceObj objects.
   """
-  command_line = ndb.StringProperty()
+  command_line = ndb.TextProperty()
   env_vars = ndb.LocalStructuredProperty(NameValuePair, repeated=True)
   test_resources = ndb.LocalStructuredProperty(TestResourceObj, repeated=True)
 
@@ -638,8 +638,8 @@ class TestRun(ndb.Model):
   user = ndb.StringProperty()
   labels = ndb.StringProperty(repeated=True)
   test_plan_key = ndb.KeyProperty(TestPlan)
-  test = ndb.StructuredProperty(Test)
-  test_run_config = ndb.StructuredProperty(TestRunConfig)
+  test = ndb.LocalStructuredProperty(Test)
+  test_run_config = ndb.LocalStructuredProperty(TestRunConfig)
   test_resources = ndb.StructuredProperty(TestResourceObj, repeated=True)
   state = ndb.EnumProperty(TestRunState, default=TestRunState.UNKNOWN)
   is_finalized = ndb.BooleanProperty()
