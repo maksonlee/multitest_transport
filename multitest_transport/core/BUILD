@@ -76,9 +76,9 @@ py_test(
     ],
     deps = [
         ":ndb_upgrader_lib",
-        "//third_party/py/protorpc:protorpc_all",
         "@tradefed_cluster//tradefed_cluster/util:ndb_test_lib",
         third_party("absl/testing:absltest"),
+        third_party("protorpc"),
     ],
 )
 

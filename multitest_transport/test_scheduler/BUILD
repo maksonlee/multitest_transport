@@ -29,7 +29,6 @@ py_test(
         ":download_util_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
-        third_party("mock"),
     ],
 )
 
@@ -41,13 +40,13 @@ pytype_strict_library(
     deps = [
         ":download_util_lib",
         ":test_run_manager_lib",
-        "//third_party/py/flask",
         "//multitest_transport/models",
         "//multitest_transport/util",
         "@tradefed_cluster//tradefed_cluster:api_messages_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster/services:task_scheduler_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
+        third_party("flask"),
         third_party("googleapiclient"),
         third_party("protorpc"),
     ],
@@ -77,7 +76,6 @@ py_test(
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_shim_lib",
         third_party("absl/testing:absltest"),
-        third_party("mock"),
         third_party("webtest"),
     ],
 )
@@ -112,7 +110,6 @@ py_test(
     deps = [
         ":test_plan_kicker_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
-        third_party("mock"),
     ],
 )
 
@@ -138,7 +135,6 @@ py_test(
         ":test_result_handler_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
         "@tradefed_cluster//tradefed_cluster/services:task_scheduler_lib",
-        third_party("mock"),
     ],
 )
 
@@ -165,11 +161,10 @@ py_test(
     ],
     deps = [
         ":test_scheduler_lib",
-        "//third_party/py/absl/testing:absltest",
         "//multitest_transport/models:messages_lib",
         "//multitest_transport/models:ndb_models_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
-        third_party("mock"),
+        third_party("absl/testing:absltest"),
     ],
 )
 
@@ -201,7 +196,6 @@ py_test(
         ":test_result_handler_lib",
         ":tfc_event_handler_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
-        third_party("mock"),
     ],
 )
 
@@ -224,7 +218,6 @@ py_test(
     deps = [
         ":test_run_manager_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
-        third_party("mock"),
     ],
 )
 
