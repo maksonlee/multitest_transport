@@ -203,8 +203,7 @@ ENV GOOGLE_APPLICATION_CREDENTIALS /tmp/keyfile/key.json
 
 COPY . /mtt
 # Compile and remove all python source files.
-RUN find /mtt/google3 -name *.py -exec sed -i "s/from __future__ import google_type_annotations//g" {} \; \
-    && python3 -m compileall -bq /mtt/google3 \
+RUN python3 -m compileall -bq /mtt/google3 \
     && find /mtt/google3 -type f -iname "*.py" ! -iname "gunicorn_config.py" -exec rm -rf {} \;
 # Unzip the selected prebuilt TF runner
 RUN unzip -q /mtt/prebuilts/tradefed/${MTT_TRADEFED_PREBUILT} -d /tradefed
