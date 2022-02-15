@@ -226,12 +226,13 @@ cat << EOF > ${STORAGE_PATH}/netdata/stream.conf
   enabled = yes
 EOF
 
-  netdata -c "${SCRIPT_DIR}/scripts/netdata.conf" \
+  netdata -c "${SCRIPT_DIR}/scripts/netdata/netdata.conf" \
       -p "${NETDATA_PORT}" \
       -W set global "cache directory" "${STORAGE_PATH}/netdata/cache" \
       -W set global "config directory" "${STORAGE_PATH}/netdata" \
       -W set global "lib directory" "${STORAGE_PATH}/netdata/lib" \
       -W set global "log directory" "${STORAGE_PATH}/netdata/log" \
+      -W set health "health configuration directory" "${SCRIPT_DIR}/scripts/netdata/health.d" \
       &
 }
 
@@ -253,12 +254,13 @@ EOF
 
   echo "Streaming Netdata metrics to ${control_server_hostname}:${control_server_stream_port}"
 
-  netdata -c "${SCRIPT_DIR}/scripts/netdata.conf" \
+  netdata -c "${SCRIPT_DIR}/scripts/netdata/netdata.conf" \
       -W set global "cache directory" "${STORAGE_PATH}/netdata/cache" \
       -W set global "config directory" "${STORAGE_PATH}/netdata" \
       -W set global "lib directory" "${STORAGE_PATH}/netdata/lib" \
       -W set global "log directory" "${STORAGE_PATH}/netdata/log" \
       -W set global "memory mode" none \
+      -W set health enabled no \
       -W set web enabled no \
       &
 }
