@@ -24,6 +24,7 @@ from multitest_transport.api import config_set_api
 from multitest_transport.api import device_action_api
 from multitest_transport.api import file_cleaner_api
 from multitest_transport.api import node_config_api
+from multitest_transport.api import netdata_api
 from multitest_transport.api import openapi
 from multitest_transport.api import private_node_config_api
 from multitest_transport.api import test_api
@@ -40,6 +41,7 @@ API_HANDLERS = [
     config_set_api.ConfigSetApi,
     device_action_api.DeviceActionApi,
     file_cleaner_api.FileCleanerApi,
+    netdata_api.NetdataApi,
     node_config_api.NodeConfigApi,
     private_node_config_api.PrivateNodeConfigApi,
     test_api.TestApi,

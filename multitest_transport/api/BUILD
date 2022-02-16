@@ -213,6 +213,7 @@ pytype_strict_library(
         ":config_set_api_lib",
         ":device_action_api_lib",
         ":file_cleaner_api_lib",
+        ":netdata_api_lib",
         ":node_config_api_lib",
         ":openapi_lib",
         ":private_node_config_api_lib",
@@ -389,5 +390,32 @@ py_test(
     deps = [
         ":api_test_util_lib",
         ":file_cleaner_api_lib",
+    ],
+)
+
+pytype_strict_library(
+    name = "netdata_api_lib",
+    srcs = [
+        "netdata_api.py",
+    ],
+    deps = [
+        ":base_lib",
+        "//multitest_transport/models",
+        "//multitest_transport/util",
+        third_party("google-endpoints"),
+        third_party("protorpc"),
+        third_party("requests"),
+    ],
+)
+
+py_test(
+    name = "netdata_api_test",
+    srcs = [
+        "netdata_api_test.py",
+    ],
+    deps = [
+        ":api_test_util_lib",
+        ":netdata_api_lib",
+        third_party("requests_mock"),
     ],
 )

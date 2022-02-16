@@ -1427,3 +1427,24 @@ def _FileCleanerSettingsMessageConverter(msg):
       id=ndb_models.FILE_CLEANER_SETTINGS_ID,
       policies=ConvertList(msg.policies, ndb_models.FileCleanerPolicy),
       configs=ConvertList(msg.configs, ndb_models.FileCleanerConfig))
+
+
+class NetdataAlarmStatus(messages.Enum):
+  REMOVED = 0
+  UNINITIALIZED = 1
+  UNDEFINED = 2
+  CLEAR = 3
+  WARNING = 4
+  CRITICAL = 5
+
+
+class NetdataAlarm(messages.Message):
+  hostname = messages.StringField(1, required=True)
+  id = messages.IntegerField(2, required=True)
+  name = messages.StringField(3, required=True)
+  value = messages.StringField(4, required=True)
+  status = messages.EnumField(NetdataAlarmStatus, 5, required=True)
+
+
+class NetdataAlarmList(messages.Message):
+  alarms = messages.MessageField(NetdataAlarm, 1, repeated=True)
