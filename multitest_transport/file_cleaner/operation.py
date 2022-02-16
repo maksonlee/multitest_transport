@@ -55,7 +55,7 @@ class Archive(Operation):
   def Apply(self, path: str):
     logging.info('Archiving %s', path)
     file_handle = file_util.FileHandle.Get(pathlib.Path(path).as_uri())
-    file_handle.Archive(self.remove_file)
+    file_handle.Archive(self.remove_file)  # pytype: disable=wrong-arg-types
 
 
 class Delete(Operation):
