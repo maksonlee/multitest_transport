@@ -91,7 +91,7 @@ describe('DeviceListTable', () => {
   });
 
   it('shows aria-label correctly', () => {
-    const checkbox = getEl(el, 'mat-checkbox');
+    const checkbox = getEl(el, 'mat-checkbox input');
     expect(checkbox).toBeTruthy();
     expect(checkbox.getAttribute('aria-label')).toBe('Select all devices');
   });
