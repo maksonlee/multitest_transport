@@ -12,6 +12,7 @@ google-cloud-secret-manager==2.4.0
 google-cloud-storage==1.28.0
 grpcio==1.33.2
 httplib2==0.18.1
+MarkupSafe==2.0.0
 packaging==20.4
 pyparsing==2.4.7
 python-dateutil==2.8.1
