@@ -169,9 +169,13 @@ then
   fi
 fi
 
-# Start TF
+# Start TF with the modified global config and at least 6GB of heap space (can
+# be adjusted by setting the -Xmx flag in the TRADEFED_OPTS variable).
 rm -rf "${MTT_TEST_WORK_DIR}"
 mkdir -p "${MTT_TEST_WORK_DIR}"
+MAX_HEAP_MB="$(expr `free -m | awk '/^Mem:/{print $2}'` / 4)"
+MAX_HEAP_MB=$(( MAX_HEAP_MB < 6000 ? 6000 : MAX_HEAP_MB ))
+MTT_TRADEFED_OPTS="-Djava.io.tmpdir=${MTT_TEST_WORK_DIR} -Xmx${MAX_HEAP_MB}m"
 TF_GLOBAL_CONFIG="${TF_CONFIG_FILE}"\
-  TRADEFED_OPTS=-Djava.io.tmpdir="${MTT_TEST_WORK_DIR}"\
+  TRADEFED_OPTS="${MTT_TRADEFED_OPTS} ${TRADEFED_OPTS}"\
   exec tradefed.sh
