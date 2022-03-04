@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import {Component, ElementRef, Input, OnInit} from '@angular/core';
+import {Component, ElementRef, Input} from '@angular/core';
 
-import {assertRequiredInput, navigateToFirstElement} from './util';
+import {navigateToFirstElement} from './util';
 
 /**
- * An error info message displayed at the bottom of each form if there's error.
- * It also displays a link for user to navigate to the first error.
+ * An error info message displayed at the bottom of each form if there's error
+ * or warning. It also displays a link for user to navigate to the first error.
  */
 @Component({
   selector: 'form-error-info',
@@ -30,5 +30,6 @@ import {assertRequiredInput, navigateToFirstElement} from './util';
 export class FormErrorInfo {
   @Input() invalidInputs: ElementRef[] = [];
   @Input() errorMessage = '';
+  @Input() warningMessage = '';
   navigateToFirstElement = navigateToFirstElement;
 }

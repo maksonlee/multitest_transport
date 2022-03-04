@@ -35,6 +35,7 @@ export class MttClient {
   readonly configSets: ConfigSetClient;
   readonly testRunActions: TestRunActionClient;
   readonly testResults: TestResultClient;
+  readonly netdata: NetdataClient;
 
   constructor(
       private readonly http: HttpClient, private readonly auth: AuthService) {
@@ -42,6 +43,7 @@ export class MttClient {
     this.configSets = new ConfigSetClient(http);
     this.testRunActions = new TestRunActionClient(http, auth);
     this.testResults = new TestResultClient(http);
+    this.netdata = new NetdataClient(http);
   }
 
   /**
@@ -547,5 +549,25 @@ export class TestResultClient {
         `${TestResultClient.PATH}/modules/${
             encodeURIComponent(moduleId)}/test_cases`,
         {params});
+  }
+}
+
+/** Provides access to the Netdata API. */
+export class NetdataClient {
+  /** Backend path which serves Netdata data. */
+  static readonly PATH = `${MTT_API_URL}/netdata`;
+
+  constructor(private readonly http: HttpClient) {}
+
+  /** Gets raised alarms. */
+  getAlarms(alarmNames: string[], hostname: string):
+      Observable<model.NetdataAlarmList> {
+    const params = new HttpParams({
+      fromObject: {
+        'alarm_names': alarmNames,
+        hostname,
+      },
+    });
+    return this.http.get(`${NetdataClient.PATH}/alarms`, {params});
   }
 }

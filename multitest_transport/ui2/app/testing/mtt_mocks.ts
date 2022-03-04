@@ -514,6 +514,23 @@ export function newMockFileCleanerConfig(
   } as mttModels.FileCleanerConfig;
 }
 
+/** Creates a new mock NetdataAlarmList object */
+export function newMockNetdataAlarmList(
+    hostname = 'hostname', id = 1, name = 'alarm', value = '',
+    status = mttModels.NetdataAlarmStatus.WARNING) {
+  return {
+    alarms: [
+      {
+        hostname,
+        id,
+        name,
+        value,
+        status,
+      } as mttModels.NetdataAlarm,
+    ],
+  } as mttModels.NetdataAlarmList;
+}
+
 /*******************************************
  * Functions to create mock TFC API objects
  *******************************************/

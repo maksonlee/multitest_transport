@@ -16,17 +16,29 @@
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
-.form-error-text {
-  background: $danger-background;
+.form-text {
   border-radius: 4px;
   display: inline-block;
   font-size: 14px;
   line-height: 38px;
   margin-left: 20px;
   padding: 0 10px;
+}
+
+.form-error-text {
+  background: $danger-background;
 
   .icon-error {
     color: $danger-dark;
-    vertical-align: middle
+    vertical-align: middle;
+  }
+}
+
+.form-warning-text {
+  background: $warning-background;
+
+  .icon-warning {
+    color: $icon-warning;
+    vertical-align: middle;
   }
 }

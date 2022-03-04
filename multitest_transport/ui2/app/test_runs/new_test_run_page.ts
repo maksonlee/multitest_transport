@@ -16,21 +16,24 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
-import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, Inject, OnInit, ViewChild} from '@angular/core';
 import {MatButton} from '@angular/material/button';
 import {MatChipInputEvent} from '@angular/material/chips';
 import {MatStepper} from '@angular/material/stepper';
 import {Title} from '@angular/platform-browser';
 import {ActivatedRoute, Params, Router} from '@angular/router';
-import {forkJoin, of as observableOf} from 'rxjs';
-import {finalize, first} from 'rxjs/operators';
+import {forkJoin, Observable, of as observableOf} from 'rxjs';
+import {catchError, filter, finalize, first, map, switchMap} from 'rxjs/operators';
 
 import {TestResourceForm} from '../build_channels/test_resource_form';
+import {APP_DATA, AppData} from '../services/app_data';
 import {MttClient} from '../services/mtt_client';
+import {DeviceSearchCriteria, LabDeviceInfosResponse} from '../services/mtt_lab_models';
 import * as mttModels from '../services/mtt_models';
 import {RerunContext, testResourceDefToObj} from '../services/mtt_models';
 import {MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
 import {Notifier} from '../services/notifier';
+import {TfcClient} from '../services/tfc_client';
 import {FormChangeTracker} from '../shared/can_deactivate';
 import {APPLICATION_NAME} from '../shared/shared_module';
 import {TestRunConfigForm} from '../shared/test_run_config_form';
@@ -44,6 +47,7 @@ enum Step {
   ADD_RERUN_CONFIGS = 4,
 }
 const TOTAL_STEPS = 5;
+const DISK_SPACE_USAGE_ALARMS = ['disk_space._data.disk_space_usage'];
 
 /**
  * Form for running a new test
@@ -62,6 +66,7 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
   @ViewChild(TestResourceForm, {static: true})
   testResourceForm!: TestResourceForm;
   errorMessage = '';
+  warningMessage = '';
 
   // Record each step whether it has finished or not
   stepCompletionStatusMap: {[stepNum: number]: boolean} = {};
@@ -100,6 +105,8 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
       private readonly mttObjectMapService: MttObjectMapService,
       private readonly notifier: Notifier,
       private readonly title: Title,
+      private readonly tfcClient: TfcClient,
+      @Inject(APP_DATA) readonly appData: AppData,
   ) {
     super();
   }
@@ -351,25 +358,29 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
     }
   }
 
-  startTestRun() {
+  startTestRun(ignoreWarnings = false) {
     // TODO: Add input verification and error message
     if (!this.validateStep(Step.SET_TEST_RESOURCES)) {
       return;
     }
 
-    const newTestRunRequest: mttModels.NewTestRunRequest = {
-      labels: this.labels,
-      test_run_config: {...this.testRunConfig} as mttModels.TestRunConfig,
-      rerun_context: this.rerunContext || {},
-      rerun_configs: this.rerunConfigs,
-    };
-
     this.isStartingTestRun = true;
-    this.mttClient.createNewTestRunRequest(newTestRunRequest)
-        .pipe(first())
-        .pipe(finalize(() => {
-          this.isStartingTestRun = false;
-        }))
+    this.checkDiskSpace(ignoreWarnings)
+        .pipe(
+            filter(result => result), switchMap(() => {
+              const newTestRunRequest: mttModels.NewTestRunRequest = {
+                labels: this.labels,
+                test_run_config: {...this.testRunConfig} as
+                    mttModels.TestRunConfig,
+                rerun_context: this.rerunContext || {},
+                rerun_configs: this.rerunConfigs,
+              };
+              return this.mttClient.createNewTestRunRequest(newTestRunRequest)
+                  .pipe(first());
+            }),
+            finalize(() => {
+              this.isStartingTestRun = false;
+            }))
         .subscribe(
             result => {
               super.resetForm();
@@ -381,5 +392,84 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
                   'Failed to schedule a new test run.',
                   buildApiErrorMessage(error));
             });
+  }
+
+  checkDiskSpace(skip = false): Observable<boolean> {
+    if (skip) {
+      return observableOf(true);
+    }
+
+    const deviceSpecs =
+        (this.testRunConfig.device_specs || [])
+            .concat(this.rerunConfigs.map(config => config.device_specs || [])
+                        .flat());
+    const deviceSerial = this.getDeviceSerials(deviceSpecs);
+
+    let deviceInfoObservable: Observable<LabDeviceInfosResponse>;
+    if (deviceSerial.length === 0) {
+      deviceInfoObservable =
+          observableOf({more: false} as LabDeviceInfosResponse);
+    } else {
+      const query: DeviceSearchCriteria = {
+        deviceSerial,
+        includeOfflineDevices: false,
+      };
+      deviceInfoObservable =
+          this.tfcClient.queryDeviceInfos(query, deviceSerial.length);
+    }
+
+
+    return deviceInfoObservable.pipe(
+        map(response => {
+          const hostnames = new Set<string>();
+          // Hostname of controller
+          if (this.appData.hostname) {
+            hostnames.add(this.appData.hostname);
+          }
+          // Hostnames of selected devices
+          for (const deviceInfo of response.deviceInfos || []) {
+            if (deviceInfo.hostname) {
+              hostnames.add(deviceInfo.hostname);
+            }
+          }
+          return Array.from(hostnames);
+        }),
+        switchMap(hostnames => {
+          if (hostnames.length === 0) {
+            return observableOf([]);
+          }
+          return forkJoin(hostnames.map(
+              hostname =>
+                  this.mttClient.netdata
+                      .getAlarms(DISK_SPACE_USAGE_ALARMS, hostname)
+                      .pipe(catchError(
+                          () => observableOf(
+                              {alarms: []} as mttModels.NetdataAlarmList)))));
+        }),
+        map(alarmLists => {
+          const alarms =
+              alarmLists.map(alarmList => alarmList.alarms || []).flat();
+          if (alarms.length === 0) {
+            return true;
+          }
+
+          this.warningMessage = `Low disk space warning on ${
+              alarms[0].hostname} (${alarms[0].value} used)`;
+          if (alarms.length > 1) {
+            this.warningMessage += ` and ${alarms.length - 1} other host(s)`;
+          }
+          return false;
+        }));
+  }
+
+  private getDeviceSerials(deviceSpecs: string[]): string[] {
+    const deviceSerials = new Set<string>();
+    for (const spec of deviceSpecs) {
+      const match = /^device_serial:(\S+)$/.exec(spec);
+      if (match) {
+        deviceSerials.add(match[1]);
+      }
+    }
+    return Array.from(deviceSerials);
   }
 }

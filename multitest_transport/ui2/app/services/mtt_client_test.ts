@@ -20,7 +20,7 @@ import {of as observableOf} from 'rxjs';
 import * as testUtil from '../testing/mtt_mocks';
 
 import {AuthService, REDIRECT_URI} from './auth_service';
-import {MTT_API_URL, MttClient, TestRunActionClient} from './mtt_client';
+import {MTT_API_URL, MttClient, NetdataClient, TestRunActionClient} from './mtt_client';
 import {BuildChannelList, TestPlanList, TestRunAction} from './mtt_models';
 
 describe('MttClient', () => {
@@ -785,6 +785,35 @@ describe('TestRunActionClient', () => {
         .toHaveBeenCalledWith(
             TestRunActionClient.PATH + '/id/auth', jasmine.any(Object));
     expect(http.delete).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('NetdataClient', () => {
+  let http: jasmine.SpyObj<HttpClient>;
+  let client: NetdataClient;
+
+  beforeEach(() => {
+    http = jasmine.createSpyObj<HttpClient>('HttpClient', ['get']);
+    client = new NetdataClient(http);
+  });
+
+  it('can get alarms', () => {
+    const alarmList =
+        testUtil.newMockNetdataAlarmList('hostname', 1, 'alarm1', '80%');
+    http.get.and.returnValue(observableOf(alarmList));
+
+    client.getAlarms(['alarm1', 'alarm2'], 'hostname')
+        .subscribe(expectResponse(alarmList));
+
+    const params = new HttpParams({
+      fromObject: {
+        'alarm_names': ['alarm1', 'alarm2'],
+        'hostname': 'hostname',
+      },
+    });
+    expect(http.get).toHaveBeenCalledWith(
+        `${NetdataClient.PATH}/alarms`, {params});
+    expect(http.get).toHaveBeenCalledTimes(1);
   });
 });
 

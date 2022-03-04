@@ -187,17 +187,21 @@
     </test-run-config-list>
 
     <div>
-     <button mat-stroked-button matStepperPrevious color="accent">
-        Previous Step
-      </button>
-      <button [disabled]="isStartingTestRun"
-              mat-flat-button
-              color="accent"
-              (click)="startTestRun()">
-        Start Test Run
+      <button mat-stroked-button matStepperPrevious color="accent">Previous Step</button>
+      <button
+        [disabled]="isStartingTestRun"
+        mat-flat-button
+        color="accent"
+        id="start-test-run-button"
+        (click)="startTestRun(!!warningMessage.length)"
+      >
+        Start Test Run <ng-container *ngIf="warningMessage.length">(Ignore Warnings)</ng-container>
       </button>
       <button mat-button (click)="back()" color="accent">Cancel</button>
-      <form-error-info [invalidInputs]="invalidInputs"></form-error-info>
+      <form-error-info
+        [warningMessage]="warningMessage"
+        [invalidInputs]="invalidInputs"
+      ></form-error-info>
     </div>
   </mat-step>
 </mat-horizontal-stepper>

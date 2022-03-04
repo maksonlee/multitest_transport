@@ -24,11 +24,12 @@ import {of as observableOf} from 'rxjs';
 
 import {APP_DATA} from '../services/app_data';
 import {FileService} from '../services/file_service';
-import {MttClient} from '../services/mtt_client';
+import {MttClient, NetdataClient} from '../services/mtt_client';
 import {Test, TestRun} from '../services/mtt_models';
 import {MttObjectMap, MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
+import {TfcClient} from '../services/tfc_client';
 import {getEl} from '../testing/jasmine_util';
-import {newMockDeviceAction, newMockNodeConfig, newMockTest, newMockTestRun} from '../testing/mtt_mocks';
+import {newMockDeviceAction, newMockNetdataAlarmList, newMockNodeConfig, newMockTest, newMockTestRun} from '../testing/mtt_mocks';
 
 import {NewTestRunPage} from './new_test_run_page';
 import {TestRunsModule} from './test_runs_module';
@@ -43,6 +44,8 @@ describe('NewTestRunPage', () => {
   let liveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
   let mttClient: jasmine.SpyObj<MttClient>;
   let mttObjectMapService: jasmine.SpyObj<MttObjectMapService>;
+  let netdataClient: jasmine.SpyObj<NetdataClient>;
+  let tfcClient: jasmine.SpyObj<TfcClient>;
 
   let el: DebugElement;
   let test: Test;
@@ -55,22 +58,33 @@ describe('NewTestRunPage', () => {
     liveAnnouncer =
         jasmine.createSpyObj('liveAnnouncer', ['announce', 'clear']);
 
-    mttClient = jasmine.createSpyObj(['getNodeConfig']);
+    netdataClient = jasmine.createSpyObj(['getAlarms']);
+    netdataClient.getAlarms.and.returnValue(observableOf({alarms: []}));
+
+    mttClient = {
+      ...jasmine.createSpyObj(['createNewTestRunRequest', 'getNodeConfig']),
+      netdata: netdataClient,
+    };
     mttClient.getNodeConfig.and.returnValue(observableOf(newMockNodeConfig()));
 
     mttObjectMapService = jasmine.createSpyObj(['getMttObjectMap']);
     mttObjectMapService.getMttObjectMap.and.returnValue(
         observableOf(newMttObjectMap()));
 
+    tfcClient = jasmine.createSpyObj(['getFilterHintList', 'queryDeviceInfos']);
+    tfcClient.getFilterHintList.and.returnValue(observableOf());
+    tfcClient.queryDeviceInfos.and.returnValue(observableOf());
+
     TestBed.configureTestingModule({
       declarations: [DeviceListStubComponent],
       imports: [TestRunsModule, NoopAnimationsModule, RouterTestingModule],
       providers: [
-        {provide: APP_DATA, useValue: {}},
+        {provide: APP_DATA, useValue: {hostname: 'hostname'}},
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: FileService, useValue: {}},
         {provide: MttClient, useValue: mttClient},
         {provide: MttObjectMapService, useValue: mttObjectMapService},
+        {provide: TfcClient, useValue: tfcClient},
       ],
     });
     newTestRunPageFixture = TestBed.createComponent(NewTestRunPage);
@@ -151,6 +165,86 @@ describe('NewTestRunPage', () => {
     newTestRunPage.removeLabel('label1');
     expect(newTestRunPage.labels).toEqual([]);
   });
+
+  it('displays warning message when there is an alarm on 1 host', () => {
+    netdataClient.getAlarms.and.returnValue(
+        observableOf(newMockNetdataAlarmList(
+            'hostname', 1, 'disk_space._data.disk_space_usage', '80%')));
+
+    getEl(el, '#start-test-run-button').click();
+
+    expect(tfcClient.queryDeviceInfos).not.toHaveBeenCalled();
+    expect(netdataClient.getAlarms)
+        .toHaveBeenCalledWith(
+            ['disk_space._data.disk_space_usage'], 'hostname');
+    expect(newTestRunPage.warningMessage)
+        .toEqual('Low disk space warning on hostname (80% used)');
+  });
+
+  it('displays warning message when there are alarms on hosts', () => {
+    newTestRunPage.testRunConfig.device_specs = ['device_serial:123456'];
+    tfcClient.queryDeviceInfos.and.returnValue(
+        observableOf({deviceInfos: [{hostname: 'hostname2'}]}));
+    netdataClient.getAlarms
+        .withArgs(['disk_space._data.disk_space_usage'], 'hostname')
+        .and.returnValue(observableOf(newMockNetdataAlarmList(
+            'hostname', 1, 'disk_space._data.disk_space_usage', '80%')));
+    netdataClient.getAlarms
+        .withArgs(['disk_space._data.disk_space_usage'], 'hostname2')
+        .and.returnValue(observableOf(newMockNetdataAlarmList(
+            'hostname2', 2, 'disk_space._data.disk_space_usage', '85%')));
+
+    getEl(el, '#start-test-run-button').click();
+
+    expect(tfcClient.queryDeviceInfos)
+        .toHaveBeenCalledWith(
+            {deviceSerial: ['123456'], includeOfflineDevices: false}, 1);
+    expect(netdataClient.getAlarms).toHaveBeenCalledTimes(2);
+    expect(newTestRunPage.warningMessage)
+        .toEqual(
+            'Low disk space warning on hostname (80% used)' +
+            ' and 1 other host(s)');
+  });
+
+  it('does not create new test run request when there are disk space alarms',
+     () => {
+       netdataClient.getAlarms.and.returnValue(
+           observableOf(newMockNetdataAlarmList(
+               'hostname', 1, 'disk_space._data.disk_space_usage', '80%')));
+
+       getEl(el, '#start-test-run-button').click();
+
+       expect(mttClient.createNewTestRunRequest).not.toHaveBeenCalled();
+     });
+
+  it('creates new test run request when ignoring warnings', () => {
+    netdataClient.getAlarms.and.returnValue(
+        observableOf(newMockNetdataAlarmList(
+            'hostname', 1, 'disk_space._data.disk_space_usage', '80%')));
+
+    getEl(el, '#start-test-run-button').click();
+    expect(mttClient.createNewTestRunRequest).not.toHaveBeenCalled();
+
+    // Ignore warnings and start test run
+    getEl(el, '#start-test-run-button').click();
+    expect(mttClient.createNewTestRunRequest).toHaveBeenCalled();
+  });
+
+  it('does not display warning message when there is no alarm', () => {
+    newTestRunPage.startTestRun();
+
+    expect(newTestRunPage.warningMessage).toEqual('');
+    expect(mttClient.createNewTestRunRequest).toHaveBeenCalled();
+  });
+
+  it('does not display warning message when netdata alarm requests fail',
+     () => {
+       netdataClient.getAlarms.and.throwError('Error');
+
+       newTestRunPage.startTestRun();
+
+       expect(newTestRunPage.warningMessage).toEqual('');
+     });
 
   describe('back button', () => {
     it('should display correct aria-label and tooltip', () => {

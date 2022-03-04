@@ -15,7 +15,7 @@
 -->
 
 <ng-container *ngIf="invalidInputs.length; else message">
-  <div class="form-error-text">
+  <div class="form-text form-error-text">
     <mat-icon class="icon-error">info</mat-icon>
     Your changes could not be saved ({{invalidInputs.length}}
     {{invalidInputs.length > 1 ? "issues" : "issue"}})
@@ -26,8 +26,18 @@
   </button>
 </ng-container>
 <ng-template #message>
-  <div class="form-error-text" *ngIf="errorMessage.length">
+  <ng-container *ngIf="errorMessage.length; then error; else warning"></ng-container>
+</ng-template>
+
+<ng-template #error>
+  <div class="form-text form-error-text">
       <mat-icon class="icon-error">info</mat-icon>
       {{errorMessage}}
+  </div>
+</ng-template>
+<ng-template #warning>
+  <div class="form-text form-warning-text" *ngIf="warningMessage.length">
+      <mat-icon class="icon-warning">info</mat-icon>
+      {{warningMessage}}
   </div>
 </ng-template>

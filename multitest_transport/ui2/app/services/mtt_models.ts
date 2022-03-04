@@ -1011,3 +1011,27 @@ export declare interface FileCleanerSettings {
   policies?: FileCleanerPolicy[];
   configs?: FileCleanerConfig[];
 }
+
+/** Netdata alarm status. */
+export enum NetdataAlarmStatus {
+  REMOVED = 'REMOVED',
+  UNINITIALIZED = 'UNINITIALIZED',
+  UNDEFINED = 'UNDEFINED',
+  CLEAR = 'CLEAR',
+  WARNING = 'WARNING',
+  CRITICAL = 'CRITICAL',
+}
+
+/** Netdata alarm. */
+export declare interface NetdataAlarm {
+  hostname: string;
+  id: number;
+  name: string;
+  value: string;
+  status: NetdataAlarmStatus;
+}
+
+/** List of netdata alarms. */
+export declare interface NetdataAlarmList {
+  alarms?: NetdataAlarm[];
+}
