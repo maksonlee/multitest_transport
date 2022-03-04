@@ -16,6 +16,7 @@
 import datetime
 import json
 import logging
+from typing import Union
 import zlib
 
 import flask
@@ -111,14 +112,9 @@ def _AfterTestRunHandler(test_run):
                                    test_run.sequence_id, test_run.key)
 
 
-def ProcessRequestEvent(message):
-  """Process a TFC request state change event message.
-
-  Args:
-    message: an api_messages.RequestEventMessage object.
-  """
-  request_id = message.request_id
-  test_run = _GetTestRunToUpdate(request_id, message)
+def ProcessRequestEvent(message: api_messages.RequestEventMessage):
+  """Process a TFC request state change event message."""
+  test_run = _GetTestRunToUpdate(message)
   if not test_run:
     return
   _ProcessRequestEvent(test_run.key.id(), message)
@@ -138,7 +134,7 @@ def _ProcessRequestEvent(test_run_id, message):
     return
 
   # Update test run information
-  test_run.last_tfc_event_time = message.event_time
+  test_run.request_event_time = message.event_time
   test_run.update_time = message.event_time
   if not test_run.IsFinal():
     test_run.state = TEST_RUN_STATE_MAP.get(
@@ -154,13 +150,10 @@ def _ProcessRequestEvent(test_run_id, message):
   test_run.put()
 
 
-def ProcessCommandAttemptEvent(message):
-  """Process a TFC attempt state change event message.
-
-  Args:
-    message: an api_messages.CommandAttemptEventMessage object.
-  """
-  test_run = _GetTestRunToUpdate(message.attempt.request_id, message)
+def ProcessCommandAttemptEvent(
+    message: api_messages.CommandAttemptEventMessage):
+  """Process a TFC attempt state change event message."""
+  test_run = _GetTestRunToUpdate(message)
   if test_run:
     _ProcessCommandAttemptEvent(test_run.key.id(), message)
 
@@ -174,7 +167,7 @@ def _ProcessCommandAttemptEvent(test_run_id, message):
 
   # Update test run information
   attempt = message.attempt
-  test_run.last_tfc_event_time = message.event_time
+  test_run.attempt_event_time = message.event_time
   test_run.update_time = message.event_time
   test_run.test_devices = _GetTestDeviceInfos(attempt.device_serials)
   test_run.put()
@@ -345,8 +338,13 @@ def _GetCurrentTime():
   return datetime.datetime.now()
 
 
-def _GetTestRunToUpdate(request_id, message):
+def _GetTestRunToUpdate(
+    message: Union[api_messages.RequestEventMessage,
+                   api_messages.CommandAttemptEventMessage]):
   """Retrieve the associated test run if it exists and should be updated."""
+  request_event = isinstance(message, api_messages.RequestEventMessage)
+  request_id = (message.request_id if request_event
+                else message.attempt.request_id)
   query = ndb_models.TestRun.query(ndb_models.TestRun.request_id == request_id)
   test_run_key = query.get(keys_only=True)
   if not test_run_key:
@@ -354,13 +352,12 @@ def _GetTestRunToUpdate(request_id, message):
     return None
 
   test_run = test_run_key.get(use_cache=False, use_memcache=False)
-  if (test_run.last_tfc_event_time and
-      message.event_time < test_run.last_tfc_event_time):
-    logging.warning(
-        'Event timestamp too old (%s < %s); skipping message: %s',
-        message.event_time, test_run.update_time, message)
+  last_event_time = (test_run.request_event_time if request_event
+                     else test_run.attempt_event_time)
+  if last_event_time and message.event_time < last_event_time:
+    logging.warning('Event timestamp too old (%s < %s); skipping message: %s',
+                    message.event_time, last_event_time, message)
     return None
-
   return test_run
 
 

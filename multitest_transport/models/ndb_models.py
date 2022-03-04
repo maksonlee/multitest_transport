@@ -627,12 +627,13 @@ class TestRun(ndb.Model):
     failed_test_run_count: the number of test modules that failed to execute.
     create_time: time a test run is created.
     update_time: time a test run is last updated.
+    request_event_time: last received TFC request event time.
+    attempt_event_time: last received TFC attempt event time.
     before_device_actions: device actions used during the run.
     test_run_actions: test run actions executed during the run.
     hook_data: additional data used by hooks
     cancel_reason: cancellation reason
     error_reason: error reason
-    last_tfc_event_time: the last received TFC event time.
   """
   prev_test_run_key = ndb.KeyProperty(kind='TestRun')
   user = ndb.StringProperty()
@@ -657,8 +658,9 @@ class TestRun(ndb.Model):
 
   create_time = ndb.DateTimeProperty(auto_now_add=True)
   update_time = ndb.DateTimeProperty(auto_now_add=True)
+  request_event_time = ndb.DateTimeProperty()
+  attempt_event_time = ndb.DateTimeProperty()
 
-  # TODO improve action versioning
   # Snapshot of the actions executed by the run
   before_device_actions = ndb.LocalStructuredProperty(
       DeviceAction, repeated=True)
@@ -667,7 +669,6 @@ class TestRun(ndb.Model):
 
   cancel_reason = ndb.EnumProperty(common.CancelReason)
   error_reason = ndb.StringProperty()
-  last_tfc_event_time = ndb.DateTimeProperty()
 
   @classmethod
   def get_by_id(cls, id_, **kwargs):
