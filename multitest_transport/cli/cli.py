@@ -29,8 +29,8 @@ import socket
 import sys
 import tempfile
 import time
+import urllib.parse
 import zipfile
-
 from packaging import version
 import six
 
@@ -380,6 +380,7 @@ def _StartMttNode(args, host):
       host.config.hostname, host_util.HostUpdateState.RESTARTING,
       target_image=host.config.docker_image)
   control_server_url = args.control_server_url or host.config.control_server_url
+  control_file_server_url = args.control_file_server_url
   operation_mode = lab_config_pb2.OperationMode.Value(args.operation_mode)
   if operation_mode == lab_config_pb2.OperationMode.UNKNOWN and host.config.operation_mode:
     # Override operation mode if arg value is UNKNOWN and host has config.
@@ -420,8 +421,17 @@ def _StartMttNode(args, host):
       'OPERATION_MODE',
       lab_config_pb2.OperationMode.Name(operation_mode).lower())
   docker_helper.AddEnv('MTT_CLI_VERSION', cli_util.GetVersion()[0])
+
   if control_server_url:
     docker_helper.AddEnv('MTT_CONTROL_SERVER_URL', control_server_url)
+    u = urllib.parse.urlparse(control_server_url)
+    if not control_file_server_url and u.hostname and u.port:
+      # Set default value for control file server url
+      control_file_server_url = u._replace(netloc=u.hostname + ':' +
+                                           str(u.port + 6)).geturl()
+    if control_file_server_url:
+      docker_helper.AddEnv('MTT_CONTROL_FILE_SERVER_URL',
+                           control_file_server_url)
   else:
     logger.info(
         'The control_server_url is not set; starting a standalone node.')
@@ -1038,6 +1048,13 @@ def _CreateStartArgParser():
       default=None,
       help=('Control server url is required for workers in ON_PREMISE mode.'
             'This field can also be set by yaml config.'))
+  parser.add_argument(
+      '--control_file_server_url',
+      default=None,
+      help=(
+          'Set in ON_PREMISE mode if file server URL cannot be inferred '
+          'from the control server URL.'
+      ))
   parser.set_defaults(func=Start)
   return parser
 

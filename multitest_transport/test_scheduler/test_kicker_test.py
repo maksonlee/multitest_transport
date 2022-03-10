@@ -951,6 +951,10 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
 
+  @mock.patch('multitest_transport.util.env.PORT',
+              '8000')
+  @mock.patch('multitest_transport.util.env.FILE_SERVER_PORT',
+              '8006')
   @mock.patch('multitest_transport.util.env.OPERATION_MODE',
               env.OperationMode.ON_PREMISE)
   @mock.patch.object(tfc_client, 'NewRequest', autospec=True)
@@ -983,16 +987,14 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self._CheckNewRequestMessage(
         msg=msg,
         test_run=test_run,
-        output_url='http://test.hostname.com:8006/file/app_default_bucket/test_runs/{}/output'
-        .format(test_run_id),
+        output_url=f'${{MTT_CONTROL_FILE_SERVER_URL}}/file/app_default_bucket/test_runs/{test_run_id}/output',
         test_resource_urls={
             'foo':
-                'http://test.hostname.com:8006/file/cache_url',
+                '${MTT_CONTROL_FILE_SERVER_URL}/file/cache_url',
             'bar':
-                'http://test.hostname.com:8006/file/cache_url',
+                '${MTT_CONTROL_FILE_SERVER_URL}/file/cache_url',
             'mtt.json':
-                'http://test.hostname.com:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
-                .format(test_run_id)
+                f'${{MTT_CONTROL_SERVER_URL}}/_ah/api/mtt/v1/test_runs/{test_run_id}/metadata',
         },
         command_lines=['command --invocation-data mtt=1'],
         test_bench=test_kicker._DeviceSpecsToTFCTestBench(
@@ -1000,7 +1002,7 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
             test_run.test_run_config.device_specs))
     self.assertEqual([
         api_messages.TestResource(
-            name='bar', url='http://test.hostname.com:8006/file/root/path')
+            name='bar', url='${MTT_CONTROL_FILE_SERVER_URL}/file/root/path')
     ], msg.prev_test_context.test_resources)
 
   @mock.patch.object(test_kicker, 'KickTestRun')

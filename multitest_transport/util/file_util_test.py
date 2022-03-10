@@ -514,23 +514,27 @@ class FileUtilTest(parameterized.TestCase):
        'http://localhost:8000/path'),
       (env.OperationMode.STANDALONE, 'file:///root/path', 'file:///root/path'),
       (env.OperationMode.ON_PREMISE, 'http://localhost:8000/xx',
-       'http://test.hostname.com:8000/xx'),
+       '${MTT_CONTROL_SERVER_URL}/xx'),
       (env.OperationMode.ON_PREMISE, 'http://0.0.0.0:8000/xx',
-       'http://test.hostname.com:8000/xx'),
+       '${MTT_CONTROL_SERVER_URL}/xx'),
       (env.OperationMode.ON_PREMISE, 'http://127.0.0.1:8000/xx',
-       'http://test.hostname.com:8000/xx'),
+       '${MTT_CONTROL_SERVER_URL}/xx'),
       (env.OperationMode.ON_PREMISE, 'http://[::]:8000/xx',
-       'http://test.hostname.com:8000/xx'),
+       '${MTT_CONTROL_SERVER_URL}/xx'),
       (env.OperationMode.ON_PREMISE, 'http://[::1]:8000/xx',
-       'http://test.hostname.com:8000/xx'),
+       '${MTT_CONTROL_SERVER_URL}/xx'),
       (env.OperationMode.ON_PREMISE, 'http://other.hostname.com:8000/xx',
        'http://other.hostname.com:8000/xx'),
       (env.OperationMode.ON_PREMISE, 'file:///root/path',
-       'http://test.hostname.com:8006/file/path'),
+       '${MTT_CONTROL_FILE_SERVER_URL}/file/path'),
+      (env.OperationMode.ON_PREMISE, 'http://localhost:8006/xx',
+       '${MTT_CONTROL_FILE_SERVER_URL}/xx'),
       (env.OperationMode.ON_PREMISE, 'file:///xx', 'file:///xx'))
   def testGetWorkerAccessibleUrl(self, operation_mode, original_url,
                                  expected_url):
     env.OPERATION_MODE = operation_mode
+    env.PORT = '8000'
+    env.FILE_SERVER_PORT = '8006'
     url = file_util.GetWorkerAccessibleUrl(original_url)
     self.assertEqual(url, expected_url)
 

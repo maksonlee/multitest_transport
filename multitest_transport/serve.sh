@@ -185,6 +185,7 @@ function start_main_server {
   DEV_MODE="$DEV_MODE" \
   MTT_FILE_SERVER_ROOT="$STORAGE_PATH" \
   MTT_FILE_SERVER_URL="http://localhost:$FILE_SERVER_PORT/" \
+  MTT_FILE_SERVER_PORT="$FILE_SERVER_PORT" \
   MTT_NETDATA_URL="http://localhost:$NETDATA_PORT/" \
   MTT_GOOGLE_OAUTH2_CLIENT_ID="$MTT_GOOGLE_OAUTH2_CLIENT_ID" \
   MTT_GOOGLE_OAUTH2_CLIENT_SECRET="$MTT_GOOGLE_OAUTH2_CLIENT_SECRET" \
@@ -193,6 +194,7 @@ function start_main_server {
   MTT_STORAGE_PATH="$STORAGE_PATH" \
   MTT_SQL_DATABASE_URI="${SQL_DATABASE_URI}" \
   MTT_USER="$MTT_USER" \
+  MTT_PORT="$MTT_PORT" \
   "${MTT_PYTHON}" -m multitest_transport.app_helper.launcher \
       --application_id="mtt" \
       --host="${MTT_HOST}" \

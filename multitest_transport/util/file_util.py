@@ -579,14 +579,23 @@ def GetWorkerAccessibleUrl(url: str) -> str:
   if env.OPERATION_MODE != env.OperationMode.ON_PREMISE:
     return url
   u = urllib.parse.urlparse(url)
-  hostname = env.HOSTNAME
   # If the URL is under file server root directory, translate it to http.
   # Otherwise, it refers to a local file on worker.
   if u.scheme == 'file' and (u.hostname or u.path.startswith(env.STORAGE_PATH)):
     u = urllib.parse.urlparse(RemoteFileHandle(url).file_url)
+  # IN ON_PREMISE mode, return templated url for worker,
+  # and tradefed will populate it with accessible url
   if (u.scheme == 'http' or
-      u.scheme == 'https') and u.hostname in LOCAL_HOSTNAME:
-    u = u._replace(netloc='{}:{}'.format(hostname, u.port))
+      u.scheme == 'https') and u.hostname in LOCAL_HOSTNAME + (env.HOSTNAME,):
+    url_format = f'{u.scheme}://{u.netloc}'
+    modified_url = u.geturl()
+    if str(u.port) == env.PORT:
+      modified_url = modified_url.replace(url_format,
+                                          '${MTT_CONTROL_SERVER_URL}', 1)
+    if str(u.port) == env.FILE_SERVER_PORT:
+      modified_url = modified_url.replace(url_format,
+                                          '${MTT_CONTROL_FILE_SERVER_URL}', 1)
+    return modified_url
   return u.geturl()
 
 

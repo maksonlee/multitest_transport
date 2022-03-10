@@ -31,6 +31,7 @@ DEFAULT_INVOCATION_TIMEOUT_SECONDS = 0  # no timeout
 DEFAULT_OUTPUT_IDLE_TIMEOUT_SECONDS = 3600  # one hour
 
 # General application parameters
+PORT = os.environ.get('MTT_PORT')
 USER = os.environ.get('MTT_USER', UNKNOWN)
 HOSTNAME = os.environ.get('MTT_HOSTNAME', UNKNOWN)
 VERSION = os.environ.get('MTT_VERSION', UNKNOWN)
@@ -51,6 +52,7 @@ GCS_BUCKET_NAME = os.environ.get('BUCKET_NAME', 'app_default_bucket')
 STORAGE_PATH = os.environ.get('MTT_STORAGE_PATH')
 FILE_SERVER_ROOT = os.environ.get('MTT_FILE_SERVER_ROOT')
 FILE_SERVER_URL = os.environ.get('MTT_FILE_SERVER_URL')
+FILE_SERVER_PORT = os.environ.get('MTT_FILE_SERVER_PORT')
 
 # Monitor parameters
 NETDATA_URL = os.environ.get('MTT_NETDATA_URL')
