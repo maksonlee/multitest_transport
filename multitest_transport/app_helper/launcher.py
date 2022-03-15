@@ -221,6 +221,12 @@ def monkeypatch_read_consistency():
       default_read_consistency=_datastore_api.EVENTUAL)
 
 
+def monkeypatch_grpc_message_length():
+  """Remove the default gRPC message length limit used by NDB (b/195488504)."""
+  import grpc    grpc.insecure_channel = functools.partial(
+      grpc.insecure_channel, options=[('grpc.max_receive_message_length', -1)])
+
+
 def set_env_variables():
   """Set the environment variables."""
   os.environ['APPLICATION_ID'] = FLAGS.application_id
@@ -272,6 +278,7 @@ def main(_):
   monkeypatch_default_auth()
   monkeypatch_crypt_rsa()
   monkeypatch_read_consistency()
+  monkeypatch_grpc_message_length()
   set_env_variables()
   set_env_config(modules)
 
