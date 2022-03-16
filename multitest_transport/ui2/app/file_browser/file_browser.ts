@@ -21,7 +21,7 @@ import {ActivatedRoute, Router, UrlSegment} from '@angular/router';
 import {combineLatest, ReplaySubject, Subject} from 'rxjs';
 import {filter, finalize, mergeMap, takeUntil} from 'rxjs/operators';
 
-import {FileNode, FileService, FileType, humanFileSize, joinPath, PROXY_PATH} from '../services/file_service';
+import {encodePath, FileNode, FileService, FileType, humanFileSize, joinPath, PROXY_PATH} from '../services/file_service';
 import {Notifier} from '../services/notifier';
 import {buildApiErrorMessage, noAwait} from '../shared/util';
 
@@ -32,6 +32,7 @@ import {buildApiErrorMessage, noAwait} from '../shared/util';
   templateUrl: './file_browser.ng.html',
 })
 export class FileBrowser implements OnInit, OnDestroy {
+  readonly encodePath = encodePath;
   readonly FileType = FileType;
   readonly humanFileSize = humanFileSize;
   readonly PROXY_PATH = PROXY_PATH;

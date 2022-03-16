@@ -102,7 +102,7 @@ export class FileService {
    */
   getFileOpenUrl(fileUrl: string): string {
     const [relativePath, hostname] = this.getRelativePathAndHostname(fileUrl);
-    return joinPath(PROXY_PATH, 'file', relativePath) +
+    return joinPath(PROXY_PATH, 'file', encodePath(relativePath)) +
         `?hostname=${hostname || ''}`;
   }
 

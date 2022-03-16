@@ -58,7 +58,7 @@
             {{ file.name }}
         </a>
         <a *ngIf="file.type !== FileType.DIRECTORY"
-           [href]="PROXY_PATH + '/file/' + file.path + '?hostname=' + hostname"
+           [href]="PROXY_PATH + '/file/' + encodePath(file.path) + '?hostname=' + hostname"
            target="_blank" aria-label="Open file" class="download">
              {{ file.name }}
         </a>
@@ -92,7 +92,7 @@
                 fxLayoutAlign="center center">
         <!-- Directory actions (download, change) -->
         <ng-container *ngIf="file.type === FileType.DIRECTORY">
-          <a [href]="PROXY_PATH + '/dir/' + file.path + '?download=true' + '&hostname=' + hostname" class="download-dir">
+          <a [href]="PROXY_PATH + '/dir/' + encodePath(file.path) + '?download=true' + '&hostname=' + hostname" class="download-dir">
             <button mat-icon-button aria-label="Download directory">
               <mat-icon>file_download</mat-icon>
             </button>
@@ -107,7 +107,7 @@
         </ng-container>
         <!-- File actions (download, delete) -->
         <ng-container *ngIf="file.type !== FileType.DIRECTORY">
-          <a [href]="PROXY_PATH + '/file/' + file.path + '?download=true' + '&hostname=' + hostname"
+          <a [href]="PROXY_PATH + '/file/' + encodePath(file.path) + '?download=true' + '&hostname=' + hostname"
             class="download">
             <button mat-icon-button aria-label="Download file">
               <mat-icon>file_download</mat-icon>
