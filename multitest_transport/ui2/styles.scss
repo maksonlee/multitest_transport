@@ -46,6 +46,7 @@ $theme: map_merge(
 );
 
 @include mat.all-component-themes($theme);
+@include mat.mdc-radio-theme($theme);
 @include mat.mdc-checkbox-theme($theme);
 @include mat.mdc-dialog-theme($theme);
 @include mat.mdc-tooltip-theme($theme);
@@ -56,6 +57,7 @@ $theme: map_merge(
 @include mat.mdc-progress-bar-theme($theme);
 
 @include mat.mdc-checkbox-typography($typography);
+@include mat.mdc-radio-typography($typography);
 @include mat.mdc-dialog-typography($typography);
 @include mat.mdc-tooltip-typography($typography);
 @include mat.mdc-button-typography($typography);
@@ -323,21 +325,6 @@ mat-spinner.loading-spinner {
 
   &::after {
     color: $accent-dark;
-  }
-}
-
-.mat-radio-button.mat-accent {
-  &.mat-radio-checked .mat-radio-outer-circle {
-    border-color: $accent-dark;
-  }
-
-  .mat-radio-inner-circle {
-    color: $accent-dark;
-    background-color: $accent-dark;
-  }
-
-  .mat-radio-ripple .mat-ripple-element {
-    background-color: $accent-dark;
   }
 }
 

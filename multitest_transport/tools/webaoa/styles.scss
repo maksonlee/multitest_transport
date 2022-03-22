@@ -30,6 +30,7 @@ $theme: mat.define-light-theme(
   )
 );
 @include mat.all-component-themes($theme);
+@include mat.mdc-radio-theme($theme);
 @include mat.mdc-checkbox-theme($theme);
 @include mat.mdc-dialog-theme($theme);
 @include mat.mdc-tooltip-theme($theme);
@@ -40,6 +41,7 @@ $theme: mat.define-light-theme(
 
 // Typography
 $typography: mat.define-typography-config();
+@include mat.mdc-radio-typography($typography);
 @include mat.mdc-checkbox-typography($typography);
 @include mat.mdc-dialog-typography($typography);
 @include mat.mdc-fab-typography($typography);

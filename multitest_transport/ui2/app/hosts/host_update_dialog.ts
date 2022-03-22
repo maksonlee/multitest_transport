@@ -15,9 +15,9 @@
  */
 import {Component, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MatRadioChange} from '@angular/material/mdc-radio';
 import {MatTableDataSource} from '@angular/material/mdc-table';
 import {MatPaginator} from '@angular/material/paginator';
-import {MatRadioChange} from '@angular/material/radio';
 import {MatSort} from '@angular/material/sort';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
