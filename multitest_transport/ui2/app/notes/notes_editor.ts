@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
-import {AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn} from '@angular/forms';
+import {AbstractControl, UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn} from '@angular/forms';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 import {OverflowListType} from 'google3/third_party/py/multitest_transport/ui2/app/shared/overflow_list';
 import {assertRequiredInput} from 'google3/third_party/py/multitest_transport/ui2/app/shared/util';
@@ -83,7 +83,7 @@ export class NotesEditor implements OnDestroy, OnInit {
 
   private readonly destroy = new ReplaySubject<void>();
 
-  forms: FormGroup;
+  forms: UntypedFormGroup;
   action = NoteEditorAction.CREATE;
   isLoading = false;
   isEditEventDate = false;
@@ -96,7 +96,7 @@ export class NotesEditor implements OnDestroy, OnInit {
 
   eventDateTime?: Date = undefined;
   defalutDateTimeFormat = 'YYYY-MM-DDTHH:mm:ss';
-  eventDateTimeFormControl = new FormControl('', [dateTimeValidator]);
+  eventDateTimeFormControl = new UntypedFormControl('', [dateTimeValidator]);
 
   filteredOfflineReasons: Observable<PredefinedMessage[]> =
       observableOf(this.offlineReasons);
@@ -123,14 +123,14 @@ export class NotesEditor implements OnDestroy, OnInit {
     this.load();
   }
 
-  createFormGroup(): FormGroup {
-    return new FormGroup(
+  createFormGroup(): UntypedFormGroup {
+    return new UntypedFormGroup(
         {
           'offlineReasonFormControl':
-              new FormControl(this.selecetedOfflineReason),
+              new UntypedFormControl(this.selecetedOfflineReason),
           'recoveryActionFormControl':
-              new FormControl(this.selecetedRecoveryAction),
-          'messageFormControl': new FormControl('')
+              new UntypedFormControl(this.selecetedRecoveryAction),
+          'messageFormControl': new UntypedFormControl('')
         },
         {validators: atLeastOne});
   }

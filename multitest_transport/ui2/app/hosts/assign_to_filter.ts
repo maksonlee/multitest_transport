@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges} from '@angular/core';
-import {FormControl} from '@angular/forms';
+import {UntypedFormControl} from '@angular/forms';
 import {ReplaySubject} from 'rxjs';
 import {startWith, takeUntil} from 'rxjs/operators';
 
@@ -40,7 +40,7 @@ export class AssignToFilter implements OnChanges, OnInit, OnDestroy {
   @Output() readonly submit = new EventEmitter<HostAssignInfo>();
 
   private readonly destroy = new ReplaySubject<void>();
-  valueControl = new FormControl();
+  valueControl = new UntypedFormControl();
   filteredOptions: string[] = this.dataSource;
 
   assignTo(assignee: string = this.valueControl.value) {

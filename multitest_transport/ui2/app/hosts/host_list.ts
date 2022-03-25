@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
 import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {FormControl, FormGroup} from '@angular/forms';
+import {UntypedFormControl, UntypedFormGroup} from '@angular/forms';
 import {MatAutocomplete, MatAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatDialog} from '@angular/material/dialog';
 import {MatTable} from '@angular/material/mdc-table';
@@ -153,8 +153,8 @@ export class HostList implements OnDestroy, OnInit {
   @ViewChild('valueInput', {static: true, read: MatAutocompleteTrigger})
   matAutocompleteTrigger!: MatAutocompleteTrigger;
   @ViewChild('auto', {static: true}) matAutocomplete!: MatAutocomplete;
-  valueControl = new FormControl({value: ''});
-  formGroup = new FormGroup({
+  valueControl = new UntypedFormControl({value: ''});
+  formGroup = new UntypedFormGroup({
     'valueControl': this.valueControl,
   });
   readonly searchableColumns = new Map<string, FilterHintType>([

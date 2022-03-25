@@ -16,7 +16,7 @@
 
 import {HttpErrorResponse} from '@angular/common/http';
 import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
-import {FormControl, FormGroup, ValidationErrors, ValidatorFn} from '@angular/forms';
+import {UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn} from '@angular/forms';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 import {ReplaySubject} from 'rxjs';
@@ -61,7 +61,7 @@ export interface PredefinedMessagesEditorDialogParams {
   templateUrl: './predefined_messages_editor.ng.html',
 })
 export class PredefinedMessagesEditor implements OnInit, OnDestroy {
-  forms: FormGroup;
+  forms: UntypedFormGroup;
   action = PredefinedMessagesEditorAction.CREATE;
   messageCategories: string[] = [];
   messageTypes: string[] = [];
@@ -103,15 +103,15 @@ export class PredefinedMessagesEditor implements OnInit, OnDestroy {
     this.dialogRef.close();
   }
 
-  createFormGroup(params: PredefinedMessagesEditorDialogParams): FormGroup {
-    return new FormGroup(
+  createFormGroup(params: PredefinedMessagesEditorDialogParams): UntypedFormGroup {
+    return new UntypedFormGroup(
         {
-          'labFormControl': new FormControl(this.selectedLab),
-          'messageCategoryFormControl': new FormControl(
+          'labFormControl': new UntypedFormControl(this.selectedLab),
+          'messageCategoryFormControl': new UntypedFormControl(
               {value: this.selectedMessageCategory, disabled: this.isEditMode}),
-          'messageTypeFormControl': new FormControl(
+          'messageTypeFormControl': new UntypedFormControl(
               {value: this.selectedMessageType, disabled: this.isEditMode}),
-          'contentFormControl': new FormControl(''),
+          'contentFormControl': new UntypedFormControl(''),
         },
         {validators: allRequired});
   }
