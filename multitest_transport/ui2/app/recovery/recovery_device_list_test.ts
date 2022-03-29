@@ -179,7 +179,6 @@ describe('RecoveryDeviceList', () => {
        const expectedNumber = recoveryDeviceList.deviceInfos.length - 1;
 
        recoveryDeviceList.removeDevice(mockClickEvent, deviceSerial);
-       await recoveryDeviceListFixture.whenStable();
 
        expect(
            recoveryDeviceList.tableRowsSelectManager.rowIdFieldAllValues.length)
