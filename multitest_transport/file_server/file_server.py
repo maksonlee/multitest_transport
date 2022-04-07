@@ -29,6 +29,7 @@ from absl import app as absl_app
 from absl import flags
 import attr
 import flask
+from werkzeug import security
 
 DEFAULT_CHUNK_SIZE = 4 * 1024  # Default chunk size when writing to file (4 MB)
 
@@ -47,7 +48,7 @@ def HandleException(error):
 @flask_app.route('/file/<path:path>', methods=['GET'])
 def DownloadFile(path: str) -> flask.Response:
   """Retrieve file content."""
-  resolved_path = flask.safe_join(flask.current_app.root_path, path)
+  resolved_path = security.safe_join(flask.current_app.root_path, path)
   if not os.path.isfile(resolved_path):
     flask.abort(http.HTTPStatus.NOT_FOUND, 'File \'%s\' not found' % path)
   # Treat as attachment if the 'download' query parameter is set.
@@ -85,7 +86,7 @@ def _WriteStreamToFile(file, chunk_size=DEFAULT_CHUNK_SIZE):
 @flask_app.route('/file/<path:path>', methods=['POST'])
 def UploadFile(path: str) -> flask.Response:
   """Upload a file to a path."""
-  resolved_path = flask.safe_join(flask.current_app.root_path, path)
+  resolved_path = security.safe_join(flask.current_app.root_path, path)
   if not flask.request.files:
     flask.abort(http.HTTPStatus.BAD_REQUEST,
                 'Request doesn\'t have any files: %s' % flask.request.files)
@@ -107,7 +108,7 @@ def UploadFile(path: str) -> flask.Response:
 @flask_app.route('/file/<path:path>', methods=['PUT'])
 def UploadFileByChunks(path: str) -> flask.Response:
   """Upload a file by chunks to a path."""
-  resolved_path = flask.safe_join(flask.current_app.root_path, path)
+  resolved_path = security.safe_join(flask.current_app.root_path, path)
   # Find or create a temporary upload file
   tmp_name = hashlib.sha512(resolved_path.encode()).hexdigest()
   tmp_path = os.path.join(flask.current_app.tmp_upload_dir, tmp_name)
@@ -143,7 +144,7 @@ def UploadFileByChunks(path: str) -> flask.Response:
 @flask_app.route('/file/<path:path>', methods=['DELETE'])
 def DeleteFile(path: str) -> flask.Response:
   """Delete a file if it exists."""
-  resolved_path = flask.safe_join(flask.current_app.root_path, path)
+  resolved_path = security.safe_join(flask.current_app.root_path, path)
   if os.path.isfile(resolved_path):
     os.remove(resolved_path)
   return flask.Response(status=http.HTTPStatus.NO_CONTENT)
@@ -206,7 +207,7 @@ class FileNode(object):
 @flask_app.route('/dir/<path:path>', methods=['GET'])
 def ListDirectory(path: str = '') -> flask.Response:
   """Retrieve directory contents as a list of JSON nodes or a tar archive."""
-  resolved_path = flask.safe_join(flask.current_app.root_path, path)
+  resolved_path = security.safe_join(flask.current_app.root_path, path)
   if not os.path.isdir(resolved_path):
     flask.abort(http.HTTPStatus.NOT_FOUND, 'Directory \'%s\' not found' % path)
 

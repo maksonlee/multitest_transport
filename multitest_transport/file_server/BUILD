@@ -16,6 +16,7 @@ py_library(
         third_party("absl/flags"),
         third_party("attr"),
         third_party("flask"),
+        third_party("werkzeug"),
     ],
 )
 
