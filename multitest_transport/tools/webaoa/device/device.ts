@@ -508,8 +508,11 @@ export class Key {
     map.set('left', Key.LEFT);
     map.set('down', Key.DOWN);
     map.set('up', Key.UP);
+    map.set('@', new Key('@', 0x1F, [KeyModifier.SHIFT]));
     map.set('-', new Key('-', 0x2D));
     map.set('_', new Key('_', 0x2D, [KeyModifier.SHIFT]));
+    map.set('+', new Key('+', 0x2E, [KeyModifier.SHIFT]));
+    map.set('.', new Key('.', 0x37));
 
     return map;
   })();

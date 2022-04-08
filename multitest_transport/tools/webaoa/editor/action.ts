@@ -151,7 +151,7 @@ PARSERS.set('swipe', SwipeAction);
 
 /** Writes alphanumeric text, e.g. write <text>. */
 export class WriteAction implements AoaAction {
-  private static readonly REGEXP = /^write ([ a-z0-9-_]+)$/i;
+  private static readonly REGEXP = /^write ([ a-z0-9@\-_+.]+)$/i;
   readonly command = 'write';
 
   /** @nocollapse */
@@ -178,7 +178,7 @@ PARSERS.set('write', WriteAction);
 
 /** Presses a sequence of keys, e.g. key <multiplier>*<keycode>. */
 export class KeyAction implements AoaAction {
-  private static readonly REGEXP = /^key(?: (?:\d+\*)?[a-z0-9-_]+)+$/i;
+  private static readonly REGEXP = /^key(?: (?:\d+\*)?[a-z0-9@\-_+.]+)+$/i;
   readonly command = 'key';
 
   /** @nocollapse */
@@ -188,7 +188,7 @@ export class KeyAction implements AoaAction {
     }
     const args = value.substring(4);
     const keys: Key[] = [];
-    const re = /(?:(\d+)\*)?([a-z0-9-_]+)/ig;
+    const re = /(?:(\d+)\*)?([a-z0-9@\-_+.]+)/ig;
     for (let match = re.exec(args); match; match = re.exec(args)) {
       const multiplier = match[1] ? Number(match[1]) : 1;
       const key = Key.get(match[2]);
