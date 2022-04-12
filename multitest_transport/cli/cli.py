@@ -409,8 +409,8 @@ def _StartMttNode(args, host):
   docker_helper.AddCapability('sys_admin')
   docker_helper.AddExtraArgs(['--security-opt', 'apparmor:unconfined'])
 
-  # TODO: Remove host network after a couple of releases.
-  if 'MTT_SUPPORT_BRIDGE_NETWORK=true' in docker_helper.GetEnv(image_name):
+  if (not args.use_host_network and
+      'MTT_SUPPORT_BRIDGE_NETWORK=true' in docker_helper.GetEnv(image_name)):
     docker_helper.SetHostname(host.name)
     network = _DOCKER_BRIDGE_NETWORK
   else:
@@ -1031,6 +1031,10 @@ def _CreateStartArgParser():
   parser.add_argument('--extra_ca_cert', help='Extra CA cert file for SSL.')
   parser.add_argument('--mount_local_path', action='append',
                       help='Additional path to mount in the local file store.')
+  parser.add_argument(
+      '--use_host_network',
+      help='Use host networking for the container.',
+      action='store_true')
   parser.add_argument(
       '--use_host_adb',
       help=(
