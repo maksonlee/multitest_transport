@@ -101,7 +101,9 @@
       </mat-header-cell>
       <mat-cell *matCellDef="let host" fxFlex="70px">
         <div class="offline-overall-host">
-          <mat-icon [className]="'mat-icon material-icons ' + getHostOverallAlertIcon(host)">
+          <mat-icon [className]="'mat-icon material-icons ' + getHostOverallAlertIcon(host)"
+                    [matTooltip]="host.bad_reason !== '' ? host.bad_reason : null"
+          >
             {{ getHostOverallAlertIcon(host) }}
           </mat-icon>
         </div>

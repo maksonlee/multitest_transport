@@ -153,6 +153,8 @@ export interface LabHostInfo {
   updateState: tfcModels.HostUpdateState|null;
   /** Detailed description for host update state */
   updateStateDisplayMessage: string|null;
+  /** The reason for host bad state */
+  bad_reason: string|null;
 }
 
 /** Extra info from a host. */
@@ -419,6 +421,7 @@ export function convertToLabHostInfo(source: tfcModels.HostInfo): LabHostInfo {
     note: source.note,
     pools: source.pools,
     assignee: source.assignee,
+    bad_reason: source.bad_reason,
     testHarness: source.test_harness,
     testHarnessVersion: source.test_harness_version,
     test_runner_start_time: source.test_runner_start_time,

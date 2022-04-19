@@ -649,6 +649,7 @@ export function newMockHostInfo(
     device_count_summaries: deviceCountSummaries,
     allocated_devices: '',
     available_devices: '',
+    bad_reason: '',
     offline_devices: offlineDevices,
     total_devices: totalDevices,
     flated_extra_info: ['host_ip: 127.0.0.1', 'wi-fi: abc'],
@@ -695,6 +696,7 @@ export function newMockUnconvertedHostInfo(
     lastRecoveryTime: string = TIMESTAMP,
     updateState: tfcModels.HostUpdateState|null = null,
     updateStateDisplayMessage: string|null = null,
+    badReason: string = '',
     ): mttLabModels.LabHostInfo {
   return {
     extraInfo,
@@ -716,6 +718,7 @@ export function newMockUnconvertedHostInfo(
     flatedExtraInfo: ['host_ip: 127.0.0.1', 'wi-fi: abc'],
     updateState,
     updateStateDisplayMessage,
+    bad_reason: badReason,
   };
 }
 

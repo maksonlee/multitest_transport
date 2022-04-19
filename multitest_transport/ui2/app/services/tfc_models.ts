@@ -411,6 +411,8 @@ export declare interface HostInfo {
   readonly offline_devices?: string;
   /** Old schema for backward compatibility: Total device count. */
   readonly total_devices?: string;
+  /** The reason for host bad state */
+  readonly bad_reason: string;
   /** Flated extra info for the host. */
   readonly flated_extra_info: string[];
   /** Host update state. */
