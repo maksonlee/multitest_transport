@@ -157,7 +157,7 @@
              (keyup.enter)="imageDropdown.open()" />
       <mat-select #imageDropdown [(ngModel)]="selectedImage">
         <mat-option *ngFor="let image of testHarnessImages"
-                    matTooltip="Tags: {{image.tags.join(', ')}}"
+                    matTooltip="Tags: {{image.tags ? image.tags.join(', ') : ''}}"
                     [value]="image">
           Image: {{image.test_harness_version}} ({{image.digest.slice(-7)}})
           --
