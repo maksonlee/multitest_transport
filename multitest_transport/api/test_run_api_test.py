@@ -393,52 +393,47 @@ class TestRunApiTest(api_test_util.TestCase):
 
   @mock.patch.object(file_util.FileHandle, 'Get')
   @mock.patch.object(sql_models.db, 'Session')
-  def testDeleteMulti(self, sql_session, mock_file_handle_get):
-    mock_file_handle = mock.MagicMock()
-    mock_file_handle_get.return_value = mock_file_handle
+  @mock.patch.object(env, 'STORAGE_PATH', '/root')
+  def testDeleteMulti(self, _, mock_handle_factory):
+    """Tests that test runs can be deleted."""
+    mock_output_dir = mock.MagicMock()
+    mock_output_zip = mock.MagicMock()
+    mock_handle_factory.side_effect = [mock_output_dir, mock_output_zip]
 
     test = self._createMockTest()
-    completed_run = self._createMockTestRuns(
-        test, state=ndb_models.TestRunState.COMPLETED, count=1)[0]
-    canceled_run = self._createMockTestRuns(
-        test, state=ndb_models.TestRunState.CANCELED, count=1)[0]
-    error_run = self._createMockTestRuns(
-        test, state=ndb_models.TestRunState.ERROR, count=1)[0]
+    test_run = self._createMockTestRuns(
+        test,
+        state=ndb_models.TestRunState.COMPLETED,
+        output_path='/test_runs/test_run_id/output/')[0]
 
     self.app.delete(
         '/_ah/api/mtt/v1/test_runs',
-        params={'test_run_ids': [completed_run.key.id(),
-                                 canceled_run.key.id(),
-                                 error_run.key.id()]})
+        params={'test_run_ids': [test_run.key.id()]})
+    self.assertIsNone(test_run.key.get())
+    mock_handle_factory.assert_has_calls(
+        [mock.call('file:///root/test_runs/test_run_id'),
+         mock.call('file:///root/test_runs/test_run_id.zip')])
+    mock_output_dir.DeleteDir.assert_called_once()
+    mock_output_zip.Delete.assert_called_once()
 
-    self.assertIsNone(completed_run.key.get())
-    self.assertIsNone(canceled_run.key.get())
-    self.assertIsNone(error_run.key.get())
-
-  @mock.patch.object(file_util.FileHandle, 'Get')
   @mock.patch.object(sql_models.db, 'Session')
-  def testDeleteMulti_invalidRuns(self, sql_session, mock_file_handle_get):
-    mock_file_handle = mock.MagicMock()
-    mock_file_handle_get.return_value = mock_file_handle
-
+  def testDeleteMulti_multiple(self, _):
+    """Tests that multiple runs can be deleted and failed ones are skipped."""
     test = self._createMockTest()
-    completed_run = self._createMockTestRuns(
-        test, state=ndb_models.TestRunState.COMPLETED, count=1)[0]
     canceled_run = self._createMockTestRuns(
-        test, state=ndb_models.TestRunState.CANCELED, count=1)[0]
+        test, state=ndb_models.TestRunState.CANCELED)[0]
     queued_run = self._createMockTestRuns(
-        test, state=ndb_models.TestRunState.QUEUED, count=1)[0]
+        test, state=ndb_models.TestRunState.QUEUED)[0]
     running_run = self._createMockTestRuns(
-        test, state=ndb_models.TestRunState.RUNNING, count=1)[0]
+        test, state=ndb_models.TestRunState.RUNNING)[0]
 
+    # CANCELED run is deleted, but active and unknown runs are skipped.
     res = self.app.delete(
         '/_ah/api/mtt/v1/test_runs',
         params={'test_run_ids': [canceled_run.key.id(),
                                  queued_run.key.id(),
                                  running_run.key.id(),
                                  'fake_id']}, expect_errors=True)
-
-    self.assertIsNotNone(completed_run.key.get())
     self.assertIsNone(canceled_run.key.get())
     self.assertIsNotNone(queued_run.key.get())
     self.assertIsNotNone(running_run.key.get())

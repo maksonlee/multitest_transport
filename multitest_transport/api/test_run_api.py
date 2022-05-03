@@ -15,6 +15,7 @@
 """A module to provide test run APIs."""
 # Non-standard docstrings are used to generate the API documentation.
 import logging
+import os
 import zipfile
 
 import endpoints
@@ -234,11 +235,13 @@ class TestRunApi(remote.Service):
       raise endpoints.BadRequestException(
           'Cannot delete non-final test run %s' % test_run_id)
 
-    # Remove output files
+    # Remove output files (i.e. test_runs/<ID>/ and test_runs/<ID>.zip).
     if test_run.output_path:
-      output_folder_url = file_util.GetAppStorageUrl([test_run.output_path])
-      output_folder = file_util.FileHandle.Get(output_folder_url)
-      output_folder.DeleteDir()
+      output_dir = os.path.normpath(os.path.join(test_run.output_path, '..'))
+      output_dir_url = file_util.GetAppStorageUrl([output_dir])
+      file_util.FileHandle.Get(output_dir_url).DeleteDir()
+      output_zip_url = file_util.GetAppStorageUrl([output_dir + '.zip'])
+      file_util.FileHandle.Get(output_zip_url).Delete()
 
     # Delete test results database
     with sql_models.db.Session() as session:

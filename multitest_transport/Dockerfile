@@ -213,7 +213,6 @@ ENV PATH /tradefed:${PATH}
 # Setup scripts
 RUN chmod 755 \
         /mtt/scripts/init.sh \
-        /mtt/scripts/file_cleaner.sh \
         /mtt/scripts/gen_subnets.py
 
 VOLUME /data
