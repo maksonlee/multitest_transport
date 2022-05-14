@@ -26,7 +26,7 @@
   </object>
   <object type="cluster_options" class="com.android.tradefed.cluster.ClusterOptions">
     <option name="check-command-state" value="true" />
-    <option name="check-flashing-permits-on-lease" value="false" />
+    <option name="check-permits-on-lease" value="false" />
     <option name="cluster" value="default"/>
     <option name="device-monitor-interval" value="60000"/>
     <option name="run-target-format" value="*" />
