@@ -69,7 +69,7 @@ class ModuleApplicationTest(parameterized.TestCase):
     self.assertEqual(
         {
             'DEFAULT_VERSION_HOSTNAME': 'hostname:8000',
-            'CURRENT_MODULE_ID': 'name'
+            'GAE_SERVICE': 'name'
         }, os.environ)
     self.assertEqual(['[::]:8000'], module_app.cfg.bind)
     self.assertEqual('ERROR', module_app.cfg.logconfig_dict['root']['level'])

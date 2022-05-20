@@ -163,7 +163,7 @@ class ModuleApplication(gunicorn.app.base.BaseApplication):
   def load_config(self):
     # Set environment variables
     os.environ['DEFAULT_VERSION_HOSTNAME'] = self.module.hostname
-    os.environ['CURRENT_MODULE_ID'] = self.module.name
+    os.environ['GAE_SERVICE'] = self.module.name
     # Set gunicorn config
     self.cfg.set('accesslog', '-')  # Log requests to stdout
     self.cfg.set('bind', self.bind_address)
