@@ -12,6 +12,7 @@ pytype_strict_library(
     ],
     deps = [
         ":rabbitmq_plugin_lib",
+        "//third_party/py/google/appengine/api:full_app_id",
         "//multitest_transport/models:test_run_hook_lib",
         "@tradefed_cluster//tradefed_cluster:common_lib",
         "@tradefed_cluster//tradefed_cluster:env_config_lib",

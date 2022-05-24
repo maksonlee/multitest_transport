@@ -60,6 +60,7 @@ pytype_strict_library(
     srcs = [
         "env.py",
     ],
+    deps = ["//third_party/py/google/appengine/api:full_app_id"],
 )
 
 pytype_strict_library(

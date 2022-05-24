@@ -34,6 +34,7 @@ import urllib.parse
 from absl import app as absl_app
 from absl import flags
 import attr
+from google.appengine.api import full_app_id
 import gunicorn.app.base
 from gunicorn.util import import_app
 import requests
@@ -229,7 +230,7 @@ def monkeypatch_grpc_message_length():
 
 def set_env_variables():
   """Set the environment variables."""
-  os.environ['APPLICATION_ID'] = FLAGS.application_id
+  full_app_id.put(FLAGS.application_id)
   os.environ['DATASTORE_EMULATOR_HOST'] = FLAGS.datastore_emulator_host
 
 

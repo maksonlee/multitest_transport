@@ -16,6 +16,7 @@
 import enum
 import os
 import re
+from google.appengine.api import full_app_id
 
 
 class OperationMode(enum.Enum):
@@ -45,7 +46,7 @@ IS_GOOGLE = bool(re.search(r'\.google\.com$', HOSTNAME))
 SQL_DATABASE_URI = os.environ.get('MTT_SQL_DATABASE_URI')
 
 # Google Cloud Storage parameters
-APPLICATION_ID = os.environ.get('APPLICATION_ID')
+APPLICATION_ID = full_app_id.get()
 GCS_BUCKET_NAME = os.environ.get('BUCKET_NAME', 'app_default_bucket')
 
 # File storage parameters
