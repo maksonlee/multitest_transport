@@ -187,7 +187,7 @@ class MttContainer(object):
     response.raise_for_status()
     return response.json()
 
-  def WaitForState(self, test_run_id, expected_state, timeout=30):
+  def WaitForState(self, test_run_id, expected_state, timeout=60):
     """Wait for a test run to be in a specific state."""
     start_time = time.time()
     while True:
