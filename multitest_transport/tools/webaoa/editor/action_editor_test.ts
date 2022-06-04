@@ -17,7 +17,7 @@
 
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/mdc-dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {getEl} from 'google3/third_party/py/multitest_transport/ui2/app/testing/jasmine_util';
 
