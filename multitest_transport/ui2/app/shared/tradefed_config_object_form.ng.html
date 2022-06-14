@@ -1,5 +1,5 @@
 <!--
- Copyright 2019 Google LLC
+ Copyright 2022 Google LLC
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
  limitations under the License.
 -->
 
-<mat-card *ngFor="let targetPreparer of targetPreparers; let i = index">
-  <h2>TF Target Preparer
+<mat-card *ngFor="let configObject of configObjects; let i = index">
+  <h2>TF {{ configObjectName }}
     <!-- Delete Button -->
     <button
       *ngIf="canEdit"
@@ -23,7 +23,8 @@
       color="accent"
       type="button"
       class="delete-button"
-      (click)="deleteTargetPreparer.emit(i); hasContentChanged = true">
+      (click)="deleteConfigObject.emit(i); hasContentChanged = true"
+    >
       Remove
     </button>
   </h2>
@@ -32,36 +33,43 @@
   <div fxLayout="column">
     <mat-form-field appearance="outline" floatLabel="always">
       <mat-label>Class Name</mat-label>
-      <input matInput type="text" [(ngModel)]="targetPreparer.class_name" [readonly]="!canEdit"
-        class="class-name-input" name="class_name" required #class_name="ngModel">
+      <input
+        matInput
+        type="text"
+        [(ngModel)]="configObject.class_name"
+        [readonly]="!canEdit"
+        class="class-name-input"
+        name="class_name"
+        required
+        #class_name="ngModel"
+      />
       <mat-error *ngIf="class_name.invalid && class_name.touched">Class name is required</mat-error>
     </mat-form-field>
   </div>
 
-  <h3 *ngIf="targetPreparer.option_values">
-    Target Preparer Options
-  </h3>
+  <h3 *ngIf="configObject.option_values">{{ configObjectName }} Options</h3>
 
   <!-- Option Form -->
-  <tradefed-config-option-form
-    [optionTypeName]="'Target Preparer Option'"
-    [optionValues]="targetPreparer.option_values"
+  <name-multi-value-pair-list-form
+    [optionTypeName]="configObjectName + ' Option'"
+    [optionValues]="configObject.option_values"
     [canEdit]="canEdit"
-    (addOption)="onAddOption(targetPreparer)"
-    (removeOption)="onRemoveOption(targetPreparer, $event)"
-    (optionValueChange)="onOptionValueChange(targetPreparer, $event)"
-    >
-  </tradefed-config-option-form>
+    (addOption)="onAddOption(configObject)"
+    (removeOption)="onRemoveOption(configObject, $event)"
+    (optionValueChange)="onOptionValueChange(configObject, $event)"
+  >
+  </name-multi-value-pair-list-form>
 </mat-card>
 
 <!-- Add button  -->
 <button
   *ngIf="canEdit"
   mat-stroked-button
-  aria-label="Add target preparer"
+  [attr.aria-label]="'Add ' + configObjectName.toLowerCase()"
   color="accent"
   type="button"
-  id="addTargetPreparerButton"
-  (click)="addTargetPreparer.emit(); hasContentChanged = true">
-    + Add Target Preparer
+  id="addConfigObjectButton"
+  (click)="addConfigObject.emit(); hasContentChanged = true"
+>
+  + Add {{ configObjectName }}
 </button>

@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,29 +21,30 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
 import {newMockNameMultiValuePairList, newMockTradefedConfigObjectList} from '../testing/mtt_mocks';
 
-import {DeviceActionsModule} from './device_actions_module';
-import {TargetPreparerForm} from './target_preparer_form';
-import {OptionValueChangeEvent} from './tradefed_config_option_form';
+import {OptionValueChangeEvent} from './name_multi_value_pair_list_form';
+import {SharedModule} from './shared_module';
+import {TradefedConfigObjectForm} from './tradefed_config_object_form';
 
-describe('TargetPreparerForm', () => {
-  let targetPreparerForm: TargetPreparerForm;
-  let targetPreparerFormFixture: ComponentFixture<TargetPreparerForm>;
+describe('TradefedConfigObjectForm', () => {
+  let configObjectForm: TradefedConfigObjectForm;
+  let configObjectFormFixture: ComponentFixture<TradefedConfigObjectForm>;
   let el: DebugElement;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [NoopAnimationsModule, DeviceActionsModule],
-      });
+      imports: [NoopAnimationsModule, SharedModule],
+    });
 
-    targetPreparerFormFixture = TestBed.createComponent(TargetPreparerForm);
-    el = targetPreparerFormFixture.debugElement;
-    targetPreparerForm = targetPreparerFormFixture.componentInstance;
-    targetPreparerForm.targetPreparers = newMockTradefedConfigObjectList();
-    targetPreparerFormFixture.detectChanges();
+    configObjectFormFixture = TestBed.createComponent(TradefedConfigObjectForm);
+    el = configObjectFormFixture.debugElement;
+    configObjectForm = configObjectFormFixture.componentInstance;
+    configObjectForm.configObjects = newMockTradefedConfigObjectList();
+    configObjectForm.configObjectName = 'Target Preparer';
+    configObjectFormFixture.detectChanges();
   });
 
   it('initializes a component', () => {
-    expect(targetPreparerForm).toBeTruthy();
+    expect(configObjectForm).toBeTruthy();
 
     const textContent = getTextContent(el);
     expect(textContent).toContain('Class Name');
@@ -55,8 +56,8 @@ describe('TargetPreparerForm', () => {
   });
 
   it('should hide add and remove buttons when not editable', () => {
-    targetPreparerForm.canEdit = false;
-    targetPreparerFormFixture.detectChanges();
+    configObjectForm.canEdit = false;
+    configObjectFormFixture.detectChanges();
     const textContent = getTextContent(el);
     expect(textContent).not.toContain('Add Target Preparer');
     expect(textContent).not.toContain('Remove');
@@ -66,18 +67,18 @@ describe('TargetPreparerForm', () => {
   });
 
   it('called correct function on press add button', () => {
-    const onAddTargetPreparer = jasmine.createSpy('onAddTargetPreparer');
-    targetPreparerForm.addTargetPreparer.subscribe(onAddTargetPreparer);
-    getEl(el, '#addTargetPreparerButton').click();
-    expect(onAddTargetPreparer).toHaveBeenCalled();
+    const onAddConfigObject = jasmine.createSpy('onAddConfigObject');
+    configObjectForm.addConfigObject.subscribe(onAddConfigObject);
+    getEl(el, '#addConfigObjectButton').click();
+    expect(onAddConfigObject).toHaveBeenCalled();
   });
 
   it('called correct function on press delete button', () => {
-    const onDeleteTargetPreparer = jasmine.createSpy('onDeleteTargetPreparer');
-    targetPreparerForm.deleteTargetPreparer.subscribe(onDeleteTargetPreparer);
+    const onDeleteConfigObject = jasmine.createSpy('onDeleteConfigObject');
+    configObjectForm.deleteConfigObject.subscribe(onDeleteConfigObject);
     getEl(el, '.delete-button').click();
-    expect(onDeleteTargetPreparer).toHaveBeenCalled();
-    expect(onDeleteTargetPreparer).toHaveBeenCalledWith(0);
+    expect(onDeleteConfigObject).toHaveBeenCalled();
+    expect(onDeleteConfigObject).toHaveBeenCalledWith(0);
   });
 
   it('has correct number of entries', () => {
@@ -87,18 +88,18 @@ describe('TargetPreparerForm', () => {
 
   describe('onAddOption', () => {
     it('adds a new option with valid index', () => {
-      const tp = targetPreparerForm.targetPreparers[0];
-      targetPreparerForm.onAddOption(tp);
+      const tp = configObjectForm.configObjects[0];
+      configObjectForm.onAddOption(tp);
       expect(tp.option_values!.length).toBe(1);
     });
   });
 
   describe('onRemoveOption', () => {
     it('removes an option with valid index', () => {
-      const tp = targetPreparerForm.targetPreparers[1];
-      targetPreparerForm.onAddOption(tp);
+      const tp = configObjectForm.configObjects[1];
+      configObjectForm.onAddOption(tp);
       expect(tp.option_values!.length).toBe(1);
-      targetPreparerForm.onRemoveOption(tp, 0);
+      configObjectForm.onRemoveOption(tp, 0);
       expect(tp.option_values!.length).toBe(0);
     });
   });
@@ -106,9 +107,9 @@ describe('TargetPreparerForm', () => {
   describe('onOptionValueChange', () => {
     it('returns correct output with valid input', () => {
       const event: OptionValueChangeEvent = {value: 'a\nb', index: 0};
-      const tp = targetPreparerForm.targetPreparers[0];
+      const tp = configObjectForm.configObjects[0];
       tp.option_values = newMockNameMultiValuePairList();
-      const res = targetPreparerForm.onOptionValueChange(tp, event);
+      const res = configObjectForm.onOptionValueChange(tp, event);
       expect(res![0]).toBe('a');
       expect(res![1]).toBe('b');
     });

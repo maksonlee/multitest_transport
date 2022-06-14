@@ -17,8 +17,9 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 
 import {NameMultiValuePair} from '../services/mtt_models';
-import {FormChangeTracker} from '../shared/can_deactivate';
-import {arrayToString} from '../shared/util';
+
+import {FormChangeTracker} from './can_deactivate';
+import {arrayToString} from './util';
 
 /**
  * An event object emitted when option's value changed
@@ -29,17 +30,17 @@ export interface OptionValueChangeEvent {
 }
 
 /**
- * Form for Tradefed Config Options
+ * Form for NameMultiValuePair list
  */
 @Component({
-  selector: 'tradefed-config-option-form',
-  styleUrls: ['tradefed_config_option_form.css'],
-  templateUrl: './tradefed_config_option_form.ng.html',
+  selector: 'name-multi-value-pair-list-form',
+  styleUrls: ['name_multi_value_pair_list_form.css'],
+  templateUrl: './name_multi_value_pair_list_form.ng.html',
   providers:
-      [{provide: FormChangeTracker, useExisting: TradefedConfigOptionForm}]
+      [{provide: FormChangeTracker, useExisting: NameMultiValuePairListForm}]
 })
-export class TradefedConfigOptionForm extends FormChangeTracker {
-  @Input() optionTypeName = 'TradeFed Option';
+export class NameMultiValuePairListForm extends FormChangeTracker {
+  @Input() optionTypeName = 'Option';
   @Input() optionValues?: NameMultiValuePair[];
   @Input() canEdit = true;
   @Output() readonly addOption = new EventEmitter();

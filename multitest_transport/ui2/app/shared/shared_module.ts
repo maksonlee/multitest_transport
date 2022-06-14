@@ -63,6 +63,7 @@ import {ListForm} from './list_form';
 import {LocalFileStore} from './local_file_store';
 import {MapListFieldPipe} from './map_list_field_pipe';
 import {MultiSelect} from './multi_select';
+import {NameMultiValuePairListForm} from './name_multi_value_pair_list_form';
 import {NameValuePairListForm} from './name_value_pair_list_form';
 import {OverflowList} from './overflow_list';
 import {Paginator} from './paginator';
@@ -72,6 +73,7 @@ import {StatusButton} from './status_button';
 import {TableRowSelect, TableRowSelectCheckbox, TableRowsSelectCheckbox, TableRowsSelectManager} from './table_rows_select';
 import {TestRunConfigForm} from './test_run_config_form';
 import {TimeInputFilter} from './time_input_filter';
+import {TradefedConfigObjectForm} from './tradefed_config_object_form';
 import {TreeTable} from './tree_table';
 import {UtcPipe} from './utc_pipe';
 import {ValuesPipe} from './values_pipe';
@@ -97,6 +99,7 @@ const COMPONENTS = [
   ListForm,
   LocalFileStore,
   MultiSelect,
+  NameMultiValuePairListForm,
   NameValuePairListForm,
   OverflowList,
   Paginator,
@@ -105,6 +108,7 @@ const COMPONENTS = [
   StatusButton,
   TestRunConfigForm,
   TimeInputFilter,
+  TradefedConfigObjectForm,
   TreeTable,
   ViewColumnsButton,
 ];

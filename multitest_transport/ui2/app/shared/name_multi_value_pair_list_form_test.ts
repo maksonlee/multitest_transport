@@ -22,32 +22,32 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {getEl, getEls, getTextContent} from '../testing/jasmine_util';
 import {newMockNameMultiValuePairList} from '../testing/mtt_mocks';
 
-import {DeviceActionsModule} from './device_actions_module';
-import {TradefedConfigOptionForm} from './tradefed_config_option_form';
+import {NameMultiValuePairListForm} from './name_multi_value_pair_list_form';
+import {SharedModule} from './shared_module';
 
-describe('TradefedConfigOptionForm', () => {
-  let tradefedConfigOptionForm: TradefedConfigOptionForm;
-  let tradefedConfigOptionFormFixture:
-      ComponentFixture<TradefedConfigOptionForm>;
+describe('NameMultiValuePairListForm', () => {
+  let nameMultiValuePairListForm: NameMultiValuePairListForm;
+  let nameMultiValuePairListFormFixture:
+      ComponentFixture<NameMultiValuePairListForm>;
   let el: DebugElement;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [NoopAnimationsModule, DeviceActionsModule],
-      });
+      imports: [NoopAnimationsModule, SharedModule],
+    });
 
-    tradefedConfigOptionFormFixture =
-        TestBed.createComponent(TradefedConfigOptionForm);
-    el = tradefedConfigOptionFormFixture.debugElement;
-    tradefedConfigOptionForm =
-        tradefedConfigOptionFormFixture.componentInstance;
-    tradefedConfigOptionForm.optionTypeName = 'Target Preparer Option';
-    tradefedConfigOptionForm.optionValues = newMockNameMultiValuePairList();
-    tradefedConfigOptionFormFixture.detectChanges();
+    nameMultiValuePairListFormFixture =
+        TestBed.createComponent(NameMultiValuePairListForm);
+    el = nameMultiValuePairListFormFixture.debugElement;
+    nameMultiValuePairListForm =
+        nameMultiValuePairListFormFixture.componentInstance;
+    nameMultiValuePairListForm.optionTypeName = 'Target Preparer Option';
+    nameMultiValuePairListForm.optionValues = newMockNameMultiValuePairList();
+    nameMultiValuePairListFormFixture.detectChanges();
   });
 
   it('initializes a component', () => {
-    expect(tradefedConfigOptionForm).toBeTruthy();
+    expect(nameMultiValuePairListForm).toBeTruthy();
 
     const textContent = getTextContent(el);
     expect(textContent).toContain('Name');
@@ -61,13 +61,13 @@ describe('TradefedConfigOptionForm', () => {
   });
 
   it('should show hide add and delete buttons when not editable', () => {
-    tradefedConfigOptionForm.canEdit = false;
-    tradefedConfigOptionFormFixture.detectChanges();
+    nameMultiValuePairListForm.canEdit = false;
+    nameMultiValuePairListFormFixture.detectChanges();
 
-    const addButton = tradefedConfigOptionFormFixture.debugElement.query(
+    const addButton = nameMultiValuePairListFormFixture.debugElement.query(
         By.css('.add-option-button'));
     expect(addButton).toBeFalsy();
-    const deleteButton = tradefedConfigOptionFormFixture.debugElement.query(
+    const deleteButton = nameMultiValuePairListFormFixture.debugElement.query(
         By.css('.shared-delete-buttton'));
     expect(deleteButton).toBeFalsy();
 
@@ -80,14 +80,14 @@ describe('TradefedConfigOptionForm', () => {
 
   it('called correct function on press add button', () => {
     const onAddOption = jasmine.createSpy('onAddOption');
-    tradefedConfigOptionForm.addOption.subscribe(onAddOption);
+    nameMultiValuePairListForm.addOption.subscribe(onAddOption);
     getEl(el, '.add-option-button').click();
     expect(onAddOption).toHaveBeenCalled();
   });
 
   it('called correct function on press delete button', () => {
     const onRemoveOption = jasmine.createSpy('onRemoveOption');
-    tradefedConfigOptionForm.removeOption.subscribe(onRemoveOption);
+    nameMultiValuePairListForm.removeOption.subscribe(onRemoveOption);
     getEl(el, '.shared-delete-button').click();
     expect(onRemoveOption).toHaveBeenCalled();
     expect(onRemoveOption).toHaveBeenCalledWith(0);
@@ -95,7 +95,7 @@ describe('TradefedConfigOptionForm', () => {
 
   it('called correct function on changing textarea content', () => {
     const onOptionValueChange = jasmine.createSpy('onOptionValueChange');
-    tradefedConfigOptionForm.optionValueChange.subscribe(onOptionValueChange);
+    nameMultiValuePairListForm.optionValueChange.subscribe(onOptionValueChange);
     const textarea = el.query(By.css('textarea')).nativeElement;
     textarea.value = '123';
     textarea.dispatchEvent(new Event('input'));

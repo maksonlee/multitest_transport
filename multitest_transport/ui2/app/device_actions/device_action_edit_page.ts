@@ -23,8 +23,8 @@ import {MttClient} from '../services/mtt_client';
 import {BuildChannel, DeviceAction, newDeviceAction, TestResourceType} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {FormChangeTracker} from '../shared/can_deactivate';
+import {OptionValueChangeEvent} from '../shared/name_multi_value_pair_list_form';
 import {buildApiErrorMessage, FormMode} from '../shared/util';
-import {OptionValueChangeEvent} from './tradefed_config_option_form';
 
 /**
  * Form for creating a device action
