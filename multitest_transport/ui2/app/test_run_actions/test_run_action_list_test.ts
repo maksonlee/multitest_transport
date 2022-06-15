@@ -18,6 +18,7 @@ import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf, throwError} from 'rxjs';
 
 import {MttClient, TestRunActionClient} from '../services/mtt_client';
@@ -51,7 +52,8 @@ describe('TestRunActionList', () => {
     client.delete.and.returnValue(observableOf(null));
 
     TestBed.configureTestingModule({
-      imports: [TestRunActionsModule, NoopAnimationsModule],
+      imports:
+          [NoopAnimationsModule, RouterTestingModule, TestRunActionsModule],
       providers: [
         {provide: LiveAnnouncer, useValue: liveAnnouncer},
         {provide: Notifier, useValue: notifier},

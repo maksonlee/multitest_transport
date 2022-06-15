@@ -15,13 +15,16 @@
  */
 
 import {NgModule} from '@angular/core';
+import {RouterModule} from '@angular/router';
 
 import {SharedModule} from '../shared';
 
+import {TestRunActionEditPage} from './test_run_action_edit_page';
 import {TestRunActionList} from './test_run_action_list';
 import {TestRunActionPicker} from './test_run_action_picker';
 
 const COMPONENTS = [
+  TestRunActionEditPage,
   TestRunActionList,
   TestRunActionPicker,
 ];
@@ -30,6 +33,7 @@ const COMPONENTS = [
 @NgModule({
   declarations: COMPONENTS,
   imports: [
+    RouterModule,
     SharedModule,
   ],
   exports: COMPONENTS,

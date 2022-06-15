@@ -1,0 +1,99 @@
+<!--
+ Copyright 2022 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<div class="header">
+  <div class="back-button-label">Test Run Actions</div>
+  <h1 class="subtitle">
+    <button
+      mat-icon-button
+      (click)="back()"
+      #backButton
+      id="back-button"
+      matTooltip="Return to settings page"
+      aria-label="Return to settings page"
+    >
+      <mat-icon class="back-button-icon">arrow_back</mat-icon>
+    </button>
+    {{ editMode ? "Edit Test Run Action" : "New Test Run Action" }}
+  </h1>
+</div>
+
+<div class="page">
+  <!-- Test Information -->
+  <h2>Test Run Action Information</h2>
+  <!-- Name field -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label>Name</mat-label>
+    <input matInput type="text" [(ngModel)]="data.name" name="name" required #name="ngModel" />
+    <mat-error *ngIf="name.invalid && name.touched">Name is required</mat-error>
+  </mat-form-field>
+
+  <!-- Description field -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label>Description</mat-label>
+    <textarea matInput type="text" [(ngModel)]="data.description" cdkTextareaAutosize></textarea>
+  </mat-form-field>
+
+  <!-- Hook class field -->
+  <!-- TODO: Use dropdown -->
+  <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
+    <mat-label>Hook Class Name</mat-label>
+    <input matInput type="text" [(ngModel)]="data.hook_class_name" />
+  </mat-form-field>
+
+  <mat-divider></mat-divider>
+
+  <!-- Test run phases -->
+  <h2>Test Run Phases</h2>
+  <mat-selection-list [(ngModel)]="data.phases">
+    <mat-list-option *ngFor="let phase of PHASES" [value]="phase" checkboxPosition="before">
+      {{ phase }}
+    </mat-list-option>
+  </mat-selection-list>
+
+  <mat-divider></mat-divider>
+
+  <!-- Test run action options -->
+  <!-- TODO: Use dropdown -->
+  <h2>Options</h2>
+  <name-value-pair-list-form
+    [data]="data.options"
+    (addNameValuePair)="onAddOption()"
+    (removeNameValuePair)="onRemoveOption($event)"
+  ></name-value-pair-list-form>
+
+  <mat-divider></mat-divider>
+
+  <!-- TradeFed Result Reporters -->
+  <h2>TradeFed Result Reporters</h2>
+  <tradefed-config-object-form
+    [configObjects]="data.tradefed_result_reporters"
+    [configObjectName]="'Result Reporter'"
+    (addConfigObject)="onAddResultReporter()"
+    (deleteConfigObject)="onDeleteResultReporter($event)"
+  >
+  </tradefed-config-object-form>
+
+  <!-- Update/Create Button and Cancel Button-->
+  <div>
+    <button mat-flat-button color="accent" type="button" (click)="onSubmit()">
+      {{ editMode ? "Update" : "Create" }}
+    </button>
+    <button mat-button color="accent" type="button" (click)="back()">Cancel</button>
+    <!-- Error messages after validation -->
+    <form-error-info [invalidInputs]="invalidInputs"></form-error-info>
+  </div>
+</div>

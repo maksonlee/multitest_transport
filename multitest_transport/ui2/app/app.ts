@@ -56,6 +56,7 @@ import {UnsavedChangeGuard} from './shared/can_deactivate';
 import {SharedModule} from './shared/shared_module';
 import {TestPlanEditPage} from './test_plans/test_plan_edit_page';
 import {TestPlanListPage} from './test_plans/test_plan_list_page';
+import {TestRunActionEditPage} from './test_run_actions/test_run_action_edit_page';
 import {TestRunActionList} from './test_run_actions/test_run_action_list';
 import {NewTestRunPage} from './test_runs/new_test_run_page';
 import {TestRunConfigEditor} from './test_runs/test_run_config_editor';
@@ -139,6 +140,21 @@ export const routes: Routes = [
     canDeactivate: [UnsavedChangeGuard]
   },
   {path: 'test_runs', component: TestRunListPage},
+  {
+    path: 'test_run_actions/new',
+    component: TestRunActionEditPage,
+    canDeactivate: [UnsavedChangeGuard]
+  },
+  {
+    path: 'test_run_actions/new/:copy_id',
+    component: TestRunActionEditPage,
+    canDeactivate: [UnsavedChangeGuard]
+  },
+  {
+    path: 'test_run_actions/:id',
+    component: TestRunActionEditPage,
+    canDeactivate: [UnsavedChangeGuard]
+  },
   {path: 'test_plans', component: TestPlanListPage},
   {
     path: 'test_plans/new',

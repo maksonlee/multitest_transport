@@ -11,12 +11,14 @@ per_file_sass_binaries(
 ng_module(
     name = "test_run_actions",
     srcs = [
+        "test_run_action_edit_page.ts",
         "test_run_action_list.ts",
         "test_run_action_picker.ts",
         "test_run_actions_module.ts",
     ],
     assets = [
         ":styles",
+        "test_run_action_edit_page.ng.html",
         "test_run_action_list.ng.html",
         "test_run_action_picker.ng.html",
     ],
@@ -27,6 +29,8 @@ ng_module(
         third_party_js("angular2:core"),
         third_party_js("angular2:cdk_collections"),
         third_party_js("angular2:cdk_drag_drop"),
+        third_party_js("angular2:material_button"),
+        third_party_js("angular2:router"),
         third_party_js("rxjs"),
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/app/shared",
@@ -37,6 +41,7 @@ ng_module(
     name = "tests",
     testonly = True,
     srcs = [
+        "test_run_action_edit_page_test.ts",
         "test_run_action_list_test.ts",
         "test_run_action_picker_test.ts",
     ],
@@ -47,6 +52,8 @@ ng_module(
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),
         third_party_js("angular2:platform_browser_animations"),
+        third_party_js("angular2:router"),
+        third_party_js("angular2:router_testing"),
         third_party_js("rxjs"),
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/app/testing:jasmine_util",

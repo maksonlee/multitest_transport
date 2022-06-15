@@ -19,6 +19,7 @@
 <div [class.loading-mask]="isLoading" class="page">
   <mat-card *ngFor="let action of actions" class="hover-mat-card">
     <h2>
+      <!-- TODO: Add service account email -->
       <span fxFlex>
         {{action.name}}
         <status-button
@@ -51,18 +52,18 @@
               (click)="revokeAuthorization(action)">
         Revoke Authorization
       </button>
-      <button id="edit-button"
+      <button [routerLink]="['/test_run_actions', action.id]"
+              id="edit-button"
               mat-icon-button
               aria-label="Edit"
-              matTooltip="Edit"
-              disabled>
+              matTooltip="Edit">
         <mat-icon>edit</mat-icon>
       </button>
-      <button id="copy-button"
+      <button [routerLink]="['/test_run_actions/new', action.id]"
+              id="copy-button"
               mat-icon-button
               aria-label="Copy"
-              matTooltip="Copy"
-              disabled>
+              matTooltip="Copy">
         <mat-icon>file_copy</mat-icon>
       </button>
       <button id="delete-button"
@@ -82,11 +83,11 @@
     No test run actions found.
   </div>
 
-  <button id="create-button"
+  <button routerLink="/test_run_actions/new"
+          id="create-button"
           mat-flat-button
           aria-label="Add new test run action"
-          color="accent"
-          disabled>
+          color="accent">
     + New test run action
   </button>
 </div>

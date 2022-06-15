@@ -122,16 +122,6 @@ export class TestRunActionList implements OnInit, OnDestroy {
             });
   }
 
-  /** Opens the test run action editor to edit an existing action. */
-  edit(action: TestRunAction) {
-    // TODO: implement test run action editor
-  }
-
-  /** Opens the test run action editor to copy an existing action. */
-  copy(action: TestRunAction) {
-    // TODO: implement test run action editor
-  }
-
   /** Delete a test run action after confirmation. */
   delete(action: TestRunAction) {
     this.notifier
@@ -157,10 +147,5 @@ export class TestRunActionList implements OnInit, OnDestroy {
                     buildApiErrorMessage(error));
               });
         });
-  }
-
-  /** Opens the test run action editor to create a new action. */
-  create() {
-    // TODO: implement test run action editor
   }
 }

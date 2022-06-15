@@ -864,6 +864,15 @@ export declare interface TestRunAction {
   authorization_state?: AuthorizationState;
 }
 
+/** Initialize a test run action */
+export function newTestRunAction(): Partial<TestRunAction> {
+  return {
+    phases: [],
+    options: [],
+    tradefed_result_reporters: [],
+  };
+}
+
 /** List of test run actions. */
 export declare interface TestRunActionList {
   actions: TestRunAction[];
