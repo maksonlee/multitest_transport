@@ -60,7 +60,7 @@ describe('Mtt', () => {
 
   it('should reverse sideNavExpanded on toggleSidenavButton click', () => {
     const sideNavExpanded = mtt.sideNavExpanded;
-    getEl(el, '#toggleSidenavButton').click();
+    getEl(el, '.toggleSidenavButton').click();
     expect(mtt.sideNavExpanded).not.toEqual(sideNavExpanded);
   });
 

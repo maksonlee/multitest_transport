@@ -52,7 +52,7 @@
                [title]="stateInfo.offsetWidth < stateInfo.scrollWidth ? testRun.state_info : ''">
             {{testRun.state_info}}
           </div>
-          <div id="action-buttons">
+          <div class="action-buttons">
             <button mat-flat-button color="accent" (click)="rerunTestRun()"
                     *ngIf="isFinalTestRunState(testRun.state); else cancel">
               Rerun

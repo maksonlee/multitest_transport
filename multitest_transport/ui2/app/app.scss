@@ -39,13 +39,13 @@ $nav-transition-duration: 250ms;
   transition-timing-function: ease-in-out;
 }
 
-#toggleSidenavButton {
+.toggleSidenavButton {
   mat-icon {
     color: $navigation;
   }
 }
 
-#version-info {
+.version-info {
   display: flex;
   flex: 1;
   font-size: 12px;

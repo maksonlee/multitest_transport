@@ -16,7 +16,7 @@
 
 <mat-toolbar>
   <button
-    id="toggleSidenavButton"
+    class="toggleSidenavButton"
     mat-icon-button
     (click)="sideNavExpanded = !sideNavExpanded"
     matTooltip="Main menu"
@@ -25,7 +25,7 @@
     <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
   </button>
   <a routerLink="/" class="title">Android Test Station</a>
-  <div id="version-info">
+  <div class="version-info">
     Version: {{ appData?.mttVersion }}<br />
     ADB: {{ appData?.adbVersion }}
   </div>

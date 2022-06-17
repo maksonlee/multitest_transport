@@ -156,7 +156,7 @@ describe('TestRunList', () => {
      }));
 
   it('should hide column on view_columns dropdown menu button clicked', () => {
-    getEl(el, '#view_columns_btn').click();
+    getEl(el, '.view_columns_btn').click();
 
     const removableColumns = testRunList.columns.filter((c) => c.removable);
     const column = removableColumns[0];
