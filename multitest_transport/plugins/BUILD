@@ -32,6 +32,33 @@ py_test(
 
 
 pytype_strict_library(
+    name = "apfe_lib",
+    srcs = [
+        "apfe.py",
+    ],
+    deps = [
+        ":plugin_base",
+        "//third_party/py/apiclient",
+        "//third_party/py/httplib2",
+        "//multitest_transport/models:event_log_lib",
+        "//multitest_transport/models:ndb_models_lib",
+        "//multitest_transport/util",
+    ],
+)
+
+py_test(
+    name = "apfe_test",
+    srcs = [
+        "apfe_test.py",
+    ],
+    deps = [
+        ":apfe_lib",
+        "//multitest_transport/models:ndb_models_lib",
+        third_party("absl/testing:absltest"),
+    ],
+)
+
+pytype_strict_library(
     name = "file_upload_hook_lib",
     srcs = [
         "file_upload_hook.py",
@@ -115,6 +142,7 @@ pytype_strict_library(
     visibility = ["//multitest_transport"],
     deps = [
         ":android_lib",
+        ":apfe_lib",
         ":plugin_base",
         ":gcs_lib",
         ":google_drive_lib",
