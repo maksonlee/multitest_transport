@@ -18,13 +18,19 @@ from typing import Optional
 
 class BaseError(Exception):
   """Base MTT error class."""
+  retriable = True
 
-  def __init__(self, message: str, http_status: Optional[int] = None):
+  def __init__(self,
+               message: str,
+               http_status: Optional[int] = None,
+               retriable: Optional[bool] = None):
     super(BaseError, self).__init__(message)
     if not hasattr(self, 'message'):
       self.message = message
     if http_status:
       self.http_status = http_status
+    if retriable is not None:
+      self.retriable = retriable
 
 
 class PluginError(BaseError):

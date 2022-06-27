@@ -668,7 +668,7 @@ class TestRun(ndb.Model):
   hook_data = ndb.JsonProperty(default={})
 
   cancel_reason = ndb.EnumProperty(common.CancelReason)
-  error_reason = ndb.StringProperty()
+  error_reason = ndb.TextProperty()
 
   @classmethod
   def get_by_id(cls, id_, **kwargs):
