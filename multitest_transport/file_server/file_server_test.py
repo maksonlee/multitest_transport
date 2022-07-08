@@ -248,6 +248,14 @@ class FileServerTest(absltest.TestCase):
       self.assertEqual(201, response.status_code)
       self.assertEqual('test', open(self.app.root_path + '/' + filename).read())
 
+  def testUploadFileByChunks_pathNotSafe(self):
+    """Tests that the path must be safe."""
+    with self.app.test_client() as client:
+      filename = '../../../../../../../etc/passwd'
+      response = client.put('/file/' + filename, data='test')
+      self.assertEqual(400, response.status_code)
+      self.assertIn(b'Path is not safe', response.data)
+
   def testDeleteFile(self):
     """Tests that files can be deleted."""
     with self.app.test_client() as client:

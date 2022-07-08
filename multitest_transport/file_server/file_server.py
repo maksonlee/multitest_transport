@@ -109,6 +109,8 @@ def UploadFile(path: str) -> flask.Response:
 def UploadFileByChunks(path: str) -> flask.Response:
   """Upload a file by chunks to a path."""
   resolved_path = security.safe_join(flask.current_app.root_path, path)
+  if not resolved_path:
+    flask.abort(http.HTTPStatus.BAD_REQUEST, 'Path is not safe')
   # Find or create a temporary upload file
   tmp_name = hashlib.sha512(resolved_path.encode()).hexdigest()
   tmp_path = os.path.join(flask.current_app.tmp_upload_dir, tmp_name)
