@@ -384,7 +384,7 @@ def Main():
   """The entry point function for lab CLI."""
   parser = CreateParser()
   args = parser.parse_args()
-  args.cli_path = os.path.realpath(sys.argv[0])
+  args.cli_path = os.environ.get('PEX', os.path.realpath(sys.argv[0]))
   global logger
   logger = cli_util.CreateLogger(args)
   if not args.no_check_update:

@@ -69,7 +69,7 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
   python3-distutils python3-pip python3.9-distutils
 COPY ./requirements.txt /tmp
 RUN pip3 install --upgrade setuptools pip
-RUN pip3 install pex==2.0.3
+RUN pip3 install pex==2.1.94
 RUN pip3 install -r /tmp/requirements.txt
 RUN pip3 install --upgrade keyrings.alt
 
