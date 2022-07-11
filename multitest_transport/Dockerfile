@@ -57,8 +57,7 @@ RUN pip3 install \
         cachetools \
         flask \
         grpcio \
-        gunicorn \
-        virtualenv
+        gunicorn
 # Install python2 pip.
 RUN wget -q --retry-connrefused -O /tmp/get-pip.py https://bootstrap.pypa.io/pip/2.7/get-pip.py && \
     python /tmp/get-pip.py && \
@@ -83,8 +82,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         libjpeg-dev \
         libncurses5 \
         libtiff-dev
-# Pin the virtualenv version to use a one with a proven compatibility with VTS.
-RUN pip install virtualenv==20.0.31
+# Install the Python3 version of virtualenv for compatibility with newer test
+# suites, but pin the version to one with a proven compatibility with VTS.
+# VTS 9.0 will require "--python-venv:python-version=2.7".
+RUN pip3 install virtualenv==20.0.31
 
 # Install JDK11 from AOSP (https://android.googlesource.com/platform/prebuilts/jdk/jdk11.git/+/4b776e23b6964354047211b1e343dc3ca14ce60a)
 RUN mkdir -p /jdk/jdk11 && \
