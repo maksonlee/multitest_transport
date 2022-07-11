@@ -281,20 +281,11 @@ class DockerContainerTest(absltest.TestCase):
     cls.container = cls.GetContainer()
     cls.container.Start()
 
-  def setUp(self):
-    """Track whether a failure has occurred."""
-    super(DockerContainerTest, self).setUp()
-    if hasattr(self, '_tear_down') and not self._tear_down:
-      # If tearDown doesn't get called in a case of test errors.
-      self.__class__.has_failure = True
-    self._tear_down = False
-
-  def tearDown(self):
-    """Track whether a failure has occurred."""
-    super(DockerContainerTest, self).tearDown()
-    if not self._ran_and_passed():
-      self.__class__.has_failure = True
-    self._tear_down = True
+  def run(self, result=None):
+    test_result = super().run(result)
+    self.__class__.has_failure = (
+        self.__class__.has_failure or not test_result.wasSuccessful())
+    return test_result
 
   @classmethod
   def tearDownClass(cls):
