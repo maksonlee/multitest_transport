@@ -19,9 +19,8 @@
 <div [class.loading-mask]="isLoading" class="page">
   <mat-card *ngFor="let action of actions" class="hover-mat-card">
     <h2>
-      <!-- TODO: Add service account email -->
       <span fxFlex>
-        {{action.name}}
+        {{ action.name }}
         <status-button
             *ngIf="[AuthorizationState.UNAUTHORIZED, AuthorizationState.AUTHORIZED].includes(action.authorization_state)"
             [state]='action.authorization_state'></status-button>
@@ -75,7 +74,10 @@
       </button>
     </h2>
     <mat-card-content>
-      {{action.description}}
+      {{ action.description }}
+    </mat-card-content>
+    <mat-card-content class="description" *ngIf="action.credentials?.email">
+      Authorized as {{ action.credentials?.email }}
     </mat-card-content>
   </mat-card>
 

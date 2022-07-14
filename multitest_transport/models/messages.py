@@ -712,6 +712,7 @@ class TestRunAction(messages.Message):
   tradefed_result_reporters = messages.MessageField(
       TradefedConfigObject, 7, repeated=True)
   authorization_state = messages.EnumField(ndb_models.AuthorizationState, 8)
+  credentials = messages.MessageField(CredentialsInfo, 9)
 
 
 @Converter(ndb_models.TestRunAction, TestRunAction)
@@ -724,7 +725,8 @@ def _TestRunActionConverter(obj):
       phases=obj.phases,
       options=ConvertNameValuePairs(obj.options, NameValuePair),
       tradefed_result_reporters=ConvertList(
-          obj.tradefed_result_reporters, TradefedConfigObject))
+          obj.tradefed_result_reporters, TradefedConfigObject),
+      credentials=Convert(obj.credentials, CredentialsInfo))
 
 
 @Converter(TestRunAction, ndb_models.TestRunAction)

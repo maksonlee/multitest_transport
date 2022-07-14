@@ -862,6 +862,7 @@ export declare interface TestRunAction {
   options?: NameValuePair[];
   tradefed_result_reporters?: TradefedConfigObject[];
   authorization_state?: AuthorizationState;
+  credentials?: CredentialsInfo;
 }
 
 /** Initialize a test run action */
