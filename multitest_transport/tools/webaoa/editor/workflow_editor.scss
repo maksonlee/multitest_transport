@@ -147,7 +147,7 @@ mat-list-item.action {
     }
   }
 
-  >>> .mat-list-item-content {
+  ::ng-deep .mat-list-item-content {
     align-items: center;
     box-sizing: border-box;
     display: flex;
