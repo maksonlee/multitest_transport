@@ -33,6 +33,7 @@ TEST_RUN_HOOK_REGISTRY = PluginRegistry()
 
 # Re-export commonly used values for convenience.
 AuthorizationMethod = ndb_models.AuthorizationMethod
+BuildItemPathType = ndb_models.BuildItemPathType
 
 # Supported option value types.
 OptionValue = TypeVar('OptionValue', str, int)
@@ -103,6 +104,7 @@ class BuildProvider(metaclass=BUILD_PROVIDER_REGISTRY.GetMetaclass()):
   auth_methods: List[AuthorizationMethod] = []
   oauth2_config: Optional[oauth2_util.OAuth2Config] = None
   url_patterns: List[UrlPattern] = []
+  build_item_path_type: BuildItemPathType
 
   def __init__(self):
     super().__init__()

@@ -434,6 +434,8 @@ class BuildChannel(messages.Message):
   auth_methods = messages.EnumField(
       ndb_models.AuthorizationMethod, 5, repeated=True)
   credentials = messages.MessageField(CredentialsInfo, 6)
+  build_item_path_type = messages.EnumField(
+      ndb_models.BuildItemPathType, 7, required=True)
 
 
 @Converter(build.BuildChannel, BuildChannel)
@@ -444,7 +446,8 @@ def _BuildChannelConverter(obj):
       provider_name=obj.provider_name,
       auth_state=obj.auth_state,
       auth_methods=obj.auth_methods,
-      credentials=Convert(obj.credentials, CredentialsInfo))
+      credentials=Convert(obj.credentials, CredentialsInfo),
+      build_item_path_type=obj.build_item_path_type)
 
 
 class BuildChannelList(messages.Message):

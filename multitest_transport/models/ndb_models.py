@@ -97,6 +97,12 @@ class AuthorizationMethod(messages.Enum):
   OAUTH2_SERVICE_ACCOUNT = 2
 
 
+class BuildItemPathType(messages.Enum):
+  """The path type of build item."""
+  DIRECTORY_FILE = 1
+  URL = 2
+
+
 class BuildChannelConfig(ndb.Model):
   """A build channel config."""
   name = ndb.StringProperty(required=True)

@@ -96,6 +96,7 @@ class GCSBuildProvider(base.BuildProvider):
       client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
       client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
       scopes=RO_SCOPES)
+  build_item_path_type = base.BuildItemPathType.DIRECTORY_FILE
 
   def __init__(self):
     super(GCSBuildProvider, self).__init__()

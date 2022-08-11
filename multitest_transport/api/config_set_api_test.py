@@ -31,6 +31,7 @@ from multitest_transport.plugins import base as plugins
 class GCSBuildProvider(plugins.BuildProvider):
   """Dummy build provider for testing."""
   name = 'Google Cloud Storage'
+  build_item_path_type = plugins.BuildItemPathType.DIRECTORY_FILE
 
 
 class ConfigSetApiTest(api_test_util.TestCase):

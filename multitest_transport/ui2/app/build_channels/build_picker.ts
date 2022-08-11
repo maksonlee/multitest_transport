@@ -25,7 +25,7 @@ import {debounceTime, delay, finalize, first, takeUntil} from 'rxjs/operators';
 
 import {joinPath} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
-import {AuthorizationMethod, BuildChannel, BuildItem, isBuildChannelAvailable} from '../services/mtt_models';
+import {AuthorizationMethod, BuildChannel, BuildItem, BuildItemPathType, isBuildChannelAvailable} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {InfiniteScrollLoadEvent} from '../shared/infinite_scroll';
 import {buildApiErrorMessage, isFnmatchPattern} from '../shared/util';
@@ -79,6 +79,7 @@ export class BuildPicker implements OnInit, OnDestroy {
   readonly AuthorizationMethod = AuthorizationMethod;
   readonly isBuildChannelAvailable = isBuildChannelAvailable;
   readonly isFnmatchPattern = isFnmatchPattern;
+  readonly BuildItemPathType = BuildItemPathType;
 
   private readonly destroy = new ReplaySubject<void>();
 
@@ -127,8 +128,8 @@ export class BuildPicker implements OnInit, OnDestroy {
       private readonly notifier: Notifier) {
     // Initialize the build picker
     // TODO: remove local file provider
-    this.buildChannels = data.buildChannels
-        .filter(c => c.provider_name !== LOCAL_FILE_PROVIDER);
+    this.buildChannels =
+        data.buildChannels.filter(c => c.provider_name !== LOCAL_FILE_PROVIDER);
     this.mode = data.mode;
     this.decodeResourceUrl(data.resourceUrl);
 
@@ -165,7 +166,7 @@ export class BuildPicker implements OnInit, OnDestroy {
       return;  // No resource URL provided, use default parameters
     }
 
-    const match = url.match(/^mtt:\/\/\/([^\/]+)\/(?:(.*)\/(.*)|(.*))$/i);
+    const match = url.match(/^mtt:\/\/\/([^\/]+)\/((.*)\/(.*)|(.*))$/i);
     if (!match) {
       // Not a build channel URL
       this.selectedTabIndex = url.startsWith('file://') ? 1 : 0;
@@ -178,13 +179,20 @@ export class BuildPicker implements OnInit, OnDestroy {
     this.selectedBuildChannel = this.buildChannels[channelIndex];
     this.selectedTabIndex = channelIndex + this.numStaticTabs;
     // Set search bar parameters
-    this.searchBarUrlValue = match[2] || '';
-    this.searchBarFilenameValue = decodeURIComponent(match[3] || match[4]);
+    if (this.isUrlBuildChannel()) {
+      this.searchBarUrlValue = decodeURIComponent(match[2]) || '';
+    } else {
+      this.searchBarUrlValue = match[3] || '';
+      this.searchBarFilenameValue = decodeURIComponent(match[4] || match[5]);
+    }
   }
 
   /** Encode the search bar parameters into a resource URL. */
   private encodeResourceUrl(): string {
     let url = this.searchBarUrlValue.trim();
+    if (this.isUrlBuildChannel()) {
+      url = encodeURIComponent(url);
+    }
     if (this.selectedBuildChannel) {
       url = `mtt:///${this.selectedBuildChannel.id}/${url}`;
     }
@@ -267,9 +275,10 @@ export class BuildPicker implements OnInit, OnDestroy {
    */
   loadBuildList(nextPageToken?: string|undefined) {
     // Don't load if buildchannel is not defined
+    // Don't load if build item path is url
     // Don't load if the selectedBuildChannel is not available/not authenticated
     // Don't load if it's a glob pattern
-    if (!this.selectedBuildChannel ||
+    if (!this.selectedBuildChannel || this.isUrlBuildChannel() ||
         !isBuildChannelAvailable(this.selectedBuildChannel) ||
         isFnmatchPattern(this.searchBarUrlValue)) {
       return;
@@ -411,5 +420,12 @@ export class BuildPicker implements OnInit, OnDestroy {
     return !!this.selectedBuildChannel &&
         this.selectedBuildChannel.provider_name === GCS_PROVIDER &&
         !this.searchBarUrlValue;
+  }
+
+  /** Returns true if the build item path is url. */
+  isUrlBuildChannel(): boolean {
+    return !!this.selectedBuildChannel &&
+        this.selectedBuildChannel.build_item_path_type ===
+        BuildItemPathType.URL;
   }
 }

@@ -60,6 +60,7 @@ class AndroidBuildProvider(base.BuildProvider):
       client_id=env.GOOGLE_OAUTH2_CLIENT_ID,
       client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
       scopes=OAUTH2_SCOPES)
+  build_item_path_type = base.BuildItemPathType.DIRECTORY_FILE
 
   def __init__(self):
     super(AndroidBuildProvider, self).__init__()

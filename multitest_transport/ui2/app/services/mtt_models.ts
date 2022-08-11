@@ -73,6 +73,7 @@ export declare interface SimpleMessage {
   /** Simple string message. */
   value: string;
 }
+
 /**
  * A build item
  */
@@ -101,6 +102,12 @@ export declare interface BuildItemList {
   next_page_token: string;
 }
 
+/** Build item path type. */
+export enum BuildItemPathType {
+  DIRECTORY_FILE = 'DIRECTORY_FILE',
+  URL = 'URL',
+}
+
 /**
  * Information for user or service account credentials
  */
@@ -123,6 +130,7 @@ export declare interface BuildChannel {
   auth_state: AuthorizationState;
   auth_methods?: AuthorizationMethod[];
   credentials?: CredentialsInfo;
+  build_item_path_type: BuildItemPathType;
 }
 
 /**

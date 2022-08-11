@@ -59,6 +59,29 @@ py_test(
 )
 
 pytype_strict_library(
+    name = "http_lib",
+    srcs = [
+        "http.py",
+    ],
+    deps = [
+        ":plugin_base",
+        "//multitest_transport/util",
+    ],
+)
+
+py_test(
+    name = "http_test",
+    srcs = [
+        "http_test.py",
+    ],
+    deps = [
+        ":http_lib",
+        "//multitest_transport/util",
+        third_party("absl/testing:absltest"),
+    ],
+)
+
+pytype_strict_library(
     name = "file_upload_hook_lib",
     srcs = [
         "file_upload_hook.py",
@@ -146,6 +169,7 @@ pytype_strict_library(
         ":plugin_base",
         ":gcs_lib",
         ":google_drive_lib",
+        ":http_lib",
         ":web_hook_lib",
         third_party("apiclient"),
     ],

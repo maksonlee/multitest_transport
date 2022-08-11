@@ -64,7 +64,8 @@
       <ng-template #other_content>
         <mat-form-field appearance="outline" [floatLabel]="'always'">
           <mat-label> {{option.name}} </mat-label>
-          <input matInput type="text" [(ngModel)]="data.options[i].value" name="name">
+          <!-- TODO: Need a better way to support password type -->
+          <input matInput [type]="option.name === 'password' ? 'password' : 'text'" [(ngModel)]="data.options[i].value" name="name">
         </mat-form-field>
       </ng-template>
     </ng-container>

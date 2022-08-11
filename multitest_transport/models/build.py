@@ -203,6 +203,10 @@ class BuildChannel(object):
       return []
     return self._provider.url_patterns
 
+  @property
+  def build_item_path_type(self):
+    return self._provider.build_item_path_type
+
   def ListBuildItems(self, path=None, page_token=None, item_type=None):
     """List build items.
 

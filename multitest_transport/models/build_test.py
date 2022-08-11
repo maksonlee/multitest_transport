@@ -115,8 +115,7 @@ class BuildChannelTest(testbed_dependent_test.TestbedDependentTest):
     private_node_config.default_credentials = credentials
     private_node_config.put()
     config = ndb_models.BuildChannelConfig(
-        id='channel_id',
-        provider_name='oauth2_provider')
+        id='channel_id', provider_name='oauth2_provider')
     channel = build.BuildChannel(config)
     self.assertEqual(channel.id, 'channel_id')
     self.assertTrue(channel.is_valid)
@@ -133,12 +132,10 @@ class BuildChannelTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(channel.id, 'channel_id')
     self.assertTrue(channel.is_valid)
     self.assertIsInstance(channel.provider, OAuth2BuildProvider)
-    self.assertEqual(
-        [
-            ndb_models.AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
-            ndb_models.AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
-        ],
-        channel.auth_methods)
+    self.assertEqual([
+        ndb_models.AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
+        ndb_models.AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
+    ], channel.auth_methods)
     self.assertEqual(channel.auth_state,
                      ndb_models.AuthorizationState.UNAUTHORIZED)
     self.assertIsNone(channel.provider.GetCredentials())
@@ -151,14 +148,12 @@ class BuildChannelTest(testbed_dependent_test.TestbedDependentTest):
     channel = build.BuildChannel(config)
     self.assertEqual(channel.id, 'channel_id')
     self.assertTrue(channel.is_valid)
-    self.assertIsInstance(
-        channel.provider,
-        OAuth2BuildWithInvalidOAuth2ConfigProvider)
-    self.assertEqual(
-        [ndb_models.AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT],
-        channel.auth_methods)
-    self.assertEqual(
-        channel.auth_state, ndb_models.AuthorizationState.UNAUTHORIZED)
+    self.assertIsInstance(channel.provider,
+                          OAuth2BuildWithInvalidOAuth2ConfigProvider)
+    self.assertEqual([ndb_models.AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT],
+                     channel.auth_methods)
+    self.assertEqual(channel.auth_state,
+                     ndb_models.AuthorizationState.UNAUTHORIZED)
     self.assertIsNone(channel.provider.GetCredentials())
 
 
@@ -282,6 +277,13 @@ class BuildLocatorTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(build_locator.directory, 'a/b/c')
     self.assertEqual(build_locator.filename, 'signed/build.img')
     self.assertEqual(build_locator.path, 'a/b/c/signed/build.img')
+
+    build_locator = build.BuildLocator.ParseUrl(
+        'mtt:///basic_auth_http/http%3A%2F%2Ffile.img')
+    self.assertEqual(build_locator.build_channel_id, 'basic_auth_http')
+    self.assertIsNone(build_locator.directory)
+    self.assertEqual(build_locator.filename, 'http://file.img')
+    self.assertEqual(build_locator.path, 'http://file.img')
 
 
 if __name__ == '__main__':

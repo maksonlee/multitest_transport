@@ -359,9 +359,13 @@ class LocalFileHandle(FileHandle):
 class HttpReadStream(BaseReadStream):
   """Read-only file-like object accessible using HTTP requests."""
 
-  def __init__(self, handle: FileHandle, url: str):
+  def __init__(self,
+               handle: FileHandle,
+               url: str,
+               urlopen=urllib.request.urlopen):
     super(HttpReadStream, self).__init__(handle)
     self.url = url
+    self.urlopen = urlopen
 
   def ReadBytes(self,
                 offset: int = 0,
@@ -374,8 +378,7 @@ class HttpReadStream(BaseReadStream):
     while attempt <= MAX_HTTP_READ_ATTEMPTS:
       try:
         request = urllib.request.Request(self.url, headers=headers)
-        return urllib.request.urlopen(
-            request, timeout=HTTP_TIMEOUT_SECONDS).read()
+        return self.urlopen(request, timeout=HTTP_TIMEOUT_SECONDS).read()
       except urllib.error.HTTPError as e:
         if e.code == 404 or e.code == 416:
           # Ignore file not found or unsatisfied range errors, which occur if
@@ -394,9 +397,13 @@ class HttpReadStream(BaseReadStream):
 class HttpWriteStream(BaseWriteStream):
   """Write-only file-like object which uses HTTP requests."""
 
-  def __init__(self, handle: FileHandle, url: str):
+  def __init__(self,
+               handle: FileHandle,
+               url: str,
+               urlopen=urllib.request.urlopen):
     super(HttpWriteStream, self).__init__(handle)
     self.url = url
+    self.urlopen = urlopen
 
   def WriteBytes(self,
                  offset: int = 0,
@@ -409,7 +416,7 @@ class HttpWriteStream(BaseWriteStream):
                                 (offset, end_byte, total_size)}
     request = urllib.request.Request(url=self.url, data=data, headers=headers)
     request.get_method = lambda: 'PUT'
-    urllib.request.urlopen(request, timeout=HTTP_TIMEOUT_SECONDS).read()
+    self.urlopen(request, timeout=HTTP_TIMEOUT_SECONDS).read()
 
 
 class HttpFileHandle(FileHandle):
@@ -418,16 +425,18 @@ class HttpFileHandle(FileHandle):
   def __init__(self,
                url: str,
                info_url: Optional[str] = None,
-               read_url: Optional[str] = None):
+               read_url: Optional[str] = None,
+               url_opener: Optional[urllib.request.OpenerDirector] = None):
     super(HttpFileHandle, self).__init__(url)
     self.info_url = info_url or url
     self.read_url = read_url or url
+    self.urlopen = url_opener.open if url_opener else urllib.request.urlopen
 
   def Info(self) -> Optional[FileInfo]:
     try:
       request = urllib.request.Request(self.info_url)
       request.get_method = lambda: 'HEAD'
-      response = urllib.request.urlopen(request, timeout=HTTP_TIMEOUT_SECONDS)
+      response = self.urlopen(request, timeout=HTTP_TIMEOUT_SECONDS)
     except urllib.error.HTTPError as e:
       if e.code == 404:
         return None
@@ -442,7 +451,8 @@ class HttpFileHandle(FileHandle):
 
   def Open(self, mode: str = 'r') -> BinaryIO:
     if mode == 'r':
-      return io.BufferedReader(HttpReadStream(self, self.read_url))
+      return io.BufferedReader(
+          HttpReadStream(self, self.read_url, self.urlopen))
     raise ValueError('Unsupported mode %s' % mode)
 
 
@@ -471,9 +481,11 @@ class RemoteFileHandle(HttpFileHandle):
 
   def Open(self, mode: str = 'r') -> BinaryIO:
     if mode == 'r':
-      return io.BufferedReader(HttpReadStream(self, self.file_url))
+      return io.BufferedReader(
+          HttpReadStream(self, self.file_url, self.urlopen))
     if mode == 'w':
-      return io.BufferedWriter(HttpWriteStream(self, self.file_url))
+      return io.BufferedWriter(
+          HttpWriteStream(self, self.file_url, self.urlopen))
     raise ValueError('Unsupported mode %s' % mode)
 
   def ListFiles(self) -> Optional[List[FileInfo]]:
@@ -651,18 +663,28 @@ def TailFile(file_url: str, length: int) -> Optional[FileSegment]:
     return FileSegment(offset, data.splitlines(True)) if data else None
 
 
-def DownloadFile(file_url: str, offset: int = 0) -> Iterator[FileChunk]:
+def DownloadFile(
+    file_url: str,
+    offset: int = 0,
+    url_opener: Optional[urllib.request.OpenerDirector] = None
+) -> Iterator[FileChunk]:
   """Download a file.
 
   Args:
     file_url: file URL
     offset: byte offset to read from
+    url_opener: optional, open director with handlers to open the url
+
   Yields:
     file chunk (chunk of data read, current position, total size in bytes)
   Raises:
     RuntimeError: if file not found
   """
-  handle = FileHandle.Get(file_url)
+  if url_opener:
+    # Only HttpFileHandle support url opener
+    handle = HttpFileHandle(file_url, url_opener=url_opener)
+  else:
+    handle = FileHandle.Get(file_url)
   info = handle.Info()
   if not info:
     raise RuntimeError('File %s not found' % file_url)

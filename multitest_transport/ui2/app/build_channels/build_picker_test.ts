@@ -21,7 +21,7 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {of as observableOf} from 'rxjs';
 
 import {MttClient} from '../services/mtt_client';
-import {AuthorizationMethod, AuthorizationState, BuildChannel} from '../services/mtt_models';
+import {AuthorizationMethod, AuthorizationState, BuildChannel, BuildItemPathType} from '../services/mtt_models';
 import {getEl, getEls, hasEl} from '../testing/jasmine_util';
 
 import {BuildChannelsModule} from './build_channels_module';
@@ -113,12 +113,31 @@ describe('BuildPicker', () => {
     expect(hasEl(element, '.keyfile-button')).toBeFalse();
   });
 
+  it('should set URL value if auth-protected URL provided', () => {
+    initComponent(
+        [{
+          id: 'channel',
+          name: 'Channel',
+          provider_name: 'HTTP (Basic Auth)',
+          build_item_path_type: BuildItemPathType.URL,
+        }],
+        'mtt:///channel/path');
+    // Build channel tab is selected and path value is initialized
+    expect(getEl(element, '.mat-tab-label-active').textContent)
+        .toEqual('Channel');
+    expect(component.searchBarUrlValue).toEqual('path');
+    expect(component.searchBarFilenameValue).toEqual('');
+    // Not list build items
+    expect(mttClient.listBuildItems).not.toHaveBeenCalled();
+  });
+
   it('should display authorize button if supported and unauthorized', () => {
     initComponent(
         [{
           id: 'channel',
           auth_state: AuthorizationState.UNAUTHORIZED,
           auth_methods: [AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE],
+          build_item_path_type: BuildItemPathType.DIRECTORY_FILE,
         }],
         'mtt:///channel/path');
     expect(mttClient.listBuildItems).not.toHaveBeenCalled();
@@ -132,6 +151,7 @@ describe('BuildPicker', () => {
           id: 'channel',
           auth_state: AuthorizationState.UNAUTHORIZED,
           auth_methods: [AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT],
+          build_item_path_type: BuildItemPathType.DIRECTORY_FILE,
         }],
         'mtt:///channel/path');
     expect(mttClient.listBuildItems).not.toHaveBeenCalled();

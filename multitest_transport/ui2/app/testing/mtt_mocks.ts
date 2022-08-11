@@ -95,6 +95,7 @@ export function newMockBuildChannel(
     provider_name: 'Local File Store',
     auth_state: mttModels.AuthorizationState.NOT_APPLICABLE,
     auth_methods: [],
+    build_item_path_type: mttModels.BuildItemPathType.DIRECTORY_FILE,
   };
 }
 

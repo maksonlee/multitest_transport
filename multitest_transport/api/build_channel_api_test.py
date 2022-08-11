@@ -36,6 +36,7 @@ class AndroidBuildProvider(plugins.BuildProvider):
   """Dummy build provider for testing."""
   name = 'Android'
   mock = mock.MagicMock()
+  build_item_path_type = plugins.BuildItemPathType.DIRECTORY_FILE
 
   def __init__(self):
     super(AndroidBuildProvider, self).__init__()
@@ -48,6 +49,7 @@ class AndroidBuildProvider(plugins.BuildProvider):
 class GoogleDriveBuildProvider(plugins.BuildProvider):
   """Dummy build provider for testing."""
   name = 'Google Drive'
+  build_item_path_type = plugins.BuildItemPathType.DIRECTORY_FILE
 
 
 class BuildChannelApiTest(api_test_util.TestCase):

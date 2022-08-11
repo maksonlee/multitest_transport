@@ -113,6 +113,7 @@ class GoogleDriveBuildProvider(base.BuildProvider):
           r'https://drive.google.com/open\?id=(?P<id>.*)',
           _FILE_ID_PATH_PREFIX + '{id}'),
   ]
+  build_item_path_type = base.BuildItemPathType.DIRECTORY_FILE
 
   def __init__(self):
     super(GoogleDriveBuildProvider, self).__init__()
