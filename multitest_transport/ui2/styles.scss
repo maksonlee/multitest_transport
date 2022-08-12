@@ -479,3 +479,8 @@ mat-spinner.loading-spinner {
 // preserves old styles that were applied to <mat-select>.
 // For more information, see go/angular-components/deprecated_styles
 @include mat.deprecated-select-display();
+
+// TODO: This mixin preserves the legacy checkbox size of
+// 16px and should be removed after the application migrates to the
+// MDC checkbox.
+@include mat.deprecated-pseudo-checkbox-size();
