@@ -123,3 +123,35 @@ class APFEReportUploadHook(base.TestRunHook):
     }).execute(
         http=self._GetHttp(), num_retries=constant.NUM_RETRIES)
     event_log.Info(test_run, f'[APFE Report Upload] Uploaded {result_url}.')
+
+
+# BEGIN-INTERNAL
+
+_STAGING_API_NAME = 'staging-androidpartner.sandbox'
+
+
+class StagingAPFEReportUploadHook(APFEReportUploadHook):
+  """Hook which uploads reports to staging APFE."""
+  name = 'StagingAPFEReportUploadHook'
+
+  def __init__(self, _credentials=None, company_id=None, api_key=None, **_):
+    super(StagingAPFEReportUploadHook, self).__init__(
+        _credentials=_credentials, company_id=company_id)
+    self.api_key = api_key
+
+  def _GetClient(self):
+    """Initializes a staging APFE client if necessary."""
+    if not self._client:
+      # Discovery api does not accept credentials
+      self._client = apiclient.discovery.build(
+          _STAGING_API_NAME,
+          _API_VERSION,
+          # Use raw model as the response of media api is not json
+          model=apiclient.model.RawModel(),
+          developerKey=self.api_key,
+      )
+
+    return self._client
+
+
+# END_INTERNAL
