@@ -122,7 +122,9 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
             ndb_models.NameMultiValuePair(
                 name='gce-driver-param', values=['--boot-timeout']),
             ndb_models.NameMultiValuePair(
-                name='gce-driver-param', values=['600'])
+                name='gce-driver-param', values=['600']),
+            ndb_models.NameMultiValuePair(
+                name='gce-driver-file-param', values=['file=url'])
         ])
 
     with self.assertRaises(ValueError):
@@ -138,7 +140,9 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
             device_type='LOCAL_VIRTUAL',
             tradefed_options=[
                 ndb_models.NameMultiValuePair(
-                    name='gce-driver-path', values=['/bin/acloud_prebuilt'])
+                    name='gce-driver-path', values=['/bin/acloud_prebuilt']),
+                ndb_models.NameMultiValuePair(
+                    name='gce-driver-file-param', values=['file2=url2'])
             ])
     ])
 

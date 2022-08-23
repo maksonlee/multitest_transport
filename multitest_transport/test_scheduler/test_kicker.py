@@ -58,6 +58,11 @@ DEFAULT_TF_CONFIG_OBJECTS = [
         ])
 ]
 TF_DEVICE_COUNT_ENV_VAR = '${TF_DEVICE_COUNT}'
+# This is the list of the tradefed options that are allowed to be specified in
+# multiple device actions. The options in the list should be repeatable and
+# unordered. The other options are disallowed because it is difficult to predict
+# the effect of the concatenated options.
+REPEATABLE_TF_OPTIONS = ('gce-driver-file-param',)
 
 APP = flask.Flask(__name__)
 
@@ -90,7 +95,8 @@ def ValidateDeviceActions(device_actions):
             (action_with_device_spec.name, action.name))
 
     for opt in action.tradefed_options:
-      if options.setdefault(opt.name, index) != index:
+      if (opt.name not in REPEATABLE_TF_OPTIONS and
+          options.setdefault(opt.name, index) != index):
         raise ValueError(
             'The selected device actions contain identical TradeFed option %s. '
             'Please remove one of %s and %s.' %
