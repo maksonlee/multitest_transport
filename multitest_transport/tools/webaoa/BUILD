@@ -2,7 +2,7 @@
 load("//multitest_transport:adapter.bzl", "COMPILER_FLAGS", "js_binary", "karma_web_test_suite", "ng_module", "sass_binary", "third_party_js", "ts_config", "ts_development_sources")
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "pytype_strict_library", "third_party")
 
-licenses(["notice"])  # Apache 2.0
+licenses(["notice"])
 
 # Angular application
 ng_module(

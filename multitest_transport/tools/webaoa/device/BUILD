@@ -1,7 +1,7 @@
 # WebAOA device management
 load("//multitest_transport:adapter.bzl", "ng_module", "per_file_sass_binaries", "third_party_js")
 
-licenses(["notice"])  # Apache 2.0
+licenses(["notice"])
 
 package(default_visibility = ["//multitest_transport/tools/webaoa:__subpackages__"])
 
