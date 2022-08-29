@@ -9,7 +9,7 @@ per_file_sass_binaries(
     name = "styles",
     srcs = glob(["*.scss"]),
     deps = [
-        third_party_js("angular2:material_sass"),
+        third_party_js("angular_components:material_sass"),
     ],
 )
 

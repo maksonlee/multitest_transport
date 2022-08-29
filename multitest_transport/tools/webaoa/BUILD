@@ -113,7 +113,7 @@ sass_binary(
     src = "styles.scss",
     strict_deps = False,
     deps = [
-        third_party_js("angular2:material_sass"),
+        third_party_js("angular_components:material_sass"),
     ],
 )
 
