@@ -23,8 +23,8 @@ ng_module(
     strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
-        third_party_js("angular2:cdk_a11y"),
-        third_party_js("angular2:cdk_collections"),
+        third_party_js("angular_components:cdk_a11y"),
+        third_party_js("angular_components:cdk_collections"),
         third_party_js("angular2:core"),
         third_party_js("angular2:platform_browser"),
         third_party_js("angular2:router"),
@@ -49,7 +49,7 @@ ng_module(
     visibility = ["//multitest_transport"],
     deps = [
         ":settings",
-        third_party_js("angular2:cdk_a11y"),
+        third_party_js("angular_components:cdk_a11y"),
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),
         third_party_js("angular2:platform_browser"),

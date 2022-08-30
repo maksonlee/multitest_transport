@@ -39,10 +39,10 @@ ng_module(
     visibility = ["//multitest_transport"],
     deps = [
         ":auth",
-        third_party_js("angular2:cdk_a11y"),
+        third_party_js("angular_components:cdk_a11y"),
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),
-        third_party_js("angular2:material_dialog"),
+        third_party_js("angular_components:material_dialog"),
         third_party_js("angular2:platform_browser_animations"),
         third_party_js("angular2:router"),
         third_party_js("angular2:router_testing"),

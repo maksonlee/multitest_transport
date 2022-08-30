@@ -28,11 +28,11 @@ ng_module(
     strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
-        third_party_js("angular2:cdk_a11y"),
+        third_party_js("angular_components:cdk_a11y"),
         third_party_js("angular2:core"),
         third_party_js("angular2:forms"),
-        third_party_js("angular2:material_button"),
-        third_party_js("angular2:material_table"),
+        third_party_js("angular_components:material_button"),
+        third_party_js("angular_components:material_table"),
         third_party_js("angular2:platform_browser"),
         third_party_js("angular2:router"),
         third_party_js("rxjs"),
@@ -52,7 +52,7 @@ ng_module(
     visibility = ["//multitest_transport"],
     deps = [
         ":tests",
-        third_party_js("angular2:cdk_a11y"),
+        third_party_js("angular_components:cdk_a11y"),
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),
         third_party_js("angular2:platform_browser_animations"),

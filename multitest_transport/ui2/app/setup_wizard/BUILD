@@ -31,10 +31,10 @@ ng_module(
     strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
-        third_party_js("angular2:cdk_a11y"),
+        third_party_js("angular_components:cdk_a11y"),
         third_party_js("angular2:core"),
-        third_party_js("angular2:material_dialog"),
-        third_party_js("angular2:material_stepper"),
+        third_party_js("angular_components:material_dialog"),
+        third_party_js("angular_components:material_stepper"),
         third_party_js("angular2:platform_browser"),
         third_party_js("rxjs"),
         "//multitest_transport/ui2/app/build_channels",
@@ -59,7 +59,7 @@ ng_module(
     visibility = ["//multitest_transport"],
     deps = [
         ":setup_wizard",
-        third_party_js("angular2:cdk_a11y"),
+        third_party_js("angular_components:cdk_a11y"),
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),
         third_party_js("angular2:platform_browser_animations"),
