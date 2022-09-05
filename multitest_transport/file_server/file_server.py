@@ -222,7 +222,7 @@ def ListDirectory(path: str = '') -> flask.Response:
       tmp_file.flush()
       return flask.send_file(
           tmp_file.name,
-          attachment_filename=os.path.basename(path) + '.tar.gz',
+          download_name=os.path.basename(path) + '.tar.gz',
           as_attachment=True)
 
   # Otherwise, convert nested files into a list of JSON nodes.
