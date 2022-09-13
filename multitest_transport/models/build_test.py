@@ -107,6 +107,8 @@ class BuildChannelTest(testbed_dependent_test.TestbedDependentTest):
     self.assertFalse(channel.is_valid)
     self.assertEqual(channel.auth_state,
                      ndb_models.AuthorizationState.NOT_APPLICABLE)
+    self.assertEqual(channel.build_item_path_type,
+                     ndb_models.BuildItemPathType.DIRECTORY_FILE)
 
   def testInit_withDefaultCredentials(self):
     """Tests that build channels inherits the default auth credentials."""

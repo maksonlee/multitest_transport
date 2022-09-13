@@ -205,6 +205,8 @@ class BuildChannel(object):
 
   @property
   def build_item_path_type(self):
+    if not self.is_valid:
+      return ndb_models.BuildItemPathType.DIRECTORY_FILE
     return self._provider.build_item_path_type
 
   def ListBuildItems(self, path=None, page_token=None, item_type=None):
