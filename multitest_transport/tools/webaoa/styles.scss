@@ -56,7 +56,10 @@ $typography: mat.define-typography-config();
 // Button theme
 $button-primary: mat.define-palette(mat.$grey-palette);
 $button-accent: mat.define-palette(mat.$blue-palette, 700);
-$button-theme: mat.define-light-theme($button-primary, $button-accent);
+$button-theme: mat.deprecated-define-light-theme(
+  $button-primary,
+  $button-accent
+);
 @include mat.mdc-button-theme($button-theme);
 @include mat.mdc-fab-theme($button-theme);
 @include mat.mdc-icon-button-theme($button-theme);
