@@ -26,7 +26,19 @@
 $primary: mat.define-palette(mat.$grey-palette);
 $accent: mat.define-palette(mat.$blue-palette, 100);
 $warn: mat.define-palette(mat.$amber-palette);
-$theme: mat.deprecated-define-light-theme($primary, $accent, $warn);
+// TODO: Provide this application's typography in the
+// theme configuration instead of providing null.
+$theme: mat.define-light-theme(
+  (
+    color: (
+      primary: $primary,
+      accent: $accent,
+      warn: $warn,
+    ),
+    density: 0,
+    typography: null,
+  )
+);
 $typography: mat.define-typography-config();
 
 // Add background theme
@@ -68,23 +80,50 @@ $theme: map_merge(
 
 $button-primary: mat.define-palette(mat.$grey-palette);
 $button-accent: mat.define-palette(mat.$blue-palette, 700);
-$button-theme: mat.deprecated-define-light-theme(
-  $button-primary,
-  $button-accent
+// TODO: Provide this application's typography in the
+// theme configuration instead of providing null.
+$button-theme: mat.define-light-theme(
+  (
+    color: (
+      primary: $button-primary,
+      accent: $button-accent,
+    ),
+    density: 0,
+    typography: null,
+  )
 );
 @include mat.button-theme($button-theme);
 
 $stepper-primary: mat.define-palette(mat.$blue-palette, 700);
 $stepper-accent: mat.define-palette(mat.$blue-palette, 100);
-$stepper-theme: mat.deprecated-define-light-theme(
-  $stepper-primary,
-  $stepper-accent
+// TODO: Provide this application's typography in the
+// theme configuration instead of providing null.
+$stepper-theme: mat.define-light-theme(
+  (
+    color: (
+      primary: $stepper-primary,
+      accent: $stepper-accent,
+    ),
+    density: 0,
+    typography: null,
+  )
 );
 @include mat.stepper-theme($stepper-theme);
 
 $input-primary: mat.define-palette(mat.$blue-palette, 600);
 $input-accent: mat.define-palette(mat.$blue-palette, 600);
-$input-theme: mat.deprecated-define-light-theme($input-primary, $input-accent);
+// TODO: Provide this application's typography in the
+// theme configuration instead of providing null.
+$input-theme: mat.define-light-theme(
+  (
+    color: (
+      primary: $input-primary,
+      accent: $input-accent,
+    ),
+    density: 0,
+    typography: null,
+  )
+);
 @include mat.form-field-theme($input-theme);
 @include mat.input-theme($input-theme);
 
