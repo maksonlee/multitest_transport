@@ -21,12 +21,16 @@
 // Application theme
 $primary: mat.define-palette(mat.$grey-palette);
 $accent: mat.define-palette(mat.$blue-palette);
+// TODO: Provide this application's typography in the
+// theme configuration instead of providing null.
 $theme: mat.define-light-theme(
   (
     color: (
       primary: $primary,
       accent: $accent,
     ),
+    density: 0,
+    typography: null,
   )
 );
 @include mat.all-component-themes($theme);
