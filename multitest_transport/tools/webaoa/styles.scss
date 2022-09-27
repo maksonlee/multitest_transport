@@ -16,7 +16,8 @@
 @use 'third_party/javascript/angular_components/material' as mat;
 
 // Core material styles
-@include mat.core();
+@include mat.all-component-typographies();
+@include mat.core($exclude-typography: true);
 
 // Application theme
 $primary: mat.define-palette(mat.$grey-palette);
