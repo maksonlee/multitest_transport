@@ -21,7 +21,7 @@
 
 // Core material styles
 @include mat.all-component-typographies();
-@include mat.core($exclude-typography: true);
+@include mat.core();
 
 // Application theme
 $primary: mat.define-palette(mat.$grey-palette);
