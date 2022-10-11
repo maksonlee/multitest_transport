@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {ADB_PID, AOA_PID, AoaDevice, AoaRequest, GOOGLE_VID, HID, Key, KeyModifier, Point, SystemButton, TouchType} from './device';
+import {ADB_PID, AOA_PID, AUDIO_PID, AoaDevice, AoaRequest, GOOGLE_VID, HID, Key, KeyModifier, Point, SystemButton, TouchType} from './device';
 
 /**
  * Set the date returned by new Date() or Date.now() without installing
@@ -110,6 +110,20 @@ describe('AoaDevice', () => {
           createMockUSBDevice({vendorId: GOOGLE_VID, productId: ADB_PID[0]}));
       expect(debuggingDevice.isAccessoryMode()).toBeTruthy();
       expect(debuggingDevice.isAdbEnabled()).toBeTruthy();
+    });
+
+      it('should determine accessory and audio status from IDs', async () => {
+      // Unknown IDs indicates accessory mode and audio are disabled
+      const unknownDevice = await AoaDevice.fromUSBDevice(
+          createMockUSBDevice({vendorId: 123, productId: 456}));
+      expect(unknownDevice.isAccessoryMode()).toBeFalsy();
+      expect(unknownDevice.isAudioEnabled()).toBeFalsy();
+
+      // Google/AUDIO IDs indicates accessory mode and audio are enabled
+      const debuggingDevice = await AoaDevice.fromUSBDevice(
+          createMockUSBDevice({vendorId: GOOGLE_VID, productId: AUDIO_PID[0]}));
+      expect(debuggingDevice.isAccessoryMode()).toBeTruthy();
+      expect(debuggingDevice.isAudioEnabled()).toBeTruthy();
     });
   });
 

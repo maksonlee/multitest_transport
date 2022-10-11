@@ -21,6 +21,8 @@ export const GOOGLE_VID = 0x18D1;
 export const AOA_PID = [0x2D00, 0x2D01, 0x2D02, 0x2D03, 0x2D04, 0x2D05];
 /** Accessory mode with ADB product IDs. */
 export const ADB_PID = [0x2D01, 0x2D03, 0x2D05];
+/** Accessory mode with AUDIO product IDs. */
+export const AUDIO_PID = [0x2D02, 0x2D03, 0x2D04, 0x2D05];
 
 // Simulated accessory information
 const MANUFACTURER = new TextEncoder().encode('Android\0');
@@ -36,6 +38,7 @@ export enum AoaRequest {
   UNREGISTER_HID = 55,       // Unregister a HID
   SET_HID_REPORT_DESC = 56,  // Send the HID descriptor
   SEND_HID_EVENT = 57,       // Send a HID event
+  SET_AUDIO_MODE = 58,       // Enable audio mode
 }
 
 const CONFIG_DELAY_MILLIS = 300;    // Delay after configuration change
@@ -162,6 +165,11 @@ export class AoaDevice {
     return GOOGLE_VID === this.vendorId && ADB_PID.includes(this.productId);
   }
 
+  /** @return true if the device has audio enabled */
+  isAudioEnabled(): boolean {
+    return GOOGLE_VID === this.vendorId && AUDIO_PID.includes(this.productId);
+  }
+
   /**
    * Perform an outgoing (towards device) USB control transfer.
    * @param request packet request field
@@ -226,6 +234,7 @@ export class AoaDevice {
       await this.transfer(AoaRequest.SEND_STRING, 0, 0, MANUFACTURER);
       await this.transfer(AoaRequest.SEND_STRING, 0, 1, MODEL);
       await this.transfer(AoaRequest.SEND_STRING, 0, 3, VERSION);
+      await this.transfer(AoaRequest.SET_AUDIO_MODE, 1, 0);
       await this.transfer(AoaRequest.START, 0, 0);
       await this.sleep(CONFIG_DELAY_MILLIS);
       await this.reconnect(timeout);
