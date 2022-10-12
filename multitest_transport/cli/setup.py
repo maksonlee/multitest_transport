@@ -24,14 +24,13 @@ setuptools.setup(
     version=VERSION,
     classifiers=[
         'Development Status :: 3 - Alpha',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
     ],
     packages=setuptools.find_packages(),
-    # The package works for 3.6 and up, but not for python 4 yet.
-    python_requires='~=3.6',
+    # The package works for 3.7 and up, but not for python 4 yet.
+    python_requires='~=3.7',
     entry_points={
         'console_scripts': ['mtt=multitest_transport.cli.cli:Main'],
     },
@@ -49,8 +48,11 @@ setuptools.setup(
         'grpcio',
         'packaging',
         'python-dateutil',
+        # Temporary fix for proto dependency bug.
+        'protobuf == 3.20.1',
         'pytz',
-        'requests',
+        'pyOpenSSL == 22.0.0',
+        'requests == 2.23.0',
         'SecretStorage',
         'six == 1.15.0',
         'strictyaml',

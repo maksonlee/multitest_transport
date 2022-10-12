@@ -22,6 +22,7 @@ MTT_BASE_URL="https://storage.googleapis.com/android-mtt.appspot.com/${ENVIRONME
 MTT_ZIP_URL="${MTT_BASE_URL}/mtt.zip"
 OLD_HOME_BIN_DIR="$HOME/bin"
 HOME_BIN_DIR="$HOME/.local/bin"
+PYTHON3_MINIMAL_MINOR_VERSION="7"
 
 function install_docker {
   docker_version=$(docker --version 2> /dev/null || echo "")
@@ -82,6 +83,13 @@ function check_python {
   if [ -z "$python3_version" ]
   then
     echo "Python 3 is not installed. Please install Python 3 first."
+    exit 1
+  fi
+
+  python3_minor_version=$(python3 --version 2> /dev/null | awk -F\. '{print $2}')
+  if [ "$python3_minor_version" -lt "$PYTHON3_MINIMAL_MINOR_VERSION" ]
+  then
+    echo "Python 3 version should be the greater then 3.6. Please upgrade Python first."
     exit 1
   fi
 }

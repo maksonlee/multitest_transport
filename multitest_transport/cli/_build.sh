@@ -65,8 +65,12 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq un
 # Add deadsnakes for different versions of python and distutils
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
-  python3.6 python3.7 python3.8 python3.9 \
+  python3.7 python3.8 python3.9 \
   python3-distutils python3-pip python3.9-distutils
+
+# Set minimal Python version that client supports.
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1000
+
 COPY ./requirements.txt /tmp
 RUN pip3 install --upgrade setuptools pip
 RUN pip3 install pex==2.1.94
@@ -89,7 +93,7 @@ cat << EOF > inside_docker_build.sh
 
 cd /workspace
 # Build mtt pex package.
-pex --python="python3.9" --python="python3.8" --python="python3.7" --python="python3.6" \
+pex --python="python3.9" --python="python3.8" --python="python3.7" \
   --python-shebang="/usr/bin/env python3" \
   -D src -r requirements.txt \
   -m multitest_transport.cli.cli \
@@ -101,7 +105,7 @@ cd ..
 
 # Build mtt_lab pex package.
 cp mtt src/mtt_binary
-pex --python="python3.9" --python="python3.8" --python="python3.7" --python="python3.6" \
+pex --python="python3.9" --python="python3.8" --python="python3.7" \
   --python-sheban="/usr/bin/env python3" \
   -D src -r requirements.txt \
   -m multitest_transport.cli.lab_cli \
