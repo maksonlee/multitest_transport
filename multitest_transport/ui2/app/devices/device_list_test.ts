@@ -134,9 +134,9 @@ describe('DeviceList', () => {
     window.sessionStorage.clear();
     const searchCriteria = deviceList.getSearchCriteria();
     deviceList.nextPageToken = 'next';
-    deviceList.paginator.changePageSize(20);
+    deviceList.paginator.changePageSize(50);
     expect(tfcClient.queryDeviceInfos)
-        .toHaveBeenCalledWith(searchCriteria, 20, undefined, false);
+        .toHaveBeenCalledWith(searchCriteria, 50, undefined, false);
   });
 
   it('can update pagination parameters', inject([Router], (router: Router) => {

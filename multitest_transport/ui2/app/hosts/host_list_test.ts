@@ -143,9 +143,9 @@ describe('HostList', () => {
     window.sessionStorage.clear();
     const searchCriteria = hostList.getSearchCriteria();
     hostList.nextPageToken = 'next';
-    hostList.paginator.changePageSize(20);
+    hostList.paginator.changePageSize(50);
     expect(tfcClient.getHostInfos)
-        .toHaveBeenCalledWith(searchCriteria, 20, undefined, false);
+        .toHaveBeenCalledWith(searchCriteria, 50, undefined, false);
   });
 
   it('can update query parameters', inject([Router], (router: Router) => {

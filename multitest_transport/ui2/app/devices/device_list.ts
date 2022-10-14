@@ -154,7 +154,7 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
   readonly deviceListPageSize = 'deviceListPageSize';
   readonly deviceListPageToken = 'deviceListPageToken';
   readonly allSize = 10000;
-  readonly pageSizeOptions = [10, 20, 50, this.allSize];
+  readonly pageSizeOptions = [10, 50, 100, 500, 1000, this.allSize];
 
   labs: string[] = [];
   selectedLab = '';
