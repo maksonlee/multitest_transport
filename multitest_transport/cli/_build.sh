@@ -65,8 +65,9 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq un
 # Add deadsnakes for different versions of python and distutils
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
-  python3.7 python3.8 python3.9 \
-  python3-distutils python3-pip python3.9-distutils
+  python3.7 python3.8 python3.9 python3.10 \
+  python3-distutils python3-pip \
+  python3.9-distutils python3.10-distutils python3.10-dev
 
 # Set minimal Python version that client supports.
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1000
@@ -77,9 +78,10 @@ RUN pip3 install pex==2.1.94
 RUN pip3 install -r /tmp/requirements.txt
 RUN pip3 install --upgrade keyrings.alt
 
+# Upgrade to the latest verified version of protoc which supports python3.10.
 RUN mkdir -p /protoc && \
-  wget --no-verbose -O /protoc/protoc-3.7.1-linux-x86_64.zip https://github.com/protocolbuffers/protobuf/releases/download/v3.7.1/protoc-3.7.1-linux-x86_64.zip && \
-  unzip -q -o /protoc/protoc-3.7.1-linux-x86_64.zip -d /protoc
+  wget --no-verbose -O /protoc/protoc-3.20.1-linux-x86_64.zip https://github.com/protocolbuffers/protobuf/releases/download/v3.20.1/protoc-3.20.1-linux-x86_64.zip && \
+  unzip -q -o /protoc/protoc-3.20.1-linux-x86_64.zip -d /protoc
 EOF
 
 docker pull gcr.io/android-mtt/pex:latest
@@ -93,7 +95,7 @@ cat << EOF > inside_docker_build.sh
 
 cd /workspace
 # Build mtt pex package.
-pex --python="python3.9" --python="python3.8" --python="python3.7" \
+pex --python="python3.10" --python="python3.9" --python="python3.8" --python="python3.7" \
   --python-shebang="/usr/bin/env python3" \
   -D src -r requirements.txt \
   -m multitest_transport.cli.cli \
@@ -105,7 +107,7 @@ cd ..
 
 # Build mtt_lab pex package.
 cp mtt src/mtt_binary
-pex --python="python3.9" --python="python3.8" --python="python3.7" \
+pex --python="python3.10" --python="python3.9" --python="python3.8" --python="python3.7" \
   --python-sheban="/usr/bin/env python3" \
   -D src -r requirements.txt \
   -m multitest_transport.cli.lab_cli \
