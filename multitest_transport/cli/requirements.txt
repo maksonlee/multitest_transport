@@ -14,7 +14,7 @@ grpcio==1.49.1
 urllib3==1.26.12
 httplib2==0.20.4
 libcst==0.4.1
-MarkupSafe==2.0.0
+MarkupSafe==2.0.1
 packaging==20.4
 protobuf==3.20.1
 pyparsing==2.4.7
