@@ -75,33 +75,5 @@ class CredentialsPropertyTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual('refresh_token', credentials.refresh_token)
 
 
-class OAuth2UtilTest(absltest.TestCase):
-
-  def testGetRedirectUri_local(self):
-    """Tests that local URIs can be used directly."""
-    local_uri = 'http://localhost:8000/auth_return'
-    self.assertEqual((local_uri, False), oauth2_util.GetRedirectUri(local_uri))
-
-  def testGetRedirectUri_remote(self):
-    """Tests that remote URIs must use the copy/paste flow."""
-    remote_uri = 'http://www.google.com/auth_return'
-    self.assertEqual((oauth2_util.MANUAL_COPY_PASTE_URI, True),
-                     oauth2_util.GetRedirectUri(remote_uri))
-
-  def testGetOAuth2Flow(self):
-    """Tests that an OAuth2 flow can be constructed."""
-    oauth2_config = oauth2_util.OAuth2Config(
-        client_id='id', client_secret='secret', scopes=['lorem', 'ipsum'])
-    flow = oauth2_util.GetOAuth2Flow(oauth2_config, 'redirect_uri')
-    self.assertEqual('id', flow.oauth2session.client_id)
-    self.assertEqual(['lorem', 'ipsum'], flow.oauth2session.scope)
-    self.assertEqual('redirect_uri', flow.oauth2session.redirect_uri)
-
-  def testGetOAuth2Flow_noConfig(self):
-    """Tests that the OAuth2 config is required when creating a flow."""
-    with self.assertRaises(ValueError):
-      oauth2_util.GetOAuth2Flow(None, 'redirect_uri')
-
-
 if __name__ == '__main__':
   absltest.main()

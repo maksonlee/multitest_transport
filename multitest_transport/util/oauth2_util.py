@@ -17,17 +17,14 @@ import dataclasses
 import json
 import logging
 import pickle
-from typing import List, Optional, Tuple
-import urllib.parse
+from typing import List, Optional
 
 from google.auth import credentials as ga_credentials
 from google.oauth2 import credentials as authorized_user
 import google_auth_httplib2
-from google_auth_oauthlib import flow
 import httplib2
 from tradefed_cluster.util import ndb_shim as ndb
 
-MANUAL_COPY_PASTE_URI = 'urn:ietf:wg:oauth:2.0:oob'
 GOOGLE_AUTH_URI = 'https://accounts.google.com/o/oauth2/auth'
 GOOGLE_TOKEN_URI = 'https://accounts.google.com/o/oauth2/token'
 
@@ -88,44 +85,3 @@ def AuthorizeHttp(http: httplib2.Http,
     credentials = ga_credentials.with_scopes_if_required(credentials, scopes)
   return google_auth_httplib2.AuthorizedHttp(credentials, http)
 
-
-def GetRedirectUri(redirect_uri: str) -> Tuple[str, bool]:
-  """Verifies a redirect URI, returning the actual URI to use.
-
-  Args:
-    redirect_uri: base redirect URI, e.g. http://127.0.0.1:8000/auth_return
-
-  Returns:
-    redirect_uri: actual redirect URI to use
-    is_manual: whether the manual copy/paste flow should be used
-  """
-  hostname = urllib.parse.urlparse(redirect_uri).hostname
-  if hostname not in ('127.0.0.1', 'localhost'):
-    return MANUAL_COPY_PASTE_URI, True
-  return redirect_uri, False
-
-
-def GetOAuth2Flow(oauth2_config: Optional[OAuth2Config],
-                  redirect_uri: str) -> flow.Flow:
-  """Constructs a OAuth2 flow used to generate URLs and exchange codes.
-
-  Args:
-    oauth2_config: OAuth2 configuration (client details and scopes)
-    redirect_uri: URI to redirect to after authorization
-
-  Returns:
-    google_auth_oauthlib.flow.Flow
-  """
-  if not oauth2_config:
-    raise ValueError('No OAuth2 configuration provided')
-  return flow.Flow.from_client_config(
-      {
-          'web': {
-              'auth_uri': oauth2_config.auth_uri,
-              'client_id': oauth2_config.client_id,
-              'client_secret': oauth2_config.client_secret,
-              'token_uri': oauth2_config.token_uri,
-          },
-      },
-      scopes=oauth2_config.scopes,
-      redirect_uri=redirect_uri)

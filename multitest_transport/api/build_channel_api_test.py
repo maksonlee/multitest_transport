@@ -29,7 +29,6 @@ from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base as plugins
 from multitest_transport.util import file_util
-from multitest_transport.util import oauth2_util
 
 
 class AndroidBuildProvider(plugins.BuildProvider):
@@ -211,55 +210,6 @@ class BuildChannelApiTest(api_test_util.TestCase):
         messages.Convert(build_channel_config, messages.BuildChannelConfig),
         msg)
     self.assertEqual(data['name'], build_channel_config.name)
-
-  @mock.patch.object(oauth2_util, 'GetOAuth2Flow')
-  @mock.patch.object(oauth2_util, 'GetRedirectUri')
-  def testGetAuthorizationInfo(self, mock_get_redirect, mock_get_flow):
-    """Tests that authorization info can be retrieved."""
-    config = self._CreateMockBuildChannel(name='android', provider='Android')
-    # Mock getting URIs from OAuth2 utilities
-    mock_get_redirect.return_value = 'redirect_uri', True
-    oauth2_flow = mock.MagicMock()
-    oauth2_flow.authorization_url.return_value = 'auth_uri', None
-    mock_get_flow.return_value = oauth2_flow
-    # Verify authorization info
-    response = self.app.get(
-        '/_ah/api/mtt/v1/build_channels/%s/auth?redirect_uri=%s' %
-        (config.key.id(), 'redirect_uri'))
-    authorization_info = protojson.decode_message(messages.AuthorizationInfo,
-                                                  response.body)
-    self.assertEqual(authorization_info.url, 'auth_uri')
-    self.assertEqual(authorization_info.is_manual, True)
-
-  def testGetAuthorizationInfo_notFound(self):
-    """Tests that an error occurs when a build channel is not found."""
-    response = self.app.get(
-        '/_ah/api/mtt/v1/build_channels/%s/auth?redirect_uri=%s' %
-        ('unknown', 'redirect_uri'),
-        expect_errors=True)
-    self.assertEqual('404 Not Found', response.status)
-
-  @mock.patch.object(oauth2_util, 'GetOAuth2Flow')
-  def testAuthorizeConfig(self, mock_get_flow):
-    """Tests that a build channel can be authorized."""
-    config = self._CreateMockBuildChannel(name='android', provider='Android')
-    # Mock getting credentials from OAuth2 utilities
-    oauth2_flow = mock.MagicMock(credentials=authorized_user.Credentials(None))
-    mock_get_flow.return_value = oauth2_flow
-    # Verify that credentials were obtained and stored
-    self.app.post(
-        '/_ah/api/mtt/v1/build_channels/%s/auth?redirect_uri=%s&code=%s'
-        % (config.key.id(), 'redirect_uri', 'code'))
-    oauth2_flow.fetch_token.assert_called_once_with(code='code')
-    config = ndb_models.BuildChannelConfig.get_by_id(config.key.id())
-    self.assertIsNotNone(config.credentials)
-
-  def testAuthorizeConfig_notFound(self):
-    """Tests that an error occurs when a build channel is not found."""
-    response = self.app.post(
-        '/_ah/api/mtt/v1/build_channels/%s/auth_return?redirect_uri=%s&code=%s'
-        % ('unknown', 'redirect_uri', 'code'), expect_errors=True)
-    self.assertEqual('404 Not Found', response.status)
 
   @mock.patch.object(service_account.Credentials, 'from_service_account_info')
   def testAuthorizeConfigWithServiceAccount(self, mock_parse_key):

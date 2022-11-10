@@ -26,7 +26,6 @@ from multitest_transport.api import base
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
-from multitest_transport.util import oauth2_util
 
 
 @base.MTT_API.api_class(resource_name='test_run_action')
@@ -131,56 +130,6 @@ class TestRunActionApi(remote.Service):
       action_id: Test run action ID
     """
     self._GetTestRunActionKey(request.action_id).delete()
-    return message_types.VoidMessage()
-
-  @base.ApiMethod(
-      endpoints.ResourceContainer(
-          message_types.VoidMessage,
-          action_id=messages.StringField(1, required=True),
-          redirect_uri=messages.StringField(2, required=True)),
-      mtt_messages.AuthorizationInfo,
-      path='test_run_actions/{action_id}/auth',
-      http_method='GET',
-      name='get_auth_info')
-  def GetAuthorizationInfo(self, request):
-    """Determine a test run action's authorization information.
-
-    Parameters:
-      action_id: Test run action ID
-      redirect_uri: URL to redirect to after authorization
-    """
-    action = self._GetTestRunAction(request.action_id)
-    redirect_uri, is_manual = oauth2_util.GetRedirectUri(request.redirect_uri)
-    oauth2_config = test_run_hook.GetOAuth2Config(action)
-    flow = oauth2_util.GetOAuth2Flow(oauth2_config, redirect_uri)
-    auth_url, _ = flow.authorization_url()
-    return mtt_messages.AuthorizationInfo(url=auth_url, is_manual=is_manual)
-
-  @base.ApiMethod(
-      endpoints.ResourceContainer(
-          message_types.VoidMessage,
-          action_id=messages.StringField(1, required=True),
-          redirect_uri=messages.StringField(2, required=True),
-          code=messages.StringField(3, required=True)),
-      message_types.VoidMessage,
-      path='test_run_actions/{action_id}/auth',
-      http_method='POST',
-      name='authorize')
-  def Authorize(self, request):
-    """Authorize a test run action with an authorization code.
-
-    Parameters:
-      action_id: Test run action ID
-      redirect_uri: URL to redirect to after authorization
-      code: Authorization code
-    """
-    action = self._GetTestRunAction(request.action_id)
-    redirect_uri, _ = oauth2_util.GetRedirectUri(request.redirect_uri)
-    oauth2_config = test_run_hook.GetOAuth2Config(action)
-    flow = oauth2_util.GetOAuth2Flow(oauth2_config, redirect_uri)
-    flow.fetch_token(code=request.code)
-    action.credentials = flow.credentials
-    action.put()
     return message_types.VoidMessage()
 
   @base.ApiMethod(

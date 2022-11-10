@@ -31,7 +31,6 @@ from multitest_transport.models import build
 from multitest_transport.models import messages as mtt_messages
 from multitest_transport.models import ndb_models
 from multitest_transport.util import file_util
-from multitest_transport.util import oauth2_util
 
 
 @base.MTT_API.api_class(resource_name='build_channel', path='build_channels')
@@ -211,52 +210,6 @@ class BuildChannelApi(remote.Service):
     build_channel_key = mtt_messages.ConvertToKey(
         ndb_models.BuildChannelConfig, request.build_channel_id)
     build_channel_key.delete()
-    return message_types.VoidMessage()
-
-  @base.ApiMethod(
-      endpoints.ResourceContainer(
-          message_types.VoidMessage,
-          build_channel_id=messages.StringField(1, required=True),
-          redirect_uri=messages.StringField(2, required=True)),
-      mtt_messages.AuthorizationInfo,
-      path='{build_channel_id}/auth', http_method='GET', name='auth')
-  def GetAuthorizationInfo(self, request):
-    """Determines a build channel configuration's authorization information.
-
-    Parameters:
-      build_channel_id: Build channel ID
-      redirect_uri: URL to redirect to after authorization
-    """
-    build_channel = self._GetBuildChannel(request.build_channel_id)
-    redirect_uri, is_manual = oauth2_util.GetRedirectUri(request.redirect_uri)
-    flow = oauth2_util.GetOAuth2Flow(build_channel.oauth2_config, redirect_uri)
-    auth_url, _ = flow.authorization_url()
-    return mtt_messages.AuthorizationInfo(url=auth_url, is_manual=is_manual)
-
-  @base.ApiMethod(
-      endpoints.ResourceContainer(
-          message_types.VoidMessage,
-          build_channel_id=messages.StringField(1, required=True),
-          redirect_uri=messages.StringField(2, required=True),
-          code=messages.StringField(3, required=True)),
-      message_types.VoidMessage,
-      path='{build_channel_id}/auth',
-      http_method='POST',
-      name='authorize')
-  def AuthorizeConfig(self, request):
-    """Authorizes a build channel configuration with an authorization code.
-
-    Parameters:
-      build_channel_id: Build channel ID
-      redirect_uri: URL to redirect to after authorization
-      code: Authorization code
-    """
-    build_channel = self._GetBuildChannel(request.build_channel_id)
-    redirect_uri, _ = oauth2_util.GetRedirectUri(request.redirect_uri)
-    flow = oauth2_util.GetOAuth2Flow(build_channel.oauth2_config, redirect_uri)
-    flow.fetch_token(code=request.code)
-    build_channel.config.credentials = flow.credentials
-    build_channel.config.put()
     return message_types.VoidMessage()
 
   @base.ApiMethod(
