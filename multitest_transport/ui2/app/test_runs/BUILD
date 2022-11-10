@@ -124,6 +124,7 @@ ng_module(
         "//multitest_transport/ui2/app/devices",
         "//multitest_transport/ui2/app/services",
         "//multitest_transport/ui2/app/shared",
+        "//multitest_transport/ui2/app/test_run_actions",
         "//multitest_transport/ui2/app/testing:jasmine_util",
         "//multitest_transport/ui2/app/testing:test_util",
     ],

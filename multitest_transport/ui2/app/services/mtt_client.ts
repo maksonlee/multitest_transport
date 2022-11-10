@@ -503,6 +503,15 @@ export class TestRunActionClient {
         {context});
   }
 
+  /** Executes test run actions for a test run with given references. */
+  executeTestRunActions(
+      testRunId: string, testRunActionRefs: model.TestRunActionRefList) {
+    const context = AnalyticsContext.create('test_run_actions', 'execute');
+    return this.http.post(
+        `${MTT_API_URL}/test_run_actions/${encodeURIComponent(testRunId)}`,
+        testRunActionRefs, {context});
+  }
+
   // Fetches authorization information to start authorization flow.
   private getAuthorizationInfo(id: string):
       Observable<model.AuthorizationInfo> {

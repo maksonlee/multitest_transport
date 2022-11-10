@@ -78,6 +78,15 @@
                [href]="exportUrl" [download]="exportUrl" (click)="trackClickEvent('export_result')">
               Export Result
             </a>
+            <button
+              mat-stroked-button
+              class="execute-test-run-actions-button"
+              color="accent"
+              (click)="executeTestRunActions()"
+              *ngIf="isFinalTestRunState(testRun.state) && manualTestRunActions.length > 0"
+            >
+              Execute Test Run Actions
+            </button>
           </div>
         </div>
       </mat-grid-tile>

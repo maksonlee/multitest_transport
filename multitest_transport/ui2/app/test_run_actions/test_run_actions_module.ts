@@ -22,11 +22,13 @@ import {SharedModule} from '../shared';
 import {TestRunActionEditPage} from './test_run_action_edit_page';
 import {TestRunActionList} from './test_run_action_list';
 import {TestRunActionPicker} from './test_run_action_picker';
+import {TestRunActionPickerDialog} from './test_run_action_picker_dialog';
 
 const COMPONENTS = [
   TestRunActionEditPage,
   TestRunActionList,
   TestRunActionPicker,
+  TestRunActionPickerDialog,
 ];
 
 /** Module for test run action components. */

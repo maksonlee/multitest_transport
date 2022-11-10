@@ -858,6 +858,7 @@ export enum TestRunPhase {
   AFTER_RUN = 'AFTER_RUN',
   ON_SUCCESS = 'ON_SUCCESS',
   ON_ERROR = 'ON_ERROR',
+  MANUAL = 'MANUAL',
 }
 
 /** Test run action. */
@@ -891,6 +892,11 @@ export declare interface TestRunActionList {
 export declare interface TestRunActionRef {
   action_id: string;
   options?: NameValuePair[];
+}
+
+/** List of test run action references. */
+export declare interface TestRunActionRefList {
+  refs: TestRunActionRef[];
 }
 
 /**

@@ -21,7 +21,7 @@ import * as testUtil from '../testing/mtt_mocks';
 
 import {AuthService, REDIRECT_URI} from './auth_service';
 import {MTT_API_URL, MttClient, NetdataClient, TestRunActionClient} from './mtt_client';
-import {BuildChannelList, TestPlanList, TestRunAction} from './mtt_models';
+import {BuildChannelList, TestPlanList, TestRunAction, TestRunActionRefList} from './mtt_models';
 
 describe('MttClient', () => {
   let httpClientSpy: jasmine.SpyObj<HttpClient>;
@@ -785,6 +785,20 @@ describe('TestRunActionClient', () => {
         .toHaveBeenCalledWith(
             TestRunActionClient.PATH + '/id/auth', jasmine.any(Object));
     expect(http.delete).toHaveBeenCalledTimes(1);
+  });
+
+  it('can execute test run actions', () => {
+    const testRunActionRefs: TestRunActionRefList = {
+      refs: [{
+        action_id: 'action',
+        options: [{name: 'option', value: 'value'}],
+      }],
+    };
+    client.executeTestRunActions('test_run_id', testRunActionRefs);
+    expect(http.post).toHaveBeenCalledWith(
+        `${MTT_API_URL}/test_run_actions/test_run_id`, testRunActionRefs,
+        jasmine.any(Object));
+    expect(http.post).toHaveBeenCalledTimes(1);
   });
 });
 

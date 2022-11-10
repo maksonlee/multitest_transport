@@ -14,6 +14,7 @@ ng_module(
         "test_run_action_edit_page.ts",
         "test_run_action_list.ts",
         "test_run_action_picker.ts",
+        "test_run_action_picker_dialog.ts",
         "test_run_actions_module.ts",
     ],
     assets = [
@@ -21,11 +22,13 @@ ng_module(
         "test_run_action_edit_page.ng.html",
         "test_run_action_list.ng.html",
         "test_run_action_picker.ng.html",
+        "test_run_action_picker_dialog.ng.html",
     ],
     strict_templates = False,
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular_components:cdk_a11y"),
+        third_party_js("angular_components:material_dialog"),
         third_party_js("angular2:core"),
         third_party_js("angular_components:cdk_collections"),
         third_party_js("angular_components:cdk_drag_drop"),
@@ -43,12 +46,14 @@ ng_module(
     srcs = [
         "test_run_action_edit_page_test.ts",
         "test_run_action_list_test.ts",
+        "test_run_action_picker_dialog_test.ts",
         "test_run_action_picker_test.ts",
     ],
     visibility = ["//multitest_transport"],
     deps = [
         ":test_run_actions",
         third_party_js("angular_components:cdk_a11y"),
+        third_party_js("angular_components:material_dialog"),
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),
         third_party_js("angular2:platform_browser_animations"),

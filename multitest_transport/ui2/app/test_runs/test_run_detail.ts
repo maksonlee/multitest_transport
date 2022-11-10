@@ -17,6 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {AfterViewInit, Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MatButton} from '@angular/material/button';
+import {MatDialog} from '@angular/material/dialog';
 import {MatTabChangeEvent, MatTabGroup} from '@angular/material/tabs';
 import {ActivatedRoute, Router} from '@angular/router';
 import {EMPTY, interval, Observable, ReplaySubject, zip} from 'rxjs';
@@ -25,12 +26,13 @@ import {finalize, first, switchMap, takeUntil} from 'rxjs/operators';
 import {AnalyticsService} from '../services/analytics_service';
 import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
-import {isFinalTestRunState, TestRun, TestRunSummary, TestRunSummaryList} from '../services/mtt_models';
+import {isFinalTestRunState, TestRun, TestRunAction, TestRunActionRef, TestRunPhase, TestRunSummary, TestRunSummaryList} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {TfcClient} from '../services/tfc_client';
 import {isFinalCommandState, Request} from '../services/tfc_models';
 import {OverflowListType} from '../shared/overflow_list';
 import {assertRequiredInput, buildApiErrorMessage} from '../shared/util';
+import {TestRunActionPickerDialog, TestRunActionPickerDialogData} from '../test_run_actions/test_run_action_picker_dialog';
 
 /** A component for displaying the details of a test run. */
 @Component({
@@ -59,18 +61,20 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
   testRun?: TestRun;
   /** Underlying TFC request, only present if test run has started. */
   request?: Request;
-  /** List of summaries of reruns */
+  /** List of summaries of reruns. */
   reruns: TestRunSummary[] = [];
-  /** Link to view the latest output files */
+  /** Link to view the latest output files. */
   outputFilesUrl?: string;
   /** Test run results URL. */
   exportUrl?: string;
-  /** Current tab index */
+  /** Current tab index. */
   currentTabIndex: number = 0;
+  /** List of available API test run actions. */
+  manualTestRunActions: TestRunAction[] = [];
 
 
   readonly matTabOptions =
-      ['progress', 'jobs', 'logs', 'test_results', 'test_resources', 'config'];
+      ['test_results', 'progress', 'logs', 'test_resources', 'config'];
 
   constructor(
       private readonly notifier: Notifier,
@@ -81,6 +85,7 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
       private readonly tfc: TfcClient,
       private readonly liveAnnouncer: LiveAnnouncer,
       private readonly analytics: AnalyticsService,
+      private readonly matDialog: MatDialog,
   ) {}
 
   ngOnInit() {
@@ -122,6 +127,7 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
           this.updateExportUrl();
           if (testRun && isFinalTestRunState(testRun.state)) {
             this.autoUpdate.unsubscribe();  // Stop auto-updating when complete.
+            this.loadManualTestRunActions();
           }
           this.loadReruns();
 
@@ -240,5 +246,43 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
 
   trackClickEvent(action: string) {
     this.analytics.trackEvent('test_run_detail', action);
+  }
+
+  loadManualTestRunActions() {
+    this.mtt.testRunActions.list().subscribe(actions => {
+      this.manualTestRunActions = actions.filter(
+          action => action.phases?.includes(TestRunPhase.MANUAL));
+    });
+  }
+
+  executeTestRunActions() {
+    const testRunActionsPickerDialogData: TestRunActionPickerDialogData = {
+      actions: this.manualTestRunActions,
+      selectedActionRefs:
+          this.testRun?.test_run_config?.test_run_action_refs || [],
+    };
+
+    const dialogRef = this.matDialog.open(TestRunActionPickerDialog, {
+      panelClass: 'test-run-action-picker-dialog',
+      data: testRunActionsPickerDialogData,
+    });
+
+    dialogRef.componentInstance.confirm.subscribe(
+        (refs: TestRunActionRef[]) => {
+          this.mtt.testRunActions.executeTestRunActions(this.testRunId, {refs})
+              .subscribe(
+                  () => {
+                    // Switch to progress tab
+                    this.router.navigate([], {fragment: 'progress'});
+                    this.loadTestRun();
+                    this.notifier.showMessage(
+                        `Executed test run actions successfully.`);
+                  },
+                  error => {
+                    this.notifier.showError(
+                        `Failed to execute test run actions.`,
+                        buildApiErrorMessage(error));
+                  });
+        });
   }
 }
