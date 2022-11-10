@@ -73,6 +73,14 @@ class APFEReportUploadHook(base.TestRunHook):
   def Execute(self, context):
     if context.phase == ndb_models.TestRunPhase.ON_SUCCESS:
       self._UploadReport(context.test_run, context.latest_attempt)
+    if context.phase == ndb_models.TestRunPhase.MANUAL:
+      if not context.test_run.IsFinal():
+        event_log.Warn(
+            context.test_run,
+            ('[APFE Report Upload] Test run is not in a final state, '
+             'skipping upload.'))
+        return
+      self._UploadReport(context.test_run, context.latest_attempt)
 
   def _UploadReport(self, test_run, attempt):
     context_file_pattern = test_run.test.context_file_pattern

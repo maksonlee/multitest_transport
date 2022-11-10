@@ -68,6 +68,39 @@ class TestRunHookTest(testbed_dependent_test.TestbedDependentTest):
         phase=ndb_models.TestRunPhase.AFTER_RUN)
     mock_execute_hook.assert_called_once_with(after_action, hook_context)
 
+  @mock.patch.object(test_run_hook, '_ExecuteHook')
+  def testExecuteHooks_notFound(self, mock_execute_hook):
+    """Tests that no hooks are executed if run not found."""
+    test_run_hook.ExecuteHooks('unknown', ndb_models.TestRunPhase.AFTER_RUN)
+    mock_execute_hook.assert_not_called()
+
+  @mock.patch.object(test_run_hook, '_ExecuteHook')
+  @mock.patch.object(test_run_hook, '_GetLatestAttempt')
+  def testExecuteHooks_withGivenActions(self, mock_get_latest_attempt,
+                                        mock_execute_hook):
+    """Tests that the given actions can be executed."""
+    manual_action = ndb_models.TestRunAction(
+        name='Manual',
+        hook_class_name='simple',
+        phases=[ndb_models.TestRunPhase.MANUAL])
+    # Create test run without actions
+    test_run = ndb_models.TestRun()
+    test_run.put()
+    attempt = mock.MagicMock()
+    mock_get_latest_attempt.return_value = attempt
+    # Execute the manual hook and verify
+    test_run_hook.ExecuteHooks(
+        test_run.key.id(),
+        ndb_models.TestRunPhase.MANUAL,
+        attempt_id='attempt_id',
+        test_run_actions=[manual_action])
+    mock_get_latest_attempt.assert_called_once_with(test_run, 'attempt_id')
+    hook_context = plugins.TestRunHookContext(
+        test_run=test_run,
+        latest_attempt=attempt,
+        phase=ndb_models.TestRunPhase.MANUAL)
+    mock_execute_hook.assert_called_once_with(manual_action, hook_context)
+
   def testApplyOptionsFromDeviceActions(self):
     """Tests that device actions can be found and executed."""
     device_action = ndb_models.DeviceAction(
@@ -82,12 +115,6 @@ class TestRunHookTest(testbed_dependent_test.TestbedDependentTest):
     test_run_hook._ApplyOptionsFromDeviceActions(test_run.key.id(), task)
     self.assertEqual(task.extra_options,
                      {'device-type': ['LOCAL_VIRTUAL_DEVICE']})
-
-  @mock.patch.object(test_run_hook, '_ExecuteHook')
-  def testExecuteHooks_notFound(self, mock_execute_hook):
-    """Tests that no hooks are executed if run not found."""
-    test_run_hook.ExecuteHooks('unknown', ndb_models.TestRunPhase.AFTER_RUN)
-    mock_execute_hook.assert_not_called()
 
   def testGetLatestAttempt_noRequest(self):
     """Tests that no attempt is returned without a TFC request ID."""

@@ -13,6 +13,7 @@
 # limitations under the License.
 """Unit tests for APFE."""
 
+import json
 from unittest import mock
 
 from absl.testing import absltest
@@ -28,11 +29,48 @@ class APFEReportUploadHookTest(absltest.TestCase):
 
   def setUp(self):
     super(APFEReportUploadHookTest, self).setUp()
+    self.mock_company_id = 'company_id'
+    self.mock_resource_name = 'resource_name'
+    self.mock_result_file = 'world.zip'
+    self.mock_output_files = ['hello.txt', self.mock_result_file]
     # Initialize mock API client and hook under test
     self.client = mock.MagicMock()
-    self.hook = apfe.APFEReportUploadHook(company_id='company_id')
+    self.hook = apfe.APFEReportUploadHook(company_id=self.mock_company_id)
     self.hook._client = self.client
     self.hook._authorized_http = mock.MagicMock()
+
+  def _SetUpContext(self, phase, mock_filenames, mock_output_url,
+                    mock_handle_factory):
+    """Sets up required context for uploading to APFE."""
+    test_run = ndb_models.TestRun(
+        test=ndb_models.Test(context_file_pattern='.+\\.zip'),
+        state=ndb_models.TestRunState.COMPLETED)
+    hook_context = plugins.TestRunHookContext(
+        test_run=test_run, latest_attempt=mock.MagicMock(), phase=phase)
+    mock_filenames.return_value = self.mock_output_files
+    mock_output_url.side_effect = lambda tr, a, filename: filename
+    mock_handle_factory.return_value.Info.return_value = file_util.FileInfo(
+        url=self.mock_result_file, content_type='application/zip')
+    mock_response = {'ref': {'name': self.mock_resource_name}}
+    self.client.compatibility().report().startUploadReport(
+    ).execute.return_value = json.dumps(mock_response)
+
+    return hook_context
+
+  def _VerifyUpload(self, test_run, mock_info):
+    """Verifies whether the uploading successes."""
+    self.client.compatibility().report().startUploadReport.assert_called()
+    self.client.media().upload.assert_called_once_with(
+        resourceName=self.mock_resource_name, media_body=mock.ANY)
+    self.client.compatibility().report().create.assert_called_once_with(
+        body={
+            'reportRef': {
+                'name': self.mock_resource_name,
+            },
+            'companyId': self.mock_company_id,
+        })
+    mock_info.assert_called_once_with(
+        test_run, f'[APFE Report Upload] Uploaded {self.mock_result_file}.')
 
   def testInit_noCompanyId(self):
     """Tests that a company id is required."""
@@ -103,41 +141,48 @@ class APFEReportUploadHookTest(absltest.TestCase):
   @mock.patch.object(file_util.FileHandle, 'Get')
   @mock.patch.object(file_util, 'GetOutputFileUrl')
   @mock.patch.object(file_util, 'GetOutputFilenames')
-  def testExecute_success(self, mock_filenames, mock_output_url,
-                          mock_handle_factory, mock_info):
-    """Tests report can be uploaded successfully."""
+  def testExecute_onSuccess(self, mock_filenames, mock_output_url,
+                            mock_handle_factory, mock_info):
+    """Tests report can be uploaded when test run is completed successfully."""
+    hook_context = self._SetUpContext(ndb_models.TestRunPhase.ON_SUCCESS,
+                                      mock_filenames, mock_output_url,
+                                      mock_handle_factory)
+
+    self.hook.Execute(hook_context)
+
+    self._VerifyUpload(hook_context.test_run, mock_info)
+
+  @mock.patch.object(event_log, 'Info')
+  @mock.patch.object(file_util.FileHandle, 'Get')
+  @mock.patch.object(file_util, 'GetOutputFileUrl')
+  @mock.patch.object(file_util, 'GetOutputFilenames')
+  def testExecute_manual(self, mock_filenames, mock_output_url,
+                         mock_handle_factory, mock_info):
+    """Tests report can be uploaded when the hook is triggered manually."""
+    hook_context = self._SetUpContext(ndb_models.TestRunPhase.MANUAL,
+                                      mock_filenames, mock_output_url,
+                                      mock_handle_factory)
+
+    self.hook.Execute(hook_context)
+
+    self._VerifyUpload(hook_context.test_run, mock_info)
+
+  @mock.patch.object(event_log, 'Warn')
+  def testExecute_manual_testRunIsNotFinal(self, mock_warn):
+    """Tests that results aren't uploaded if test run is not finished."""
     test_run = ndb_models.TestRun(
         test=ndb_models.Test(context_file_pattern='.+\\.zip'))
     hook_context = plugins.TestRunHookContext(
         test_run=test_run,
         latest_attempt=mock.MagicMock(),
-        phase=ndb_models.TestRunPhase.ON_SUCCESS)
-    mock_filenames.return_value = ['hello.txt', 'world.zip']
-    mock_output_url.side_effect = lambda tr, a, filename: filename
-    mock_handle_factory.return_value.Info.return_value = file_util.FileInfo(
-        url='world.zip', content_type='application/zip')
-    self.client.compatibility().report().startUploadReport(
-    ).execute.return_value = b"""
-      {
-        "ref" : {
-          "name" : "resource_name"
-        }
-      }
-    """
+        phase=ndb_models.TestRunPhase.MANUAL)
 
     self.hook.Execute(hook_context)
 
-    self.client.compatibility().report().startUploadReport.assert_called()
-    self.client.media().upload.assert_called_once_with(
-        resourceName='resource_name', media_body=mock.ANY)
-    self.client.compatibility().report().create.assert_called_once_with(body={
-        'reportRef': {
-            'name': 'resource_name',
-        },
-        'companyId': 'company_id',
-    })
-    mock_info.assert_called_once_with(
-        test_run, '[APFE Report Upload] Uploaded world.zip.')
+    mock_warn.assert_called_once_with(
+        test_run, ('[APFE Report Upload] Test run is not in a final state, '
+                   'skipping upload.'))
+    self.client.compatibility().report().startUploadReport.assert_not_called()
 
 
 if __name__ == '__main__':

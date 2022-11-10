@@ -173,3 +173,30 @@ class TestRunActionApi(remote.Service):
     action.credentials = None
     action.put()
     return message_types.VoidMessage()
+
+  @base.ApiMethod(
+      endpoints.ResourceContainer(
+          mtt_messages.TestRunActionRefList,
+          test_run_id=messages.StringField(1, required=True)),
+      message_types.VoidMessage,
+      path='test_run_actions/{test_run_id}',
+      http_method='POST',
+      name='execute')
+  def ExecuteTestRunActions(self, request):
+    """Execute test run actions.
+
+    Body:
+      A list of test run action references
+    Parameters:
+      test_run_id: Test run ID
+    """
+    test_run = ndb_models.TestRun.get_by_id(request.test_run_id)
+    if not test_run:
+      raise endpoints.NotFoundException('no test run found for ID %s' %
+                                        request.test_run_id)
+    action_refs = mtt_messages.ConvertList(request.refs,
+                                           ndb_models.TestRunActionRef)
+    actions = [ref.ToAction() for ref in action_refs]
+    test_run_hook.ExecuteHooks(request.test_run_id,
+                               ndb_models.TestRunPhase.MANUAL, actions)
+    return message_types.VoidMessage()

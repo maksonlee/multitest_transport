@@ -328,6 +328,7 @@ class TestRunPhase(messages.Enum):
   AFTER_RUN = 4  # After run is completed (successfully or not)
   ON_SUCCESS = 5  # After run is completed successfully (may have test failures)
   ON_ERROR = 6  # After run fails to complete due to errors
+  MANUAL = 7  # Phase triggered manually
 
 
 class TestRunAction(ndb.Model):

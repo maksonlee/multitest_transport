@@ -26,6 +26,7 @@ from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base as plugins
 from multitest_transport.util import oauth2_util
+from multitest_transport.models import test_run_hook
 
 
 class SimpleHook(plugins.TestRunHook):
@@ -178,6 +179,42 @@ class TestRunActionApiTest(api_test_util.TestCase):
         expect_errors=True)
     self.assertEqual('404 Not Found', response.status)
 
+  @mock.patch.object(test_run_hook, 'ExecuteHooks')
+  def testExecuteTestRunActions(self, mock_execute_hooks):
+    """Tests that actions can be executed with given references."""
+    test_run = ndb_models.TestRun()
+    test_run.put()
+    action1 = self._CreateTestRunAction(name='action1', hook_class_name='hook1')
+    action2 = self._CreateTestRunAction(name='action2', hook_class_name='hook2')
+    test_run_action_refs = {
+        'refs': [
+            {
+                'action_id': str(action1.key.id()),
+                'options': [{
+                    'name': 'option',
+                    'value': 'value',
+                }],
+            },
+            {
+                'action_id': str(action2.key.id()),
+            },
+        ],
+    }
+
+    self.app.post_json(
+        '/_ah/api/mtt/v1/test_run_actions/%s' % test_run.key.id(),
+        test_run_action_refs)
+
+    action1.options = [ndb_models.NameValuePair(name='option', value='value')]
+    mock_execute_hooks.assert_called_once_with(
+        str(test_run.key.id()), ndb_models.TestRunPhase.MANUAL,
+        [action1, action2])
+
+  def testExecuteTestRunActions_testNotFound(self):
+    """Tests that an error occurs when executing actions for an unknown test."""
+    response = self.app.post_json(
+        '/_ah/api/mtt/v1/test_run_actions/unknown', {}, expect_errors=True)
+    self.assertEqual('404 Not Found', response.status)
 
 if __name__ == '__main__':
   absltest.main()

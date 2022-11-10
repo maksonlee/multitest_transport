@@ -770,6 +770,11 @@ def _TestRunActionRefMessageConverter(msg):
       options=ConvertNameValuePairs(msg.options, ndb_models.NameValuePair))
 
 
+class TestRunActionRefList(messages.Message):
+  """A list of test run action references."""
+  refs = messages.MessageField(TestRunActionRef, 1, repeated=True)
+
+
 class TestResourceObj(messages.Message):
   """A test resource object for a test."""
   name = messages.StringField(1)

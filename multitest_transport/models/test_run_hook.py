@@ -41,8 +41,21 @@ def _ApplyOptionsFromDeviceActions(test_run_id, task):
                                     []).extend(tradefed_option.values)
 
 
-def ExecuteHooks(test_run_id, phase, attempt_id=None, task=None):
-  """Execute all hooks configured for a specific phase."""
+def ExecuteHooks(test_run_id,
+                 phase,
+                 attempt_id=None,
+                 task=None,
+                 test_run_actions=None):
+  """Executes all hooks configured for a specific phase.
+
+  Args:
+    test_run_id: id of the test run
+    phase: the execution phase
+    attempt_id: id of the attempt. If None, use the latest finished attempt
+    task: the next task to be executed
+    test_run_actions: test run actions to be executed. If None, use the actions
+      defined in the test run
+  """
   test_run = ndb_models.TestRun.get_by_id(test_run_id)
   if not test_run:
     return
@@ -52,7 +65,8 @@ def ExecuteHooks(test_run_id, phase, attempt_id=None, task=None):
       phase=ndb_models.TestRunPhase(phase),
       latest_attempt=latest_attempt,
       next_task=task)
-  for action in test_run.test_run_actions:
+  test_run_actions = test_run_actions or test_run.test_run_actions
+  for action in test_run_actions:
     if phase in action.phases:
       _ExecuteHook(action, hook_context)
 
@@ -84,9 +98,8 @@ def _ExecuteHook(action, hook_context):
     }
     if action.credentials:
       options['_credentials'] = action.credentials
-    logging.debug(
-        'Executing %s: ctx=%s, options=%s',
-        hook_cls, test_run_context, options)
+    logging.debug('Executing %s: ctx=%s, options=%s', hook_cls,
+                  test_run_context, options)
     hook = hook_cls(**options)
     analytics.Log(
         analytics.TEST_RUN_ACTION_CATEGORY,
