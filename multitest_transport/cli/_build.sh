@@ -80,8 +80,8 @@ RUN pip3 install --upgrade keyrings.alt
 
 # Upgrade to the latest verified version of protoc which supports python3.10.
 RUN mkdir -p /protoc && \
-  wget --no-verbose -O /protoc/protoc-3.20.1-linux-x86_64.zip https://github.com/protocolbuffers/protobuf/releases/download/v3.20.1/protoc-3.20.1-linux-x86_64.zip && \
-  unzip -q -o /protoc/protoc-3.20.1-linux-x86_64.zip -d /protoc
+  wget --no-verbose -O /protoc/protoc-3.20.3-linux-x86_64.zip https://github.com/protocolbuffers/protobuf/releases/download/v3.20.3/protoc-3.20.3-linux-x86_64.zip && \
+  unzip -q -o /protoc/protoc-3.20.3-linux-x86_64.zip -d /protoc
 EOF
 
 docker pull gcr.io/android-mtt/pex:latest

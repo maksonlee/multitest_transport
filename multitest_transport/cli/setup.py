@@ -51,7 +51,7 @@ setuptools.setup(
         'packaging',
         'python-dateutil',
         # Temporary fix for proto dependency bug.
-        'protobuf == 3.20.1',
+        'protobuf == 3.20.3',
         'pytz',
         'pyOpenSSL == 22.0.0',
         'requests == 2.27.0',
