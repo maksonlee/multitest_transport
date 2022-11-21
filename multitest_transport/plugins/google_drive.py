@@ -98,7 +98,6 @@ class GoogleDriveBuildProvider(base.BuildProvider):
   """
   name = 'Google Drive'
   auth_methods = [
-      base.AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
       base.AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
   ]
   oauth2_config = oauth2_util.OAuth2Config(

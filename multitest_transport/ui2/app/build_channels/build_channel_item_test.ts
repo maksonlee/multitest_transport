@@ -69,16 +69,12 @@ describe('BuildChannelItem', () => {
   it('can display an authorized build channel', () => {
     reload({
       auth_state: AuthorizationState.AUTHORIZED,
-      auth_methods: [
-        AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
-        AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
-      ],
+      auth_methods: [AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT],
       credentials: newMockCredentialsInfo(),
     });
 
     const text = getTextContent(element);
     expect(text).toContain('credentials_email@google.com');
-    expect(text).toContain('Use Different User Account');
     expect(text).toContain('Use Different Service Account');
     expect(hasEl(element, '.revoke-button')).toBeTruthy();
   });
@@ -86,13 +82,9 @@ describe('BuildChannelItem', () => {
   it('can display an auth button', () => {
     reload({
       auth_state: AuthorizationState.UNAUTHORIZED,
-      auth_methods: [
-        AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
-        AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
-      ],
+      auth_methods: [AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT],
     });
     const text = getTextContent(element);
-    expect(text).toContain('Authorize');
     expect(text).toContain('Upload Service Account Key');
     expect(hasEl(element, '.revoke-button')).toBeFalsy();
   });
@@ -140,35 +132,6 @@ describe('BuildChannelItem', () => {
     // notifies parent to delete item
     expect(component.deleteItem.emit)
         .toHaveBeenCalledWith(jasmine.objectContaining({id: 'bc_id'}));
-  });
-
-  it('can authorize a build channel', fakeAsync(() => {
-      mtt.authorizeBuildChannel.and.returnValue(observableOf(null));
-      reload({
-        id: 'bc_id',
-        auth_state: AuthorizationState.UNAUTHORIZED,
-        auth_methods: [AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE],
-      });
-      getEl(element, '.auth-button').click();
-      tick(500);
-      // authorizes build channel and notifies parent
-      expect(mtt.authorizeBuildChannel).toHaveBeenCalledWith('bc_id');
-      expect(notifier.showError).not.toHaveBeenCalled();
-      expect(component.authChange.emit)
-         .toHaveBeenCalledWith(jasmine.objectContaining({id: 'bc_id'}));
-    }));
-
-  it('can handle errors when authorizing', () => {
-    mtt.authorizeBuildChannel.and.returnValue(throwError('authorize failed'));
-    reload({
-      id: 'bc_id',
-      auth_state: AuthorizationState.UNAUTHORIZED,
-      auth_methods: [AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE],
-    });
-    getEl(element, '.auth-button').click();
-    // displays error and doesn't notify parent
-    expect(notifier.showError).toHaveBeenCalled();
-    expect(component.authChange.emit).not.toHaveBeenCalled();
   });
 
   it('can authorize a build channel with a service account', fakeAsync(() => {

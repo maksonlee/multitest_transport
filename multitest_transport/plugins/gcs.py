@@ -89,7 +89,6 @@ class GCSBuildProvider(base.BuildProvider):
           '{bucket}/{path}'),
   ]
   auth_methods = [
-      base.AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
       base.AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
   ]
   oauth2_config = oauth2_util.OAuth2Config(
@@ -200,7 +199,7 @@ class GCSBuildProvider(base.BuildProvider):
         raise errors.FilePermissionError('no permission to access GCS bucket %s'
                                          % bucket)
       if e.resp.status == 404:
-        raise GCSBucketNotFoundError('bucket %s does not exist' % bucket)
+        raise GCSBucketNotFoundError('bucket %s does not exist' % bucket) from e
       raise
 
   def ListBuildItems(self, path=None, page_token=None, item_type=None):

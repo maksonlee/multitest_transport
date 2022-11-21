@@ -93,8 +93,7 @@ class AuthorizationState(messages.Enum):
 
 class AuthorizationMethod(messages.Enum):
   """Authorization methods."""
-  OAUTH2_AUTHORIZATION_CODE = 1
-  OAUTH2_SERVICE_ACCOUNT = 2
+  OAUTH2_SERVICE_ACCOUNT = 1
 
 
 class BuildItemPathType(messages.Enum):

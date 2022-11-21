@@ -181,14 +181,7 @@ class BuildChannel(object):
     """Supported authorization methods."""
     if not self.is_valid:
       return []
-    auth_methods = self._provider.auth_methods
-    # Disable OAuth2 authentication if the OAuth2 config is not valid.
-    oauth2_method = ndb_models.AuthorizationMethod(
-        ndb_models.AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE)
-    if (oauth2_method in auth_methods and
-        not (self.oauth2_config and self.oauth2_config.is_valid)):
-      auth_methods.remove(oauth2_method)
-    return auth_methods
+    return self._provider.auth_methods
 
   @property
   def oauth2_config(self):

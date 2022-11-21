@@ -62,7 +62,6 @@ export enum AuthorizationState {
 
 /** Authorization methods. */
 export enum AuthorizationMethod {
-  OAUTH2_AUTHORIZATION_CODE = 'OAUTH2_AUTHORIZATION_CODE',
   OAUTH2_SERVICE_ACCOUNT = 'OAUTH2_SERVICE_ACCOUNT',
 }
 

@@ -53,22 +53,6 @@ export class BuildChannelItem implements OnInit {
         this.buildChannel.auth_methods.includes(method);
   }
 
-  /** Authorize a build channel. */
-  authorize(): void {
-    this.mtt.authorizeBuildChannel(this.buildChannel.id)
-        .pipe(delay(500))  // delay for data to be persisted
-        .subscribe(
-            () => {
-              this.authChange.emit(this.buildChannel);
-            },
-            error => {
-              this.notifier.showError(
-                  `Failed to authorize build channel '${
-                      this.buildChannel.name}'.`,
-                  buildApiErrorMessage(error));
-            });
-  }
-
   /** Authorize a build channel with a service account JSON key. */
   uploadKeyfile(keyFile?: File) {
     if (!keyFile) {

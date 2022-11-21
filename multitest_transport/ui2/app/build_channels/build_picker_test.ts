@@ -131,20 +131,6 @@ describe('BuildPicker', () => {
     expect(mttClient.listBuildItems).not.toHaveBeenCalled();
   });
 
-  it('should display authorize button if supported and unauthorized', () => {
-    initComponent(
-        [{
-          id: 'channel',
-          auth_state: AuthorizationState.UNAUTHORIZED,
-          auth_methods: [AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE],
-          build_item_path_type: BuildItemPathType.DIRECTORY_FILE,
-        }],
-        'mtt:///channel/path');
-    expect(mttClient.listBuildItems).not.toHaveBeenCalled();
-    expect(hasEl(element, '.auth-button')).toBeTrue();
-    expect(hasEl(element, '.keyfile-button')).toBeFalse();
-  });
-
   it('should display keyfile button if supported and unauthorized', () => {
     initComponent(
         [{

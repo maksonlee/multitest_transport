@@ -39,7 +39,6 @@ class OAuth2BuildProvider(plugins.BuildProvider):
   """Build provider with OAuth2 configuration."""
   name = 'oauth2_provider'
   auth_methods = [
-      plugins.AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
       plugins.AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
   ]
   oauth2_config = oauth2_util.OAuth2Config('id', 'secret', ['scope'])
@@ -49,7 +48,6 @@ class OAuth2BuildWithInvalidOAuth2ConfigProvider(plugins.BuildProvider):
   """Build provider with OAuth2 configuration."""
   name = 'oauth2_provider_with_invalid_oauth2_config'
   auth_methods = [
-      plugins.AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
       plugins.AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
   ]
   oauth2_config = oauth2_util.OAuth2Config('', '', ['scope'])
@@ -135,7 +133,6 @@ class BuildChannelTest(testbed_dependent_test.TestbedDependentTest):
     self.assertTrue(channel.is_valid)
     self.assertIsInstance(channel.provider, OAuth2BuildProvider)
     self.assertEqual([
-        ndb_models.AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
         ndb_models.AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
     ], channel.auth_methods)
     self.assertEqual(channel.auth_state,

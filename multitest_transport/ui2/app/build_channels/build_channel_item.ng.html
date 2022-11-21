@@ -25,15 +25,6 @@
       </status-button>
     </span>
 
-    <button *ngIf="canAuthWith(AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE)"
-            class="auth-button"
-            mat-stroked-button
-            aria-label="Authorize"
-            color='accent'
-            (click)="authorize()">
-      {{buildChannel.auth_state === AuthorizationState.AUTHORIZED ?
-      'Use Different User Account' : 'Authorize'}}
-    </button>
     <input type="file" #keyfileInput
            (change)="uploadKeyfile($event.target.files[0]); keyfileInput.value = ''"/>
     <button *ngIf="canAuthWith(AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT)"

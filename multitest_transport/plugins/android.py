@@ -53,7 +53,6 @@ class AndroidBuildProvider(base.BuildProvider):
   """A build provider for the Android Build system."""
   name = 'Android'
   auth_methods = [
-      base.AuthorizationMethod.OAUTH2_AUTHORIZATION_CODE,
       base.AuthorizationMethod.OAUTH2_SERVICE_ACCOUNT
   ]
   oauth2_config = oauth2_util.OAuth2Config(
