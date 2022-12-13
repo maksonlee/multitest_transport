@@ -30,6 +30,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         cec-utils \
         cron \
         daemontools \
+        ffmpeg \
         fuse-zip \
         git \
         iputils-ping \
