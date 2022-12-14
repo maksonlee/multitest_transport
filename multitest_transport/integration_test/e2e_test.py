@@ -36,10 +36,10 @@ CTS_DOWNLOAD_URL = 'https://dl.google.com/dl/android/cts/android-cts-10_r2-linux
 _ARTIFACTS_DOWNLOAD_URL = ('https://www.googleapis.com/android/internal/build/'
                            'v3/builds/%s/%s/attempts/latest/artifacts/%s/url')
 _CVD_HOST_PACKAGE_URL = _ARTIFACTS_DOWNLOAD_URL % (
-    '9029240', 'aosp_cf_x86_64_phone-userdebug', 'cvd-host_package.tar.gz')
+    '9387701', 'aosp_cf_x86_64_phone-userdebug', 'cvd-host_package.tar.gz')
 _IMG_ZIP_URL = _ARTIFACTS_DOWNLOAD_URL % (
-    '9029240', 'aosp_cf_x86_64_phone-userdebug',
-    'aosp_cf_x86_64_phone-img-9029240.zip')
+    '9387701', 'aosp_cf_x86_64_phone-userdebug',
+    'aosp_cf_x86_64_phone-img-9387701.zip')
 
 
 class E2eIntegrationTest(integration_util.DockerContainerTest):
