@@ -299,14 +299,15 @@ def _CheckDockerImageVersion(docker_helper, container_name):
     return
   cli_build_env, cli_version = cli_version.strip().split('_', 1)
   image_build_env, image_version = image_version.strip().split('_', 1)
-  cli_version_obj = version.parse(cli_version)
-  image_version_obj = version.parse(image_version)
   if cli_build_env != image_build_env:
     logger.warning(
         'CLI and Docker image are from different release channels; '
         'proceed with cautions (%s != %s)',
         cli_build_env, image_build_env)
-  elif cli_version_obj < image_version_obj:
+    return
+  cli_version_obj = version.parse(cli_version)
+  image_version_obj = version.parse(image_version)
+  if cli_version_obj < image_version_obj:
     # Stop a started container.
     docker_helper.Stop([container_name])
     raise ActionableError(
