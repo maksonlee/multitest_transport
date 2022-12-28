@@ -305,8 +305,17 @@ def _CheckDockerImageVersion(docker_helper, container_name):
         'proceed with cautions (%s != %s)',
         cli_build_env, image_build_env)
     return
-  cli_version_obj = version.parse(cli_version)
-  image_version_obj = version.parse(image_version)
+
+  try:
+    cli_version_obj = version.parse(cli_version)
+    image_version_obj = version.parse(image_version)
+  except version.InvalidVersion:
+    logger.debug(
+        'CLI or Docker image version is unrecognizable; '
+        'skipping version check: cli_version=%s, image_version=%s', cli_version,
+        image_version)
+    return
+
   if cli_version_obj < image_version_obj:
     # Stop a started container.
     docker_helper.Stop([container_name])

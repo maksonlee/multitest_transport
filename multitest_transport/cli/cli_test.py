@@ -222,6 +222,16 @@ class CliTest(parameterized.TestCase):
 
     cli._CheckDockerImageVersion(docker_helper, container_name)
 
+  @mock.patch.object(cli_util, 'GetVersion')
+  def testCheckDockerImageVersion_invalidVersion(self, mock_get_version):
+    docker_helper = mock.MagicMock()
+    container_name = 'container_name'
+    mock_get_version.return_value = ('presubmit_227550af-6c61', 'presubmit')
+    docker_helper.Exec.return_value = mock.MagicMock(
+        stdout='prod_R8.202008.001')
+
+    cli._CheckDockerImageVersion(docker_helper, container_name)
+
   @mock.patch.object(command_util.DockerContext, 'Run')
   def testCheckTfConsoleSuccessfullyStarted_withSuccessIndicator(
       self, mock_command_result):
