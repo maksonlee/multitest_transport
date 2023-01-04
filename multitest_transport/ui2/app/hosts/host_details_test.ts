@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import {Location} from '@angular/common';
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {DebugElement, LOCALE_ID} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
@@ -106,9 +107,9 @@ describe('HostDetails', () => {
   });
 
   it('calls window.history.back when the back button clicked', () => {
-    spyOn(window.history, 'back');
+    const backSpy = spyOn(TestBed.inject(Location), 'back');
     getEl(el, '#back-button').click();
-    expect(window.history.back).toHaveBeenCalledTimes(1);
+    expect(backSpy).toHaveBeenCalledTimes(1);
   });
 
   it('should remove host correctly', () => {
