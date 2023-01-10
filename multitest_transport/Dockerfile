@@ -159,6 +159,26 @@ RUN git clone https://github.com/google/android-cuttlefish --no-checkout --singl
     apt-get install -y ../cuttlefish-common_*_amd64.deb iproute2 rsyslog && \
     cd - && \
     rm -rf /tmp/cuttlefish-common/src
+
+# Ubuntu has a weird bug which is not allowing us to boot linux kernel when
+# kernel and u-boot modes are different (for example u-boot is 32 bit and
+# linux is 64 bit): https://bugs.launchpad.net/ubuntu/+source/grub2/+bug/1876737
+# Fixing this by downloading the latest debian grub-efi-ie32-bin deb package
+# instead.
+#
+# Update: No need to update this along with OS since that's just a static
+# binaries that are used to boot OtherOS and OpenWRT. In case link will become
+# invalid, just use another latest debian grub-efi-ia32-bin
+#
+# Test: To verify it works fine need to check OpenWRT succesfully booted by
+# verifying we have kernel log inside <cvd-instance>/crosvm_openwrt_boot.log
+# and virtual wifi works fine inside guest.
+ARG GRUB_BIN_DEB_URL="http://ftp.debian.org/debian/pool/main/g/grub2/grub-efi-ia32-bin_2.06-7_amd64.deb"
+ENV GRUB_BIN_DEB_PATH=/tmp/grub-efi-ia32-bin.deb
+RUN wget -q --retry-connrefused -O ${GRUB_BIN_DEB_PATH} ${GRUB_BIN_DEB_URL} \
+    && dpkg --force-all -i ${GRUB_BIN_DEB_PATH} \
+    && rm -rf ${GRUB_BIN_DEB_PATH}
+
 # TODO: Remove this flag after a couple of releases.
 ENV MTT_SUPPORT_BRIDGE_NETWORK true
 
