@@ -306,6 +306,8 @@ py_test(
     tags = ["local"],
     deps = [
         third_party("absl/testing:absltest"),
+        # TODO: remove six
+        third_party("six"),
     ],
 )
 
