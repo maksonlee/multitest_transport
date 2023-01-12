@@ -207,8 +207,9 @@ class TestRunActionApiTest(api_test_util.TestCase):
 
     action1.options = [ndb_models.NameValuePair(name='option', value='value')]
     mock_execute_hooks.assert_called_once_with(
-        str(test_run.key.id()), ndb_models.TestRunPhase.MANUAL,
-        [action1, action2])
+        str(test_run.key.id()),
+        ndb_models.TestRunPhase.MANUAL,
+        test_run_actions=[action1, action2])
 
   def testExecuteTestRunActions_testNotFound(self):
     """Tests that an error occurs when executing actions for an unknown test."""
