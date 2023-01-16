@@ -100,6 +100,47 @@ device_actions:
   # Remove secondary users during teardown
   - class_name: com.android.tradefed.targetprep.UserCleaner
 
+- id: 'cts_virtual_device_setup'
+  name: CTS Virtual Device Setup
+  description: >
+    Configure a virtual device for running CTS, according to
+    https://source.android.com/compatibility/cts/setup#config_device.
+  tradefed_target_preparers:
+  - class_name: com.android.tradefed.targetprep.DeviceSetup
+    option_values:
+    - name: force-skip-system-props
+    - name: wifi
+      values: 'ON'
+    - name: wifi-network
+      values: VirtWifi
+    - name: wifi-psk
+      values: ''
+    - name: no-disconnect-wifi-after-test
+    - name: set-system-setting
+      values:
+      - system_locales=en-US
+      - time_12_24=12
+    - name: set-secure-setting
+      values:
+      - location_providers_allowed=+gps
+      - user_setup_complete=1
+    - name: set-global-setting
+      values:
+      - development_settings_enabled=1
+      - ota_disable_automatic_update=1
+      - verifier_verify_adb_installs=0
+    - name: run-command
+      values:
+      - svc power stayon true
+      - locksettings clear --old 1234
+      - locksettings clear --old 12345
+      - locksettings clear --old 0000
+      - locksettings clear --old primary
+      - locksettings set-disabled true
+      - echo 'chrome --disable-fre' > /data/local/tmp/chrome-command-line
+  - class_name: com.android.tradefed.targetprep.RebootTargetPreparer
+  - class_name: com.android.tradefed.targetprep.UserCleaner
+
 - id: flash
   name: Flash
   test_resource_defs:

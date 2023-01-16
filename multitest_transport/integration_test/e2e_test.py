@@ -36,10 +36,10 @@ CTS_DOWNLOAD_URL = 'https://dl.google.com/dl/android/cts/android-cts-10_r2-linux
 _ARTIFACTS_DOWNLOAD_URL = ('https://www.googleapis.com/android/internal/build/'
                            'v3/builds/%s/%s/attempts/latest/artifacts/%s/url')
 _CVD_HOST_PACKAGE_URL = _ARTIFACTS_DOWNLOAD_URL % (
-    '9387701', 'aosp_cf_x86_64_phone-userdebug', 'cvd-host_package.tar.gz')
+    '9457334', 'aosp_cf_x86_64_phone-userdebug', 'cvd-host_package.tar.gz')
 _IMG_ZIP_URL = _ARTIFACTS_DOWNLOAD_URL % (
-    '9387701', 'aosp_cf_x86_64_phone-userdebug',
-    'aosp_cf_x86_64_phone-img-9387701.zip')
+    '9457334', 'aosp_cf_x86_64_phone-userdebug',
+    'aosp_cf_x86_64_phone-img-9457334.zip')
 
 
 class E2eIntegrationTest(integration_util.DockerContainerTest):
@@ -164,7 +164,7 @@ class E2eIntegrationTest(integration_util.DockerContainerTest):
                         _CVD_HOST_PACKAGE_URL)
     test_run_id = self.container.ScheduleTestRun(
         self._GetGlobalDeviceSerial('local-virtual-device-0'),
-        before_device_action_ids=['lvd_setup'],
+        before_device_action_ids=['lvd_setup', 'cts_virtual_device_setup'],
         test_resource_objs=[{
             'name': 'device',
             'url': 'file:///data/img.zip',
