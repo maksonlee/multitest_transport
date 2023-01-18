@@ -360,17 +360,21 @@ mat-spinner.loading-spinner {
   background-color: $background-table-header;
 }
 
+// TODO: Consider using an alternative to `!important` such as a theming mixin
+// or increasing specificity.
 .mat-option.mat-selected {
   background-color: $accent-light !important;
   color: $text-default !important;
 }
 
+// TODO: Consider using an alternative to `!important` such as a theming mixin
+// or increasing specificity.
 .mat-pseudo-checkbox-checked {
   background: $background-default !important;
   border-color: $accent-dark !important;
 
   &::after {
-    color: $accent-dark;
+    color: $accent-dark !important;
   }
 }
 
