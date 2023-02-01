@@ -1,8 +1,18 @@
+load("//tools/build_defs/license:license.bzl", "license")
+
 # Android testing lab software for Android device partners
 load("//tools/build_defs/testing:bzl_library.bzl", "bzl_library")
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_appengine_binary", "pytype_strict_library", "third_party")
 
-package(default_visibility = [":multitest_transport"])
+package(
+    default_applicable_licenses = ["//multitest_transport:license"],
+    default_visibility = [":multitest_transport"],
+)
+
+license(
+    name = "license",
+    package_name = "multitest_transport",
+)
 
 licenses(["notice"])
 
