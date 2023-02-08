@@ -153,8 +153,10 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     logging.debug('Getting file IDs with param: %s', param)
     client = self._GetClient()
     try:
-      files = client.files().list(**param).execute(
-          num_retries=constant.NUM_RETRIES)
+      files = client.files().list(
+          supportsAllDrives=True,
+          includeItemsFromAllDrives=True,
+          **param).execute(num_retries=constant.NUM_RETRIES)
       logging.debug('response = %s', files)
       next_page_token = files.get('nextPageToken', None)
       file_ids = [file_item['id'] for file_item in files.get('files', [])]
@@ -180,6 +182,7 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     client = self._GetClient()
     try:
       file_item = client.files().get(
+          supportsAllDrives=True,
           fileId=file_id,
           fields=_FIELDS).execute(num_retries=constant.NUM_RETRIES)
       return file_item
@@ -346,7 +349,7 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     """
     client = self._GetClient()
     file_id = self._GetFileId(path)
-    request = client.files().get_media(fileId=file_id)
+    request = client.files().get_media(supportsAllDrives=True, fileId=file_id)
     downloader = apiclient.http.MediaIoBaseDownload(
         file_handle, request, chunksize=chunk_size)
     downloader._progress = offset      return downloader
