@@ -41,9 +41,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         mariadb-server \
         ndppd \
         netdata \
-        python \
-        python3 \
-        python3-pip \
         rabbitmq-server=3.8.2-0ubuntu1 \
         socat \
         tini \
@@ -51,7 +48,17 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         usbutils \
         unzip \
         wget \
-        zip
+        zip \
+        software-properties-common
+
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
+  python python3.8 python3.9 python3-pip \
+  python3-distutils python3.9-distutils
+
+# Set minimal Python version that client supports.
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1000
+RUN pip3 install --upgrade setuptools pip
 RUN pip3 install \
         absl-py \
         attrs \
@@ -86,7 +93,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
 # Install the Python3 version of virtualenv for compatibility with newer test
 # suites, but pin the version to one with a proven compatibility with VTS.
 # VTS 9.0 will require "--python-venv:python-version=2.7".
-RUN pip3 install virtualenv==20.0.31
+RUN pip3 install virtualenv==20.19.0
 
 # Install JDK11 from AOSP (https://android.googlesource.com/platform/prebuilts/jdk/jdk11.git/+/4b776e23b6964354047211b1e343dc3ca14ce60a)
 RUN mkdir -p /jdk/jdk11 && \
