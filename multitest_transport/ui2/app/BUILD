@@ -24,6 +24,7 @@ sass_binary(
 ng_module(
     name = "app",
     srcs = ["app.ts"],
+    allow_warnings = True,
     assets = [
         "app.ng.html",
         ":app_styles",
