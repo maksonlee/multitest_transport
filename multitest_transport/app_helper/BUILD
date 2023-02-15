@@ -1,7 +1,10 @@
 # Helpers for off-cloud environment.
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_test", "pytype_strict_library", "third_party")
 
-package(default_visibility = ["//multitest_transport"])
+package(
+    default_applicable_licenses = ["//multitest_transport:license"],
+    default_visibility = ["//multitest_transport"],
+)
 
 licenses(["notice"])
 

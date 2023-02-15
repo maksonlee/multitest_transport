@@ -3,6 +3,8 @@
 load("//multitest_transport:adapter.bzl", "COMPILER_FLAGS", "js_binary", "karma_web_test_suite", "ng_module", "sass_binary", "sass_library", "third_party_js", "ts_config", "ts_development_sources")
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "Fileset", "FilesetEntry", "pytype_strict_library", "third_party")
 
+package(default_applicable_licenses = ["//multitest_transport:license"])
+
 licenses(["notice"])
 
 # Main Angular module

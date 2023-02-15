@@ -1,6 +1,8 @@
 # MTT default plugins.
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_test", "pytype_strict_library", "third_party")
 
+package(default_applicable_licenses = ["//multitest_transport:license"])
+
 licenses(["notice"])
 
 pytype_strict_library(

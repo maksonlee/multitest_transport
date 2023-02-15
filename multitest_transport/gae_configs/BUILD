@@ -1,5 +1,7 @@
 # MTT GAE configs.
 
+package(default_applicable_licenses = ["//multitest_transport:license"])
+
 licenses(["notice"])
 
 filegroup(

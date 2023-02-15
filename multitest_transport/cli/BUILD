@@ -1,6 +1,8 @@
 # MTT Command Line Interfaces
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "Fileset", "FilesetEntry", "py_library", "py_test", "pytype_strict_binary", "third_party", "zip_dir")
 
+package(default_applicable_licenses = ["//multitest_transport:license"])
+
 licenses(["notice"])
 
 pytype_strict_binary(

@@ -1,6 +1,8 @@
 # Android Test Station local file server.
 load("@tradefed_cluster//tradefed_cluster:adapter.bzl", "py_library", "py_strict_test", "pytype_strict_binary", "pytype_strict_library", "third_party")
 
+package(default_applicable_licenses = ["//multitest_transport:license"])
+
 licenses(["notice"])
 
 # TODO: change to pytype_strict_library once b/168841142 is fixed.

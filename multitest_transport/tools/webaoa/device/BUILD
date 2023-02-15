@@ -3,7 +3,10 @@ load("//multitest_transport:adapter.bzl", "ng_module", "per_file_sass_binaries",
 
 licenses(["notice"])
 
-package(default_visibility = ["//multitest_transport/tools/webaoa:__subpackages__"])
+package(
+    default_applicable_licenses = ["//multitest_transport:license"],
+    default_visibility = ["//multitest_transport/tools/webaoa:__subpackages__"],
+)
 
 per_file_sass_binaries(
     name = "styles",

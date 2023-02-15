@@ -1,6 +1,8 @@
 # MTT application root
 load("//multitest_transport:adapter.bzl", "ng_module", "sass_binary", "sass_library", "third_party_js")
 
+package(default_applicable_licenses = ["//multitest_transport:license"])
+
 licenses(["notice"])
 
 # Material theme and styling
