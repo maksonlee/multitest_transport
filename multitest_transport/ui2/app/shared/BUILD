@@ -1,5 +1,7 @@
 load("//multitest_transport:adapter.bzl", "ng_module", "per_file_sass_binaries", "sass_library", "third_party_js")
 
+package(default_applicable_licenses = ["//multitest_transport:license"])
+
 # A package for common components
 licenses(["notice"])
 

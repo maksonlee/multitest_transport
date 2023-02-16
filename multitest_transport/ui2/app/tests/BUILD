@@ -3,7 +3,10 @@ load("//multitest_transport:adapter.bzl", "ng_module", "per_file_sass_binaries",
 
 licenses(["notice"])
 
-package(default_visibility = ["//multitest_transport"])
+package(
+    default_applicable_licenses = ["//multitest_transport:license"],
+    default_visibility = ["//multitest_transport"],
+)
 
 per_file_sass_binaries(
     name = "styles",

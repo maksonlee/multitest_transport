@@ -3,7 +3,10 @@ load("//multitest_transport:adapter.bzl", "ng_module", "third_party_js")
 # A package for testing utilities
 licenses(["notice"])
 
-package(default_visibility = ["//multitest_transport"])
+package(
+    default_applicable_licenses = ["//multitest_transport:license"],
+    default_visibility = ["//multitest_transport"],
+)
 
 ng_module(
     name = "init_tests",
