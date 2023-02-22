@@ -88,7 +88,7 @@ def _UploadEvent(category: str, action: str, **kwargs) -> bool:
   """Uploads an event to GA if metrics are enabled."""
   private_node_config = ndb_models.GetPrivateNodeConfig()
   if (env.IS_DEV_MODE or not private_node_config.metrics_enabled or
-      _UPLOAD_ERROR_COUNT.value >= MAX_CONSECUTIVE_UPLOAD_ERRORS):
+      _UPLOAD_ERROR_COUNT.value >= MAX_CONSECUTIVE_UPLOAD_ERRORS):  # pytype: disable=attribute-error  # re-none
     logging.debug('Metrics disabled - skipping %s:%s', category, action)
     return False
   event = _Event(private_node_config.server_uuid, category, action, **kwargs)
@@ -100,7 +100,7 @@ def _UploadEvent(category: str, action: str, **kwargs) -> bool:
     _UPLOAD_ERROR_COUNT.value = 0
   except:
     with _UPLOAD_ERROR_COUNT.get_lock():
-      _UPLOAD_ERROR_COUNT.value += 1
+      _UPLOAD_ERROR_COUNT.value += 1  # pytype: disable=attribute-error  # re-none
     raise
   return True
 
