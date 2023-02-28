@@ -23,6 +23,7 @@ import string
 from tradefed_cluster import api_messages
 from tradefed_cluster.plugins import base as tfc_plugins
 
+
 from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins import base as plugins
@@ -107,7 +108,8 @@ def _ExecuteHook(action, hook_context):
         label=action.hook_class_name,
         value=int(hook_context.phase))
     hook.Execute(hook_context)
-  except Exception as e:      logging.exception('Failed to execute action %s', action)
+  except Exception as e:  
+    logging.exception('Failed to execute action %s', action)
     event_log.Error(hook_context.test_run,
                     'Test run action \'%s\' failed: %s' % (action.name, e))
 

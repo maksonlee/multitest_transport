@@ -69,7 +69,8 @@ def _CreateControlServerApiClient(
     # out due to the api key and service account are not from same project.
     # By separating the two steps, we use different auth for the two steps:
     # api key for discovery and service account for api call.
-    api_doc = apiclient.discovery._retrieve_discovery_doc(          url=_DISCOVERY_URL.format(control_server_url),
+    api_doc = apiclient.discovery._retrieve_discovery_doc(  
+        url=_DISCOVERY_URL.format(control_server_url),
         http=httplib2.Http(timeout=_DEFAULT_HTTP_TIMEOUT_SECONDS),
         cache_discovery=False,
         developerKey=api_key)
@@ -78,7 +79,8 @@ def _CreateControlServerApiClient(
     control_server_api_client = apiclient.discovery.build_from_document(
         api_doc,
         http=http)
-  except Exception:      logger.exception('Failed to create Control Server API client.')
+  except Exception:  
+    logger.exception('Failed to create Control Server API client.')
   return control_server_api_client
 
 
@@ -132,7 +134,8 @@ class ControlServerClient(object):
                    'skip submitting host update events.')
       return
 
-        now_sec = int(datetime.datetime.utcnow()
+    
+    now_sec = int(datetime.datetime.utcnow()
                   .replace(tzinfo=pytz.utc).timestamp())
     body = {
         'host_events': [

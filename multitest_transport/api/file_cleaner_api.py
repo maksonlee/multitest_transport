@@ -14,8 +14,10 @@
 
 """A module to provide file cleaner APIs."""
 # Non-standard docstrings are used to generate the API documentation.
+
 from protorpc import message_types
 from protorpc import remote
+
 
 from multitest_transport.api import base
 from multitest_transport.models import messages

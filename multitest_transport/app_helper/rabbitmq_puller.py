@@ -103,7 +103,8 @@ class MessagePuller(threading.Thread):
         self._logger.exception('Connection lost, retrying after %s seconds:',
                                RECONNECT_DELAY_SECONDS)
         time.sleep(RECONNECT_DELAY_SECONDS)
-      except Exception:          self._logger.exception('Unexpected error:')
+      except Exception:  
+        self._logger.exception('Unexpected error:')
         break
     self._logger.info('MessagePuller[queue=%s] is stopped.', self._queue)
 

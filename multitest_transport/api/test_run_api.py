@@ -14,6 +14,7 @@
 
 """A module to provide test run APIs."""
 # Non-standard docstrings are used to generate the API documentation.
+
 import logging
 import os
 import zipfile
@@ -25,6 +26,7 @@ from protorpc import protojson
 from protorpc import remote
 from tradefed_cluster import datastore_util
 from tradefed_cluster.common import IsFinalCommandState
+
 
 from multitest_transport.api import base
 from multitest_transport.models import messages as mtt_messages
@@ -390,5 +392,6 @@ class TestRunApi(remote.Service):
             mtt_messages.TestRunMetadataList, zf.read(metadata_file))
         # TODO: last command attempt is missing
         return metadata_list.test_runs
-    except Exception:        logging.exception('Failed to read remote metadata')
+    except Exception:  
+      logging.exception('Failed to read remote metadata')
       return []

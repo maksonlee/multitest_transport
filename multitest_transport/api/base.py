@@ -22,6 +22,7 @@ import traceback
 import endpoints
 from tradefed_cluster.util import ndb_shim as ndb
 
+
 from multitest_transport.api import openapi
 
 DEFAULT_MAX_RESULTS = 25  # The default number of max results per page.
@@ -75,7 +76,8 @@ def ConvertExceptions(method):
   def _Wrapper(*args, **kwargs):
     try:
       return method(*args, **kwargs)
-    except Exception as e:        logging.exception('API handler exception:')
+    except Exception as e:  
+      logging.exception('API handler exception:')
       raise ApiError(
           cause=e, status=getattr(e, 'http_status', None), message=str(e))
   return _Wrapper

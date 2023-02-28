@@ -17,6 +17,7 @@ from absl.testing import absltest
 from tradefed_cluster import testbed_dependent_test
 from tradefed_cluster.util import ndb_shim as ndb
 
+
 from multitest_transport.models import config_encoder
 from multitest_transport.models import ndb_models
 

@@ -19,6 +19,7 @@ import io
 import apiclient
 import httplib2
 
+
 from multitest_transport.plugins import base
 from multitest_transport.plugins import constant
 from multitest_transport.util import env
@@ -342,7 +343,8 @@ class AndroidBuildProvider(base.BuildProvider):
     buffer_ = io.BytesIO()
     downloader = apiclient.http.MediaIoBaseDownload(
         buffer_, dl_req, chunksize=constant.DEFAULT_CHUNK_SIZE)
-    downloader._progress = offset      done = False
+    downloader._progress = offset  
+    done = False
     while not done:
       status, done = downloader.next_chunk(num_retries=constant.NUM_RETRIES)
       yield file_util.FileChunk(

@@ -15,6 +15,7 @@
 """A main app for sidekick modules."""
 import flask
 
+
 from multitest_transport.test_scheduler import download_util
 from multitest_transport.util import analytics
 

@@ -23,6 +23,7 @@ import uuid
 import pika
 import pytz
 
+
 from tradefed_cluster.plugins import base
 
 DEFAULT_EXCHANGE = ''

@@ -22,6 +22,7 @@ import time
 from tradefed_cluster import common
 from tradefed_cluster.util import ndb_shim as ndb
 
+
 from multitest_transport.models import build
 from multitest_transport.models import event_log
 from multitest_transport.models import ndb_models
@@ -194,7 +195,8 @@ class TestResourceDownloader(object):
       logging.info('Downloading %s completed', self.url)
       # Mark download as completed
       self._UpdateTracker(1.0, completed=True)
-    except Exception as e:        logging.error('Failed to download %s: %s', self.url, e)
+    except Exception as e:  
+      logging.error('Failed to download %s: %s', self.url, e)
       self._UpdateTracker(0.0, error=str(e))
       raise
 

@@ -23,6 +23,7 @@ from protorpc import protojson
 from tradefed_cluster import api_messages
 from tradefed_cluster.api_messages import CommandState
 
+
 from multitest_transport.api import api_test_util
 from multitest_transport.api import test_run_api
 from multitest_transport.models import messages
@@ -588,7 +589,8 @@ class TestRunApiTest(api_test_util.TestCase):
     test = self._createMockTest()
 
     # create hierarchy of test_runs
-    child, parent, grandparent = self._createMockTestRuns(test=test, count=3)      child.prev_test_run_key = parent.key
+    child, parent, grandparent = self._createMockTestRuns(test=test, count=3)  
+    child.prev_test_run_key = parent.key
     child.prev_test_context = ndb_models.TestContextObj()
     child.put()
     parent.prev_test_run_key = grandparent.key
@@ -616,6 +618,7 @@ class TestRunApiTest(api_test_util.TestCase):
     # create hierarchy of test_runs
     test = self._createMockTest()
     child, parent = self._createMockTestRuns(test=test, count=2)  
+
     with tempfile.NamedTemporaryFile(suffix='.zip') as tmp_stream:
       # write parent metadata to a temporary zip file
       with zipfile.ZipFile(tmp_stream, 'w') as context_file:

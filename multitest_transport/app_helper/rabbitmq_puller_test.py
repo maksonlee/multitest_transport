@@ -23,6 +23,7 @@ import urllib.request
 from absl.testing import absltest
 import pika
 
+
 from multitest_transport.app_helper import rabbitmq_puller
 
 

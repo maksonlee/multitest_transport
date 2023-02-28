@@ -25,6 +25,7 @@ from tradefed_cluster import api_messages
 from tradefed_cluster.common import IsFinalCommandState
 from tradefed_cluster.services import app_manager
 
+
 from multitest_transport.util import env
 
 API_NAME = 'tradefed_cluster'
@@ -38,7 +39,8 @@ _tls = threading.local()
 class _Http:
   """A httplib2.Http-like object based on requests."""
 
-  def request(        self,
+  def request(  
+      self,
       uri,
       method='GET',
       body=None,

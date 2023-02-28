@@ -37,6 +37,7 @@ import os
 
 import apiclient
 
+
 from multitest_transport.plugins import base
 from multitest_transport.plugins import constant
 from multitest_transport.util import env
@@ -349,7 +350,8 @@ class GoogleDriveBuildProvider(base.BuildProvider):
     request = client.files().get_media(fileId=file_id)
     downloader = apiclient.http.MediaIoBaseDownload(
         file_handle, request, chunksize=chunk_size)
-    downloader._progress = offset      return downloader
+    downloader._progress = offset  
+    return downloader
 
   def DownloadFile(self, path, offset=0):
     """Download file from Google Drive.

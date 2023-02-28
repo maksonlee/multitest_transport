@@ -8,6 +8,7 @@ from typing import List
 
 import attr
 
+
 from multitest_transport.cli import common
 
 logger = logging.getLogger(__name__)

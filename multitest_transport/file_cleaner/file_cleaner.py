@@ -45,6 +45,7 @@ from absl import flags
 from protorpc import protojson
 import requests
 
+
 from multitest_transport.file_cleaner import policy
 from multitest_transport.models import messages
 
@@ -83,14 +84,16 @@ def CleanUp():
           logging.info('[File Cleaner] Applying %s to %s', policy_name,
                        directory)
           policies[policy_name].Apply(directory)
-    except Exception:        logging.exception('[File Cleaner] Config %s failed:', config.name)
+    except Exception:  
+      logging.exception('[File Cleaner] Config %s failed:', config.name)
 
 
 def main(_):
   while True:
     try:
       CleanUp()
-    except Exception:        logging.exception('[File Cleaner] Failed when cleaning up:')
+    except Exception:  
+      logging.exception('[File Cleaner] Failed when cleaning up:')
     time.sleep(FILE_CLEANER_INTERVAL)
 
 

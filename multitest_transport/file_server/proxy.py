@@ -22,6 +22,7 @@ import urllib.request
 import flask
 import flask.views
 
+
 from multitest_transport.util import env
 
 APP = flask.Flask(__name__)
@@ -51,6 +52,7 @@ class FileServerProxy(flask.views.MethodView):
       host = hostname + ':' + str(urllib.parse.urlparse(target_host).port)
     (_, _, _, query, fragment) = urllib.parse.urlsplit(flask.request.url)
     url = urllib.parse.urlunsplit((scheme, host, path, query, fragment))  
+
     try:
       # Create and send request with body and header
       data = flask.request.get_data()

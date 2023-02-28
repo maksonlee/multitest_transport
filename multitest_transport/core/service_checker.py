@@ -20,6 +20,7 @@ import logging
 import subprocess
 import requests
 
+
 from multitest_transport.models import sql_models
 from multitest_transport.util import analytics
 from multitest_transport.util import file_util
@@ -110,7 +111,8 @@ def Check():
     try:
       checker.Run()
       logging.info('\t%s: OK', checker.name)
-    except Exception:        logging.exception('\t%s: ERROR', checker.name)
+    except Exception:  
+      logging.exception('\t%s: ERROR', checker.name)
       analytics.Log(
           analytics.SYSTEM_CATEGORY,
           analytics.CRASH_ACTION,

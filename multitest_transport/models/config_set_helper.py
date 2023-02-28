@@ -18,6 +18,7 @@ import logging
 
 from tradefed_cluster.util import ndb_shim as ndb
 
+
 from multitest_transport.models import build
 from multitest_transport.models import config_encoder
 from multitest_transport.models import messages as mtt_messages

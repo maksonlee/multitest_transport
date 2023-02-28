@@ -18,6 +18,7 @@ from protorpc import protojson
 
 from absl.testing import absltest
 
+
 from multitest_transport.api import api_test_util
 from multitest_transport.api import device_action_api
 from multitest_transport.models import messages

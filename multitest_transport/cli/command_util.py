@@ -28,6 +28,7 @@ import time
 
 import six
 
+
 from multitest_transport.cli import common
 from multitest_transport.cli import google_auth_util
 from multitest_transport.cli import ssh_util
@@ -36,14 +37,17 @@ logger = logging.getLogger(__name__)
 
 
 try:
-  import invoke  except ImportError:
+  import invoke  
+except ImportError:
   invoke = None
   logging.warning('Failed to import invoke')
 
 try:
   # Test importing paramiko.
   # Importing fabric can error out in uncatchable ways if paramiko errors out.
-  import paramiko    import fabric  except ImportError:
+  import paramiko  
+  import fabric  
+except ImportError:
   fabric = None
   paramiko = None
   logging.warning('Failed to import fabric or paramiko')
@@ -141,7 +145,8 @@ class HostCommandOutStream(object):
       self._prefix += ': '
     self._last_incomplete_line = ''
 
-  def write(self, b):      """Write a string to the stream."""
+  def write(self, b):  
+    """Write a string to the stream."""
     decoded_stream = six.ensure_text(b, errors='ignore')
     lines = decoded_stream.split('\n')
     if not lines:
@@ -151,7 +156,8 @@ class HostCommandOutStream(object):
     for line in lines:
       self._Print(self._prefix + line)
 
-  def flush(self):      pass
+  def flush(self):  
+    pass
 
   def _Print(self, line):
     """Print a line, expose for testing."""

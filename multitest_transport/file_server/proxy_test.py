@@ -21,6 +21,7 @@ import urllib.request
 from absl.testing import absltest
 import webtest
 
+
 from multitest_transport.file_server import proxy
 from multitest_transport.util import env
 
@@ -34,9 +35,11 @@ class MockProxyResponse(object):
     self.headers = headers or {}
     self.data = data
 
-  def read(self):      return self.data
+  def read(self):  
+    return self.data
 
-  def close(self):      pass
+  def close(self):  
+    pass
 
 
 class MockProxyError(urllib.error.HTTPError, MockProxyResponse):

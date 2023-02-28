@@ -15,6 +15,7 @@
 """Unit tests for registry."""
 from absl.testing import absltest
 
+
 from multitest_transport.plugins.registry import PluginRegistry
 
 
@@ -27,7 +28,8 @@ class RegistryTest(absltest.TestCase):
 
   def testRegisterPlugin(self):
     # Register a mock plugin explicitly
-    class MockPlugin:        name = 'mock'
+    class MockPlugin:  
+      name = 'mock'
     self.registry.RegisterPlugin(MockPlugin)
     # Verify that it is in the registry
     self.assertEqual(self.registry.ListPluginNames(), ['mock'])
@@ -35,19 +37,22 @@ class RegistryTest(absltest.TestCase):
 
   def testRegisterPlugin_noName(self):
     # Register a mock plugin with no name explicitly
-    class MockPlugin:        pass
+    class MockPlugin:  
+      pass
     self.registry.RegisterPlugin(MockPlugin)
     self.assertEmpty(self.registry.ListPluginNames())  # Not registered
 
   def testRegisterPlugin_abstract(self):
     # Register an abstract mock plugin explicitly
-    class AbstractMockPlugin:        name = 'mock'
+    class AbstractMockPlugin:  
+      name = 'mock'
     self.registry.RegisterPlugin(AbstractMockPlugin)
     self.assertEmpty(self.registry.ListPluginNames())  # Not registered
 
   def testMetaclass(self):
     # Register a mock plugin using the registry metaclass
-    class MockPlugin(metaclass=self.registry.GetMetaclass()):        name = 'metaclass'
+    class MockPlugin(metaclass=self.registry.GetMetaclass()):  
+      name = 'metaclass'
     # Verify that it is in the registry
     self.assertEqual(self.registry.ListPluginNames(), ['metaclass'])
     self.assertEqual(self.registry.GetPluginClass('metaclass'), MockPlugin)

@@ -15,6 +15,7 @@
 """A module to load MTT configuration during application start."""
 import logging
 
+
 from multitest_transport.models import config_encoder
 
 BASE_CONFIG_PATH = 'config.yaml'

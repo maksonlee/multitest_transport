@@ -40,7 +40,8 @@ class APFEReportUploadHook(base.TestRunHook):
       client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
       scopes=list(_OAUTH2_SCOPES))
 
-  def __init__(self, _credentials=None, company_id=None, **_):      if not company_id:
+  def __init__(self, _credentials=None, company_id=None, **_):  
+    if not company_id:
       raise ValueError('Company id is required')
 
     self._authorized_http = None

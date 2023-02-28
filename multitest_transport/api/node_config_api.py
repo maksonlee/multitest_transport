@@ -14,10 +14,12 @@
 
 """A module to provide node config APIs."""
 # Non-standard docstrings are used to generate the API documentation.
+
 import datetime
 
 from protorpc import message_types
 from protorpc import remote
+
 
 from multitest_transport.api import base
 from multitest_transport.models import config_encoder

@@ -43,6 +43,7 @@ from tradefed_cluster import env_config
 from tradefed_cluster.plugins import base
 from tradefed_cluster.util import ndb_shim as ndb
 
+
 from multitest_transport.app_helper import rabbitmq_plugin
 from multitest_transport.models import test_run_hook
 
@@ -202,12 +203,16 @@ class ModuleApplication(gunicorn.app.base.BaseApplication):
 
 def monkeypatch_default_auth():
   """Use anonymous credentials and application ID as the defaults."""
-  from google import auth    from google.auth.credentials import AnonymousCredentials    auth.default = lambda **_: (AnonymousCredentials(), FLAGS.application_id)
+  from google import auth  
+  from google.auth.credentials import AnonymousCredentials  
+  auth.default = lambda **_: (AnonymousCredentials(), FLAGS.application_id)
 
 
 def monkeypatch_crypt_rsa():
   """Use a pure-python RSA implementation which supports pickling."""
-  from google.auth import crypt    from google.auth.crypt import _python_rsa    crypt.RSASigner = _python_rsa.RSASigner
+  from google.auth import crypt  
+  from google.auth.crypt import _python_rsa  
+  crypt.RSASigner = _python_rsa.RSASigner
   crypt.RSAVerifier = _python_rsa.RSAVerifier
 
 
@@ -217,14 +222,16 @@ def monkeypatch_read_consistency():
   ATS uses the cloud datastore emulator which can leak memory if all queries
   (including those outside transactions) are forced to be strongly consistent.
   """
-  from google.cloud.ndb import _datastore_api    _datastore_api.get_read_options = functools.partial(
+  from google.cloud.ndb import _datastore_api  
+  _datastore_api.get_read_options = functools.partial(
       _datastore_api.get_read_options,
       default_read_consistency=_datastore_api.EVENTUAL)
 
 
 def monkeypatch_grpc_message_length():
   """Remove the default gRPC message length limit used by NDB (b/195488504)."""
-  import grpc    grpc.insecure_channel = functools.partial(
+  import grpc  
+  grpc.insecure_channel = functools.partial(
       grpc.insecure_channel, options=[('grpc.max_receive_message_length', -1)])
 
 

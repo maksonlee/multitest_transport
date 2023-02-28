@@ -34,6 +34,7 @@ import zipfile
 from packaging import version
 import six
 
+
 from multitest_transport.cli import cli_util
 from multitest_transport.cli import command_util
 from multitest_transport.cli import google_auth_util
@@ -907,7 +908,8 @@ def _UpdateMttNode(args, host):
   try:
     _StopMttNode(args, host)
     _StartMttNode(args, host)
-  except Exception as e:      host.control_server_client.SubmitHostUpdateStateChangedEvent(
+  except Exception as e:  
+    host.control_server_client.SubmitHostUpdateStateChangedEvent(
         host.config.hostname,
         host_util.HostUpdateState.ERRORED,
         display_message=str(e),
@@ -966,7 +968,8 @@ def _RunDaemonIteration(args, host=None):
       if new_path:
         logger.debug('CLI is updated.')
         os.execv(new_path, [new_path] + sys.argv[1:])
-    except Exception as e:        logger.warning('Failed to check/update tool: %s', e)
+    except Exception as e:  
+      logger.warning('Failed to check/update tool: %s', e)
   host = host or host_util.CreateHost(args)
   if (host.config.secret_project_id and
       host.config.service_account_key_secret_id and
@@ -1138,7 +1141,8 @@ def _UpdateServiceAccountKeyFile(
     with open(local_service_account_key_path, 'w') as f:
       f.write(service_account_key.decode())
     return True
-  except Exception:      logger.exception(
+  except Exception:  
+    logger.exception(
         'Fail to update service account key %s.',
         local_service_account_key_path)
     return False
@@ -1201,7 +1205,8 @@ def Main():
       if new_path:
         logger.debug('CLI is updated.')
         os.execv(new_path, [new_path] + sys.argv[1:])
-    except Exception as e:        logger.warning('Failed to check/update tool: %s', e)
+    except Exception as e:  
+      logger.warning('Failed to check/update tool: %s', e)
   try:
     if args.action == 'version':
       cli_util.PrintVersion()

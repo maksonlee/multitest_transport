@@ -25,12 +25,14 @@ import six
 logger = logging.getLogger(__name__)
 
 
+
 try:
   from google.cloud import exceptions as cloud_exceptions
   from google.cloud import storage
 except ImportError as e:
   storage = None
   logger.warning('Failed to import google cloud storage.')
+
 
 
 class GCSError(Exception):

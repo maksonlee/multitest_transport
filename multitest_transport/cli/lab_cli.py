@@ -27,6 +27,7 @@ import zipfile
 
 import dateutil
 
+
 from multitest_transport.cli import cli_util
 from multitest_transport.cli import google_auth_util
 from multitest_transport.cli import host_util
@@ -395,7 +396,8 @@ def Main():
       if new_path:
         logger.debug('CLI is updated.')
         os.execv(new_path, [new_path] + sys.argv[1:])
-    except Exception as e:        logger.warning('Failed to check/update tool: %s', e)
+    except Exception as e:  
+      logger.warning('Failed to check/update tool: %s', e)
   if not args.action:
     parser.print_usage()
     return

@@ -14,6 +14,7 @@
 
 """A module to provide test plan APIs."""
 # Non-standard docstrings are used to generate the API documentation.
+
 import croniter
 import endpoints
 from protorpc import message_types
@@ -21,6 +22,7 @@ from protorpc import messages
 from protorpc import remote
 
 from tradefed_cluster.util import ndb_shim as ndb
+
 
 from multitest_transport.api import base
 from multitest_transport.models import build

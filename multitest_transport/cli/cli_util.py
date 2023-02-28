@@ -24,6 +24,7 @@ import zipfile
 import requests
 import six
 
+
 from google.cloud import logging as gcloud_logging
 from multitest_transport.cli import command_util
 from multitest_transport.cli import gcs_file_util

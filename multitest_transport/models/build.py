@@ -20,12 +20,16 @@ import re
 import urllib.parse
 import uuid
 
+
 from multitest_transport.plugins import base as plugins
 from multitest_transport.models import ndb_models
 from multitest_transport.util import analytics
 from multitest_transport.util import errors
 
-BuildItem = plugins.BuildItem  BuildItemType = plugins.BuildItemType  UrlPattern = plugins.UrlPattern  
+BuildItem = plugins.BuildItem  
+BuildItemType = plugins.BuildItemType  
+UrlPattern = plugins.UrlPattern  
+
 WILDCARD_CHARS = '*?'
 
 

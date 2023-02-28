@@ -23,6 +23,7 @@ import pytz
 from tradefed_cluster import api_messages
 from tradefed_cluster.util import ndb_shim as ndb
 
+
 from google.oauth2 import credentials
 from google.oauth2 import service_account
 
@@ -141,6 +142,7 @@ def _AddTimezone(datetime, timezone=pytz.UTC):
   """Adds timezone to an NDB datetime (which doesn't store timezone)."""
   if datetime:
     return datetime.replace(tzinfo=timezone)  
+
 
 class AuthorizationInfo(messages.Message):
   """OAuth2 authorization information.

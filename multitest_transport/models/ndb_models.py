@@ -23,6 +23,7 @@ from protorpc import messages
 from tradefed_cluster import common
 from tradefed_cluster.util import ndb_shim as ndb
 
+
 from multitest_transport.util import env
 from multitest_transport.util import oauth2_util
 

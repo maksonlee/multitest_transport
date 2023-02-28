@@ -23,6 +23,7 @@ import flask
 import pytz
 from retry import api as retry
 
+
 from multitest_transport.models import messages
 from multitest_transport.models import ndb_models
 from multitest_transport.test_scheduler import test_kicker
@@ -158,7 +159,8 @@ def KickTestPlan(test_plan_id, task_name=None):
               test_run_config=sequence.test_run_configs[0],
               rerun_configs=sequence.test_run_configs[1:]))
       test_runs.append(test_run)
-  except Exception as e:      # Record exception info and cancel all scheduled runs
+  except Exception as e:  
+    # Record exception info and cancel all scheduled runs
     error = e
     for test_run in test_runs:
       test_run_manager.SetTestRunState(
@@ -205,7 +207,8 @@ def TaskHandler(fake):
   reschedule = True
   try:
     reschedule = KickTestPlan(test_plan_id, task_name=task_name)
-  except Exception:      logging.exception('Failed to start test plan %s; skipping cron kick',
+  except Exception:  
+    logging.exception('Failed to start test plan %s; skipping cron kick',
                       test_plan_id)
   # Reschedule if the kick was successful or if an error occurred
   if reschedule:

@@ -44,6 +44,8 @@ class PluginRegistry:
 
   def GetMetaclass(self):
     """Generates a metaclass to automatically registers subclasses."""
-    class Metaclass(type):        def __init__(cls, name, parents, attributes):          self.RegisterPlugin(cls)
+    class Metaclass(type):  
+      def __init__(cls, name, parents, attributes):  
+        self.RegisterPlugin(cls)
         type.__init__(cls, name, parents, attributes)
     return Metaclass

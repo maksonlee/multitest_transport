@@ -21,6 +21,7 @@ import logging
 import socket
 import time
 
+
 from multitest_transport.cli import command_util
 from multitest_transport.cli import control_server_util
 from multitest_transport.cli import gcs_file_util
@@ -241,11 +242,13 @@ def _GetMaxWorker(args, hosts):
   Returns:
     An int, the number of max worker thread.
   """
-    if args.parallel is True:
+  
+  if args.parallel is True:
     return len(hosts)
   elif args.parallel is False or args.parallel < 1:
     return 1
-    else:
+  
+  else:
     return args.parallel
 
 
@@ -286,7 +289,8 @@ def _ParallelExecute(host_func, args, hosts, execution_state_printer=None):
         host = future_to_host[f]
         try:
           f.result()
-        except Exception as e:            logger.error('Failed %s on %s: %s.', host_func.__name__, host.name, e)
+        except Exception as e:  
+          logger.error('Failed %s on %s: %s.', host_func.__name__, host.name, e)
           host.control_server_client.SubmitHostUpdateStateChangedEvent(
               host.config.hostname, HostUpdateState.ERRORED,
               display_message=str(e), target_image=host.config.docker_image)
@@ -405,7 +409,8 @@ def _SequentialExecute(
     try:
       host_func(args, host)
       execution_state_printer.PrintState()
-    except Exception as e:        logger.exception('Failed to run "%s" on %s.',
+    except Exception as e:  
+      logger.exception('Failed to run "%s" on %s.',
                        host_func.__name__, host.name)
       host.control_server_client.SubmitHostUpdateStateChangedEvent(
           host.config.hostname, HostUpdateState.ERRORED,
@@ -434,7 +439,8 @@ def _WrapFuncForSetHost(host_func):
     try:
       host_func(args, host)
       host.execution_state = HostExecutionState.COMPLETED
-    except Exception as e:        logger.debug(
+    except Exception as e:  
+      logger.debug(
           '%s failed to run %s due to %s.',
           host.name, host_func.__name__, e)
       host.error = e
@@ -584,6 +590,7 @@ def Execute(args, lab_config_pool=None):
         if host.context:
           logger.debug('Closing %s.', host.name)
           host.context.Close()
-      except Exception as e:          logger.error('Failed to close %s: %s.', host.name, e)
+      except Exception as e:  
+        logger.error('Failed to close %s: %s.', host.name, e)
     logger.info('Finished executing "%s".', args.host_func.__name__)
     execution_state_printer.PrintResult()

@@ -33,6 +33,7 @@ import zipfile
 
 import apiclient
 
+
 from multitest_transport.util import env
 
 DOWNLOAD_BUFFER_SIZE = 16 * 1024 * 1024
@@ -733,7 +734,8 @@ def GetTestSuiteInfo(file_obj: BinaryIO) -> Optional[TestSuiteInfo]:
                              name=suite_info.get('name'),
                              fullname=suite_info.get('fullname'),
                              version=suite_info.get('version'))
-  except Exception:      logging.exception('Failed to get test suite info')
+  except Exception:  
+    logging.exception('Failed to get test suite info')
   return None
 
 

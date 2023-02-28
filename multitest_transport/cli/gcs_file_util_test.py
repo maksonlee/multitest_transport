@@ -20,8 +20,10 @@ from unittest import mock
 
 from absl.testing import absltest
 from google.cloud import exceptions as cloud_exceptions
-from google.cloud import storage  import six
+from google.cloud import storage  
+import six
 from tradefed_cluster.configs import lab_config
+
 
 from multitest_transport.cli import gcs_file_util
 

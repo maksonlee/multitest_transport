@@ -48,6 +48,7 @@ class Database(object):
     self.uri = uri
     self.options = options
     self.Model = declarative.declarative_base()  
+
   @property
   def engine(self) -> sa.engine.Engine:
     """Returns the sqlalchemy engine, connecting and create DB if necessary."""

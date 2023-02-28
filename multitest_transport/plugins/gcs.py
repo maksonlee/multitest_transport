@@ -19,6 +19,7 @@ import logging
 
 import apiclient
 
+
 from multitest_transport.models import event_log
 from multitest_transport.plugins import base
 from multitest_transport.plugins import constant
@@ -253,7 +254,8 @@ class GCSBuildProvider(base.BuildProvider):
     request = client.objects().get_media(bucket=bucket, object=object_name)
     downloader = apiclient.http.MediaIoBaseDownload(
         fh, request, chunksize=chunk_size)
-    downloader._progress = offset      return downloader
+    downloader._progress = offset  
+    return downloader
 
   def DownloadFile(self, path, offset=0):
     """Download file from remote GCS.
@@ -293,7 +295,8 @@ class GCSFileUploadHook(file_upload_hook.AbstractFileUploadHook):
       client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
       scopes=RW_SCOPES)
 
-  def __init__(self, _credentials=None, **_):      super(GCSFileUploadHook, self).__init__(**_)
+  def __init__(self, _credentials=None, **_):  
+    super(GCSFileUploadHook, self).__init__(**_)
     self._client = None
     self._credentials = _credentials
 

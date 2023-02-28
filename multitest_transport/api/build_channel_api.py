@@ -14,6 +14,7 @@
 
 """A module to provide build channel APIs."""
 # Non-standard docstrings are used to generate the API documentation.
+
 import collections
 import json
 import os
@@ -25,6 +26,7 @@ from protorpc import messages
 from protorpc import remote
 
 from google.oauth2 import service_account
+
 
 from multitest_transport.api import base
 from multitest_transport.models import build

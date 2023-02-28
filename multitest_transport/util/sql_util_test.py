@@ -20,6 +20,7 @@ from protorpc import messages
 import sqlalchemy as sa
 import sqlalchemy_utils as sa_utils
 
+
 from multitest_transport.util import sql_util
 
 # Database for testing
