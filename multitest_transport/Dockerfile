@@ -180,11 +180,9 @@ RUN git clone https://github.com/google/android-cuttlefish --no-checkout --singl
 # Test: To verify it works fine need to check OpenWRT succesfully booted by
 # verifying we have kernel log inside <cvd-instance>/crosvm_openwrt_boot.log
 # and virtual wifi works fine inside guest.
-ARG GRUB_BIN_DEB_URL="http://ftp.debian.org/debian/pool/main/g/grub2/grub-efi-ia32-bin_2.06-7_amd64.deb"
-ENV GRUB_BIN_DEB_PATH=/tmp/grub-efi-ia32-bin.deb
-RUN wget -q --retry-connrefused -O ${GRUB_BIN_DEB_PATH} ${GRUB_BIN_DEB_URL} \
-    && dpkg --force-all -i ${GRUB_BIN_DEB_PATH} \
-    && rm -rf ${GRUB_BIN_DEB_PATH}
+RUN echo "deb [trusted=yes] http://ftp.debian.org/debian sid main" > /etc/apt/sources.list.d/debian.list && \
+    apt-get update && \
+    apt-get install -y grub-efi-ia32-bin
 
 # TODO: Remove this flag after a couple of releases.
 ENV MTT_SUPPORT_BRIDGE_NETWORK true
