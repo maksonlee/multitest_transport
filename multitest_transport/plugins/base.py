@@ -17,6 +17,7 @@ import collections
 import dataclasses
 import datetime
 import enum
+import inspect
 import logging
 import re
 from typing import Dict, Generic, List, Optional, Tuple, Type, TypeVar
@@ -28,6 +29,8 @@ from tradefed_cluster import api_messages as tfc_messages
 from multitest_transport.models import ndb_models
 from multitest_transport.plugins.registry import PluginRegistry
 from multitest_transport.util import oauth2_util
+
+_PRIVATE_OPTION_PREFIX = '_'
 
 BUILD_PROVIDER_REGISTRY = PluginRegistry()
 TEST_RUN_HOOK_REGISTRY = PluginRegistry()
@@ -306,7 +309,28 @@ class TestRunHook(metaclass=TEST_RUN_HOOK_REGISTRY.GetMetaclass()):
     """
     raise NotImplementedError()
 
+  @classmethod
+  def GetPublicOptionDefs(cls):
+    """Retrieves a list of public option definitions."""
+    option_def_map = collections.OrderedDict()
+    signature = inspect.signature(cls)
+    for (name, param) in signature.parameters.items():
+      if name.startswith(_PRIVATE_OPTION_PREFIX):
+        continue
+      # Param type is always str. Convert the default value to str
+      if param.default == inspect.Parameter.empty or param.default is None:
+        default = ''
+      else:
+        default = str(param.default)
+      option_def_map[name] = OptionDef(name, str, [], default)
+    return option_def_map.values()
+
 
 def GetTestRunHookClass(name: str) -> Optional[Type[TestRunHook]]:
-  """Retrieve a run hook class by its name."""
+  """Retrieves a run hook class by its name."""
   return TEST_RUN_HOOK_REGISTRY.GetPluginClass(name)
+
+
+def ListTestRunHookNames() -> List[str]:
+  """Lists all registered test run hook names."""
+  return TEST_RUN_HOOK_REGISTRY.ListPluginNames()

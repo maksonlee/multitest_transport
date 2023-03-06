@@ -280,6 +280,16 @@ class TestRunHookTest(testbed_dependent_test.TestbedDependentTest):
         task=converted_task)
     mock_update_task.assert_called_once_with(expected_task, converted_task)
 
+  def testGetTestRunHook(self):
+    """Tests that test run hook classes can be retrieved by name."""
+    self.assertEqual(SimpleHook, test_run_hook.GetTestRunHookClass('simple'))
+    self.assertEqual(OAuth2Hook, test_run_hook.GetTestRunHookClass('oauth2'))
+
+  def testListTestRunHookNames(self):
+    """Tests that all registered test run hook names can be listed."""
+    self.assertCountEqual(['simple', 'oauth2'],
+                          test_run_hook.ListTestRunHookNames())
+
 
 if __name__ == '__main__':
   absltest.main()

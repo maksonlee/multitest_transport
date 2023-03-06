@@ -41,6 +41,22 @@ class OAuth2Hook(plugins.TestRunHook):
   oauth2_config = oauth2_util.OAuth2Config('id', 'secret', ['scope'])
 
 
+class OptionHook(plugins.TestRunHook):
+  """Test run hook with options."""
+  name = 'option'
+
+  def __init__(
+      self,
+      _credentials=None,  
+      option_one='default',
+      option_two=None,
+      **_,
+  ):
+    pass
+
+
+
+
 class TestRunActionApiTest(api_test_util.TestCase):
 
   def setUp(self, api_class=test_run_action_api.TestRunActionApi):
@@ -217,6 +233,39 @@ class TestRunActionApiTest(api_test_util.TestCase):
     response = self.app.post_json(
         '/_ah/api/mtt/v1/test_run_actions/unknown', {}, expect_errors=True)
     self.assertEqual('404 Not Found', response.status)
+
+  def testListTestRunHooks(self):
+    """Tests that a list of test run hooks can be fetched."""
+    response = self.app.get('/_ah/api/mtt/v1/test_run_actions/test_run_hooks')
+    hook_list = protojson.decode_message(
+        messages.TestRunHookList, response.body
+    ).test_run_hooks
+    self.assertLen(hook_list, 3)
+    self.assertCountEqual(
+        [
+            messages.TestRunHook(name='simple', option_defs=[]),
+            messages.TestRunHook(name='oauth2', option_defs=[]),
+            messages.TestRunHook(
+                name='option',
+                option_defs=[
+                    messages.OptionDef(
+                        name='option_one',
+                        value_type='str',
+                        choices=[],
+                        default='default',
+                    ),
+                    messages.OptionDef(
+                        name='option_two',
+                        value_type='str',
+                        choices=[],
+                        default='',
+                    ),
+                ],
+            ),
+        ],
+        hook_list,
+    )
+
 
 if __name__ == '__main__':
   absltest.main()

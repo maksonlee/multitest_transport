@@ -161,3 +161,23 @@ class TfcTaskInterceptor(tfc_plugins.Plugin):
     """Apply modifications to a TFC command task."""
     command_task.extra_options = api_messages.MapToKeyMultiValuePairMessages(
         task.extra_options)
+
+
+def GetTestRunHookClass(name):
+  """Returns a test run hook class.
+
+  Args:
+    name: a test run hook name.
+  Returns:
+    a plugins.TestRunHook class.
+  """
+  return plugins.GetTestRunHookClass(name)
+
+
+def ListTestRunHookNames():
+  """Returns a list of names of registered test run hooks.
+
+  Returns:
+    a list of test run hook names.
+  """
+  return plugins.ListTestRunHookNames()

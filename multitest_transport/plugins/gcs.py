@@ -295,8 +295,13 @@ class GCSFileUploadHook(file_upload_hook.AbstractFileUploadHook):
       client_secret=env.GOOGLE_OAUTH2_CLIENT_SECRET,
       scopes=RW_SCOPES)
 
-  def __init__(self, _credentials=None, **_):  
-    super(GCSFileUploadHook, self).__init__(**_)
+  def __init__(self,
+               _credentials=None,
+               file_pattern=None,
+               upload_prefix=None,
+               **_):  
+    super(GCSFileUploadHook, self).__init__(
+        file_pattern=file_pattern, upload_prefix=upload_prefix)
     self._client = None
     self._credentials = _credentials
 

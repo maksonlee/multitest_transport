@@ -204,3 +204,24 @@ class TestRunActionApi(remote.Service):
         ndb_models.TestRunPhase.MANUAL,
         test_run_actions=actions)
     return message_types.VoidMessage()
+
+  @base.ApiMethod(
+      message_types.VoidMessage,
+      mtt_messages.TestRunHookList,
+      path='test_run_actions/test_run_hooks',
+      http_method='GET',
+      name='list_test_run_hooks')
+  def ListTestRunHooks(self, request):
+    """List registered test run hooks."""
+    hook_names = test_run_hook.ListTestRunHookNames()
+    test_run_hooks = []
+    for name in hook_names:
+      cls = test_run_hook.GetTestRunHookClass(name)
+      assert cls
+      option_defs = cls.GetPublicOptionDefs()
+      test_run_hooks.append(
+          mtt_messages.TestRunHook(
+              name=name,
+              option_defs=mtt_messages.ConvertList(option_defs,
+                                                   mtt_messages.OptionDef)))
+    return mtt_messages.TestRunHookList(test_run_hooks=test_run_hooks)

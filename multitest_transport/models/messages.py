@@ -458,7 +458,7 @@ class BuildChannelList(messages.Message):
 
 
 class OptionDef(messages.Message):
-  """A build channel provider option definition."""
+  """A plugin option definition."""
   name = messages.StringField(1, required=True)
   value_type = messages.StringField(2, required=True)
   choices = messages.StringField(3, repeated=True)
@@ -775,6 +775,17 @@ def _TestRunActionRefMessageConverter(msg):
 class TestRunActionRefList(messages.Message):
   """A list of test run action references."""
   refs = messages.MessageField(TestRunActionRef, 1, repeated=True)
+
+
+class TestRunHook(messages.Message):
+  """Information about a test run hook."""
+  name = messages.StringField(1, required=True)
+  option_defs = messages.MessageField(OptionDef, 2, repeated=True)
+
+
+class TestRunHookList(messages.Message):
+  """A list of test run hook."""
+  test_run_hooks = messages.MessageField(TestRunHook, 1, repeated=True)
 
 
 class TestResourceObj(messages.Message):
