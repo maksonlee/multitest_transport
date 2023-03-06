@@ -14,6 +14,7 @@
 
 """MTT integration tests utilities."""
 
+from importlib import resources
 import logging
 import os
 import socket
@@ -45,6 +46,8 @@ RETRY_PARAMS = {'tries': 4, 'delay': 2, 'backoff': 2}
 
 # Constants
 CLUSTER = 'default'
+_SECCOMP_PROFILE_PACKAGE = 'multitest_transport.cli'
+_SECCOMP_PROFILE_NAME = 'seccomp.json'
 
 
 class MttContainer(object):
@@ -57,6 +60,9 @@ class MttContainer(object):
   def __enter__(self):
     """Start the MTT docker container."""
     self._control_server_port = portpicker.pick_unused_port()
+    # Docker API takes the seccomp profile as a string.
+    seccomp_profile = resources.read_text(
+        _SECCOMP_PROFILE_PACKAGE, _SECCOMP_PROFILE_NAME)
     kwargs = {
         'cap_add': ['sys_admin'],
         'devices': ['/dev/fuse'],
@@ -70,7 +76,10 @@ class MttContainer(object):
         'ports': {
             '8000/tcp': self._control_server_port,
         },
-        'security_opt': ['apparmor:unconfined'],
+        'security_opt': [
+            'apparmor:unconfined',
+            'seccomp=' + seccomp_profile,
+        ],
     }
     if self._max_local_virtual_devices:
       kwargs['cap_add'].append('net_admin')

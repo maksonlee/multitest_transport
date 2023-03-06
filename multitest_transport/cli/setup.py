@@ -30,6 +30,9 @@ setuptools.setup(
         'Programming Language :: Python :: 3.10',
     ],
     packages=setuptools.find_packages(),
+    package_data={
+        'multitest_transport.cli': ['seccomp.json'],
+    },
     # The package works for 3.7 and up, but not for python 4 yet.
     python_requires='~=3.7',
     entry_points={

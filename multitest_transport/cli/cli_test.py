@@ -302,6 +302,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -355,6 +356,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -410,6 +412,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -468,6 +471,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call([
             'docker', 'cp', '-L',
@@ -516,6 +520,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -560,6 +565,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -606,6 +612,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -712,6 +719,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'animage:atag']),
         mock.call(['docker', 'start', 'acontainer']),
         mock.call(
@@ -763,6 +771,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call([  # temp directory copied over to container
             'docker',
@@ -827,6 +836,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call([
             'docker', 'cp', '-L',
@@ -887,6 +897,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -932,6 +943,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'a_docker_image']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -1003,6 +1015,7 @@ class CliTest(parameterized.TestCase):
             '--device', '/dev/net/tun',
             '--device', '/dev/vhost-net',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -1048,6 +1061,7 @@ class CliTest(parameterized.TestCase):
             '--device', '/dev/net/tun',
             '--device', '/dev/vhost-net',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -1097,6 +1111,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             '--arg3', 'value3', '--arg1', 'value1', '--arg2', 'value2',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
@@ -1135,6 +1150,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
     ])
@@ -1179,6 +1195,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -1244,6 +1261,7 @@ class CliTest(parameterized.TestCase):
               '--cap-add', 'sys_admin',
               '--device', '/dev/fuse',
               '--security-opt', 'apparmor:unconfined',
+              '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
               'gcr.io/android-mtt/mtt:prod']),
           mock.call(['docker', 'start', 'mtt']),
           mock.call(
@@ -1299,6 +1317,7 @@ class CliTest(parameterized.TestCase):
             '--sysctl', 'net.ipv6.conf.all.disable_ipv6=0',
             '--sysctl', 'net.ipv6.conf.all.forwarding=1',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
@@ -1333,6 +1352,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod'
         ]),
         mock.call(['docker', 'start', 'mtt']),
@@ -1369,6 +1389,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod'
         ]),
         mock.call(['docker', 'start', 'mtt']),
@@ -1406,6 +1427,7 @@ class CliTest(parameterized.TestCase):
             '--cap-add', 'sys_admin',
             '--device', '/dev/fuse',
             '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod'
         ]),
         mock.call(['docker', 'start', 'mtt']),

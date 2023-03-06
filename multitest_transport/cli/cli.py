@@ -18,6 +18,7 @@ This tool is supposed to be bootstrapped by 'mtt' script and expects the current
 working directory to be the root of MTT package.
 """
 import argparse
+from importlib import resources
 import json
 import logging
 import os
@@ -68,6 +69,11 @@ _DOCKER_HOST_NETWORK = 'host'
 # The device nodes required by local virtual devices.
 _LOCAL_VIRTUAL_DEVICE_NODES = ('/dev/kvm', '/dev/vhost-vsock', '/dev/net/tun',
                                '/dev/vhost-net')
+# Docker seccomp profile as a resource.
+_SECCOMP_PROFILE_PACKAGE = 'multitest_transport.cli'
+_SECCOMP_PROFILE_NAME = 'seccomp.json'
+# Docker seccomp profile copied to host file system.
+_SECCOMP_PROFILE_PATH = os.path.join(_TMP_DIR, 'mtt_seccomp.json')
 
 # Tradefed accept TSTP signal as 'quit', which will wait all running tests
 # to finish.
@@ -279,6 +285,21 @@ def _CheckMttNodePrerequisites(args, host):
     raise ActionableError('\n'.join(messages))
 
 
+def _CreateSeccompProfile(host):
+  """Create a seccomp profile in temporary directory.
+
+  Args:
+    host: an instance of host_util.Host.
+
+  Returns:
+    The path to the seccomp profile.
+  """
+  with resources.path(_SECCOMP_PROFILE_PACKAGE,
+                      _SECCOMP_PROFILE_NAME) as resource_path:
+    host.context.CopyFile(resource_path, _SECCOMP_PROFILE_PATH)
+  return _SECCOMP_PROFILE_PATH
+
+
 def _CheckDockerImageVersion(docker_helper, container_name):
   """Check a Docker image is compatible with CLI.
 
@@ -419,6 +440,10 @@ def _StartMttNode(args, host):
   docker_helper.AddDeviceNode('/dev/fuse')
   docker_helper.AddCapability('sys_admin')
   docker_helper.AddExtraArgs(['--security-opt', 'apparmor:unconfined'])
+
+  # Set seccomp
+  docker_helper.AddExtraArgs(['--security-opt',
+                              'seccomp=' + _CreateSeccompProfile(host)])
 
   if (not args.use_host_network and
       'MTT_SUPPORT_BRIDGE_NETWORK=true' in docker_helper.GetEnv(image_name)):

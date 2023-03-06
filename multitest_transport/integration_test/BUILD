@@ -12,6 +12,9 @@ py_library(
     srcs = [
         "integration_util.py",
     ],
+    data = [
+        "//multitest_transport/cli:seccomp.json",
+    ],
     deps = [
         third_party("absl/testing:absltest"),
         third_party("docker"),

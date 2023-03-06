@@ -165,7 +165,8 @@ RUN git clone https://github.com/google/android-cuttlefish --no-checkout --singl
     debuild -i -us -uc -b -d && \
     apt-get install -y ../cuttlefish-common_*_amd64.deb iproute2 rsyslog && \
     cd - && \
-    rm -rf /tmp/cuttlefish-common/src
+    rm -rf /tmp/cuttlefish-common/src && \
+    groupadd --force kvm
 
 # Ubuntu has a weird bug which is not allowing us to boot linux kernel when
 # kernel and u-boot modes are different (for example u-boot is 32 bit and

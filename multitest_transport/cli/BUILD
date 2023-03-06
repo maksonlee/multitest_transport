@@ -5,6 +5,8 @@ package(default_applicable_licenses = ["//multitest_transport:license"])
 
 licenses(["notice"])
 
+exports_files(["seccomp.json"])
+
 pytype_strict_binary(
     name = "cli",
     srcs = ["cli.py"],
@@ -17,6 +19,9 @@ py_library(
     name = "cli_lib",
     srcs = [
         "cli.py",
+    ],
+    data = [
+        "seccomp.json",
     ],
     deps = [
         ":cli_util_lib",
