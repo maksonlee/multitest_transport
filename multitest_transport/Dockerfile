@@ -114,6 +114,7 @@ RUN mkdir -p /sdk_tools/lib64
 # Use wget for more reliable retries
 RUN wget -q --retry-connrefused -O build-tools.zip https://dl.google.com/android/repository/build-tools_r30.0.2-linux.zip \
     && unzip -jq build-tools.zip -d /sdk_tools android-11/aapt \
+    && unzip -jq build-tools.zip -d /sdk_tools android-11/aapt2 \
     && unzip -jq build-tools.zip -d /sdk_tools/lib64 android-11/lib64/* \
     && rm build-tools.zip
 RUN wget -q --retry-connrefused -O platform-tools.zip https://dl.google.com/android/repository/platform-tools-latest-linux.zip \
