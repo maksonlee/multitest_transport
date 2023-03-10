@@ -18,7 +18,7 @@ import { ElementRef, HostListener, Injectable, QueryList, ViewChildren, Directiv
 import {NgModel} from '@angular/forms';
 import {MatInput} from '@angular/material/input';
 import {MatSelect} from '@angular/material/select';
-import {CanDeactivate, UrlTree} from '@angular/router';
+import { UrlTree } from '@angular/router';
 import {Observable} from 'rxjs';
 
 import {Notifier} from '../services/notifier';
@@ -125,7 +125,7 @@ export abstract class FormChangeTracker {
  * The component for that route must implement ChangeTracker.
  */
 @Injectable()
-export class UnsavedChangeGuard implements CanDeactivate<FormChangeTracker> {
+export class UnsavedChangeGuard  {
   constructor(private readonly notifier: Notifier) {}
 
   canDeactivate(tracker: FormChangeTracker):
