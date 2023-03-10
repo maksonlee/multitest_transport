@@ -357,9 +357,13 @@ class GoogleDriveTest(absltest.TestCase):
 
     result = list(provider.DownloadFile(path))
     mock_file_id.assert_called_with('fake/path/kitten.png')
-    provider._client.files().get_media.assert_called_with(fileId='file_id')
-    expected = [file_util.FileChunk(data=b'hello', offset=5, total_size=10),
-                file_util.FileChunk(data=b'world', offset=10, total_size=10)]
+    provider._client.files().get_media.assert_called_with(
+        supportsAllDrives=True, fileId='file_id'
+    )
+    expected = [
+        file_util.FileChunk(data=b'hello', offset=5, total_size=10),
+        file_util.FileChunk(data=b'world', offset=10, total_size=10),
+    ]
     self.assertEqual(expected, result)
 
 
