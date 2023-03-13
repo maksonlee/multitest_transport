@@ -25,7 +25,7 @@ genrule(
     ],
     outs = ["cron.yaml"],
     cmd = "$(location @tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls) $(SRCS) > \"$@\"",
-    exec_tools = ["@tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls"],
+    tools = ["@tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls"],
 )
 
 genrule(
@@ -36,7 +36,7 @@ genrule(
     ],
     outs = ["index.yaml"],
     cmd = "$(location @tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls) $(SRCS) > \"$@\"",
-    exec_tools = ["@tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls"],
+    tools = ["@tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls"],
 )
 
 genrule(
@@ -47,5 +47,5 @@ genrule(
     ],
     outs = ["queue.yaml"],
     cmd = "$(location @tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls) $(SRCS) > \"$@\"",
-    exec_tools = ["@tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls"],
+    tools = ["@tradefed_cluster//tradefed_cluster/gae_configs:merge_yamls"],
 )
