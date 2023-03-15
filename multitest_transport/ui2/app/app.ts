@@ -20,7 +20,7 @@ import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/dialog
 import {MatTooltipModule} from '@angular/material/mdc-tooltip';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {NavigationEnd, Router, RouterModule, Routes} from '@angular/router';
+import { NavigationEnd, Router, RouterModule, Routes, mapToCanDeactivate } from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
@@ -71,12 +71,12 @@ export const routes: Routes = [
   {
     path: 'build_channels/new',
     component: BuildChannelEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {
     path: 'build_channels/:id',
     component: BuildChannelEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {
     path: 'config_sets/add',
@@ -85,22 +85,22 @@ export const routes: Routes = [
   {
     path: 'device_actions/new',
     component: DeviceActionEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {
     path: 'device_actions/new/:copy_id',
     component: DeviceActionEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {
     path: 'device_actions/view/:view_id',
     component: DeviceActionEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {
     path: 'device_actions/:id',
     component: DeviceActionEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {path: 'devices', component: DeviceListPage},
   {path: 'devices/:id', component: DeviceDetailsPage},
@@ -117,7 +117,7 @@ export const routes: Routes = [
       {
         path: 'general',
         component: SettingForm,
-        canDeactivate: [UnsavedChangeGuard]
+        canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
       },
       {path: 'file_cleaner', component: FileCleanerSettingList},
       {path: '**', redirectTo: '/settings/general', pathMatch: 'full'},
@@ -127,49 +127,49 @@ export const routes: Routes = [
   {
     path: 'tests/new',
     component: TestEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {
     path: 'tests/new/:copy_id',
     component: TestEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {
     path: 'tests/:id',
     component: TestEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {path: 'test_runs', component: TestRunListPage},
   {
     path: 'test_run_actions/new',
     component: TestRunActionEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {
     path: 'test_run_actions/new/:copy_id',
     component: TestRunActionEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {
     path: 'test_run_actions/:id',
     component: TestRunActionEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {path: 'test_plans', component: TestPlanListPage},
   {
     path: 'test_plans/new',
     component: TestPlanEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {
     path: 'test_plans/:id',
     component: TestPlanEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {
     path: 'test_runs/new',
     component: NewTestRunPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {path: 'test_runs/:id', component: TestRunDetailPage},
   {path: 'auth_return', component: AuthReturnPage},
@@ -180,22 +180,22 @@ export const routes: Routes = [
   {
     path: 'file_cleaner/policy/new',
     component: FileCleanerPolicyEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {
     path: 'file_cleaner/policy/:index',
     component: FileCleanerPolicyEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {
     path: 'file_cleaner/config/new',
     component: FileCleanerConfigEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {
     path: 'file_cleaner/config/:index',
     component: FileCleanerConfigEditPage,
-    canDeactivate: [UnsavedChangeGuard]
+    canDeactivate: mapToCanDeactivate([UnsavedChangeGuard])
   },
   {path: '**', redirectTo: '/test_runs', pathMatch: 'full'},
 ];
