@@ -155,7 +155,7 @@ function start_mysql_database {
   local pidfile="${datadir}/mysqld.pid"
   # Ensure DB directory is created and initialized
   mkdir -p "${datadir}"
-  chown mysql:mysql "${datadir}"
+  chown -R mysql:mysql "${datadir}"
   # Start DB with specific socket/pid to prevent clashes. Does not check access
   # (system/grant tables don't need to exist), but network access is disabled.
   mysqld_safe \
