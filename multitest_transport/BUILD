@@ -55,9 +55,9 @@ py_appengine_binary(
     }) + [
         ":prebuilts",
         ":serve.sh",
-        "//multitest_transport/file_server:file_server_lib",
         "//multitest_transport/file_cleaner:file_cleaner_lib",
-        "//multitest_transport/scripts:scripts",
+        "//multitest_transport/file_server:file_server_lib",
+        "//multitest_transport/scripts",
     ],
     python_version = "PY3",
     deps = [
