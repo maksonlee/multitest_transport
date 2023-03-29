@@ -51,7 +51,7 @@ APP = flask.Flask(__name__)
 
 
 @ndb.transactional()
-def _AfterTestRunHandler(test_run):
+def _AfterTestRunHandler(test_run_id):
   """Performs after test run tasks.
 
   After a test run is in one of the final states, MTT needs to do the following:
@@ -61,8 +61,12 @@ def _AfterTestRunHandler(test_run):
     Record test run metrics.
 
   Args:
-    test_run: a ndb_models.TestRun object.
+    test_run_id: id for the test run.
   """
+  test_run = ndb_models.TestRun.get_by_id(test_run_id)
+  if not test_run:
+    return
+
   test_run.is_finalized = True  # Mark post-run handlers as completed
 
   # Query and store next test context
@@ -124,7 +128,7 @@ def ProcessRequestEvent(message: api_messages.RequestEventMessage):
     if test_run.test.result_file:
       test_result_handler.UpdateTestRunSummary(test_run.key.id())
     if not test_run.is_finalized:
-      _AfterTestRunHandler(test_run)
+      _AfterTestRunHandler(test_run.key.id())
 
 
 @ndb.transactional()

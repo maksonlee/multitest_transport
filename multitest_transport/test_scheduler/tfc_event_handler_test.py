@@ -120,7 +120,7 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
     self.assertEqual(ndb_models.TestRunState.COMPLETED,
                      self.mock_test_run.state)
     mock_update_summary.assert_called_once_with(self.mock_test_run.key.id())
-    mock_after_test.assert_called_with(self.mock_test_run)
+    mock_after_test.assert_called_with(self.mock_test_run.key.id())
 
   @mock.patch.object(tfc_event_handler, '_AfterTestRunHandler')
   @mock.patch.object(test_result_handler, 'UpdateTestRunSummary')
@@ -235,13 +235,13 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
             ndb_models.TestResourceObj(url='url2', name='name2')
         ])
 
-    tfc_event_handler._AfterTestRunHandler(self.mock_test_run)
+    tfc_event_handler._AfterTestRunHandler(self.mock_test_run.key.id())
 
     # test run updated, run hooks invoked, output uploaded, and metrics tracked
     mock_get_request.assert_called_with(request_id)
     mock_get_test_context.assert_called_with(request_id, 'bar')
     self.assertEqual(expected_test_context,
-                     self.mock_test_run.next_test_context)
+                     self.mock_test_run.key.get().next_test_context)
     mock_add_task.assert_has_calls([
         mock.call(test_run_hook.ExecuteHooks, self.mock_test_run.key.id(),
                   ndb_models.TestRunPhase.AFTER_RUN, _transactional=True),
