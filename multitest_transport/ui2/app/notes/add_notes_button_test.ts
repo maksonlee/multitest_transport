@@ -16,7 +16,7 @@
 
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MatDialog} from '@angular/material/dialog';
+import {MatLegacyDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {NoteDialogState, NotesDialog} from '../notes/notes_dialog';
@@ -47,7 +47,7 @@ describe('AddNotesButton', () => {
   });
 
   it('opens note editor dialog correctly', async () => {
-    const dialog = TestBed.inject(MatDialog);
+    const dialog = TestBed.inject(MatLegacyDialog);
     spyOn(dialog, 'open').and.callThrough();
     spyOn(addNotesButton, 'notesUpdated');
 

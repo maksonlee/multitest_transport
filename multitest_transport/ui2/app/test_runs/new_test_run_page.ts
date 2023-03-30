@@ -17,8 +17,8 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {AfterViewInit, Component, Inject, OnInit, ViewChild} from '@angular/core';
-import {MatButton} from '@angular/material/button';
-import {MatChipInputEvent} from '@angular/material/chips';
+import {MatLegacyButton} from '@angular/material/button';
+import {MatLegacyChipInputEvent} from '@angular/material/chips';
 import {MatStepper} from '@angular/material/stepper';
 import {Title} from '@angular/platform-browser';
 import {ActivatedRoute, Params, Router} from '@angular/router';
@@ -59,7 +59,7 @@ const DISK_SPACE_USAGE_ALARMS = ['disk_space._data.disk_space_usage'];
 })
 export class NewTestRunPage extends FormChangeTracker implements OnInit,
                                                                  AfterViewInit {
-  @ViewChild('backButton', {static: false}) backButton?: MatButton;
+  @ViewChild('backButton', {static: false}) backButton?: MatLegacyButton;
   // Validation variable
   @ViewChild(TestRunConfigForm, {static: true})
   testRunConfigForm!: TestRunConfigForm;
@@ -338,7 +338,7 @@ export class NewTestRunPage extends FormChangeTracker implements OnInit,
     this.testRunConfig.test_resource_objs = Object.values(updatedObjsMap);
   }
 
-  addLabel(event: MatChipInputEvent) {
+  addLabel(event: MatLegacyChipInputEvent) {
     const input = event.chipInput.inputElement;
     const value = event.value;
 

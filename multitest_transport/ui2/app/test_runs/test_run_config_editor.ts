@@ -15,7 +15,7 @@
  */
 
 import {Component, EventEmitter, Inject, OnInit, Output, ViewChild} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
 import {MatStepper} from '@angular/material/stepper';
 
 import {TestResourceClassType, TestResourceForm} from '../build_channels/test_resource_form';
@@ -77,7 +77,7 @@ export class TestRunConfigEditor extends FormChangeTracker implements OnInit {
   selectedTestRunActions: mttModels.TestRunAction[] = [];
 
   constructor(
-      private readonly dialogRef: MatDialogRef<TestRunConfigEditor>,
+      private readonly dialogRef: MatLegacyDialogRef<TestRunConfigEditor>,
       readonly mttObjectMapService: MttObjectMapService,
       @Inject(MAT_DIALOG_DATA) public data: TestRunConfigEditorData) {
     super();

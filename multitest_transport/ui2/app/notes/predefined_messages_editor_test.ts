@@ -16,7 +16,7 @@
 
 import {HttpErrorResponse} from '@angular/common/http';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatLegacyDialog, MatLegacyDialogRef} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {of as observableOf, throwError} from 'rxjs';
 
@@ -30,7 +30,7 @@ import {PredefinedMessagesEditor, PredefinedMessagesEditorAction, PredefinedMess
 
 
 describe('PredefinedMessagesEditor', () => {
-  let dialogRefSpy: jasmine.SpyObj<MatDialogRef<PredefinedMessagesEditor>>;
+  let dialogRefSpy: jasmine.SpyObj<MatLegacyDialogRef<PredefinedMessagesEditor>>;
   let predefinedMessagesEditor: PredefinedMessagesEditor;
   let predefinedMessagesEditorFixture:
       ComponentFixture<PredefinedMessagesEditor>;
@@ -47,7 +47,7 @@ describe('PredefinedMessagesEditor', () => {
   let tfcClient: jasmine.SpyObj<TfcClient>;
 
   beforeEach(() => {
-    dialogRefSpy = jasmine.createSpyObj<MatDialogRef<PredefinedMessagesEditor>>(
+    dialogRefSpy = jasmine.createSpyObj<MatLegacyDialogRef<PredefinedMessagesEditor>>(
         'dialogRefSpy', ['close']);
     tfcClient = jasmine.createSpyObj(
         'tfcClient', ['createPredefinedMessage', 'updatePredefinedMessage']);
@@ -61,7 +61,7 @@ describe('PredefinedMessagesEditor', () => {
       ],
       providers: [
         {provide: MAT_DIALOG_DATA, useValue: {...dialogParams}},
-        {provide: MatDialogRef, useValue: dialogRefSpy},
+        {provide: MatLegacyDialogRef, useValue: dialogRefSpy},
         {provide: TfcClient, useValue: tfcClient},
       ],
     });
@@ -142,7 +142,7 @@ describe('PredefinedMessagesEditor', () => {
   });
 
   it('can show error when createPredefinedMessage returns 409', () => {
-    const dialog = TestBed.inject(MatDialog);
+    const dialog = TestBed.inject(MatLegacyDialog);
     spyOn(dialog, 'open').and.callThrough();
 
     const errorResponse = new HttpErrorResponse({
@@ -171,7 +171,7 @@ describe('PredefinedMessagesEditor', () => {
   });
 
   it('can show error when updatePredefinedMessage returns 404, 409', () => {
-    const dialog = TestBed.inject(MatDialog);
+    const dialog = TestBed.inject(MatLegacyDialog);
     const dialogSpy = spyOn(dialog, 'open').and.callThrough();
     const errorCodes = [404, 409];
 

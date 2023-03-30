@@ -20,7 +20,7 @@ import {ComponentFixture, TestBed, inject} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of as observableOf} from 'rxjs';
-import {MatDialog} from '@angular/material/dialog';
+import {MatLegacyDialog} from '@angular/material/dialog';
 
 import {AnalyticsService} from '../services/analytics_service';
 import {FileService} from '../services/file_service';
@@ -180,7 +180,7 @@ describe('TestRunDetail', () => {
      });
 
   it('opens the test run action picker dialog and executes successfully',
-     inject([MatDialog], (dialog: MatDialog) => {
+     inject([MatLegacyDialog], (dialog: MatLegacyDialog) => {
        const manualAction: TestRunAction = {
          id: 'id',
          name: 'action',

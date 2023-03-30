@@ -15,7 +15,7 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {MatDialog} from '@angular/material/dialog';
+import {MatLegacyDialog} from '@angular/material/dialog';
 
 import * as mttModels from '../services/mtt_models';
 import {MttObjectMapService, newMttObjectMap} from '../services/mtt_object_map';
@@ -43,7 +43,7 @@ export class TestRunConfigSummary implements OnInit {
 
   constructor(
       private readonly mttObjectMapService: MttObjectMapService,
-      private readonly matDialog: MatDialog,
+      private readonly matDialog: MatLegacyDialog,
   ) {}
 
   ngOnInit() {

@@ -16,7 +16,7 @@
 
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, inject, TestBed} from '@angular/core/testing';
-import {MatDialog} from '@angular/material/dialog';
+import {MatLegacyDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {Router} from '@angular/router';
 import {ActivatedRoute} from '@angular/router';
@@ -170,7 +170,7 @@ describe('Device noteList', () => {
      }));
 
   it('should open note dialog on addNote called', () => {
-    const dialog = TestBed.inject(MatDialog);
+    const dialog = TestBed.inject(MatLegacyDialog);
     spyOn(dialog, 'open').and.callThrough();
     noteList.openEditor();
     expect(dialog.open).toHaveBeenCalled();
@@ -271,7 +271,7 @@ describe('Host noteList', () => {
      }));
 
   it('should open note dialog on addNote called', () => {
-    const dialog = TestBed.inject(MatDialog);
+    const dialog = TestBed.inject(MatLegacyDialog);
     spyOn(dialog, 'open').and.callThrough();
     noteList.openEditor();
     expect(dialog.open).toHaveBeenCalled();

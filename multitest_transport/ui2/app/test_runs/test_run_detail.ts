@@ -16,9 +16,9 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {AfterViewInit, Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MatButton} from '@angular/material/button';
-import {MatDialog} from '@angular/material/dialog';
-import {MatTabChangeEvent, MatTabGroup} from '@angular/material/tabs';
+import {MatLegacyButton} from '@angular/material/button';
+import {MatLegacyDialog} from '@angular/material/dialog';
+import {MatLegacyTabChangeEvent, MatLegacyTabGroup} from '@angular/material/tabs';
 import {ActivatedRoute, Router} from '@angular/router';
 import {EMPTY, interval, Observable, ReplaySubject, zip} from 'rxjs';
 import {finalize, first, switchMap, takeUntil} from 'rxjs/operators';
@@ -41,9 +41,9 @@ import {TestRunActionPickerDialog, TestRunActionPickerDialogData} from '../test_
   templateUrl: './test_run_detail.ng.html',
 })
 export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('backButton', {static: false}) backButton?: MatButton;
+  @ViewChild('backButton', {static: false}) backButton?: MatLegacyButton;
   // TODO Add test for tab change
-  @ViewChild('tabGroup', {static: false}) tabGroup?: MatTabGroup;
+  @ViewChild('tabGroup', {static: false}) tabGroup?: MatLegacyTabGroup;
   readonly OverflowListType = OverflowListType;
   @Input() testRunId!: string;
 
@@ -85,7 +85,7 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
       private readonly tfc: TfcClient,
       private readonly liveAnnouncer: LiveAnnouncer,
       private readonly analytics: AnalyticsService,
-      private readonly matDialog: MatDialog,
+      private readonly matDialog: MatLegacyDialog,
   ) {}
 
   ngOnInit() {
@@ -109,7 +109,7 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
     this.liveAnnouncer.clear();
   }
 
-  switchTab(tabChangeEvent: MatTabChangeEvent) {
+  switchTab(tabChangeEvent: MatLegacyTabChangeEvent) {
     this.router.navigate([], {
       fragment: this.matTabOptions[tabChangeEvent.index],
       queryParamsHandling: 'merge',

@@ -15,7 +15,7 @@
  */
 
 import {Component, Inject} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
 
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 
@@ -73,7 +73,7 @@ export class NotesDialog {
 
   constructor(
       @Inject(MAT_DIALOG_DATA) private params: NoteDialogParams,
-      private readonly dialogRef: MatDialogRef<NotesDialog>,
+      private readonly dialogRef: MatLegacyDialogRef<NotesDialog>,
       private readonly notifier: Notifier,
   ) {
     if (this.validateParams(params) === false) {

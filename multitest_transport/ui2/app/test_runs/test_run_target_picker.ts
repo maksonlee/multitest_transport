@@ -15,8 +15,8 @@
  */
 
 import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
-import {MatAutocompleteTrigger} from '@angular/material/autocomplete';
-import {MatOptionSelectionChange} from '@angular/material/core';
+import {MatLegacyAutocompleteTrigger} from '@angular/material/autocomplete';
+import {MatLegacyOptionSelectionChange} from '@angular/material/core';
 import {ConnectableObservable, Observable, of as observableOf, ReplaySubject, Subject} from 'rxjs';
 import {catchError, map, publishBehavior, retry, switchMap, switchMapTo, takeUntil, throttleTime} from 'rxjs/operators';
 
@@ -196,8 +196,8 @@ export class TestRunTargetPicker extends FormChangeTracker implements
   }
 
   onDeviceSpecsAutocomplete(
-      event: MatOptionSelectionChange, option: AutocompleteOption,
-      trigger: MatAutocompleteTrigger) {
+      event: MatLegacyOptionSelectionChange, option: AutocompleteOption,
+      trigger: MatLegacyAutocompleteTrigger) {
     if (event.source.selected && option.reopenPanel) {
       setTimeout(() => {
         trigger.openPanel();
