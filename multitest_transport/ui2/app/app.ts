@@ -16,7 +16,7 @@
 
 import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
 import {Component, Inject, NgModule, OnDestroy} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatLegacyDialog, MatLegacyDialogRef} from '@angular/material/dialog';
 import {MatTooltipModule} from '@angular/material/mdc-tooltip';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
@@ -206,12 +206,12 @@ export const routes: Routes = [
 export class Mtt implements OnDestroy {
   sideNavExpanded = false;
   netdataUrl: string = '';
-  dialogRef!: MatDialogRef<SetupWizardDialog>;
+  dialogRef!: MatLegacyDialogRef<SetupWizardDialog>;
   private readonly destroy = new ReplaySubject<void>();
 
   constructor(
       private readonly analytics: AnalyticsService,
-      private readonly dialog: MatDialog,
+      private readonly dialog: MatLegacyDialog,
       private readonly router: Router,
       readonly userService: UserService,
       @Inject(APP_DATA) readonly appData: AppData,

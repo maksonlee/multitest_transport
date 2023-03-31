@@ -15,7 +15,7 @@
  */
 
 import {AfterViewInit, Component, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
-import {MatButton} from '@angular/material/button';
+import {MatLegacyButton} from '@angular/material/button';
 import {ActivatedRoute, Router} from '@angular/router';
 import {first} from 'rxjs/operators';
 
@@ -40,7 +40,7 @@ export class TestRunActionEditPage extends FormChangeTracker implements
   editMode = false;
   data: Partial<TestRunAction> = newTestRunAction();
 
-  @ViewChild('backButton', {static: false}) backButton?: MatButton;
+  @ViewChild('backButton', {static: false}) backButton?: MatLegacyButton;
   @ViewChildren(FormChangeTracker)
   override trackers!: QueryList<FormChangeTracker>;
 

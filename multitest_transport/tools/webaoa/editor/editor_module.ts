@@ -21,15 +21,15 @@ import {CommonModule} from '@angular/common';
 import {NgModule} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/mdc-button';
-import {MatCardModule} from '@angular/material/card';
+import {MatLegacyCardModule} from '@angular/material/card';
 import {MatDialogModule} from '@angular/material/mdc-dialog';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatLegacyFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
-import {MatInputModule} from '@angular/material/input';
-import {MatListModule} from '@angular/material/list';
+import {MatLegacyInputModule} from '@angular/material/input';
+import {MatLegacyListModule} from '@angular/material/list';
 import {MatProgressBarModule} from '@angular/material/mdc-progress-bar';
 import {MatSnackBarModule} from '@angular/material/mdc-snack-bar';
-import {MatSelectModule} from '@angular/material/select';
+import {MatLegacySelectModule} from '@angular/material/select';
 import {MatTooltipModule} from '@angular/material/mdc-tooltip';
 
 import {AoaActionEditor} from './action_editor';
@@ -57,14 +57,14 @@ import {WorkflowEditor} from './workflow_editor';
     DragDropModule,
     FormsModule,
     MatButtonModule,
-    MatCardModule,
+    MatLegacyCardModule,
     MatDialogModule,
-    MatFormFieldModule,
+    MatLegacyFormFieldModule,
     MatIconModule,
-    MatInputModule,
-    MatListModule,
+    MatLegacyInputModule,
+    MatLegacyListModule,
     MatProgressBarModule,
-    MatSelectModule,
+    MatLegacySelectModule,
     MatSnackBarModule,
     MatTooltipModule,
   ],

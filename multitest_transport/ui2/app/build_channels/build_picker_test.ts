@@ -16,7 +16,7 @@
 
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {of as observableOf} from 'rxjs';
 
@@ -28,7 +28,7 @@ import {BuildChannelsModule} from './build_channels_module';
 import {BuildPicker, BuildPickerData, BuildPickerMode} from './build_picker';
 
 describe('BuildPicker', () => {
-  let dialogRef: jasmine.SpyObj<MatDialogRef<BuildPicker>>;
+  let dialogRef: jasmine.SpyObj<MatLegacyDialogRef<BuildPicker>>;
   let dialogData: BuildPickerData;
   let mttClient: jasmine.SpyObj<MttClient>;
 
@@ -37,14 +37,14 @@ describe('BuildPicker', () => {
   let element: DebugElement;
 
   beforeEach(() => {
-    dialogRef = jasmine.createSpyObj<MatDialogRef<BuildPicker>>(['close']);
+    dialogRef = jasmine.createSpyObj<MatLegacyDialogRef<BuildPicker>>(['close']);
     mttClient = jasmine.createSpyObj<MttClient>(['listBuildItems']);
     mttClient.listBuildItems.and.returnValue(observableOf({}));
 
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, BuildChannelsModule],
       providers: [
-        {provide: MatDialogRef, useValue: dialogRef},
+        {provide: MatLegacyDialogRef, useValue: dialogRef},
         {provide: MAT_DIALOG_DATA, useFactory: () => dialogData},
         {provide: MttClient, useValue: mttClient},
       ],

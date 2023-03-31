@@ -21,11 +21,11 @@ import {CommonModule} from '@angular/common';
 import {HttpClientModule} from '@angular/common/http';
 import {NgModule} from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import {MatButtonModule} from '@angular/material/button';
-import {MatDialogModule} from '@angular/material/dialog';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatLegacyButtonModule} from '@angular/material/button';
+import {MatLegacyDialogModule} from '@angular/material/dialog';
+import {MatLegacyFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
-import {MatInputModule} from '@angular/material/input';
+import {MatLegacyInputModule} from '@angular/material/input';
 
 import {AuthDialog} from './auth_dialog';
 import {ErrorDialog} from './error_dialog';
@@ -35,12 +35,12 @@ import {NotifierDialog} from './notifier_dialog';
   imports: [
     CommonModule,
     HttpClientModule,
-    MatButtonModule,
-    MatDialogModule,
+    MatLegacyButtonModule,
+    MatLegacyDialogModule,
     MatIconModule,
-    MatFormFieldModule,
+    MatLegacyFormFieldModule,
     FormsModule,
-    MatInputModule,
+    MatLegacyInputModule,
   ],
   declarations: [
     AuthDialog,

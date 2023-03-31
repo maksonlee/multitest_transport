@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
 import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MatButton} from '@angular/material/button';
+import {MatLegacyButton} from '@angular/material/button';
 import {ActivatedRoute, Params} from '@angular/router';
 import {Router} from '@angular/router';
 import {forkJoin, of as observableOf, ReplaySubject} from 'rxjs';
@@ -39,7 +39,7 @@ import {buildApiErrorMessage} from '../shared/util';
 })
 export class BuildChannelEditPage extends FormChangeTracker implements
     OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('backButton', {static: false}) backButton?: MatButton;
+  @ViewChild('backButton', {static: false}) backButton?: MatLegacyButton;
   data: BuildChannelConfig = {id: '', name: '', provider_name: '', options: []};
   providers: BuildChannelProvider[] = [];
   editMode = false;

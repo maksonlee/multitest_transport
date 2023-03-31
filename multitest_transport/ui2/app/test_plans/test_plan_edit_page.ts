@@ -17,8 +17,8 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MatButton} from '@angular/material/button';
-import {MatChipInputEvent} from '@angular/material/chips';
+import {MatLegacyButton} from '@angular/material/button';
+import {MatLegacyChipInputEvent} from '@angular/material/chips';
 import {MatStepper} from '@angular/material/stepper';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 import {forkJoin, of as observableOf, ReplaySubject, Subscription} from 'rxjs';
@@ -50,7 +50,7 @@ const TOTAL_STEPS = 4;
 })
 export class TestPlanEditPage extends FormChangeTracker implements
     OnDestroy, OnInit, AfterViewInit {
-  @ViewChild('backButton', {static: false}) backButton?: MatButton;
+  @ViewChild('backButton', {static: false}) backButton?: MatLegacyButton;
 
   // Validation variables
   @ViewChild(TestResourceForm, {static: true})
@@ -205,7 +205,7 @@ export class TestPlanEditPage extends FormChangeTracker implements
     this.data.test_resource_pipes = testPlan.test_resource_pipes || [];
   }
 
-  addLabel(event: MatChipInputEvent) {
+  addLabel(event: MatLegacyChipInputEvent) {
     const input = event.chipInput.inputElement;
     const value = event.value;
 
