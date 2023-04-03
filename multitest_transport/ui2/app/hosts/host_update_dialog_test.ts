@@ -16,7 +16,7 @@
 import {HttpErrorResponse} from '@angular/common/http';
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
 import {MatRadioButton, MatRadioChange} from '@angular/material/mdc-radio';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -37,7 +37,7 @@ describe('HostUpdateDialog', () => {
   let routerSpy: jasmine.SpyObj<Router>;
   let tfcClient: jasmine.SpyObj<TfcClient>;
   let notifier: jasmine.SpyObj<Notifier>;
-  let dialogRefSpy: jasmine.SpyObj<MatDialogRef<HostUpdateDialog>>;
+  let dialogRefSpy: jasmine.SpyObj<MatLegacyDialogRef<HostUpdateDialog>>;
   let hostUpdateDialog: HostUpdateDialog;
   let hostUpdateDialogFixture: ComponentFixture<HostUpdateDialog>;
 
@@ -62,7 +62,7 @@ describe('HostUpdateDialog', () => {
   ];
 
   beforeEach((() => {
-    dialogRefSpy = jasmine.createSpyObj<MatDialogRef<HostUpdateDialog>>(
+    dialogRefSpy = jasmine.createSpyObj<MatLegacyDialogRef<HostUpdateDialog>>(
         'dialogRefSpy', ['close']);
     notifier = jasmine.createSpyObj<Notifier>(
         'notifier', ['showMessage', 'showError']);
@@ -89,7 +89,7 @@ describe('HostUpdateDialog', () => {
       providers: [
         {provide: MAT_DIALOG_DATA, useValue: dialogData},
         {provide: APP_DATA, useValue: newMockAppData()},
-        {provide: MatDialogRef, useValue: dialogRefSpy},
+        {provide: MatLegacyDialogRef, useValue: dialogRefSpy},
         {provide: Notifier, useValue: notifier},
         {provide: Router, useValue: routerSpy},
         {provide: ActivatedRoute, useValue: activatedRouteSpy},

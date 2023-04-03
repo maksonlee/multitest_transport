@@ -16,7 +16,7 @@
 
 import {DebugElement, SimpleChange} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MatDialog} from '@angular/material/dialog';
+import {MatLegacyDialog} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute} from '@angular/router';
 import {RouterTestingModule} from '@angular/router/testing';
@@ -250,7 +250,7 @@ describe('RecoveryHostList', () => {
   });
 
   it('opens note editor dialog in create mode correctly', () => {
-    const dialog = TestBed.inject(MatDialog);
+    const dialog = TestBed.inject(MatLegacyDialog);
     spyOn(dialog, 'open').and.callThrough();
     const mockClickEvent = new MouseEvent('click');
 
@@ -260,7 +260,7 @@ describe('RecoveryHostList', () => {
   });
 
   it('opens note editor dialog in edit mode correctly', () => {
-    const dialog = TestBed.inject(MatDialog);
+    const dialog = TestBed.inject(MatLegacyDialog);
     spyOn(dialog, 'open').and.callThrough();
     const mockClickEvent = new MouseEvent('click');
 
@@ -271,7 +271,7 @@ describe('RecoveryHostList', () => {
   });
 
   it('opens host details dialog correctly', () => {
-    const dialog = TestBed.inject(MatDialog);
+    const dialog = TestBed.inject(MatLegacyDialog);
     spyOn(dialog, 'open').and.callThrough();
     const mockClickEvent = new MouseEvent('click');
 

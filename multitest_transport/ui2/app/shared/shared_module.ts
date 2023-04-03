@@ -20,18 +20,18 @@ import {CommonModule} from '@angular/common';
 import {NgModule} from '@angular/core';
 import {FlexLayoutModule} from '@angular/flex-layout';
 import {FormsModule} from '@angular/forms';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
-import {MatButtonModule} from '@angular/material/button';
-import {MatCardModule} from '@angular/material/card';
-import {MatChipsModule} from '@angular/material/chips';
-import {MatDialogModule} from '@angular/material/dialog';
+import {MatLegacyAutocompleteModule} from '@angular/material/autocomplete';
+import {MatLegacyButtonModule} from '@angular/material/button';
+import {MatLegacyCardModule} from '@angular/material/card';
+import {MatLegacyChipsModule} from '@angular/material/chips';
+import {MatLegacyDialogModule} from '@angular/material/dialog';
 import {MatDividerModule} from '@angular/material/divider';
 import {MatExpansionModule} from '@angular/material/expansion';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatLegacyFormFieldModule} from '@angular/material/form-field';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {MatIconModule} from '@angular/material/icon';
-import {MatInputModule} from '@angular/material/input';
-import {MatListModule} from '@angular/material/list';
+import {MatLegacyInputModule} from '@angular/material/input';
+import {MatLegacyListModule} from '@angular/material/list';
 import {MatCheckboxModule} from '@angular/material/mdc-checkbox';
 import {MatProgressBarModule} from '@angular/material/mdc-progress-bar';
 import {MatProgressSpinnerModule} from '@angular/material/mdc-progress-spinner';
@@ -39,13 +39,13 @@ import {MatRadioModule} from '@angular/material/mdc-radio';
 import {MatSnackBarModule} from '@angular/material/mdc-snack-bar';
 import {MatTableModule} from '@angular/material/mdc-table';
 import {MatTooltipModule} from '@angular/material/mdc-tooltip';
-import {MatMenuModule} from '@angular/material/menu';
-import {MatPaginatorModule} from '@angular/material/paginator';
-import {MatSelectModule} from '@angular/material/select';
+import {MatLegacyMenuModule} from '@angular/material/menu';
+import {MatLegacyPaginatorModule} from '@angular/material/paginator';
+import {MatLegacySelectModule} from '@angular/material/select';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {MatSortModule} from '@angular/material/sort';
 import {MatStepperModule} from '@angular/material/stepper';
-import {MatTabsModule} from '@angular/material/tabs';
+import {MatLegacyTabsModule} from '@angular/material/tabs';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatTreeModule} from '@angular/material/tree';
 
@@ -81,15 +81,15 @@ import {ViewColumnsButton} from './view_columns_button';
 
 const MATERIAL_MODULES = [
   A11yModule,         DragDropModule,        FlexLayoutModule,
-  FormsModule,        MatAutocompleteModule, MatButtonModule,
-  MatCardModule,      MatChipsModule,        MatCheckboxModule,
-  MatDialogModule,    MatDividerModule,      MatExpansionModule,
-  MatFormFieldModule, MatGridListModule,     MatIconModule,
-  MatInputModule,     MatListModule,         MatMenuModule,
-  MatPaginatorModule, MatProgressBarModule,  MatProgressSpinnerModule,
-  MatRadioModule,     MatSelectModule,       MatSidenavModule,
+  FormsModule,        MatLegacyAutocompleteModule, MatLegacyButtonModule,
+  MatLegacyCardModule,      MatLegacyChipsModule,        MatCheckboxModule,
+  MatLegacyDialogModule,    MatDividerModule,      MatExpansionModule,
+  MatLegacyFormFieldModule, MatGridListModule,     MatIconModule,
+  MatLegacyInputModule,     MatLegacyListModule,         MatLegacyMenuModule,
+  MatLegacyPaginatorModule, MatProgressBarModule,  MatProgressSpinnerModule,
+  MatRadioModule,     MatLegacySelectModule,       MatSidenavModule,
   MatSnackBarModule,  MatSortModule,         MatStepperModule,
-  MatTableModule,     MatTabsModule,         MatToolbarModule,
+  MatTableModule,     MatLegacyTabsModule,         MatToolbarModule,
   MatTooltipModule,   MatTreeModule,
 ];
 

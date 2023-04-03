@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, Inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
 import {MAT_DIALOG_DATA} from '@angular/material/dialog';
-import {MatTabChangeEvent} from '@angular/material/tabs';
+import {MatLegacyTabChangeEvent} from '@angular/material/tabs';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
@@ -132,7 +132,7 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
     }
   }
 
-  startDeviceHistoryHats(event: MatTabChangeEvent) {
+  startDeviceHistoryHats(event: MatLegacyTabChangeEvent) {
     if (event.tab.textLabel === 'History') {
       this.feedbackService.startSurvey(SurveyTrigger.DEVICE_HISTORY);
     }

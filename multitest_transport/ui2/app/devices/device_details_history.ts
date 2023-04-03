@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
 import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
-import {MatDialog} from '@angular/material/dialog';
+import {MatLegacyDialog} from '@angular/material/dialog';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 import {DEFAULT_PAGE_SIZE, Paginator} from 'google3/third_party/py/multitest_transport/ui2/app/shared/paginator';
@@ -69,7 +69,7 @@ export class DeviceDetailsHistory implements OnChanges, OnInit, OnDestroy {
       private readonly location: Location,
       private readonly route: ActivatedRoute,
       private readonly liveAnnouncer: LiveAnnouncer,
-      private readonly matDialog: MatDialog,
+      private readonly matDialog: MatLegacyDialog,
       private readonly notifier: Notifier,
       private readonly router: Router,
       private readonly tfcClient: TfcClient,

@@ -18,7 +18,7 @@ import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
 import {Component, ElementRef, EventEmitter, Inject, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
 import {UntypedFormControl, UntypedFormGroup} from '@angular/forms';
-import {MatAutocomplete, MatAutocompleteTrigger} from '@angular/material/autocomplete';
+import {MatLegacyAutocomplete, MatLegacyAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatTable} from '@angular/material/mdc-table';
 import {ActivatedRoute, convertToParamMap, ParamMap, Router} from '@angular/router';
 import {forkJoin, Observable, of as observableOf, ReplaySubject, throwError, timer} from 'rxjs';
@@ -160,9 +160,9 @@ export class DeviceList implements OnChanges, OnDestroy, OnInit {
   selectedLab = '';
 
   @ViewChild('valueInput', {static: true}) valueInput!: ElementRef;
-  @ViewChild('valueInput', {static: true, read: MatAutocompleteTrigger})
-  matAutocompleteTrigger!: MatAutocompleteTrigger;
-  @ViewChild('auto', {static: true}) matAutocomplete!: MatAutocomplete;
+  @ViewChild('valueInput', {static: true, read: MatLegacyAutocompleteTrigger})
+  matAutocompleteTrigger!: MatLegacyAutocompleteTrigger;
+  @ViewChild('auto', {static: true}) matAutocomplete!: MatLegacyAutocomplete;
   valueControl = new UntypedFormControl({value: ''});
   formGroup = new UntypedFormGroup({
     'valueControl': this.valueControl,

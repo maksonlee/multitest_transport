@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 import {Component, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MAT_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
 import {MatRadioChange} from '@angular/material/mdc-radio';
 import {MatTableDataSource} from '@angular/material/mdc-table';
-import {MatPaginator} from '@angular/material/paginator';
+import {MatLegacyPaginator} from '@angular/material/paginator';
 import {MatSort} from '@angular/material/sort';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
@@ -100,7 +100,7 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
 
   private readonly destroy = new ReplaySubject<void>(1);
 
-  @ViewChild(MatPaginator) matPaginator!: MatPaginator;
+  @ViewChild(MatLegacyPaginator) matPaginator!: MatLegacyPaginator;
   @ViewChild(MatSort) matSort!: MatSort;
 
   get selectedHostGroup() {
@@ -137,7 +137,7 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
   }
 
   constructor(
-      public dialogRef: MatDialogRef<HostUpdateDialog>,
+      public dialogRef: MatLegacyDialogRef<HostUpdateDialog>,
       @Inject(MAT_DIALOG_DATA) public data: HostUpdateDialogData,
       private readonly tfcClient: TfcClient,
       private readonly notifier: Notifier,

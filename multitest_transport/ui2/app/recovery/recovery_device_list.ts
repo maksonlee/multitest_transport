@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
-import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {MatLegacyDialog, MatLegacyDialogRef} from '@angular/material/dialog';
 import {MatTable} from '@angular/material/mdc-table';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 import {TableRowsSelectManager} from 'google3/third_party/py/multitest_transport/ui2/app/shared/table_rows_select';
@@ -74,9 +74,9 @@ export class RecoveryDeviceList implements OnInit, OnChanges, OnDestroy {
   tableRowsSelectManager!: TableRowsSelectManager;
 
   constructor(
-      private readonly dialog: MatDialog,
+      private readonly dialog: MatLegacyDialog,
       private readonly liveAnnouncer: LiveAnnouncer,
-      private readonly matDialog: MatDialog,
+      private readonly matDialog: MatLegacyDialog,
       private readonly notifier: Notifier,
       private readonly tfcClient: TfcClient,
       readonly userService: UserService,
@@ -224,7 +224,7 @@ export class RecoveryDeviceList implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  openNotesDialog(params: NoteDialogParams): MatDialogRef<NotesDialog> {
+  openNotesDialog(params: NoteDialogParams): MatLegacyDialogRef<NotesDialog> {
     return this.matDialog.open(NotesDialog, {
       height: '600px',
       width: '1200px',
