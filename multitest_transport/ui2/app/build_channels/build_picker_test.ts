@@ -16,7 +16,7 @@
 
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {of as observableOf} from 'rxjs';
 
@@ -45,7 +45,7 @@ describe('BuildPicker', () => {
       imports: [NoopAnimationsModule, BuildChannelsModule],
       providers: [
         {provide: MatLegacyDialogRef, useValue: dialogRef},
-        {provide: MAT_DIALOG_DATA, useFactory: () => dialogData},
+        {provide: MAT_LEGACY_DIALOG_DATA, useFactory: () => dialogData},
         {provide: MttClient, useValue: mttClient},
       ],
     });

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import {Component, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MAT_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
 import {MatRadioChange} from '@angular/material/mdc-radio';
 import {MatTableDataSource} from '@angular/material/mdc-table';
 import {MatLegacyPaginator} from '@angular/material/paginator';
@@ -138,7 +138,7 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
 
   constructor(
       public dialogRef: MatLegacyDialogRef<HostUpdateDialog>,
-      @Inject(MAT_DIALOG_DATA) public data: HostUpdateDialogData,
+      @Inject(MAT_LEGACY_DIALOG_DATA) public data: HostUpdateDialogData,
       private readonly tfcClient: TfcClient,
       private readonly notifier: Notifier,
   ) {

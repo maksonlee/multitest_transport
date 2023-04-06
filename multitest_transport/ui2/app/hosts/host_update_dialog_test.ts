@@ -16,7 +16,7 @@
 import {HttpErrorResponse} from '@angular/common/http';
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
 import {MatRadioButton, MatRadioChange} from '@angular/material/mdc-radio';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -87,7 +87,7 @@ describe('HostUpdateDialog', () => {
         HttpClientTestingModule,
       ],
       providers: [
-        {provide: MAT_DIALOG_DATA, useValue: dialogData},
+        {provide: MAT_LEGACY_DIALOG_DATA, useValue: dialogData},
         {provide: APP_DATA, useValue: newMockAppData()},
         {provide: MatLegacyDialogRef, useValue: dialogRefSpy},
         {provide: Notifier, useValue: notifier},

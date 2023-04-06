@@ -18,7 +18,7 @@ import {Location} from '@angular/common';
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {DebugElement, LOCALE_ID} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_DIALOG_DATA} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {ActivatedRoute, convertToParamMap, Router} from '@angular/router';
 import {of as observableOf} from 'rxjs';
@@ -90,7 +90,7 @@ describe('HostDetails', () => {
         {provide: APP_DATA, useValue: newMockAppData()},
         {provide: FeedbackService, useValue: feedbackService},
         {provide: LOCALE_ID, useValue: 'en-US'},
-        {provide: MAT_DIALOG_DATA, useValue: {}},
+        {provide: MAT_LEGACY_DIALOG_DATA, useValue: {}},
         {provide: Notifier, useValue: notifierSpy},
         {provide: Router, useValue: routerSpy},
         {provide: TfcClient, useValue: tfcClient},

@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {SelectionModel} from '@angular/cdk/collections';
 import {Component, EventEmitter, Inject, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
-import {MAT_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
 import {MatTable} from '@angular/material/mdc-table';
 import {MatLegacyTabChangeEvent} from '@angular/material/tabs';
 import {ReplaySubject, Subject, Subscription} from 'rxjs';
@@ -122,7 +122,7 @@ export class BuildPicker implements OnInit, OnDestroy {
 
   constructor(
       private readonly dialogRef: MatLegacyDialogRef<BuildPicker>,
-      @Inject(MAT_DIALOG_DATA) data: BuildPickerData,
+      @Inject(MAT_LEGACY_DIALOG_DATA) data: BuildPickerData,
       private readonly liveAnnouncer: LiveAnnouncer,
       private readonly mttClient: MttClient,
       private readonly notifier: Notifier) {

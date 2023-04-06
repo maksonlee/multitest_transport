@@ -16,7 +16,7 @@
 
 import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
 import {Component, Inject, NgModule, OnDestroy} from '@angular/core';
-import {MAT_DIALOG_DATA, MatLegacyDialog, MatLegacyDialogRef} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialog, MatLegacyDialogRef} from '@angular/material/dialog';
 import {MatTooltipModule} from '@angular/material/mdc-tooltip';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
@@ -304,7 +304,7 @@ export class Mtt implements OnDestroy {
       useValue: (window as any)['APP_DATA'],
     },
     {
-      provide: MAT_DIALOG_DATA,
+      provide: MAT_LEGACY_DIALOG_DATA,
       useValue: {},
     },
     UnsavedChangeGuard

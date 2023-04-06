@@ -16,7 +16,7 @@
 
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MAT_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {of as observableOf} from 'rxjs';
 
@@ -42,7 +42,7 @@ describe('TestRunActionPickerDialog', () => {
       imports: [NoopAnimationsModule, TestRunActionsModule],
       providers: [
         {
-          provide: MAT_DIALOG_DATA,
+          provide: MAT_LEGACY_DIALOG_DATA,
           useFactory: () => ({
             actions: [
               {
