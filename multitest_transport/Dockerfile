@@ -23,8 +23,6 @@ ENV PATH /tmp/custom_sdk_tools:${PATH}
 # Make sure apt-get retries on failures
 RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries
 
-# TODO: rabbitmq-server is fixed to an old version because
-#                    3.8.2-0ubuntu1.1 takes one minute to start.
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y \
         apt-utils \
         cec-utils \
@@ -58,7 +56,6 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
 # Set minimal Python version that client supports.
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1000
 RUN pip3 install --upgrade setuptools pip
-# RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 RUN pip3 install \
         absl-py \
         attrs \
