@@ -41,7 +41,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         mariadb-server \
         ndppd \
         netdata \
-        rabbitmq-server=3.8.2-0ubuntu1 \
         socat \
         tini \
         tzdata \
@@ -59,6 +58,7 @@ RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
 # Set minimal Python version that client supports.
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1000
 RUN pip3 install --upgrade setuptools pip
+# RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 RUN pip3 install \
         absl-py \
         attrs \
@@ -70,6 +70,26 @@ RUN pip3 install \
 RUN wget -q --retry-connrefused -O /tmp/get-pip.py https://bootstrap.pypa.io/pip/2.7/get-pip.py && \
     python /tmp/get-pip.py && \
     rm /tmp/get-pip.py
+
+# Install erlang which is used by rabbitmq.
+RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y \
+        curl \
+        apt-transport-https \
+        lsb-release
+RUN curl -fsSL https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc \
+        | gpg --dearmor -o /etc/apt/trusted.gpg.d/erlang.gpg
+RUN echo "deb https://packages.erlang-solutions.com/ubuntu $(lsb_release -cs) contrib" \
+        | tee /etc/apt/sources.list.d/erlang.list
+# Install erlang-nox to save container image size (=3.68GB).
+# With erlang, container image size could go to 4.78GB.
+RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y \
+        erlang-nox
+
+# Install rabbitmq from official channel.
+RUN curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.deb.sh \
+        | bash
+RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y \
+        rabbitmq-server
 
 # Enable rabbitmq management plugin for reliability checking
 RUN rabbitmq-plugins enable rabbitmq_management

@@ -77,7 +77,7 @@ cd /mtt
 if [[ -z "${MTT_CONTROL_SERVER_URL}" ]] || [[ "${OPERATION_MODE}"=="on_premise" ]]
 then
   # Start RabbitMQ server
-  service rabbitmq-server start || (cat /var/log/rabbitmq/startup_*; false)
+  time service rabbitmq-server start || (cat /var/log/rabbitmq/startup_*; false)
 
   MTT_CONTROL_SERVER_PORT="${MTT_CONTROL_SERVER_PORT:-8000}"
   MTT_CONTROL_SERVER_LOG_DIR="${MTT_LOG_DIR}/server"
