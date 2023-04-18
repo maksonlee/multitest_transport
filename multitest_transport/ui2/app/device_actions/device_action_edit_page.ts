@@ -15,7 +15,7 @@
  */
 
 import {AfterViewInit, Component, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
-import {MatLegacyButton} from '@angular/material/button';
+import {MatLegacyButton} from '@angular/material/legacy-button';
 import {ActivatedRoute, Router} from '@angular/router';
 import {first} from 'rxjs/operators';
 
@@ -42,7 +42,8 @@ export class DeviceActionEditPage extends FormChangeTracker implements
   readonly FormMode = FormMode;
 
   @ViewChild('backButton', {static: false}) backButton?: MatLegacyButton;
-  @ViewChildren(FormChangeTracker) override trackers!: QueryList<FormChangeTracker>;
+  @ViewChildren(FormChangeTracker)
+  override trackers!: QueryList<FormChangeTracker>;
 
   constructor(
       private readonly mttClient: MttClient,

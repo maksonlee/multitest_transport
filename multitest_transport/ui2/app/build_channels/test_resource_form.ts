@@ -15,7 +15,7 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {MatLegacyDialog} from '@angular/material/dialog';
+import {MatLegacyDialog} from '@angular/material/legacy-dialog';
 import {Observable, of} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
@@ -56,7 +56,7 @@ export class TestResourceForm extends FormChangeTracker implements OnInit {
   // Whenever an event fired such as add or remove, it will set this value to
   // true
   override hasContentChanged = false;
-  buildItemByUrl: { [url: string]: Observable<BuildItem|null> } = {};
+  buildItemByUrl: {[url: string]: Observable<BuildItem|null>} = {};
   arrayToString = arrayToString;
 
   ngOnInit() {

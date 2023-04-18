@@ -15,8 +15,9 @@
  */
 
 import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
-import {MatLegacySelect} from '@angular/material/select';
+import {MatLegacySelect} from '@angular/material/legacy-select';
 import {assertRequiredInput} from 'google3/third_party/py/multitest_transport/ui2/app/shared/util';
+
 import {ALL_OPTIONS_VALUE} from '../services/mtt_lab_models';
 
 /** Store value and display status from component input. */

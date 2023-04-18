@@ -16,10 +16,11 @@
 
 import {DebugElement} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MatLegacyDialog} from '@angular/material/dialog';
+import {MatLegacyDialog} from '@angular/material/legacy-dialog';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
 import {NoteDialogState, NotesDialog} from '../notes/notes_dialog';
+
 import {AddNotesButton} from './add_notes_button';
 import {NotesModule} from './notes_module';
 
@@ -34,7 +35,7 @@ describe('AddNotesButton', () => {
         NotesModule,
         NoopAnimationsModule,
       ],
-      });
+    });
 
     addNotesButtonFixture = TestBed.createComponent(AddNotesButton);
     el = addNotesButtonFixture.debugElement;

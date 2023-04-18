@@ -30,7 +30,7 @@ ng_module(
         third_party_js("angular2:common"),
         third_party_js("angular2:core"),
         third_party_js("angular_components:material_icon"),
-        third_party_js("angular_components:material_list"),
+        third_party_js("angular_components:material_legacy_list"),
         third_party_js("angular_components:material_mdc_button"),
         third_party_js("angular_components:material_mdc_dialog"),
         third_party_js("typings/w3c_web_usb"),

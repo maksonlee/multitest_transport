@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import { ElementRef, HostListener, Injectable, QueryList, ViewChildren, Directive } from '@angular/core';
+import {Directive, ElementRef, HostListener, Injectable, QueryList, ViewChildren} from '@angular/core';
 import {NgModel} from '@angular/forms';
-import {MatLegacyInput} from '@angular/material/input';
-import {MatLegacySelect} from '@angular/material/select';
-import { UrlTree } from '@angular/router';
+import {MatLegacyInput} from '@angular/material/legacy-input';
+import {MatLegacySelect} from '@angular/material/legacy-select';
+import {UrlTree} from '@angular/router';
 import {Observable} from 'rxjs';
 
 import {Notifier} from '../services/notifier';
@@ -125,7 +125,7 @@ export abstract class FormChangeTracker {
  * The component for that route must implement ChangeTracker.
  */
 @Injectable()
-export class UnsavedChangeGuard  {
+export class UnsavedChangeGuard {
   constructor(private readonly notifier: Notifier) {}
 
   canDeactivate(tracker: FormChangeTracker):

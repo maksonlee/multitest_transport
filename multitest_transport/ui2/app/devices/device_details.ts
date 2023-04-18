@@ -16,15 +16,14 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, Inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
-import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/dialog';
-import {MatLegacyTabChangeEvent} from '@angular/material/tabs';
+import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/legacy-dialog';
+import {MatLegacyTabChangeEvent} from '@angular/material/legacy-tabs';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
 import {FeedbackService} from '../services/feedback_service';
-import {SurveyTrigger} from '../services/mtt_lab_models';
-import {LabDeviceInfo, NoteType} from '../services/mtt_lab_models';
+import {LabDeviceInfo, NoteType, SurveyTrigger} from '../services/mtt_lab_models';
 import {Notifier} from '../services/notifier';
 import {StorageService} from '../services/storage_service';
 import {TfcClient} from '../services/tfc_client';
@@ -66,7 +65,8 @@ export class DeviceDetails implements OnChanges, OnDestroy, OnInit {
       private readonly router: Router,
       private readonly storageService: StorageService,
       private readonly tfcClient: TfcClient,
-      @Inject(MAT_LEGACY_DIALOG_DATA) readonly params?: DeviceDetailsDialogParams,
+      @Inject(MAT_LEGACY_DIALOG_DATA) readonly params?:
+          DeviceDetailsDialogParams,
   ) {}
 
   ngOnChanges(changes: SimpleChanges) {

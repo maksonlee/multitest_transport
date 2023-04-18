@@ -15,8 +15,8 @@
  */
 
 import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
-import {MatLegacyAutocompleteTrigger} from '@angular/material/autocomplete';
-import {MatLegacyOptionSelectionChange} from '@angular/material/core';
+import {MatLegacyAutocompleteTrigger} from '@angular/material/legacy-autocomplete';
+import {MatLegacyOptionSelectionChange} from '@angular/material/legacy-core';
 import {ConnectableObservable, Observable, of as observableOf, ReplaySubject, Subject} from 'rxjs';
 import {catchError, map, publishBehavior, retry, switchMap, switchMapTo, takeUntil, throttleTime} from 'rxjs/operators';
 
@@ -50,8 +50,8 @@ export class TestRunTargetPicker extends FormChangeTracker implements
 
   @Output() readonly deviceSpecsChange = new EventEmitter<string[]>();
   @Output() readonly shardCountChange = new EventEmitter<number>();
-  @Output() readonly allowPartialDeviceMatchChange =
-      new EventEmitter<boolean>();
+  @Output()
+  readonly allowPartialDeviceMatchChange = new EventEmitter<boolean>();
 
   manualDeviceSpecs = false;
   // The options displayed on the UI.

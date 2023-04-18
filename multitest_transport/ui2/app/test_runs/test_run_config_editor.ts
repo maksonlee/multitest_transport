@@ -15,7 +15,7 @@
  */
 
 import {Component, EventEmitter, Inject, OnInit, Output, ViewChild} from '@angular/core';
-import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
 import {MatStepper} from '@angular/material/stepper';
 
 import {TestResourceClassType, TestResourceForm} from '../build_channels/test_resource_form';
@@ -56,7 +56,8 @@ const TOTAL_STEPS = 4;
 export class TestRunConfigEditor extends FormChangeTracker implements OnInit {
   @ViewChild(TestResourceForm, {static: true})
   testResourceForm!: TestResourceForm;
-  @Output() readonly configSubmitted = new EventEmitter<mttModels.TestRunConfig>();
+  @Output()
+  readonly configSubmitted = new EventEmitter<mttModels.TestRunConfig>();
 
   // Record each step whether it has finished or not
   stepCompletionStatusMap: {[stepNum: number]: boolean} = {};

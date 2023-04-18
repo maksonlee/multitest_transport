@@ -48,7 +48,7 @@ ng_module(
         third_party_js("angular2:common"),
         third_party_js("angular2:core"),
         third_party_js("angular2:core_testing"),
-        third_party_js("angular_components:material_dialog"),
+        third_party_js("angular_components:material_legacy_dialog"),
         third_party_js("angular_components:material_mdc_snack_bar"),
         third_party_js("angular2:platform_browser"),
         third_party_js("angular2:platform_browser_animations"),

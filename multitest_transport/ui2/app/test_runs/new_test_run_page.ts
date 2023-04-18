@@ -17,8 +17,8 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {AfterViewInit, Component, Inject, OnInit, ViewChild} from '@angular/core';
-import {MatLegacyButton} from '@angular/material/button';
-import {MatLegacyChipInputEvent} from '@angular/material/chips';
+import {MatLegacyButton} from '@angular/material/legacy-button';
+import {MatLegacyChipInputEvent} from '@angular/material/legacy-chips';
 import {MatStepper} from '@angular/material/stepper';
 import {Title} from '@angular/platform-browser';
 import {ActivatedRoute, Params, Router} from '@angular/router';

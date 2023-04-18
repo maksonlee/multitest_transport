@@ -15,7 +15,7 @@
  */
 
 import {Component, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
-import {MatLegacyButton} from '@angular/material/button';
+import {MatLegacyButton} from '@angular/material/legacy-button';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 
 import {MttClient} from '../services/mtt_client';

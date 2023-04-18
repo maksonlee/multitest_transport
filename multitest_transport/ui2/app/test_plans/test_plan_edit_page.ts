@@ -17,15 +17,14 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MatLegacyButton} from '@angular/material/button';
-import {MatLegacyChipInputEvent} from '@angular/material/chips';
+import {MatLegacyButton} from '@angular/material/legacy-button';
+import {MatLegacyChipInputEvent} from '@angular/material/legacy-chips';
 import {MatStepper} from '@angular/material/stepper';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 import {forkJoin, of as observableOf, ReplaySubject, Subscription} from 'rxjs';
 import {first, takeUntil} from 'rxjs/operators';
 
-import {TestResourceClassType} from '../build_channels/test_resource_form';
-import {TestResourceForm} from '../build_channels/test_resource_form';
+import {TestResourceClassType, TestResourceForm} from '../build_channels/test_resource_form';
 import {MttClient} from '../services/mtt_client';
 import * as mttModels from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
@@ -91,10 +90,9 @@ export class TestPlanEditPage extends FormChangeTracker implements
   }
 
   ngOnInit() {
-    this.route.params.pipe(first())
-        .subscribe((params: Params) => {
-          this.loadData(params['id']);
-        });
+    this.route.params.pipe(first()).subscribe((params: Params) => {
+      this.loadData(params['id']);
+    });
 
     // Initialize step completion status map
     resetStepCompletion(0, this.stepCompletionStatusMap, this.totalSteps);

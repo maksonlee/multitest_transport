@@ -15,7 +15,7 @@
  */
 
 import {Component, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
-import {MatLegacyButton} from '@angular/material/button';
+import {MatLegacyButton} from '@angular/material/legacy-button';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 
 import {MttClient} from '../services/mtt_client';
@@ -62,8 +62,9 @@ export class FileCleanerConfigEditPage extends FormChangeTracker implements
           this.settings = settings;
           this.settings.configs = this.settings.configs || [];
           this.policyNames.clear();
-          settings.policies?.forEach(
-              (policy) => { this.policyNames.add(policy.name); });
+          settings.policies?.forEach((policy) => {
+            this.policyNames.add(policy.name);
+          });
 
           const config = this.settings.configs[i];
           if (config) {

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 import {Component, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
+import {MatLegacyPaginator} from '@angular/material/legacy-paginator';
 import {MatRadioChange} from '@angular/material/mdc-radio';
 import {MatTableDataSource} from '@angular/material/mdc-table';
-import {MatLegacyPaginator} from '@angular/material/paginator';
 import {MatSort} from '@angular/material/sort';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';

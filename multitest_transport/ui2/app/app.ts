@@ -16,11 +16,11 @@
 
 import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
 import {Component, Inject, NgModule, OnDestroy} from '@angular/core';
-import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialog, MatLegacyDialogRef} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialog, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
 import {MatTooltipModule} from '@angular/material/mdc-tooltip';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import { NavigationEnd, Router, RouterModule, Routes, mapToCanDeactivate } from '@angular/router';
+import {mapToCanDeactivate, NavigationEnd, Router, RouterModule, Routes} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 

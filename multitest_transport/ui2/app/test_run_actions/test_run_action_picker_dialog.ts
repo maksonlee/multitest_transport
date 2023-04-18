@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import {Component, EventEmitter, Inject, Output} from '@angular/core';
-import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
 
 import {TestRunAction, TestRunActionRef} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
@@ -46,7 +46,8 @@ export class TestRunActionPickerDialog {
   constructor(
       private readonly notifier: Notifier,
       public dialogRef: MatLegacyDialogRef<TestRunActionPickerDialog>,
-      @Inject(MAT_LEGACY_DIALOG_DATA) public data: TestRunActionPickerDialogData,
+      @Inject(MAT_LEGACY_DIALOG_DATA) public data:
+          TestRunActionPickerDialogData,
   ) {
     const actionMap: {[id: string]: TestRunAction} = {};
     for (const action of data.actions) {

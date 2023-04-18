@@ -15,7 +15,7 @@
  */
 
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {MatLegacyDialog} from '@angular/material/dialog';
+import {MatLegacyDialog} from '@angular/material/legacy-dialog';
 
 import * as mttModels from '../services/mtt_models';
 import {MttObjectMapService} from '../services/mtt_object_map';
@@ -71,7 +71,7 @@ export class TestRunConfigList implements OnInit {
 
     dialogRef.componentInstance.configSubmitted.subscribe(
         (result: mttModels.TestRunConfig) => {
-            this.data.push(result);
+          this.data.push(result);
           this.dataChange.emit(this.data);
         });
   }

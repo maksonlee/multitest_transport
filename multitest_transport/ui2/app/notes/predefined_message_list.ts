@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MatLegacyDialog} from '@angular/material/dialog';
+import {MatLegacyDialog} from '@angular/material/legacy-dialog';
 import {MatTable, MatTableDataSource} from '@angular/material/mdc-table';
 import {MatSort, Sort} from '@angular/material/sort';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';

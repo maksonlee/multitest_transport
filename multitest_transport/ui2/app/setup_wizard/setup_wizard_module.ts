@@ -18,7 +18,7 @@
  * A module for the setup wizard flow
  */
 import {NgModule} from '@angular/core';
-import {MatLegacyDialogModule} from '@angular/material/dialog';
+import {MatLegacyDialogModule} from '@angular/material/legacy-dialog';
 import {Title} from '@angular/platform-browser';
 
 import {BuildChannelsModule} from '../build_channels/build_channels_module';

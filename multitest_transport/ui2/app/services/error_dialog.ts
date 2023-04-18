@@ -15,7 +15,7 @@
  */
 
 import {Component, Inject} from '@angular/core';
-import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/legacy-dialog';
 
 /** Detailed error object */
 export interface EndpointDetailedError {

@@ -21,11 +21,11 @@ import {CommonModule} from '@angular/common';
 import {HttpClientModule} from '@angular/common/http';
 import {NgModule} from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import {MatLegacyButtonModule} from '@angular/material/button';
-import {MatLegacyDialogModule} from '@angular/material/dialog';
-import {MatLegacyFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
-import {MatLegacyInputModule} from '@angular/material/input';
+import {MatLegacyButtonModule} from '@angular/material/legacy-button';
+import {MatLegacyDialogModule} from '@angular/material/legacy-dialog';
+import {MatLegacyFormFieldModule} from '@angular/material/legacy-form-field';
+import {MatLegacyInputModule} from '@angular/material/legacy-input';
 
 import {AuthDialog} from './auth_dialog';
 import {ErrorDialog} from './error_dialog';

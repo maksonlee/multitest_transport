@@ -15,7 +15,7 @@
  */
 
 import {Component} from '@angular/core';
-import {MatLegacyDialog, MatLegacyDialogRef} from '@angular/material/dialog';
+import {MatLegacyDialog, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
 import {first, mergeMap} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';

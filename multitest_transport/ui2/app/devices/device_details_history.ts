@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
 import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
-import {MatLegacyDialog} from '@angular/material/dialog';
+import {MatLegacyDialog} from '@angular/material/legacy-dialog';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 import {DEFAULT_PAGE_SIZE, Paginator} from 'google3/third_party/py/multitest_transport/ui2/app/shared/paginator';
@@ -26,8 +26,7 @@ import {ReplaySubject} from 'rxjs';
 import {first, mergeMap, takeUntil} from 'rxjs/operators';
 
 import {NoteDialogParams, NoteDialogState, NotesDialog} from '../notes/notes_dialog';
-import {NoteType} from '../services/mtt_lab_models';
-import {LabDeviceInfo, LabDeviceInfoHistoryList} from '../services/mtt_lab_models';
+import {LabDeviceInfo, LabDeviceInfoHistoryList, NoteType} from '../services/mtt_lab_models';
 import {TfcClient} from '../services/tfc_client';
 import {UserService} from '../services/user_service';
 
@@ -83,15 +82,14 @@ export class DeviceDetailsHistory implements OnChanges, OnInit, OnDestroy {
   ngOnInit() {
     assertRequiredInput(this.id, 'id', 'device-detail-history');
     this.route.queryParams.pipe(takeUntil(this.destroy)).subscribe(params => {
-        const pageToken = params[this.HISTORY_PAGE_TOKEN];
-        const pageSize = params[this.HISTORY_PAGE_SIZE] ?
-            Number(params[this.HISTORY_PAGE_SIZE]) :
-            DEFAULT_PAGE_SIZE;
-        this.prevPageToken = undefined;
-        this.nextPageToken = pageToken;
-        this.paginator.pageSize = pageSize;
-        this.loadHistory(this.id);
-
+      const pageToken = params[this.HISTORY_PAGE_TOKEN];
+      const pageSize = params[this.HISTORY_PAGE_SIZE] ?
+          Number(params[this.HISTORY_PAGE_SIZE]) :
+          DEFAULT_PAGE_SIZE;
+      this.prevPageToken = undefined;
+      this.nextPageToken = pageToken;
+      this.paginator.pageSize = pageSize;
+      this.loadHistory(this.id);
     });
   }
 

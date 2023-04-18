@@ -15,7 +15,7 @@
  */
 
 import {Component, EventEmitter, Input, OnDestroy, Output} from '@angular/core';
-import {MatLegacyDialog, MatLegacyDialogRef} from '@angular/material/dialog';
+import {MatLegacyDialog, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
 import {ReplaySubject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 

@@ -17,9 +17,8 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
 import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MatLegacyButton} from '@angular/material/button';
-import {ActivatedRoute, Params} from '@angular/router';
-import {Router} from '@angular/router';
+import {MatLegacyButton} from '@angular/material/legacy-button';
+import {ActivatedRoute, Params, Router} from '@angular/router';
 import {forkJoin, of as observableOf, ReplaySubject} from 'rxjs';
 import {first, takeUntil} from 'rxjs/operators';
 

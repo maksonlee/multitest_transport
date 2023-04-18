@@ -15,7 +15,7 @@
  */
 
 import {AfterViewInit, Component, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
-import {MatLegacyButton} from '@angular/material/button';
+import {MatLegacyButton} from '@angular/material/legacy-button';
 import {ActivatedRoute, Router} from '@angular/router';
 import {first} from 'rxjs/operators';
 
@@ -37,7 +37,8 @@ import {buildApiErrorMessage} from '../shared/util';
 export class TestEditPage extends FormChangeTracker implements OnInit,
                                                                AfterViewInit {
   @ViewChild('backButton', {static: false}) backButton?: MatLegacyButton;
-  @ViewChildren(FormChangeTracker) override trackers!: QueryList<FormChangeTracker>;
+  @ViewChildren(FormChangeTracker)
+  override trackers!: QueryList<FormChangeTracker>;
 
   data: Partial<Test> = initTest();
   outputFilePatterns: Partial<string[]> = [];

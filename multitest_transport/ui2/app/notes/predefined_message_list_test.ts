@@ -16,7 +16,7 @@
 
 import {HttpClientTestingModule} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MatLegacyDialog} from '@angular/material/dialog';
+import {MatLegacyDialog} from '@angular/material/legacy-dialog';
 import {SortDirection} from '@angular/material/sort';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {of as observableOf} from 'rxjs';
@@ -67,7 +67,7 @@ describe('Predefined Message List', () => {
         {provide: Notifier, useValue: notifierSpy},
         {provide: TfcClient, useValue: tfcClientSpy},
       ],
-      
+
     });
     predefinedMessageListFixture =
         TestBed.createComponent(PredefinedMessageList);

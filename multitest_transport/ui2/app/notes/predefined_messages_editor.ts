@@ -17,7 +17,7 @@
 import {HttpErrorResponse} from '@angular/common/http';
 import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
 import {UntypedFormControl, UntypedFormGroup, ValidationErrors, ValidatorFn} from '@angular/forms';
-import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
 import {Notifier} from 'google3/third_party/py/multitest_transport/ui2/app/services/notifier';
 import {ReplaySubject} from 'rxjs';
 import {finalize, takeUntil} from 'rxjs/operators';
@@ -103,7 +103,8 @@ export class PredefinedMessagesEditor implements OnInit, OnDestroy {
     this.dialogRef.close();
   }
 
-  createFormGroup(params: PredefinedMessagesEditorDialogParams): UntypedFormGroup {
+  createFormGroup(params: PredefinedMessagesEditorDialogParams):
+      UntypedFormGroup {
     return new UntypedFormGroup(
         {
           'labFormControl': new UntypedFormControl(this.selectedLab),

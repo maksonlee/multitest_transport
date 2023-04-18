@@ -17,8 +17,8 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Location} from '@angular/common';
 import {AfterViewChecked, ChangeDetectorRef, Component, Inject, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
-import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/dialog';
-import {MatLegacyTabChangeEvent} from '@angular/material/tabs';
+import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/legacy-dialog';
+import {MatLegacyTabChangeEvent} from '@angular/material/legacy-tabs';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {filter, finalize, switchMap, takeUntil} from 'rxjs/operators';

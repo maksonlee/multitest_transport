@@ -15,7 +15,7 @@
  */
 
 import {Injectable} from '@angular/core';
-import {MatLegacyDialog} from '@angular/material/dialog';
+import {MatLegacyDialog} from '@angular/material/legacy-dialog';
 import {interval, Observable} from 'rxjs';
 import {filter, finalize, first, map} from 'rxjs/operators';
 

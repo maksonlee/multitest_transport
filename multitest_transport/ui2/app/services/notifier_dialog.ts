@@ -15,7 +15,7 @@
  */
 
 import {Component, Inject} from '@angular/core';
-import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/dialog';
+import {MAT_LEGACY_DIALOG_DATA} from '@angular/material/legacy-dialog';
 
 /** Data to be displayed in a popup dialog box */
 export interface NotifierDialogData {
@@ -34,5 +34,6 @@ export interface NotifierDialogData {
   styleUrls: ['./notifier_dialog.css'],
 })
 export class NotifierDialog {
-  constructor(@Inject(MAT_LEGACY_DIALOG_DATA) readonly data: NotifierDialogData) {}
+  constructor(@Inject(MAT_LEGACY_DIALOG_DATA) readonly data:
+                  NotifierDialogData) {}
 }
