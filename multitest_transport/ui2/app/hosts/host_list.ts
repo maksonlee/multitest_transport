@@ -20,7 +20,7 @@ import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core
 import {UntypedFormControl, UntypedFormGroup} from '@angular/forms';
 import {MatLegacyAutocomplete, MatLegacyAutocompleteTrigger} from '@angular/material/legacy-autocomplete';
 import {MatLegacyDialog} from '@angular/material/legacy-dialog';
-import {MatTable} from '@angular/material/mdc-table';
+import {MatTable} from '@angular/material/table';
 import {ActivatedRoute, ParamMap, Router} from '@angular/router';
 import {forkJoin, Observable, of as observableOf, ReplaySubject, throwError} from 'rxjs';
 import {catchError, concatMap, delay, filter, finalize, map, mergeMap, retryWhen, switchMap, take, takeUntil} from 'rxjs/operators';

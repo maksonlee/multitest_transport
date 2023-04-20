@@ -19,8 +19,8 @@ import {CommonModule} from '@angular/common';
 import {NgModule} from '@angular/core';
 import {MatIconModule} from '@angular/material/icon';
 import {MatLegacyListModule} from '@angular/material/legacy-list';
-import {MatButtonModule} from '@angular/material/mdc-button';
-import {MatDialogModule} from '@angular/material/mdc-dialog';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDialogModule} from '@angular/material/dialog';
 
 import {DeviceList} from './device_list';
 import {DeviceManager} from './device_manager';

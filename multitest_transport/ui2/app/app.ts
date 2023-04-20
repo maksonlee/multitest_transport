@@ -17,7 +17,7 @@
 import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
 import {Component, Inject, NgModule, OnDestroy} from '@angular/core';
 import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialog, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
-import {MatTooltipModule} from '@angular/material/mdc-tooltip';
+import {MatTooltipModule} from '@angular/material/tooltip';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {mapToCanDeactivate, NavigationEnd, Router, RouterModule, Routes} from '@angular/router';

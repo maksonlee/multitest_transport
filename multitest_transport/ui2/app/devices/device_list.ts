@@ -19,7 +19,7 @@ import {Location} from '@angular/common';
 import {Component, ElementRef, EventEmitter, Inject, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
 import {UntypedFormControl, UntypedFormGroup} from '@angular/forms';
 import {MatLegacyAutocomplete, MatLegacyAutocompleteTrigger} from '@angular/material/legacy-autocomplete';
-import {MatTable} from '@angular/material/mdc-table';
+import {MatTable} from '@angular/material/table';
 import {ActivatedRoute, convertToParamMap, ParamMap, Router} from '@angular/router';
 import {forkJoin, Observable, of as observableOf, ReplaySubject, throwError, timer} from 'rxjs';
 import {catchError, concatMap, delay, filter, map, mergeMap, retryWhen, switchMap, take, takeUntil} from 'rxjs/operators';

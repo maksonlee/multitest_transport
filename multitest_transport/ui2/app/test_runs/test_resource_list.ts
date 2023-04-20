@@ -15,7 +15,7 @@
  */
 
 import {ChangeDetectionStrategy, Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
-import {MatTableDataSource} from '@angular/material/mdc-table';
+import {MatTableDataSource} from '@angular/material/table';
 
 import {FileService} from '../services/file_service';
 import {TestResourceObj, TestRun} from '../services/mtt_models';

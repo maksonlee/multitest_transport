@@ -55,7 +55,7 @@ ng_module(
         third_party_js("angular_components:material_legacy_form_field"),
         third_party_js("angular_components:material_icon"),
         third_party_js("angular_components:material_legacy_input"),
-        third_party_js("angular_components:material_mdc_snack_bar"),
+        third_party_js("angular_components:material_snack_bar"),
         third_party_js("rxjs"),
     ],
 )

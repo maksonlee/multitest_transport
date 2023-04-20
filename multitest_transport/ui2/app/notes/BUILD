@@ -42,7 +42,7 @@ ng_module(
         third_party_js("angular2:common_http"),
         third_party_js("angular2:forms"),
         third_party_js("angular_components:material_legacy_dialog"),
-        third_party_js("angular_components:material_mdc_table"),
+        third_party_js("angular_components:material_table"),
         third_party_js("angular_components:material_sort"),
         third_party_js("angular_components:material_legacy_table"),
         third_party_js("angular2:router"),

@@ -19,7 +19,7 @@ import {SelectionModel} from '@angular/cdk/collections';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {AfterViewInit, Component, ElementRef, HostListener, OnDestroy, ViewChild} from '@angular/core';
 import {MatLegacyChipInputEvent} from '@angular/material/legacy-chips';
-import {MatTableDataSource} from '@angular/material/mdc-table';
+import {MatTableDataSource} from '@angular/material/table';
 import {ActivatedRoute, Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
 import {finalize, first, takeUntil} from 'rxjs/operators';

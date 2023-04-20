@@ -33,7 +33,7 @@ ng_module(
         third_party_js("angular2:core"),
         third_party_js("angular_components:material_legacy_button"),
         third_party_js("angular_components:material_legacy_chips"),
-        third_party_js("angular_components:material_mdc_table"),
+        third_party_js("angular_components:material_table"),
         third_party_js("angular_components:material_stepper"),
         third_party_js("angular_components:material_legacy_table"),
         third_party_js("angular2:platform_browser"),

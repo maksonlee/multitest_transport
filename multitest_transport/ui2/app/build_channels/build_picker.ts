@@ -19,7 +19,7 @@ import {SelectionModel} from '@angular/cdk/collections';
 import {Component, EventEmitter, Inject, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
 import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
 import {MatLegacyTabChangeEvent} from '@angular/material/legacy-tabs';
-import {MatTable} from '@angular/material/mdc-table';
+import {MatTable} from '@angular/material/table';
 import {ReplaySubject, Subject, Subscription} from 'rxjs';
 import {debounceTime, delay, finalize, first, takeUntil} from 'rxjs/operators';
 

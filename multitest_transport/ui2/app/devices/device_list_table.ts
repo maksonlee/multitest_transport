@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {Component, ElementRef, EventEmitter, HostListener, Inject, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild} from '@angular/core';
-import {MatTable, MatTableDataSource} from '@angular/material/mdc-table';
+import {MatTable, MatTableDataSource} from '@angular/material/table';
 import {MatSort, Sort} from '@angular/material/sort';
 import {Router} from '@angular/router';
 import {TableColumn} from 'google3/third_party/py/multitest_transport/ui2/app/services/mtt_models';

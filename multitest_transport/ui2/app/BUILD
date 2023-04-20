@@ -36,7 +36,7 @@ ng_module(
         third_party_js("angular2:common_http"),
         third_party_js("angular2:core"),
         third_party_js("angular_components:material_legacy_dialog"),
-        third_party_js("angular_components:material_mdc_tooltip"),
+        third_party_js("angular_components:material_tooltip"),
         third_party_js("angular2:platform_browser"),
         third_party_js("angular2:platform_browser_animations"),
         third_party_js("angular2:router"),

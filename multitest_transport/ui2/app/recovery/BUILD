@@ -38,7 +38,7 @@ ng_module(
         third_party_js("angular_components:cdk_collections"),
         third_party_js("angular2:core"),
         third_party_js("angular_components:material_legacy_dialog"),
-        third_party_js("angular_components:material_mdc_table"),
+        third_party_js("angular_components:material_table"),
         third_party_js("angular_components:material_legacy_table"),
         third_party_js("angular2:platform_browser"),
         third_party_js("angular2:router"),
