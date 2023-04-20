@@ -20,8 +20,8 @@
 
 
 // Core material styles
-@include mat.all-component-typographies();
-@include mat.core();
+@include mat.all-legacy-component-typographies();
+@include mat.legacy-core();
 
 // Application theme
 $primary: mat.define-palette(mat.$grey-palette);
@@ -40,7 +40,7 @@ $theme: mat.define-light-theme(
     typography: null,
   )
 );
-$typography: mat.define-typography-config();
+$typography: mat.define-legacy-typography-config();
 
 // Add background theme
 $background-color: $white;
@@ -58,7 +58,7 @@ $theme: map_merge(
   )
 );
 
-@include mat.all-component-themes($theme);
+@include mat.all-legacy-component-themes($theme);
 @include mat.mdc-radio-theme($theme);
 @include mat.mdc-checkbox-theme($theme);
 @include mat.mdc-dialog-theme($theme);
@@ -93,7 +93,7 @@ $button-theme: mat.define-light-theme(
     typography: null,
   )
 );
-@include mat.button-theme($button-theme);
+@include mat.legacy-button-theme($button-theme);
 
 $stepper-primary: mat.define-palette(mat.$blue-palette, 700);
 $stepper-accent: mat.define-palette(mat.$blue-palette, 100);
@@ -125,8 +125,8 @@ $input-theme: mat.define-light-theme(
     typography: null,
   )
 );
-@include mat.form-field-theme($input-theme);
-@include mat.input-theme($input-theme);
+@include mat.legacy-form-field-theme($input-theme);
+@include mat.legacy-input-theme($input-theme);
 
 $panel-title-font-size: 20px;
 $panel-title-line-height: 20px;

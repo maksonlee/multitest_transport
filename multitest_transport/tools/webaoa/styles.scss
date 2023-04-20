@@ -16,8 +16,8 @@
 @use 'third_party/javascript/angular_components/material' as mat;
 
 // Core material styles
-@include mat.all-component-typographies();
-@include mat.core();
+@include mat.all-legacy-component-typographies();
+@include mat.legacy-core();
 
 // Application theme
 $primary: mat.define-palette(mat.$grey-palette);
@@ -34,7 +34,7 @@ $theme: mat.define-light-theme(
     typography: null,
   )
 );
-@include mat.all-component-themes($theme);
+@include mat.all-legacy-component-themes($theme);
 @include mat.mdc-radio-theme($theme);
 @include mat.mdc-checkbox-theme($theme);
 @include mat.mdc-dialog-theme($theme);
@@ -45,7 +45,7 @@ $theme: mat.define-light-theme(
 @include mat.mdc-progress-bar-theme($theme);
 
 // Typography
-$typography: mat.define-typography-config();
+$typography: mat.define-legacy-typography-config();
 @include mat.mdc-radio-typography($typography);
 @include mat.mdc-checkbox-typography($typography);
 @include mat.mdc-dialog-typography($typography);
