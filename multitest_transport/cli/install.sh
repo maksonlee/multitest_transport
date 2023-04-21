@@ -23,17 +23,10 @@ MTT_ZIP_URL="${MTT_BASE_URL}/mtt.zip"
 OLD_HOME_BIN_DIR="$HOME/bin"
 HOME_BIN_DIR="$HOME/.local/bin"
 PYTHON3_MINIMAL_MINOR_VERSION="7"
-DOCKER_MINIMAL_API_VERSION="42"
 
 function install_docker {
   docker_version=$(docker --version 2> /dev/null || echo "")
-
-  if [ ! -z "$docker_version" ]
-  then
-    docker_api_version=$(docker version --format '{{.Server.APIVersion}}' 2> /dev/null | awk -F\. '{print $2}')
-  fi
-
-  if [ -z "$docker_version" ] || [ "$docker_api_version" -lt "$DOCKER_MINIMAL_API_VERSION" ]
+  if [ -z "$docker_version" ]
   then
     echo "Install Docker Engine..."
     # Follow https://docs.docker.com/install/linux/docker-ce/ubuntu/
