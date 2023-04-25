@@ -35,28 +35,28 @@ $theme: mat.define-light-theme(
   )
 );
 @include mat.all-legacy-component-themes($theme);
-@include mat.mdc-radio-theme($theme);
-@include mat.mdc-checkbox-theme($theme);
-@include mat.mdc-dialog-theme($theme);
-@include mat.mdc-tooltip-theme($theme);
-@include mat.mdc-snack-bar-theme($theme);
-@include mat.mdc-table-theme($theme);
-@include mat.mdc-progress-spinner-theme($theme);
-@include mat.mdc-progress-bar-theme($theme);
+@include mat.radio-theme($theme);
+@include mat.checkbox-theme($theme);
+@include mat.dialog-theme($theme);
+@include mat.tooltip-theme($theme);
+@include mat.snack-bar-theme($theme);
+@include mat.table-theme($theme);
+@include mat.progress-spinner-theme($theme);
+@include mat.progress-bar-theme($theme);
 
 // Typography
 $typography: mat.define-legacy-typography-config();
-@include mat.mdc-radio-typography($typography);
-@include mat.mdc-checkbox-typography($typography);
-@include mat.mdc-dialog-typography($typography);
+@include mat.radio-typography($typography);
+@include mat.checkbox-typography($typography);
+@include mat.dialog-typography($typography);
 @include mat.mdc-fab-typography($typography);
 @include mat.mdc-icon-button-typography($typography);
-@include mat.mdc-tooltip-typography($typography);
-@include mat.mdc-button-typography($typography);
-@include mat.mdc-snack-bar-typography($typography);
-@include mat.mdc-table-typography($typography);
-@include mat.mdc-progress-spinner-typography($typography);
-@include mat.mdc-progress-bar-typography($typography);
+@include mat.tooltip-typography($typography);
+@include mat.button-typography($typography);
+@include mat.snack-bar-typography($typography);
+@include mat.table-typography($typography);
+@include mat.progress-spinner-typography($typography);
+@include mat.progress-bar-typography($typography);
 
 // Button theme
 $button-primary: mat.define-palette(mat.$grey-palette);
@@ -73,7 +73,7 @@ $button-theme: mat.define-light-theme(
     typography: null,
   )
 );
-@include mat.mdc-button-theme($button-theme);
+@include mat.button-theme($button-theme);
 @include mat.mdc-fab-theme($button-theme);
 @include mat.mdc-icon-button-theme($button-theme);
 
