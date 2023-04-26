@@ -49,8 +49,8 @@ $typography: mat.define-legacy-typography-config();
 @include mat.radio-typography($typography);
 @include mat.checkbox-typography($typography);
 @include mat.dialog-typography($typography);
-@include mat.mdc-fab-typography($typography);
-@include mat.mdc-icon-button-typography($typography);
+@include mat.fab-typography($typography);
+@include mat.icon-button-typography($typography);
 @include mat.tooltip-typography($typography);
 @include mat.button-typography($typography);
 @include mat.snack-bar-typography($typography);
@@ -74,8 +74,8 @@ $button-theme: mat.define-light-theme(
   )
 );
 @include mat.button-theme($button-theme);
-@include mat.mdc-fab-theme($button-theme);
-@include mat.mdc-icon-button-theme($button-theme);
+@include mat.fab-theme($button-theme);
+@include mat.icon-button-theme($button-theme);
 
 // General styles
 * {
