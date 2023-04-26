@@ -115,6 +115,10 @@ def _AfterTestRunHandler(test_run_id):
   if test_run.sequence_id:
     task_scheduler.AddCallableTask(test_scheduler.ScheduleNextTestRun,
                                    test_run.sequence_id, test_run.key)
+  # Schedule the report merging
+  task_scheduler.AddCallableTask(
+      test_result_handler.MergeReports, test_run_id, _transactional=True
+  )
 
 
 def ProcessRequestEvent(message: api_messages.RequestEventMessage):

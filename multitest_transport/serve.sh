@@ -40,6 +40,7 @@ STORAGE_PATH="/tmp/mtt"
 FILE_SERVICE_ONLY="false"
 SQL_DATABASE_URI="mysql+pymysql://root@/ats_db"
 MTT_CONTROL_SERVER_URL="http://localhost:8000"
+REPORT_GENERATOR_JAR=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --bind_address) MTT_HOST="$2";;
@@ -52,6 +53,7 @@ while [[ $# -gt 0 ]]; do
     --dev_mode) DEV_MODE="$2";;
     --sql_database_uri) SQL_DATABASE_URI="$2";;
     --control_server_url) MTT_CONTROL_SERVER_URL="$2";;
+    --report_generator_jar) REPORT_GENERATOR_JAR="$2";;
     *) echo "Unknown argument $1"; exit 1; # fail-fast on unknown key
   esac
   shift # skip key
@@ -195,6 +197,7 @@ function start_main_server {
   MTT_SQL_DATABASE_URI="${SQL_DATABASE_URI}" \
   MTT_USER="$MTT_USER" \
   MTT_PORT="$MTT_PORT" \
+  MTT_REPORT_GENERATOR_JAR="$REPORT_GENERATOR_JAR" \
   "${MTT_PYTHON}" -m multitest_transport.app_helper.launcher \
       --application_id="mtt" \
       --host="${MTT_HOST}" \

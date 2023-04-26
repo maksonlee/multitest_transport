@@ -107,6 +107,7 @@ then
       --file_service_only "${FILE_SERVICE_ONLY}" \
       --sql_database_uri "" \
       --control_server_url "${MTT_CONTROL_SERVER_URL}" \
+      --report_generator_jar "${MTT_REPORT_GENERATOR_JAR}" \
       2>&1 | multilog s10485760 n10 "${MTT_CONTROL_SERVER_LOG_DIR}" &
 fi
 
