@@ -168,7 +168,7 @@ RUN apt-get -qqy update && apt-get install -qqy \
 
 # Installing dependencies for TVTS
 RUN export DEBIAN_FRONTEND=noninteractive && \
-        curl -sL https://deb.nodesource.com/setup_12.x -o nodesource_setup.sh && \
+        curl -sL https://deb.nodesource.com/setup_18.x -o nodesource_setup.sh && \
         bash nodesource_setup.sh && \
         apt-get install -y nodejs && \
         rm nodesource_setup.sh
