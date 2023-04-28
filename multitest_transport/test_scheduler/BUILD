@@ -36,12 +36,37 @@ py_test(
 )
 
 pytype_strict_library(
+    name = "sharding_strategies_lib",
+    srcs = [
+        "sharding_strategies.py",
+    ],
+    deps = [
+        "//multitest_transport/models:ndb_models_lib",
+        "//multitest_transport/util:file_util_lib",
+        "@tradefed_cluster//tradefed_cluster:api_messages_lib",
+        third_party("more_itertools"),
+    ],
+)
+
+py_test(
+    name = "sharding_strategies_test",
+    srcs = [
+        "sharding_strategies_test.py",
+    ],
+    deps = [
+        ":sharding_strategies_lib",
+        third_party("absl/testing:absltest"),
+    ],
+)
+
+pytype_strict_library(
     name = "test_kicker_lib",
     srcs = [
         "test_kicker.py",
     ],
     deps = [
         ":download_util_lib",
+        ":sharding_strategies_lib",
         ":test_run_manager_lib",
         "//multitest_transport/models",
         "//multitest_transport/util",

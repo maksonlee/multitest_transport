@@ -36,6 +36,7 @@ from multitest_transport.models import ndb_models
 from multitest_transport.models import test_run_hook
 from multitest_transport.test_scheduler import download_util
 from multitest_transport.test_scheduler import test_run_manager
+from multitest_transport.test_scheduler import sharding_strategies
 from multitest_transport.util import analytics
 from multitest_transport.util import env
 from multitest_transport.util import errors
@@ -64,6 +65,7 @@ TF_DEVICE_COUNT_ENV_VAR = '${TF_DEVICE_COUNT}'
 # unordered. The other options are disallowed because it is difficult to predict
 # the effect of the concatenated options.
 REPEATABLE_TF_OPTIONS = ('gce-driver-file-param',)
+MAX_COMMANDS = 500
 
 APP = flask.Flask(__name__)
 
@@ -492,30 +494,9 @@ def _CreateTFCRequest(test_run_id):
     device_specs = [' '.join(test_run.test_run_config.device_specs)]
     test_bench = _DeviceSpecsToTFCTestBench(
         test_run.test_run_config.cluster, device_specs)
-    test_package_urls = [
-        r.cache_url
-        for r in test_run.test_resources
-        if r.test_resource_type == ndb_models.TestResourceType.TEST_PACKAGE]
-    # get module infos
-    module_infos = file_util.GetTestModuleInfos(
-        file_util.OpenFile(test_package_urls[0]),
-        test_run.test.module_config_pattern)
-    tmpl = string.Template(test_run.test.module_execution_args)
-    for info in sorted(module_infos, key=lambda x: x.name):
-      module_args = tmpl.safe_substitute({'MODULE_NAME': info.name})
-      command_info = api_messages.CommandInfo(
-          name=info.name,
-          command_line=' '.join([command_line, module_args]),
-          test_bench=test_bench,
-          run_count=test_run.test_run_config.run_count,
-          shard_count=1,
-          allow_partial_device_match=(
-              test_run.test_run_config.allow_partial_device_match))
-      # Give a priority to CtsDeqpTestCases since it takes the longest time.
-      if info.name == 'CtsDeqpTestCases':
-        command_infos.insert(0, command_info)
-      else:
-        command_infos.append(command_info)
+    command_infos = sharding_strategies.ShardModules(
+        test_run, command_line, test_bench, MAX_COMMANDS
+    )
     max_concurrent_tasks = test_run.test_run_config.shard_count
 
   # Append extra command args to flag as a MTT run.
