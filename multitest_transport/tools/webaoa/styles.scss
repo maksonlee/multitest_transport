@@ -17,7 +17,7 @@
 
 // Core material styles
 @include mat.all-legacy-component-typographies();
-@include mat.legacy-core();
+@include mat.core();
 
 // Application theme
 $primary: mat.define-palette(mat.$grey-palette);
