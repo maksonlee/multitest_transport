@@ -50,10 +50,10 @@ def StoreTestResults(test_run_id, attempt_id, test_results_url):
     logging.warning('Test result file not found: %s', test_results_url)
   task_scheduler.AddCallableTask(UpdateTestRunSummary, test_run_id)
   test_run = ndb_models.TestRun.get_by_id(test_run_id)
-  # If the test run is cancelled and finalized earlier which may not merge the
+  # If the test run is canceled and finalized earlier which may not merge the
   # result from this attempt, so do the merging again.
   # In most of cases, the test run is not finalized at the moment and the merge
-  # will be delegated to the request hanlder
+  # will be delegated to the request handler
   if test_run.is_finalized:
     task_scheduler.AddCallableTask(MergeReports, test_run_id)
 
@@ -118,12 +118,12 @@ def MergeReports(test_run_id):
   with write_report_lock:
     logging.info('Acquired the lock to merge reports...')
     xml_report_files = ','.join(result_urls)
-    merge_report_dir = os.path.join(
+    merged_report_dir = os.path.join(
         _GetLocalFilePath(file_util.GetAppStorageUrl([test_run.output_path])),
-        'merge_report',
+        'merged_report',
     )
-    if os.path.isdir(merge_report_dir):
-      shutil.rmtree(merge_report_dir, ignore_errors=True)
+    if os.path.isdir(merged_report_dir):
+      shutil.rmtree(merged_report_dir, ignore_errors=True)
     merge_reports_cmd = [
         'java',
         '-jar',
@@ -131,7 +131,7 @@ def MergeReports(test_run_id):
         '--xml_report_files',
         xml_report_files,
         '--output_dir',
-        merge_report_dir,
+        merged_report_dir,
     ]
     logging.info('Executing cmd to merge reports: %s', merge_reports_cmd)
     proc = subprocess.Popen(

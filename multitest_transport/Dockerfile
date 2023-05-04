@@ -230,6 +230,8 @@ RUN wget -q --retry-connrefused -O ${LIBUSB_VERSION}.tar.bz2 http://downloads.so
 # later layers.
 ARG MTT_GOOGLE_OAUTH2_CLIENT_ID=
 ARG MTT_GOOGLE_OAUTH2_CLIENT_SECRET=
+ARG MTT_REPORT_GENERATOR_JAR_DIR=/merge_report_generator
+ARG MTT_REPORT_GENERATOR_JAR_PATH=${MTT_REPORT_GENERATOR_JAR_DIR}/report_generator_deploy.jar
 ARG MTT_TRADEFED_PREBUILT=tradefed.zip
 ARG MTT_VERSION=dev
 
@@ -241,6 +243,7 @@ ENV MTT_SERVER_LOG_LEVEL info
 
 ENV MTT_CUSTOM_TF_CONFIG_FILE ${MTT_STORAGE_PATH}/host-config.xml
 ENV MTT_LOG_DIR ${MTT_STORAGE_PATH}/log
+ENV MTT_REPORT_GENERATOR_JAR ${MTT_REPORT_GENERATOR_JAR_PATH}
 ENV MTT_TEST_OUTPUT_DIR ${MTT_STORAGE_PATH}/app_default_bucket/test_runs
 ENV MTT_TEST_WORK_DIR ${MTT_STORAGE_PATH}/tmp
 ENV MTT_USE_HOST_ADB ""
@@ -254,7 +257,10 @@ RUN python3 -m compileall -bq /mtt/google3 \
     && find /mtt/google3 -type f -iname "*.py" ! -iname "gunicorn_config.py" -exec rm -rf {} \;
 # Unzip the selected prebuilt TF runner
 RUN unzip -q /mtt/prebuilts/tradefed/${MTT_TRADEFED_PREBUILT} -d /tradefed
-RUN rm -rf /mtt/prebuilts/tradefed
+# Prepare the report generator jar used for merging reports
+RUN unzip -q /mtt/prebuilts/tools/report_generator.zip -d ${MTT_REPORT_GENERATOR_JAR_DIR}
+
+RUN rm -rf /mtt/prebuilts
 ENV PATH /tradefed:${PATH}
 
 # Setup scripts

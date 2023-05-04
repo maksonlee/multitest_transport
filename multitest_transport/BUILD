@@ -30,9 +30,14 @@ exports_files(["serve.sh"])
 
 filegroup(
     name = "prebuilts",
-    srcs = glob([
-        "prebuilts/**",
-    ]),
+    srcs = glob(
+        [
+            "prebuilts/**",
+        ],
+        exclude = [
+            "prebuilts/tools/README.md",
+        ],
+    ),
 )
 
 config_setting(
