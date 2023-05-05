@@ -15,15 +15,10 @@
  * limitations under the License.
  */
 
-import {enableProdMode} from '@angular/core';
 import {platformBrowser} from '@angular/platform-browser';
 
 import {AppModule} from './app_module';
 
-// Enable faster runtime when compiled
-if (COMPILED) {
-  enableProdMode();
-}
 
 // Bootstrap the application
 platformBrowser().bootstrapModule(AppModule);

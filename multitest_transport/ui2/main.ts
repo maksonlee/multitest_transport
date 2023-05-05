@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-import {enableProdMode} from '@angular/core';
 import {platformBrowser} from '@angular/platform-browser';
 
 import {MttModule} from './app/app';
-
 
 // Bootstrap the MTT Module
 platformBrowser().bootstrapModule(MttModule);
