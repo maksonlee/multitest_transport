@@ -17,10 +17,11 @@
 import {AfterViewInit, Component, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {MatLegacyButton} from '@angular/material/legacy-button';
 import {ActivatedRoute, Router} from '@angular/router';
+import {forkJoin, of as observableOf} from 'rxjs';
 import {first} from 'rxjs/operators';
 
 import {MttClient} from '../services/mtt_client';
-import {newTestRunAction, TestRunAction, TestRunPhase} from '../services/mtt_models';
+import {newTestRunAction, TestRunAction, TestRunHook, TestRunPhase} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {FormChangeTracker} from '../shared/can_deactivate';
 import {buildApiErrorMessage} from '../shared/util';
@@ -36,9 +37,12 @@ import {buildApiErrorMessage} from '../shared/util';
 export class TestRunActionEditPage extends FormChangeTracker implements
     OnInit, AfterViewInit {
   readonly PHASES = Object.values(TestRunPhase).slice(1);
+  readonly Object = Object;
 
+  isLoading = false;
   editMode = false;
   data: Partial<TestRunAction> = newTestRunAction();
+  testRunHookMap: {[key: string]: TestRunHook} = {};
 
   @ViewChild('backButton', {static: false}) backButton?: MatLegacyButton;
   @ViewChildren(FormChangeTracker)
@@ -53,12 +57,7 @@ export class TestRunActionEditPage extends FormChangeTracker implements
 
   ngOnInit() {
     this.route.params.pipe(first()).subscribe(params => {
-      if (params['id']) {
-        this.editMode = true;
-        this.loadTestRunAction(params['id']);
-      } else if (params['copy_id']) {
-        this.loadTestRunAction(params['copy_id']);
-      }
+      this.loadData(params['id'] || params['copy_id']);
     });
   }
 
@@ -66,26 +65,52 @@ export class TestRunActionEditPage extends FormChangeTracker implements
     this.backButton!.focus();
   }
 
-  loadTestRunAction(id: string) {
-    this.mttClient.testRunActions.get(id).pipe(first()).subscribe(
-        result => {
-          this.data = result;
-          this.data.phases = result.phases || [];
-          this.data.options = result.options || [];
-          this.data.tradefed_result_reporters =
-              result.tradefed_result_reporters || [];
-          if (!this.editMode) {
-            // Clear ID to ensure a new test run action is created
-            delete this.data.id;
-            this.data.name = `${this.data.name} (copy)`;
-          }
-        },
-        error => {
-          this.notifier.showError(
-              `Failed to load test run action '${id}'`,
-              buildApiErrorMessage(error));
-        },
-    );
+  loadData(id?: string) {
+    this.isLoading = true;
+    this.editMode = !!id;
+    const testRunActionObs =
+        id ? this.mttClient.testRunActions.get(id) : observableOf(null);
+    const testRunHookObs = this.mttClient.testRunActions.listTestRunHooks();
+    forkJoin([testRunActionObs, testRunHookObs])
+        .pipe()
+        .subscribe(
+            ([testRunActionRes, testRunHookRes]) => {
+              if (testRunActionRes) {
+                this.data = testRunActionRes;
+                this.data.phases = testRunActionRes.phases || [];
+                this.data.options = testRunActionRes.options || [];
+                this.data.tradefed_result_reporters =
+                    testRunActionRes.tradefed_result_reporters || [];
+                if (!this.editMode) {
+                  // Clear ID to ensure a new test run action is created
+                  delete this.data.id;
+                  this.data.name = `${this.data.name} (copy)`;
+                }
+              }
+              testRunHookRes.test_run_hooks?.reduce((map, hook) => {
+                map[hook.name] = hook;
+                return map;
+              }, this.testRunHookMap);
+              this.isLoading = false;
+            },
+            error => {
+              this.notifier.showError(
+                  `Failed to load test run action '${id}'`,
+                  buildApiErrorMessage(error));
+            },
+        );
+  }
+
+  onSelectTestRunHook(hookName: string) {
+    const testRunHook = this.testRunHookMap[hookName];
+    if (testRunHook) {
+      this.data.options =
+          testRunHook.option_defs?.map(optionDef => ({
+                                         name: optionDef.name,
+                                         value: optionDef.default || '',
+                                       })) ||
+          [];
+    }
   }
 
   onAddOption() {

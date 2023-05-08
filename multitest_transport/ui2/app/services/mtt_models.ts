@@ -373,7 +373,7 @@ export declare interface NodeConfig {
 }
 
 /**
- * A build channel provider option definition.
+ * A plugin option definition.
  */
 export declare interface OptionDef {
   /** An option definition name */
@@ -896,6 +896,17 @@ export declare interface TestRunActionRef {
 /** List of test run action references. */
 export declare interface TestRunActionRefList {
   refs: TestRunActionRef[];
+}
+
+/** Information about a test run hook. */
+export declare interface TestRunHook {
+  name: string;
+  option_defs?: OptionDef[];
+}
+
+/** List of test run hooks. */
+export declare interface TestRunHookList {
+  test_run_hooks?: TestRunHook[];
 }
 
 /**

@@ -31,7 +31,9 @@
   </h1>
 </div>
 
-<div class="page">
+<mat-spinner class="loading-spinner" color="accent" *ngIf="isLoading"> </mat-spinner>
+
+<div class="page" [class.loading-mask]="isLoading">
   <!-- Test Information -->
   <h2>Test Run Action Information</h2>
   <!-- Name field -->
@@ -48,10 +50,23 @@
   </mat-form-field>
 
   <!-- Hook class field -->
-  <!-- TODO: Use dropdown -->
   <mat-form-field appearance="outline" floatLabel="always" fxLayout="column">
     <mat-label>Hook Class Name</mat-label>
-    <input matInput type="text" [(ngModel)]="data.hook_class_name" />
+    <input
+      id="hook-class-name-input"
+      matInput
+      type="text"
+      [(ngModel)]="data.hook_class_name"
+      [matAutocomplete]="autocompleteHookClassName"
+    />
+    <mat-autocomplete
+      #autocompleteHookClassName="matAutocomplete"
+      (optionSelected)="onSelectTestRunHook($event.option.value)"
+    >
+      <mat-option *ngFor="let name of Object.keys(testRunHookMap)" [value]="name">
+        {{ name }}
+      </mat-option>
+    </mat-autocomplete>
   </mat-form-field>
 
   <mat-divider></mat-divider>
@@ -67,7 +82,6 @@
   <mat-divider></mat-divider>
 
   <!-- Test run action options -->
-  <!-- TODO: Use dropdown -->
   <h2>Options</h2>
   <name-value-pair-list-form
     [data]="data.options"

@@ -796,9 +796,16 @@ describe('TestRunActionClient', () => {
     };
     client.executeTestRunActions('test_run_id', testRunActionRefs);
     expect(http.post).toHaveBeenCalledWith(
-        `${MTT_API_URL}/test_run_actions/test_run_id`, testRunActionRefs,
+        `${TestRunActionClient.PATH}/test_run_id`, testRunActionRefs,
         jasmine.any(Object));
     expect(http.post).toHaveBeenCalledTimes(1);
+  });
+
+  it('can list test run hooks', () => {
+    client.listTestRunHooks();
+    expect(http.get).toHaveBeenCalledWith(
+        `${TestRunActionClient.PATH}/test_run_hooks`, jasmine.any(Object));
+    expect(http.get).toHaveBeenCalledTimes(1);
   });
 });
 

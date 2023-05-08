@@ -34,11 +34,32 @@ describe('TestRunActionEditPage', () => {
   let el: DebugElement;
 
   beforeEach(() => {
-    testRunActionClient = jasmine.createSpyObj(['get']);
+    testRunActionClient = jasmine.createSpyObj(['get', 'listTestRunHooks']);
     testRunActionClient.get.and.returnValue(observableOf({
       id: 'id',
       name: 'test run action',
       hook_class_name: 'hook class',
+    }));
+    testRunActionClient.listTestRunHooks.and.returnValue(observableOf({
+      test_run_hooks: [
+        {
+          name: 'hook class 1',
+        },
+        {
+          name: 'hook class 2',
+          option_defs: [
+            {
+              name: 'option1',
+              value_type: 'str',
+            },
+            {
+              name: 'option2',
+              value_type: 'str',
+              default: 'default',
+            },
+          ]
+        },
+      ],
     }));
 
     TestBed.configureTestingModule({
@@ -72,6 +93,7 @@ describe('TestRunActionEditPage', () => {
 
   it('calls API correctly', () => {
     expect(testRunActionClient.get).toHaveBeenCalled();
+    expect(testRunActionClient.listTestRunHooks).toHaveBeenCalled();
   });
 
   it('displays texts correctly', () => {
@@ -111,6 +133,20 @@ describe('TestRunActionEditPage', () => {
         .toBe(1);
     expect(testRunActionEditPage.data.tradefed_result_reporters![0])
         .toBe(first);
+  });
+
+  it('handles test run hook events', () => {
+    testRunActionEditPage.onAddOption();
+    expect(testRunActionEditPage.data.options!.length).toBe(1);
+    testRunActionEditPage.onSelectTestRunHook('hook class 1');
+    expect(testRunActionEditPage.data.options!.length).toBe(0);
+
+    testRunActionEditPage.onSelectTestRunHook('hook class 2');
+    expect(testRunActionEditPage.data.options!.length).toBe(2);
+    expect(testRunActionEditPage.data.options).toEqual([
+      {name: 'option1', value: ''},
+      {name: 'option2', value: 'default'},
+    ]);
   });
 
   describe('back button', () => {

@@ -508,8 +508,16 @@ export class TestRunActionClient {
       testRunId: string, testRunActionRefs: model.TestRunActionRefList) {
     const context = AnalyticsContext.create('test_run_actions', 'execute');
     return this.http.post(
-        `${MTT_API_URL}/test_run_actions/${encodeURIComponent(testRunId)}`,
+        `${TestRunActionClient.PATH}/${encodeURIComponent(testRunId)}`,
         testRunActionRefs, {context});
+  }
+
+  /** Lists all registered test run hooks. */
+  listTestRunHooks(): Observable<model.TestRunHookList> {
+    const context =
+        AnalyticsContext.create('test_run_actions', 'list_test_run_hooks');
+    return this.http.get<model.TestRunHookList>(
+        `${TestRunActionClient.PATH}/test_run_hooks`, {context});
   }
 
   // Fetches authorization information to start authorization flow.
