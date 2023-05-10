@@ -49,6 +49,7 @@ py_test(
     srcs = [
         "analytics_uploader_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         third_party("absl/testing:absltest"),
         ":analytics_uploader_lib",
@@ -93,6 +94,7 @@ py_test(
     srcs = [
         "oauth2_util_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":oauth2_util_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -148,6 +150,7 @@ py_test(
     srcs = [
         "tfc_client_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":tfc_client_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",

@@ -26,6 +26,7 @@ py_test(
     srcs = [
         "build_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":build_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -50,6 +51,7 @@ py_test(
     srcs = [
         "config_encoder_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":config_encoder_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -77,6 +79,7 @@ py_test(
     srcs = [
         "config_set_helper_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":build_lib",
         ":config_encoder_lib",
@@ -100,6 +103,7 @@ py_test(
     srcs = [
         "event_log_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":event_log_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -132,6 +136,7 @@ py_test(
     srcs = [
         "messages_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":messages_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -208,6 +213,7 @@ py_test(
     srcs = [
         "test_run_hook_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":test_run_hook_lib",
         "@tradefed_cluster//tradefed_cluster:command_task_api_lib",

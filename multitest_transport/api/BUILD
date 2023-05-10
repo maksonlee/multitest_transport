@@ -59,6 +59,7 @@ py_test(
     srcs = [
         "build_channel_api_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":api_test_util_lib",
         ":build_channel_api_lib",
@@ -84,6 +85,7 @@ py_test(
     srcs = [
         "build_channel_provider_api_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":api_test_util_lib",
         ":build_channel_provider_api_lib",
@@ -110,6 +112,7 @@ py_test(
     srcs = [
         "config_set_api_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":api_test_util_lib",
         ":config_set_api_lib",
@@ -135,6 +138,7 @@ py_test(
     srcs = [
         "device_action_api_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":api_test_util_lib",
         ":device_action_api_lib",
@@ -159,6 +163,7 @@ py_test(
     srcs = [
         "node_config_api_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":api_test_util_lib",
         ":node_config_api_lib",
@@ -194,6 +199,7 @@ py_test(
     srcs = [
         "private_node_config_api_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":api_test_util_lib",
         ":private_node_config_api_lib",
@@ -250,6 +256,7 @@ py_test(
     srcs = [
         "test_api_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":api_test_util_lib",
         ":test_api_lib",
@@ -280,6 +287,7 @@ py_test(
     srcs = [
         "test_plan_api_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":api_test_util_lib",
         ":test_plan_api_lib",
@@ -305,6 +313,7 @@ py_test(
     srcs = [
         "test_result_api_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":api_test_util_lib",
         ":test_result_api_lib",
@@ -335,6 +344,7 @@ py_test(
     srcs = [
         "test_run_action_api_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":api_test_util_lib",
         ":test_run_action_api_lib",
@@ -366,6 +376,7 @@ py_test(
     srcs = [
         "test_run_api_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":api_test_util_lib",
         ":test_run_api_lib",
@@ -389,6 +400,7 @@ py_test(
     srcs = [
         "file_cleaner_api_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":api_test_util_lib",
         ":file_cleaner_api_lib",
@@ -415,6 +427,7 @@ py_test(
     srcs = [
         "netdata_api_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":api_test_util_lib",
         ":netdata_api_lib",

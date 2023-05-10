@@ -28,6 +28,7 @@ py_test(
     srcs = [
         "download_util_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":download_util_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -88,6 +89,7 @@ py_test(
     data = [
         "//multitest_transport/gae_configs",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":download_util_lib",
         ":test_kicker_lib",
@@ -135,6 +137,7 @@ py_test(
     data = [
         "//multitest_transport/gae_configs",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":test_plan_kicker_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -159,6 +162,7 @@ py_test(
     srcs = [
         "test_result_handler_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":test_result_handler_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -187,6 +191,7 @@ py_test(
     srcs = [
         "test_scheduler_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":test_scheduler_lib",
         "//multitest_transport/models:messages_lib",
@@ -220,6 +225,7 @@ py_test(
     srcs = [
         "tfc_event_handler_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":test_result_handler_lib",
         ":tfc_event_handler_lib",
@@ -243,6 +249,7 @@ py_test(
     srcs = [
         "test_run_manager_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":test_run_manager_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",

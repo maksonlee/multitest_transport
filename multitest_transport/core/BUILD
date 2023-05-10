@@ -54,6 +54,7 @@ py_test(
     data = [
         "//multitest_transport/gae_configs",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":cron_kicker_lib",
         "@tradefed_cluster//tradefed_cluster:testbed_dependent_test_lib",
@@ -77,6 +78,7 @@ py_test(
     srcs = [
         "ndb_upgrader_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":ndb_upgrader_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_test_lib",
@@ -122,6 +124,7 @@ py_test(
     srcs = [
         "service_checker_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":service_checker_lib",
         "@tradefed_cluster//tradefed_cluster/util:ndb_test_lib",

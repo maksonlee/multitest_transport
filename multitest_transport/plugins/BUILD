@@ -227,6 +227,7 @@ py_test(
     srcs = [
         "web_hook_test.py",
     ],
+    tags = ["not_run:arm"],
     deps = [
         ":web_hook_lib",
         "//multitest_transport/models",
