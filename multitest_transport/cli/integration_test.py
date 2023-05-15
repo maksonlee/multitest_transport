@@ -61,8 +61,15 @@ class CliIntegrationTest(absltest.TestCase):
 
   def _Start(self, image=None, args=None):
     """Start MTT."""
-    cmd = [FLAGS.mtt_path, '--no_check_update', '-v', 'start', '--image_name',
-           image or FLAGS.docker_image]
+    cmd = [
+        FLAGS.mtt_path,
+        '--no_check_update',
+        '-v',
+        'start',
+        '--use_host_network',
+        '--image_name',
+        image or FLAGS.docker_image,
+    ]
     _RunCmd(cmd + (args or []))
 
   def _Stop(self):
@@ -71,8 +78,15 @@ class CliIntegrationTest(absltest.TestCase):
 
   def _Update(self, image=None, args=None):
     """Update MTT."""
-    cmd = [FLAGS.mtt_path, '--no_check_update', '-v', 'update', '--image_name',
-           image or FLAGS.docker_image]
+    cmd = [
+        FLAGS.mtt_path,
+        '--no_check_update',
+        '-v',
+        'update',
+        '--use_host_network',
+        '--image_name',
+        image or FLAGS.docker_image,
+    ]
     _RunCmd(cmd + (args or []))
 
   def _Inspect(self, args):
