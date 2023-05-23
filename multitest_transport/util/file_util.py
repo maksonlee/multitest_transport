@@ -558,6 +558,21 @@ def GetOutputFileUrl(test_run, attempt, file_path: str = '') -> str:
       [test_run.output_path, attempt.command_id, attempt.attempt_id, file_path])
 
 
+def GetMergedReportFileUrl(test_run, file_path: str = '') -> str:
+  """Get URL for the test run's merged report directory.
+
+  Only test run triggered with sharding mode MODULE will have merged report.
+
+  Args:
+    test_run: test run
+    file_path: optional file path
+
+  Returns:
+    test run's merged report directory/file URL
+  """
+  return GetAppStorageUrl([test_run.output_path, 'merged_report', file_path])
+
+
 def GetOutputFilenames(test_run, attempt) -> List[str]:
   """Get a list of output filenames for a completed attempt.
 

@@ -85,6 +85,16 @@ export class FileService {
   }
 
   /**
+   * Get the URL for the test run's merged report root directory.
+   * @param testRun relevant test run
+   * @return dir URL
+   */
+  getTestRunMergedReportDirUrl(testRun: TestRun): string {
+    const outputUrl = testRun.output_url || '';
+    return joinPath(outputUrl, 'merged_report');
+  }
+
+  /**
    * Generate a URL at which the directory can be browsed.
    * @param dirUrl directory URL to browse
    * @return directory browse URL

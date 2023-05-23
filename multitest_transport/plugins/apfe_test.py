@@ -40,11 +40,13 @@ class APFEReportUploadHookTest(absltest.TestCase):
     self.hook._authorized_http = mock.MagicMock()
 
   def _SetUpContext(self, phase, mock_filenames, mock_output_url,
-                    mock_handle_factory):
+                    mock_handle_factory,
+                    sharding_mode=ndb_models.ShardingMode.RUNNER):
     """Sets up required context for uploading to APFE."""
     test_run = ndb_models.TestRun(
         test=ndb_models.Test(context_file_pattern='.+\\.zip'),
-        state=ndb_models.TestRunState.COMPLETED)
+        state=ndb_models.TestRunState.COMPLETED,
+        test_run_config=ndb_models.TestRunConfig(sharding_mode=sharding_mode))
     hook_context = plugins.TestRunHookContext(
         test_run=test_run, latest_attempt=mock.MagicMock(), phase=phase)
     mock_filenames.return_value = self.mock_output_files
@@ -80,7 +82,11 @@ class APFEReportUploadHookTest(absltest.TestCase):
   @mock.patch.object(event_log, 'Warn')
   def testExecute_noContextParams(self, mock_warn):
     """Tests that results aren't uploaded if context parameters not set."""
-    test_run = ndb_models.TestRun(test=ndb_models.Test())
+    test_run = ndb_models.TestRun(
+        test=ndb_models.Test(),
+        test_run_config=ndb_models.TestRunConfig(
+            sharding_mode=ndb_models.ShardingMode.RUNNER
+        ))
     hook_context = plugins.TestRunHookContext(
         test_run=test_run,
         latest_attempt=mock.MagicMock(),
@@ -98,10 +104,14 @@ class APFEReportUploadHookTest(absltest.TestCase):
   def testExecute_resultNotFound(self, mock_filenames, mock_warn):
     """Tests that results aren't uploaded if result file not found."""
     test_run = ndb_models.TestRun(
-        test=ndb_models.Test(context_file_pattern='.+\\.zip'))
+        test=ndb_models.Test(context_file_pattern='.+\\.zip'),
+        test_run_config=ndb_models.TestRunConfig(
+            sharding_mode=ndb_models.ShardingMode.RUNNER
+        ))
+    mock_attempt = mock.MagicMock(attempt_id='99999')
     hook_context = plugins.TestRunHookContext(
         test_run=test_run,
-        latest_attempt=mock.MagicMock(),
+        latest_attempt=mock_attempt,
         phase=ndb_models.TestRunPhase.ON_SUCCESS)
     mock_filenames.return_value = ['hello.txt', 'world.xml']
 
@@ -109,7 +119,8 @@ class APFEReportUploadHookTest(absltest.TestCase):
 
     mock_warn.assert_called_once_with(
         test_run,
-        '[APFE Report Upload] Result file not found, skipping upload.')
+        '[APFE Report Upload] Result file not found, skipping upload for '
+        'attempt 99999.')
     self.client.compatibility().report().startUploadReport.assert_not_called()
 
   @mock.patch.object(event_log, 'Warn')
@@ -120,7 +131,10 @@ class APFEReportUploadHookTest(absltest.TestCase):
                                mock_handle_factory, mock_warn):
     """Tests that results aren't uploaded if result file is not zip."""
     test_run = ndb_models.TestRun(
-        test=ndb_models.Test(context_file_pattern='.+\\.txt'))
+        test=ndb_models.Test(context_file_pattern='.+\\.txt'),
+        test_run_config=ndb_models.TestRunConfig(
+            sharding_mode=ndb_models.ShardingMode.RUNNER
+        ))
     hook_context = plugins.TestRunHookContext(
         test_run=test_run,
         latest_attempt=mock.MagicMock(),
@@ -171,7 +185,10 @@ class APFEReportUploadHookTest(absltest.TestCase):
   def testExecute_manual_testRunIsNotFinal(self, mock_warn):
     """Tests that results aren't uploaded if test run is not finished."""
     test_run = ndb_models.TestRun(
-        test=ndb_models.Test(context_file_pattern='.+\\.zip'))
+        test=ndb_models.Test(context_file_pattern='.+\\.zip'),
+        test_run_config=ndb_models.TestRunConfig(
+            sharding_mode=ndb_models.ShardingMode.RUNNER
+        ))
     hook_context = plugins.TestRunHookContext(
         test_run=test_run,
         latest_attempt=mock.MagicMock(),
@@ -183,6 +200,55 @@ class APFEReportUploadHookTest(absltest.TestCase):
         test_run, ('[APFE Report Upload] Test run is not in a final state, '
                    'skipping upload.'))
     self.client.compatibility().report().startUploadReport.assert_not_called()
+
+  @mock.patch.object(event_log, 'Info')
+  @mock.patch.object(file_util.FileHandle, 'Get')
+  @mock.patch.object(file_util, 'GetMergedReportFileUrl')
+  def testExecute_shardingModeModule_onSuccess(
+      self, mock_merged_report_url, mock_handle_factory, mock_info
+  ):
+    test_run = ndb_models.TestRun(
+        test=ndb_models.Test(context_file_pattern='.+\\.zip'),
+        state=ndb_models.TestRunState.COMPLETED,
+        test_run_config=ndb_models.TestRunConfig(
+            sharding_mode=ndb_models.ShardingMode.MODULE
+        ),
+    )
+    hook_context = plugins.TestRunHookContext(
+        test_run=test_run,
+        latest_attempt=mock.MagicMock(),
+        phase=ndb_models.TestRunPhase.ON_SUCCESS,
+    )
+
+    def _MockMergedReportUrl(unused_test_run, filename='') -> str:
+      if not filename:
+        return mock.MagicMock()
+      return filename
+
+    mock_merged_report_url.side_effect = _MockMergedReportUrl
+
+    mock_handle_factory.return_value.ListFiles.return_value = [
+        file_util.FileInfo(
+            url='merged_report_summary', is_file=False, content_type='directory'
+        ),
+        file_util.FileInfo(
+            url=self.mock_result_file,
+            is_file=True,
+            content_type='application/zip',
+        ),
+    ]
+    mock_handle_factory.return_value.Info.return_value = file_util.FileInfo(
+        url=self.mock_result_file, is_file=True, content_type='application/zip'
+    )
+
+    mock_response = {'ref': {'name': self.mock_resource_name}}
+    self.client.compatibility().report().startUploadReport().execute.return_value = json.dumps(
+        mock_response
+    )
+
+    self.hook.Execute(hook_context)
+
+    self._VerifyUpload(hook_context.test_run, mock_info)
 
 
 if __name__ == '__main__':

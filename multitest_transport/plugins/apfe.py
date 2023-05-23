@@ -13,6 +13,8 @@
 # limitations under the License.
 """Android Partner Front End plugins."""
 import json
+import logging
+import os
 import re
 
 import apiclient
@@ -73,7 +75,10 @@ class APFEReportUploadHook(base.TestRunHook):
 
   def Execute(self, context):
     if context.phase == ndb_models.TestRunPhase.ON_SUCCESS:
-      self._UploadReport(context.test_run, context.latest_attempt)
+      if self._isTestRunShardingModeModule(context.test_run):
+        self._UploadReport(context.test_run, context.latest_attempt, True)
+      else:
+        self._UploadReport(context.test_run, context.latest_attempt)
     if context.phase == ndb_models.TestRunPhase.MANUAL:
       if not context.test_run.IsFinal():
         event_log.Warn(
@@ -81,9 +86,22 @@ class APFEReportUploadHook(base.TestRunHook):
             ('[APFE Report Upload] Test run is not in a final state, '
              'skipping upload.'))
         return
-      self._UploadReport(context.test_run, context.latest_attempt)
+      if self._isTestRunShardingModeModule(context.test_run):
+        self._UploadReport(context.test_run, context.latest_attempt, True)
+      else:
+        self._UploadReport(context.test_run, context.latest_attempt)
 
-  def _UploadReport(self, test_run, attempt):
+  def _isTestRunShardingModeModule(self, test_run):
+    try:
+      return (
+          test_run.test_run_config.sharding_mode
+          == ndb_models.ShardingMode.MODULE
+      )
+    except AttributeError as e:
+      logging.exception('Not found sharding mode: %s', e)
+    return False
+
+  def _UploadReport(self, test_run, attempt, upload_merged_report=False):
     context_file_pattern = test_run.test.context_file_pattern
     if not context_file_pattern:
       event_log.Warn(
@@ -93,15 +111,40 @@ class APFEReportUploadHook(base.TestRunHook):
 
     # Prepare the results file to upload
     result_file_regex = re.compile('^' + context_file_pattern + '$')
-    output_files = file_util.GetOutputFilenames(test_run, attempt)
-    result_file = next((f for f in output_files if result_file_regex.match(f)),
-                       None)
+    result_file = ''
+    if upload_merged_report:
+      merged_report_dir = file_util.GetMergedReportFileUrl(test_run)
+      merged_report_dir_handle = file_util.FileHandle.Get(merged_report_dir)
+      merged_report_files = merged_report_dir_handle.ListFiles()
+      if merged_report_files:
+        merged_report_file_names = [
+            os.path.basename(f.url) for f in merged_report_files if f.is_file
+        ]
+        result_file = next(
+            (f for f in merged_report_file_names if result_file_regex.match(f)),
+            None,
+        )
+    else:
+      output_files = file_util.GetOutputFilenames(test_run, attempt)
+      result_file = next(
+          (f for f in output_files if result_file_regex.match(f)), None
+      )
     if not result_file:
       event_log.Warn(
           test_run,
-          '[APFE Report Upload] Result file not found, skipping upload.')
+          '[APFE Report Upload] Result file not found, skipping upload for %s.'
+          % (
+              'merged report'
+              if upload_merged_report
+              else 'attempt %s' % attempt.attempt_id
+          ),
+      )
       return
-    result_url = file_util.GetOutputFileUrl(test_run, attempt, result_file)
+    result_url = (
+        file_util.GetMergedReportFileUrl(test_run, result_file)
+        if upload_merged_report
+        else file_util.GetOutputFileUrl(test_run, attempt, result_file)
+    )
     result_handle = file_util.FileHandle.Get(result_url)
     result_info = result_handle.Info()
     if not result_info or result_info.content_type != 'application/zip':

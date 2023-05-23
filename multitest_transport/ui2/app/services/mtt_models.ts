@@ -758,6 +758,11 @@ export function isFinalTestRunState(state: TestRunState) {
   return FINAL_TEST_RUN_STATES.includes(state);
 }
 
+/** Returns true if the sharding mode is MODULE, false otherwise */
+export function isTestRunShardingModeModule(test_run_config?: TestRunConfig) {
+  return test_run_config?.sharding_mode === ShardingMode.MODULE;
+}
+
 /**
  * Test run info and results (includes retries)
  */

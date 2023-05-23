@@ -26,7 +26,7 @@ import {finalize, first, switchMap, takeUntil} from 'rxjs/operators';
 import {AnalyticsService} from '../services/analytics_service';
 import {FileService} from '../services/file_service';
 import {MttClient} from '../services/mtt_client';
-import {isFinalTestRunState, TestRun, TestRunAction, TestRunActionRef, TestRunPhase, TestRunSummary, TestRunSummaryList} from '../services/mtt_models';
+import {isFinalTestRunState, isTestRunShardingModeModule, TestRun, TestRunAction, TestRunActionRef, TestRunPhase, TestRunSummary, TestRunSummaryList} from '../services/mtt_models';
 import {Notifier} from '../services/notifier';
 import {TfcClient} from '../services/tfc_client';
 import {isFinalCommandState, Request} from '../services/tfc_models';
@@ -49,6 +49,7 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
 
   isLoading = false;
   isFinalTestRunState = isFinalTestRunState;
+  isTestRunShardingModeModule = isTestRunShardingModeModule;
   deviceInfoColumns = ['device_serial', 'product', 'build_id'];
 
   private readonly destroyed = new ReplaySubject<void>();
@@ -176,7 +177,9 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
 
     const attempts = this.request.command_attempts;
     const lastAttempt = attempts[attempts.length - 1];
-    const fileUrl = this.fs.getTestRunFileUrl(this.testRun, lastAttempt);
+    const fileUrl = isTestRunShardingModeModule(this.testRun.test_run_config) ?
+        this.fs.getTestRunMergedReportDirUrl(this.testRun) :
+        this.fs.getTestRunFileUrl(this.testRun, lastAttempt);
     this.outputFilesUrl = this.fs.getFileBrowseUrl(fileUrl);
   }
 
@@ -185,14 +188,48 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    if (isTestRunShardingModeModule(this.testRun.test_run_config)) {
+      this.updateExportUrlForModuleMode();
+      return;
+    }
+
+    this.updateExportUrlForRunnerMode();
+  }
+
+  updateExportUrlForRunnerMode() {
+    if (!this.testRun) {
+      return;
+    }
     const nextResources = this.testRun.next_test_context &&
         this.testRun.next_test_context.test_resources;
     const contextFile = nextResources && nextResources[0].url;
     if (!contextFile) {
       return;
     }
-
     this.exportUrl = this.fs.getFileOpenUrl(contextFile);
+  }
+
+  updateExportUrlForModuleMode() {
+    if (!this.testRun) {
+      return;
+    }
+    const mergedReportDirUrl =
+        this.fs.getTestRunMergedReportDirUrl(this.testRun);
+    const mergedReportDirRelativePath =
+        this.fs.getRelativePathAndHostname(mergedReportDirUrl)[0];
+
+    this.fs.listFiles(mergedReportDirRelativePath).subscribe(files => {
+      const mergedReportZipFile = files.find(f => f.path.endsWith('.zip'));
+      if (mergedReportZipFile) {
+        this.exportUrl = this.fs.getFileOpenUrl(mergedReportZipFile.path);
+      } else {
+        console.log(
+            'Test run %s uses MODULE sharding mode but found no merged ' +
+                'report. Fallback to classic behavior.',
+            this.testRunId);
+        this.updateExportUrlForRunnerMode();
+      }
+    });
   }
 
   cancelTestRun() {
