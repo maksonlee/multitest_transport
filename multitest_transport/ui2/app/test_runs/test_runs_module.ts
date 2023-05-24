@@ -68,7 +68,6 @@ const COMPONENTS = [
     TestRunActionsModule, ServicesModule, SharedModule, RouterModule
   ],
   exports: COMPONENTS,
-  entryComponents: [TestRunConfigEditor],
-})
+  })
 export class TestRunsModule {
 }

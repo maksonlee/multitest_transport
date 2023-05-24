@@ -49,7 +49,6 @@ const COMPONENTS = [
     SharedModule,
   ],
   exports: COMPONENTS,
-  entryComponents: [COMPONENTS],
-})
+  })
 export class SetupWizardModule {
 }

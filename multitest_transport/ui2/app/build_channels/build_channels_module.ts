@@ -38,9 +38,6 @@ const COMPONENTS = [
   declarations: [BuildPicker, COMPONENTS],
   imports: [ServicesModule, SharedModule, RouterModule, ReactiveFormsModule],
   exports: COMPONENTS,
-  entryComponents: [
-    BuildPicker,
-  ]
-})
+  })
 export class BuildChannelsModule {
 }

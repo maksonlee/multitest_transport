@@ -44,9 +44,6 @@ import {WorkflowEditor} from './workflow_editor';
     TouchScreen,
     WorkflowEditor,
   ],
-  entryComponents: [
-    AoaActionEditor,
-  ],
   exports: [
     TouchScreen,
     WorkflowEditor,

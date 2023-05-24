@@ -36,9 +36,6 @@ const COMPONENTS = [ConfigSetList, ConfigSetPicker];
     BuildChannelsModule,
   ],
   exports: COMPONENTS,
-  entryComponents: [
-    ConfigSetPicker,
-  ],
-})
+  })
 export class ConfigSetsModule {
 }

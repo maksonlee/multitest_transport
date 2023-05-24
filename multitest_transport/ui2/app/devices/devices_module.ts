@@ -59,7 +59,6 @@ const COMPONENTS = [
     SharedModule,
   ],
   exports: COMPONENTS,
-  entryComponents: [DeviceDetails],
-})
+  })
 export class DevicesModule {
 }

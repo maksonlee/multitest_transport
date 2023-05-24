@@ -28,7 +28,6 @@ import {AuthModule} from './auth/auth_module';
 import {AuthReturnPage} from './auth/auth_return_page';
 import {BuildChannelEditPage} from './build_channels/build_channel_edit_page';
 import {BuildChannelList} from './build_channels/build_channel_list';
-import {BuildPicker} from './build_channels/build_picker';
 import {ConfigSetList} from './config_sets/config_set_list';
 import {ConfigSetPicker} from './config_sets/config_set_picker';
 import {DeviceActionEditPage} from './device_actions/device_action_edit_page';
@@ -59,7 +58,6 @@ import {TestPlanListPage} from './test_plans/test_plan_list_page';
 import {TestRunActionEditPage} from './test_run_actions/test_run_action_edit_page';
 import {TestRunActionList} from './test_run_actions/test_run_action_list';
 import {NewTestRunPage} from './test_runs/new_test_run_page';
-import {TestRunConfigEditor} from './test_runs/test_run_config_editor';
 import {TestRunDetailPage} from './test_runs/test_run_detail_page';
 import {TestRunListPage} from './test_runs/test_run_list_page';
 import {TestEditPage} from './tests/test_edit_page';
@@ -309,7 +307,6 @@ export class Mtt implements OnDestroy {
     },
     UnsavedChangeGuard
   ],
-  entryComponents: [BuildPicker, TestRunConfigEditor],
-})
+  })
 export class MttModule {
 }

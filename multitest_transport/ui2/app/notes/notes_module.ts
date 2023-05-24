@@ -46,10 +46,6 @@ const COMPONENTS = [
     ServicesModule,
   ],
   exports: COMPONENTS,
-  entryComponents: [
-    NotesDialog,
-    PredefinedMessagesEditor,
-  ],
-})
+  })
 export class NotesModule {
 }

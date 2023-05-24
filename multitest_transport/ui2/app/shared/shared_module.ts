@@ -49,8 +49,6 @@ import {MatStepperModule} from '@angular/material/stepper';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatTreeModule} from '@angular/material/tree';
 
-import {ErrorDialog} from '../services/error_dialog';
-
 import {Breadcrumb} from './breadcrumb';
 import {FileSizePipe} from './file_size_pipe';
 import {ForbiddenValuesValidator} from './forbidden_values_validator';
@@ -176,7 +174,6 @@ export const LAB_APPLICATION_NAME = `${APPLICATION_NAME} Lab`;
     MATERIAL_MODULES,
     PIPES,
   ],
-  entryComponents: [ErrorDialog],
-})
+  })
 export class SharedModule {
 }

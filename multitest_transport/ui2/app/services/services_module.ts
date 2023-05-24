@@ -47,11 +47,6 @@ import {NotifierDialog} from './notifier_dialog';
     ErrorDialog,
     NotifierDialog,
   ],
-  entryComponents: [
-    ErrorDialog,
-    NotifierDialog,
-    AuthDialog,
-  ]
-})
+  })
 export class ServicesModule {
 }

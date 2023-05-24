@@ -19,7 +19,6 @@ import {RouterModule} from '@angular/router';
 import {ServicesModule} from 'google3/third_party/py/multitest_transport/ui2/app/services';
 import {SharedModule} from 'google3/third_party/py/multitest_transport/ui2/app/shared';
 
-import {DeviceDetails} from '../devices/device_details';
 import {DevicesModule} from '../devices/devices_module';
 import {HostsModule} from '../hosts/hosts_module';
 import {NotesModule} from '../notes/notes_module';
@@ -49,7 +48,6 @@ const COMPONENTS = [
     SharedModule,
   ],
   exports: COMPONENTS,
-  entryComponents: [DeviceDetails]
-})
+  })
 export class RecoveryModule {
 }

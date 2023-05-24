@@ -86,7 +86,6 @@ const COMPONENTS = [
     ServicesModule,
   ],
   exports: COMPONENTS,
-  entryComponents: [HostDetails, HostUpdateDialog],
 })
 export class HostsModule {
 }

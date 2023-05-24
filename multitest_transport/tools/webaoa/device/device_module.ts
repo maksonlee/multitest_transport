@@ -32,9 +32,6 @@ import {FindDeviceDialog} from './find_device_dialog';
     DeviceList,
     FindDeviceDialog,
   ],
-  entryComponents: [
-    FindDeviceDialog,
-  ],
   exports: [
     DeviceList,
   ],
