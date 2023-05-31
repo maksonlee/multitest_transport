@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@use 'third_party/javascript/angular_components/deprecated' as mat-deprecated;
 @use 'third_party/javascript/angular_components/material' as mat;
 @use 'sass:list';
 
@@ -20,7 +21,7 @@
 
 
 // Core material styles
-@include mat.all-legacy-component-typographies();
+@include mat-deprecated.all-legacy-component-typographies();
 @include mat.core();
 
 // Application theme
@@ -40,7 +41,7 @@ $theme: mat.define-light-theme(
     typography: null,
   )
 );
-$typography: mat.define-legacy-typography-config();
+$typography: mat-deprecated.define-legacy-typography-config();
 
 // Add background theme
 $background-color: $white;
@@ -58,7 +59,7 @@ $theme: map_merge(
   )
 );
 
-@include mat.all-legacy-component-themes($theme);
+@include mat-deprecated.all-legacy-component-themes($theme);
 @include mat.radio-theme($theme);
 @include mat.checkbox-theme($theme);
 @include mat.dialog-theme($theme);
@@ -93,7 +94,7 @@ $button-theme: mat.define-light-theme(
     typography: null,
   )
 );
-@include mat.legacy-button-theme($button-theme);
+@include mat-deprecated.legacy-button-theme($button-theme);
 
 $stepper-primary: mat.define-palette(mat.$blue-palette, 700);
 $stepper-accent: mat.define-palette(mat.$blue-palette, 100);
@@ -125,8 +126,8 @@ $input-theme: mat.define-light-theme(
     typography: null,
   )
 );
-@include mat.legacy-form-field-theme($input-theme);
-@include mat.legacy-input-theme($input-theme);
+@include mat-deprecated.legacy-form-field-theme($input-theme);
+@include mat-deprecated.legacy-input-theme($input-theme);
 
 $panel-title-font-size: 20px;
 $panel-title-line-height: 20px;
@@ -282,7 +283,9 @@ mat-spinner.loading-spinner {
   margin-bottom: 20px;
 }
 
-.mat-autocomplete-filter.mat-form-field-appearance-outline:not(.mat-form-field-disabled)
+.mat-autocomplete-filter.mat-form-field-appearance-outline:not(
+    .mat-form-field-disabled
+  )
   .mat-form-field-outline {
   color: $blue-300;
 }
