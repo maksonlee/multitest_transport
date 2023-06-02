@@ -116,6 +116,7 @@ sass_binary(
     strict_deps = False,
     deps = [
         third_party_js("angular_components:material_sass"),
+        third_party_js("angular_components:deprecated_sass"),
     ],
 )
 
