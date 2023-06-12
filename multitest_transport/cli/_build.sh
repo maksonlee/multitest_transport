@@ -53,13 +53,8 @@ chmod +w src/setup.py
 sed -i "s/VERSION =.*/VERSION = \"${RELEASE}\"/" src/setup.py
 
 cat << EOF > Dockerfile
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 ENV LANG=C.UTF-8
-
-# Ubuntu 18.04's python3-distutils is 3.6.9-1, which support python >= 3.6.7-1
-# to << 3.9. Later if we want to support new version of python, we need to
-# update the python3-distutils as well (may need to drop some old version
-# support).
 
 RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq unzip wget zip software-properties-common;
 # Add deadsnakes for different versions of python and distutils
@@ -67,14 +62,14 @@ RUN add-apt-repository ppa:deadsnakes/ppa
 RUN export DEBIAN_FRONTEND=noninteractive; apt update -qq; apt install -y -qq \
   python3.7 python3.8 python3.9 python3.10 \
   python3-distutils python3-pip \
-  python3.9-distutils python3.10-distutils python3.10-dev
+  python3.7-distutils python3.9-distutils python3.10-distutils python3.10-dev
 
 # Set minimal Python version that client supports.
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1000
 
 COPY ./requirements.txt /tmp
 RUN pip3 install --upgrade setuptools pip
-RUN pip3 install pex==2.1.94
+RUN pip3 install pex
 RUN pip3 install -r /tmp/requirements.txt
 RUN pip3 install --upgrade keyrings.alt
 
