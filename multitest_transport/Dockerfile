@@ -173,8 +173,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         apt-get install -y nodejs && \
         rm nodesource_setup.sh
 
-# Install cuttlefish-common
+# Install cuttlefish-common and add MTT user (root) to the groups
 # debuild -d skips checking the dependency of debhelper-compat 12.
+# Reference: https://android.googlesource.com/device/google/cuttlefish/+/refs/heads/android13-dev/README.md
 ARG CUTTLEFISH_COMMON_COMMIT=09546cf4a618563071beb42508fc7b4a5336ad29
 RUN git clone https://github.com/google/android-cuttlefish --no-checkout --single-branch /tmp/cuttlefish-common/src && \
     cd /tmp/cuttlefish-common/src && \
@@ -184,7 +185,10 @@ RUN git clone https://github.com/google/android-cuttlefish --no-checkout --singl
     apt-get install -y ../cuttlefish-common_*_amd64.deb iproute2 rsyslog && \
     cd - && \
     rm -rf /tmp/cuttlefish-common/src && \
-    groupadd --force kvm
+    groupadd --force kvm && \
+    groupadd --force cvdnetwork && \
+    groupadd --force render && \
+    usermod -aG kvm,cvdnetwork,render root
 
 # Ubuntu has a weird bug which is not allowing us to boot linux kernel when
 # kernel and u-boot modes are different (for example u-boot is 32 bit and
@@ -208,7 +212,7 @@ ENV MTT_SUPPORT_BRIDGE_NETWORK true
 
 # Install acloud
 # TODO: Replace /url with ?alt=media when it works
-ARG ACLOUD_DOWNLOAD_URL='https://www.googleapis.com/android/internal/build/v3/builds/9572993/aosp_cf_x86_64_phone-userdebug/attempts/latest/artifacts/acloud_prebuilt/url'
+ARG ACLOUD_DOWNLOAD_URL='https://www.googleapis.com/android/internal/build/v3/builds/10100910/aosp_cf_x86_64_phone-userdebug/attempts/latest/artifacts/acloud_prebuilt/url'
 ENV ACLOUD_PREBUILT_PATH=/bin/acloud_prebuilt
 RUN wget -q --retry-connrefused -O ${ACLOUD_PREBUILT_PATH} ${ACLOUD_DOWNLOAD_URL} \
     && chmod +x ${ACLOUD_PREBUILT_PATH}
