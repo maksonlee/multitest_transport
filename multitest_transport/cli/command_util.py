@@ -787,6 +787,7 @@ class DockerHelper(object):
         '-v', '/dev/bus/usb:/dev/bus/usb',  # Mount USB devices
         '--device-cgroup-rule', 'c 189:* rwm',  # Grant access to USB devices
         '--cap-add', 'syslog',  # Enables host system logs (e.g. dmesg) access
+        '--log-opt', 'max-size=200m', '--log-opt', 'max-file=5'  # Set log size
     ]
     if self._hostname:
       args.extend(['--hostname', self._hostname])

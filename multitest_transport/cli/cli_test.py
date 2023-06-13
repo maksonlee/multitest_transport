@@ -32,6 +32,12 @@ from multitest_transport.cli import google_auth_util
 from multitest_transport.cli import unittest_util
 
 _DOCKER_VERSION_STRING = 'Docker version 18.06.1-ce'
+_DEFAULT_CREATE_ARGS = (
+    '-v', '/dev/bus/usb:/dev/bus/usb',
+    '--device-cgroup-rule', 'c 189:* rwm',
+    '--cap-add', 'syslog',
+    '--log-opt', 'max-size=200m', '--log-opt', 'max-file=5',
+)
 
 
 class CliTest(parameterized.TestCase):
@@ -277,9 +283,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -328,9 +332,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'ahost',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -389,9 +391,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -445,9 +445,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -493,9 +491,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=on_premise',
@@ -538,9 +534,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=on_premise',
@@ -585,9 +579,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -695,9 +687,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'acontainer', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -747,9 +737,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -808,9 +796,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -872,9 +858,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -919,9 +903,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -986,9 +968,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -1032,9 +1012,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -1087,9 +1065,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'ahost',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -1129,9 +1105,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--network', 'host',
             '-e', 'OPERATION_MODE=unknown',
             '-e', 'MTT_CLI_VERSION=dev_version',
@@ -1169,9 +1143,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -1238,9 +1210,7 @@ class CliTest(parameterized.TestCase):
           mock.call([
               'docker', 'create',
               '--name', 'mtt', '-it',
-              '-v', '/dev/bus/usb:/dev/bus/usb',
-              '--device-cgroup-rule', 'c 189:* rwm',
-              '--cap-add', 'syslog',
+              *_DEFAULT_CREATE_ARGS,
               '--hostname', 'mock-host',
               '--network', 'bridge',
               '-e', 'OPERATION_MODE=unknown',
@@ -1285,9 +1255,7 @@ class CliTest(parameterized.TestCase):
         mock.call([
             'docker', 'create',
             '--name', 'mtt', '-it',
-            '-v', '/dev/bus/usb:/dev/bus/usb',
-            '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog',
+            *_DEFAULT_CREATE_ARGS,
             '--hostname', 'mock-host',
             '--network', 'bridge',
             '-e', 'OPERATION_MODE=unknown',
@@ -1333,9 +1301,9 @@ class CliTest(parameterized.TestCase):
 
     self.mock_context.Run.assert_has_calls([
         mock.call([
-            'docker', 'create', '--name', 'mtt', '-it', '-v',
-            '/dev/bus/usb:/dev/bus/usb', '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog', '--hostname', 'mock-host', '--network',
+            'docker', 'create', '--name', 'mtt', '-it',
+            *_DEFAULT_CREATE_ARGS,
+            '--hostname', 'mock-host', '--network',
             'bridge', '-e', 'OPERATION_MODE=unknown', '-e',
             'MTT_CLI_VERSION=dev_version', '-e',
             'MTT_CONTROL_SERVER_URL=new_url', '-e', 'LAB_NAME=alab', '-e',
@@ -1368,9 +1336,9 @@ class CliTest(parameterized.TestCase):
 
     self.mock_context.Run.assert_has_calls([
         mock.call([
-            'docker', 'create', '--name', 'mtt', '-it', '-v',
-            '/dev/bus/usb:/dev/bus/usb', '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog', '--hostname', 'mock-host', '--network',
+            'docker', 'create', '--name', 'mtt', '-it',
+            *_DEFAULT_CREATE_ARGS,
+            '--hostname', 'mock-host', '--network',
             'bridge', '-e', 'OPERATION_MODE=unknown', '-e',
             'MTT_CLI_VERSION=dev_version', '-e',
             'MTT_CONTROL_SERVER_URL=http://localhost:9000', '-e',
@@ -1406,9 +1374,9 @@ class CliTest(parameterized.TestCase):
 
     self.mock_context.Run.assert_has_calls([
         mock.call([
-            'docker', 'create', '--name', 'mtt', '-it', '-v',
-            '/dev/bus/usb:/dev/bus/usb', '--device-cgroup-rule', 'c 189:* rwm',
-            '--cap-add', 'syslog', '--hostname', 'mock-host', '--network',
+            'docker', 'create', '--name', 'mtt', '-it',
+            *_DEFAULT_CREATE_ARGS,
+            '--hostname', 'mock-host', '--network',
             'bridge', '-e', 'OPERATION_MODE=unknown', '-e',
             'MTT_CLI_VERSION=dev_version', '-e',
             'MTT_CONTROL_SERVER_URL=http://localhost:9000', '-e',

@@ -466,6 +466,7 @@ class DockerHelperTest(absltest.TestCase):
              '-v', '/dev/bus/usb:/dev/bus/usb',
              '--device-cgroup-rule', 'c 189:* rwm',
              '--cap-add', 'syslog',
+             '--log-opt', 'max-size=200m', '--log-opt', 'max-file=5',
              '--hostname', 'ahost',
              '--network', 'anetwork',
              '-e', 'ENV1=value1',
