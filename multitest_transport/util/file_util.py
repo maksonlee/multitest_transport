@@ -613,8 +613,9 @@ def GetWorkerAccessibleUrl(url: str) -> str:
     u = urllib.parse.urlparse(RemoteFileHandle(url).file_url)
   # IN ON_PREMISE mode, return templated url for worker,
   # and tradefed will populate it with accessible url
-  if (u.scheme == 'http' or
-      u.scheme == 'https') and u.hostname in LOCAL_HOSTNAME + (env.HOSTNAME,):
+  if (u.scheme == 'http' or u.scheme == 'https') and u.hostname in (
+      LOCAL_HOSTNAME + (env.HOSTNAME.lower(),)
+  ):
     url_format = f'{u.scheme}://{u.netloc}'
     modified_url = u.geturl()
     if str(u.port) == env.PORT:

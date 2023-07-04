@@ -530,12 +530,15 @@ class FileUtilTest(parameterized.TestCase):
        '${MTT_CONTROL_FILE_SERVER_URL}/file/path'),
       (env.OperationMode.ON_PREMISE, 'http://localhost:8006/xx',
        '${MTT_CONTROL_FILE_SERVER_URL}/xx'),
-      (env.OperationMode.ON_PREMISE, 'file:///xx', 'file:///xx'))
+      (env.OperationMode.ON_PREMISE, 'file:///xx', 'file:///xx'),
+      (env.OperationMode.ON_PREMISE, 'http://TEST.hostname.com:8000/xx',
+       '${MTT_CONTROL_SERVER_URL}/xx'))
   def testGetWorkerAccessibleUrl(self, operation_mode, original_url,
                                  expected_url):
     env.OPERATION_MODE = operation_mode
     env.PORT = '8000'
     env.FILE_SERVER_PORT = '8006'
+    env.HOSTNAME = 'TEST.hostname.com'
     url = file_util.GetWorkerAccessibleUrl(original_url)
     self.assertEqual(url, expected_url)
 
