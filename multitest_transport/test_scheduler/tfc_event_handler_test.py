@@ -200,6 +200,33 @@ class TfcEventHandlerTest(testbed_dependent_test.TestbedDependentTest):
                   attempt_id='attempt_id', _transactional=True),
     ])
 
+  @mock.patch.object(tfc_client, 'GetDeviceInfo')
+  def testProcessCommandAttemptEvent_appendNewDevice(self, mock_get_device):
+    # Test run already have a test device
+    self.mock_test_run.test_devices = [
+        ndb_models.TestDeviceInfo(device_serial='SERIAL1', build_id='TEST')
+    ]
+    self.mock_test_run.put()
+    mock_event = self.CreateMockCommandAttemptEvent(
+        datetime.timedelta(hours=1), serials=['SERIAL2']
+    )
+    mock_get_device.return_value = api_messages.DeviceInfo(
+        device_serial='SERIAL2', build_id='TEST'
+    )
+
+    tfc_event_handler.ProcessCommandAttemptEvent(mock_event)
+    self.mock_test_run = self.mock_test_run.key.get()
+
+    # New device is appended to test_devices
+    expected_devices = [
+        ndb_models.TestDeviceInfo(device_serial='SERIAL1', build_id='TEST'),
+        ndb_models.TestDeviceInfo(device_serial='SERIAL2', build_id='TEST'),
+    ]
+    self.assertEqual(
+        [d.to_dict() for d in self.mock_test_run.test_devices],
+        [d.to_dict() for d in expected_devices],
+    )
+
   @mock.patch.object(task_scheduler, 'AddCallableTask')
   @mock.patch.object(tfc_client, 'GetTestContext')
   @mock.patch.object(tfc_client, 'GetRequest')

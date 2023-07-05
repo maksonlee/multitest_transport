@@ -180,7 +180,10 @@ def _ProcessCommandAttemptEvent(test_run_id, message):
   attempt = message.attempt
   test_run.attempt_event_time = message.event_time
   test_run.update_time = message.event_time
-  test_run.test_devices = _GetTestDeviceInfos(attempt.device_serials)
+  device_serials = {device.device_serial for device in test_run.test_devices}
+  test_run.test_devices.extend(
+      _GetTestDeviceInfos(set(attempt.device_serials) - device_serials)
+  )
   test_run.put()
 
   # Store attempt test results and invoke after attempt hooks
