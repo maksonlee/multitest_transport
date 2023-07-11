@@ -15,14 +15,17 @@
 """Sharding strategies."""
 import string
 import more_itertools
-
 from multitest_transport.models import ndb_models
 from multitest_transport.util import file_util
 from tradefed_cluster import api_messages
 
-# Large modules that should be kept separate from other modules.
-LARGE_MODULES = frozenset([
-    'CtsDeqpTestCases',
+# Max shard number for a single module
+_MAX_MODULE_SHARDS = 10
+# Modules that should be shard to several commands for execution efficiency
+_SHARD_MODULES = frozenset(['CtsDeqpTestCases'])
+
+# Large modules that should be kept separate from other modules
+_LARGE_MODULES = frozenset([
     'CtsAutoFillServiceTestCases',
     'CtsMediaStressTestCases',
     'CtsSecurityTestCases',
@@ -58,7 +61,29 @@ def ShardModules(
   ordered_module_groups = []
   rest_module_infos = []
   for info in sorted(module_infos, key=lambda x: x.name):
-    if info.name in LARGE_MODULES:
+    if info.name in _SHARD_MODULES:
+      module_shards = min(
+          _MAX_MODULE_SHARDS, test_run.test_run_config.shard_count
+      )
+      module_arg = tmpl.safe_substitute({'MODULE_NAME': info.name})
+      for shard_index in range(module_shards):
+        command_infos.append(
+            api_messages.CommandInfo(
+                name=f'{info.name} shard {shard_index}',
+                command_line=(
+                    f'{command_line} {module_arg} --shard-count'
+                    f' {module_shards} --shard-index {shard_index}'
+                ),
+                test_bench=test_bench,
+                run_count=test_run.test_run_config.run_count,
+                shard_count=1,
+                allow_partial_device_match=(
+                    test_run.test_run_config.allow_partial_device_match
+                ),
+            )
+        )
+      max_command -= module_shards
+    elif info.name in _LARGE_MODULES:
       ordered_module_groups.append([info])
     else:
       rest_module_infos.append(info)

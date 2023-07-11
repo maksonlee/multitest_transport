@@ -105,7 +105,7 @@ class ShardingStrategiesTest(absltest.TestCase):
     mock_get_test_module_infos.return_value = [
         file_util.TestModuleInfo(name='CtsFooTestCases'),
         file_util.TestModuleInfo(name='CtsBarTestCases'),
-        file_util.TestModuleInfo(name='CtsDeqpTestCases'),
+        file_util.TestModuleInfo(name='CtsMediaStressTestCases'),
     ]
 
     command_infos = sharding_strategies.ShardModules(
@@ -113,9 +113,9 @@ class ShardingStrategiesTest(absltest.TestCase):
     )
 
     self._AssertCommandInfos(
-        ['CtsDeqpTestCases', 'CtsBarTestCases', 'CtsFooTestCases'],
+        ['CtsMediaStressTestCases', 'CtsBarTestCases', 'CtsFooTestCases'],
         [
-            'command -m CtsDeqpTestCases',
+            'command -m CtsMediaStressTestCases',
             'command -m CtsBarTestCases',
             'command -m CtsFooTestCases',
         ],
@@ -131,7 +131,7 @@ class ShardingStrategiesTest(absltest.TestCase):
         file_util.TestModuleInfo(name='CtsFooTestCases'),
         file_util.TestModuleInfo(name='CtsBarTestCases'),
         file_util.TestModuleInfo(name='CtsBazTestCases'),
-        file_util.TestModuleInfo(name='CtsDeqpTestCases'),
+        file_util.TestModuleInfo(name='CtsMediaStressTestCases'),
     ]
 
     command_infos = sharding_strategies.ShardModules(
@@ -140,14 +140,44 @@ class ShardingStrategiesTest(absltest.TestCase):
 
     self._AssertCommandInfos(
         [
-            'CtsDeqpTestCases',
+            'CtsMediaStressTestCases',
             'CtsBarTestCases CtsBazTestCases',
             'CtsFooTestCases',
         ],
         [
-            'command -m CtsDeqpTestCases',
+            'command -m CtsMediaStressTestCases',
             'command -m CtsBarTestCases -m CtsBazTestCases',
             'command -m CtsFooTestCases',
+        ],
+        command_infos,
+        test_bench=self.test_bench,
+        shard_count=1,
+    )
+
+  @mock.patch.object(file_util, 'OpenFile', autospec=True)
+  @mock.patch.object(file_util, 'GetTestModuleInfos', autospec=True)
+  def testShardModules_shardSingleModule(self, mock_get_test_module_infos, _):
+    mock_get_test_module_infos.return_value = [
+        file_util.TestModuleInfo(name='CtsFooTestCases'),
+        file_util.TestModuleInfo(name='CtsBarTestCases'),
+        file_util.TestModuleInfo(name='CtsDeqpTestCases'),
+    ]
+    self.test_run.test_run_config.shard_count = 2
+
+    command_infos = sharding_strategies.ShardModules(
+        self.test_run, 'command', self.test_bench, 3
+    )
+
+    self._AssertCommandInfos(
+        [
+            'CtsDeqpTestCases shard 0',
+            'CtsDeqpTestCases shard 1',
+            'CtsBarTestCases CtsFooTestCases',
+        ],
+        [
+            'command -m CtsDeqpTestCases --shard-count 2 --shard-index 0',
+            'command -m CtsDeqpTestCases --shard-count 2 --shard-index 1',
+            'command -m CtsBarTestCases -m CtsFooTestCases',
         ],
         command_infos,
         test_bench=self.test_bench,

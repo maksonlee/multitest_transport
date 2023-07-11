@@ -704,25 +704,54 @@ class TestKickerTest(testbed_dependent_test.TestbedDependentTest):
     self._CheckNewRequestMessage(
         msg=msg,
         test_run=test_run,
-        output_url='file:///data/app_default_bucket/test_runs/{}/output'.format(
-            test_run_id),
+        output_url=(
+            'file:///data/app_default_bucket/test_runs/{}/output'.format(
+                test_run_id
+            )
+        ),
         test_resource_urls={
             'foo': 'foo_cache_url',
             'bar': 'bar_cache_url',
             'test_package': 'test_package_cache_url',
-            'mtt.json':
+            'mtt.json': (
                 'http://localhost:8000/_ah/api/mtt/v1/test_runs/{}/metadata'
                 .format(test_run_id)
+            ),
         },
         command_lines=[
-            'command -m CtsDeqpTestCases --invocation-data mtt=1',
+            (
+                'command -m CtsDeqpTestCases --shard-count 6 --shard-index 0'
+                ' --invocation-data mtt=1'
+            ),
+            (
+                'command -m CtsDeqpTestCases --shard-count 6 --shard-index 1'
+                ' --invocation-data mtt=1'
+            ),
+            (
+                'command -m CtsDeqpTestCases --shard-count 6 --shard-index 2'
+                ' --invocation-data mtt=1'
+            ),
+            (
+                'command -m CtsDeqpTestCases --shard-count 6 --shard-index 3'
+                ' --invocation-data mtt=1'
+            ),
+            (
+                'command -m CtsDeqpTestCases --shard-count 6 --shard-index 4'
+                ' --invocation-data mtt=1'
+            ),
+            (
+                'command -m CtsDeqpTestCases --shard-count 6 --shard-index 5'
+                ' --invocation-data mtt=1'
+            ),
             'command -m CtsBarTestCases --invocation-data mtt=1',
             'command -m CtsFooTestCases --invocation-data mtt=1',
         ],
         test_bench=test_kicker._DeviceSpecsToTFCTestBench(
-            test_run.test_run_config.cluster, ['name:value1 name:value2']),
+            test_run.test_run_config.cluster, ['name:value1 name:value2']
+        ),
         shard_count=1,
-        max_concurrent_tasks=6)
+        max_concurrent_tasks=6,
+    )
     test_run = ndb_models.TestRun.get_by_id(test_run_id)
     self.assertEqual(mock_request.id, test_run.request_id)
     self.assertEqual(ndb_models.TestRunState.QUEUED, test_run.state)
