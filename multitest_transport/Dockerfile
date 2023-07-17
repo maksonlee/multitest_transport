@@ -62,6 +62,7 @@ RUN pip3 install \
         cachetools \
         flask \
         grpcio \
+        bcrypt \
         gunicorn
 # Install python2 pip.
 RUN wget -q --retry-connrefused -O /tmp/get-pip.py https://bootstrap.pypa.io/pip/2.7/get-pip.py && \
