@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {AfterViewInit, Component, Inject, OnInit, ViewChild} from '@angular/core';
-import {MatLegacyButton} from '@angular/material/legacy-button';
+import {MatButton} from '@angular/material/button';
 import {MatLegacyChipInputEvent} from '@angular/material/legacy-chips';
 import {MatStepper} from '@angular/material/stepper';
 import {Title} from '@angular/platform-browser';
@@ -59,7 +59,7 @@ const DISK_SPACE_USAGE_ALARMS = ['disk_space._data.disk_space_usage'];
 })
 export class NewTestRunPage extends FormChangeTracker implements OnInit,
                                                                  AfterViewInit {
-  @ViewChild('backButton', {static: false}) backButton?: MatLegacyButton;
+  @ViewChild('backButton', {static: false}) backButton?: MatButton;
   // Validation variable
   @ViewChild(TestRunConfigForm, {static: true})
   testRunConfigForm!: TestRunConfigForm;

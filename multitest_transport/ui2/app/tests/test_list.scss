@@ -18,9 +18,13 @@ div.config-set-actions {
   padding: 8px;
 }
 
-.mat-button,
-.mat-flat-button {
+.mat-mdc-button,
+.mat-mdc-unelevated-button {
   margin-left: 20px;
+}
+
+.mat-mdc-icon-button {
+  vertical-align: middle;
 }
 
 .mat-card {

@@ -64,17 +64,17 @@ $theme: map_merge(
 @include mat.checkbox-theme($theme);
 @include mat.dialog-theme($theme);
 @include mat.tooltip-theme($theme);
-@include mat.button-theme($theme);
 @include mat.snack-bar-theme($theme);
 @include mat.table-theme($theme);
 @include mat.progress-spinner-theme($theme);
+@include mat.fab-theme($theme);
 @include mat.progress-bar-theme($theme);
+@include mat.icon-button-theme($theme);
 
 @include mat.checkbox-typography($typography);
 @include mat.radio-typography($typography);
 @include mat.dialog-typography($typography);
 @include mat.tooltip-typography($typography);
-@include mat.button-typography($typography);
 @include mat.snack-bar-typography($typography);
 @include mat.table-typography($typography);
 @include mat.progress-spinner-typography($typography);
@@ -82,8 +82,6 @@ $theme: map_merge(
 
 $button-primary: mat.define-palette(mat.$grey-palette);
 $button-accent: mat.define-palette(mat.$blue-palette, 700);
-// TODO: Provide this application's typography in the
-// theme configuration instead of providing null.
 $button-theme: mat.define-light-theme(
   (
     color: (
@@ -91,15 +89,13 @@ $button-theme: mat.define-light-theme(
       accent: $button-accent,
     ),
     density: 0,
-    typography: null,
+    typography: mat.define-typography-config(),
   )
 );
-@include mat-deprecated.legacy-button-theme($button-theme);
+@include mat.button-theme($button-theme);
 
 $stepper-primary: mat.define-palette(mat.$blue-palette, 700);
 $stepper-accent: mat.define-palette(mat.$blue-palette, 100);
-// TODO: Provide this application's typography in the
-// theme configuration instead of providing null.
 $stepper-theme: mat.define-light-theme(
   (
     color: (
@@ -107,7 +103,7 @@ $stepper-theme: mat.define-light-theme(
       accent: $stepper-accent,
     ),
     density: 0,
-    typography: null,
+    typography: mat.define-typography-config(),
   )
 );
 @include mat.stepper-theme($stepper-theme);
@@ -145,7 +141,7 @@ body {
 
 // aria-disabled buttons are still focusable for accessibility purposes
 button[aria-disabled='true'] {
-  &.mat-flat-button {
+  &.mat-mdc-unelevated-button {
     background-color: rgba(0, 0, 0, 0.12) !important;
     color: rgba(0, 0, 0, 0.26) !important;
   }
@@ -306,9 +302,9 @@ mat-spinner.loading-spinner {
   }
 }
 
-.mat-button,
-.mat-flat-button,
-.mat-stroked-button {
+.mat-mdc-button,
+.mat-mdc-unelevated-button,
+.mat-mdc-outlined-button {
   flex-shrink: 0 !important;
 }
 
@@ -398,7 +394,7 @@ mat-spinner.loading-spinner {
   height: 48px;
 }
 
-.mat-raised-button {
+.mat-mdc-raised-button {
   background-color: $blue-600 !important;
   color: white !important;
   margin-right: 8px !important;
@@ -423,7 +419,7 @@ mat-spinner.loading-spinner {
   }
 }
 
-.mat-stroked-button {
+.mat-mdc-outlined-button {
   border-color: map-get($button-accent, 700) !important;
 
   &[disabled] {
@@ -478,6 +474,12 @@ mat-spinner.loading-spinner {
 
 .page {
   margin: 24px;
+}
+
+.shared-input-row {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
 }
 
 .shared-delete-button {

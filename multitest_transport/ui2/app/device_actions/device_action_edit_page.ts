@@ -15,7 +15,7 @@
  */
 
 import {AfterViewInit, Component, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
-import {MatLegacyButton} from '@angular/material/legacy-button';
+import {MatButton} from '@angular/material/button';
 import {ActivatedRoute, Router} from '@angular/router';
 import {first} from 'rxjs/operators';
 
@@ -41,7 +41,7 @@ export class DeviceActionEditPage extends FormChangeTracker implements
   buildChannels: BuildChannel[] = [];
   readonly FormMode = FormMode;
 
-  @ViewChild('backButton', {static: false}) backButton?: MatLegacyButton;
+  @ViewChild('backButton', {static: false}) backButton?: MatButton;
   @ViewChildren(FormChangeTracker)
   override trackers!: QueryList<FormChangeTracker>;
 

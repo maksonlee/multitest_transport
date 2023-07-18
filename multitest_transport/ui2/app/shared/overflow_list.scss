@@ -27,10 +27,13 @@ button {
 
 .dropdown-button {
   margin-left: 2px;
+  white-space: nowrap;
+  --mdc-icon-button-icon-size: 14px;
 }
 
 .mat-icon {
   margin: 0 -8px 2px;
+  vertical-align: middle;
 }
 
 .main-button {

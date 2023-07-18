@@ -10,8 +10,8 @@ per_file_sass_binaries(
     srcs = glob(["*.scss"]),
     visibility = ["//visibility:private"],
     deps = [
+        ":shared_styles",
         "//multitest_transport/ui2:constants",
-        "//multitest_transport/ui2/app/shared:shared_styles",
     ],
 )
 
@@ -93,7 +93,7 @@ ng_module(
         third_party_js("angular2:flex-layout"),
         third_party_js("angular2:forms"),
         third_party_js("angular_components:material_legacy_autocomplete"),
-        third_party_js("angular_components:material_legacy_button"),
+        third_party_js("angular_components:material_button"),
         third_party_js("angular_components:material_legacy_card"),
         third_party_js("angular_components:material_legacy_checkbox"),
         third_party_js("angular_components:material_legacy_chips"),

@@ -79,10 +79,13 @@
   </div>
 
   <div class="action-row">
-    <button mat-stroked-button class="delete-button"
-            (click)="deleteSelectedRows()"
-            [disabled]="this.selection.selected.length === 0"
-            >
+    <button
+      mat-stroked-button
+      class="delete-button"
+      color="accent"
+      (click)="deleteSelectedRows()"
+      [disabled]="this.selection.selected.length === 0"
+    >
       Delete
     </button>
   </div>
@@ -133,8 +136,8 @@
 
     <!-- Device Specs -->
     <ng-container matColumnDef="device_specs">
-      <mat-header-cell *matHeaderCellDef fxFlex="160px">Device Specs</mat-header-cell>
-      <mat-cell *matCellDef="let testRun" fxFlex="160px">
+      <mat-header-cell *matHeaderCellDef fxFlex="168px">Device Specs</mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex="168px">
         <overflow-list [data]="testRun.device_specs || []"
                        [overflowListType]="OverflowListType.BUTTON">
         </overflow-list>
@@ -143,8 +146,8 @@
 
     <!-- Device Build -->
     <ng-container matColumnDef="device_build">
-      <mat-header-cell *matHeaderCellDef fxFlex="160px">Device Build</mat-header-cell>
-      <mat-cell *matCellDef="let testRun" fxFlex="160px">
+      <mat-header-cell *matHeaderCellDef fxFlex="182px">Device Build</mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex="182px">
         <overflow-list [data]="testRun.test_devices | mapListField: 'build_id'"
                        [overflowListType]="OverflowListType.BUTTON">
         </overflow-list>
@@ -153,8 +156,8 @@
 
     <!-- Device Product -->
     <ng-container matColumnDef="device_product">
-      <mat-header-cell *matHeaderCellDef fxFlex="120px">Product</mat-header-cell>
-      <mat-cell *matCellDef="let testRun" fxFlex="120px">
+      <mat-header-cell *matHeaderCellDef fxFlex="128px">Product</mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex="128px">
         <overflow-list [data]="testRun.test_devices | mapListField: 'product'"
                        [overflowListType]="OverflowListType.BUTTON">
         </overflow-list>
@@ -164,8 +167,8 @@
     <!-- Test Run Labels -->
     <!-- TODO: add filtering -->
     <ng-container matColumnDef="labels">
-      <mat-header-cell *matHeaderCellDef fxFlex="200px">Labels</mat-header-cell>
-      <mat-cell *matCellDef="let testRun" fxFlex="200px">
+      <mat-header-cell *matHeaderCellDef fxFlex="208px">Labels</mat-header-cell>
+      <mat-cell *matCellDef="let testRun" fxFlex="208px">
         <overflow-list [data]="testRun.labels || []" [overflowListType]="OverflowListType.CHIP">
         </overflow-list>
       </mat-cell>
@@ -204,7 +207,12 @@
     <ng-container matColumnDef="view" stickyEnd>
       <mat-header-cell *matHeaderCellDef fxFlex="100px"></mat-header-cell>
       <mat-cell *matCellDef="let testRun" fxFlex="100px">
-        <a mat-stroked-button [routerLink]="'/test_runs/' + testRun.id" queryParamsHandling="merge">
+        <a
+          mat-stroked-button
+          color="accent"
+          [routerLink]="'/test_runs/' + testRun.id"
+          queryParamsHandling="merge"
+        >
           View
         </a>
       </mat-cell>

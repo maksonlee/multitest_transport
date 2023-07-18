@@ -23,7 +23,8 @@
 mat-table {
   overflow-x: auto;
 
-  mat-header-row, mat-row {
+  mat-header-row,
+  mat-row {
     align-items: stretch;
     height: auto;
     min-height: 49px;
@@ -31,13 +32,15 @@ mat-table {
     vertical-align: middle;
   }
 
-  mat-header-cell:last-of-type, mat-cell:last-of-type {
+  mat-header-cell:last-of-type,
+  mat-cell:last-of-type {
     justify-content: center;
     padding: 0 0 0 1px;
   }
 
   &:not(.scrolled) {
-    mat-header-cell:last-of-type, mat-cell:last-of-type {
+    mat-header-cell:last-of-type,
+    mat-cell:last-of-type {
       border-left: 1px solid $primary-less;
       padding: 0;
     }
@@ -69,11 +72,6 @@ mat-table {
   background-color: $background-default !important;
   border: 1px solid $border-chip;
   font-size: 12px;
-}
-
-.mat-stroked-button {
-  border-color: $border-button;
-  color: $text-button;
 }
 
 .test-name-column {

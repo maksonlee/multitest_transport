@@ -50,7 +50,7 @@ ng_module(
         third_party_js("angular2:common_http"),
         third_party_js("angular2:core"),
         third_party_js("angular2:forms"),
-        third_party_js("angular_components:material_legacy_button"),
+        third_party_js("angular_components:material_button"),
         third_party_js("angular_components:material_legacy_dialog"),
         third_party_js("angular_components:material_legacy_form_field"),
         third_party_js("angular_components:material_icon"),

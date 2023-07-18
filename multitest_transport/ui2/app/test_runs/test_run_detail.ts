@@ -16,7 +16,7 @@
 
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {AfterViewInit, Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MatLegacyButton} from '@angular/material/legacy-button';
+import {MatButton} from '@angular/material/button';
 import {MatLegacyDialog} from '@angular/material/legacy-dialog';
 import {MatLegacyTabChangeEvent, MatLegacyTabGroup} from '@angular/material/legacy-tabs';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -41,7 +41,7 @@ import {TestRunActionPickerDialog, TestRunActionPickerDialogData} from '../test_
   templateUrl: './test_run_detail.ng.html',
 })
 export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('backButton', {static: false}) backButton?: MatLegacyButton;
+  @ViewChild('backButton', {static: false}) backButton?: MatButton;
   // TODO Add test for tab change
   @ViewChild('tabGroup', {static: false}) tabGroup?: MatLegacyTabGroup;
   readonly OverflowListType = OverflowListType;

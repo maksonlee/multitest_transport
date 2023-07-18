@@ -30,10 +30,10 @@ ng_module(
     visibility = ["//multitest_transport"],
     deps = [
         third_party_js("angular_components:cdk_a11y"),
-        third_party_js("angular_components:material_legacy_dialog"),
         third_party_js("angular_components:cdk_collections"),
         third_party_js("angular_components:cdk_drag_drop"),
-        third_party_js("angular_components:material_legacy_button"),
+        third_party_js("angular_components:material_button"),
+        third_party_js("angular_components:material_legacy_dialog"),
         third_party_js("angular2:core"),
         third_party_js("angular2:router"),
         third_party_js("rxjs"),

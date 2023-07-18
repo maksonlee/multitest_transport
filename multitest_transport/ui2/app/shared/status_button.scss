@@ -16,25 +16,39 @@
 
 @import 'third_party/py/multitest_transport/ui2/constants';
 
-//Default status
+// Default status
 .status-button {
   background: $primary-less;
   line-height: 30px;
   width: 100px;
 }
 
-// Device status
-.status-button-allocated {
-  background: $progress-background;
-}
+// For specificity
+button {
+  // Device status
+  &.status-button-allocated {
+    background: $progress-background;
+  }
 
-.status-button-gone,
-.status-button-missing {
-  background: $danger-background;
-}
+  &.status-button-gone,
+  &.status-button-missing {
+    background: $danger-background;
+  }
 
-.status-button-available {
-  background: $success-background;
+  &.status-button-available {
+    background: $success-background;
+  }
+
+  // Build Channel status
+  &.status-button-authorized {
+    background: $success-background;
+    width: 150px;
+  }
+
+  &.status-button-unauthorized {
+    background: $danger-background;
+    width: 150px;
+  }
 }
 
 // Test Case Result status
@@ -65,17 +79,6 @@
 
 .status-button-running {
   background: $progress-background;
-}
-
-// Build Channel status
-.status-button-authorized {
-  background: $success-background;
-  width: 150px;
-}
-
-.status-button-unauthorized {
-  background: $danger-background;
-  width: 150px;
 }
 
 // Config Set state

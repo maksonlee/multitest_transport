@@ -25,7 +25,7 @@ import {MatExpansionModule} from '@angular/material/expansion';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {MatIconModule} from '@angular/material/icon';
 import {MatLegacyAutocompleteModule} from '@angular/material/legacy-autocomplete';
-import {MatLegacyButtonModule} from '@angular/material/legacy-button';
+import {MatButtonModule} from '@angular/material/button';
 import {MatLegacyCardModule} from '@angular/material/legacy-card';
 import {MatLegacyChipsModule} from '@angular/material/legacy-chips';
 import {MatLegacyDialogModule} from '@angular/material/legacy-dialog';
@@ -83,7 +83,7 @@ const MATERIAL_MODULES = [
   FlexLayoutModule,
   FormsModule,
   MatLegacyAutocompleteModule,
-  MatLegacyButtonModule,
+  MatButtonModule,
   MatLegacyCardModule,
   MatLegacyChipsModule,
   MatCheckboxModule,

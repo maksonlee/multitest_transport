@@ -15,7 +15,7 @@
  */
 
 import {Component, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
-import {MatLegacyButton} from '@angular/material/legacy-button';
+import {MatButton} from '@angular/material/button';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 
 import {MttClient} from '../services/mtt_client';
@@ -40,7 +40,7 @@ export class FileCleanerPolicyEditPage extends FormChangeTracker implements
   editMode = false;
   data: Partial<FileCleanerPolicy> = initFileCleanerPolicy();
   settings: FileCleanerSettings = {};
-  @ViewChild('backButton', {static: false}) backButton?: MatLegacyButton;
+  @ViewChild('backButton', {static: false}) backButton?: MatButton;
   @ViewChildren(FormChangeTracker)
   override trackers!: QueryList<FormChangeTracker>;
   existingPolicyNames = new Set<string>();

@@ -21,10 +21,6 @@
   position: relative;
 }
 
-.back-button-icon {
-  line-height: 44px;
-}
-
 .header {
   background-color: $background-default;
   padding-bottom: 0px;
@@ -33,10 +29,15 @@
   z-index: 101;
 }
 
-.mat-flat-button {
+.subtitle {
+  align-items: baseline;
+}
+
+.mat-mdc-unelevated-button {
   margin-left: 20px;
 }
 
 mark-host-as-fixed-button {
   margin-right: 8px;
+  vertical-align: middle;
 }

@@ -31,7 +31,7 @@ ng_module(
         third_party_js("angular_components:cdk_a11y"),
         third_party_js("angular_components:cdk_keycodes"),
         third_party_js("angular2:core"),
-        third_party_js("angular_components:material_legacy_button"),
+        third_party_js("angular_components:material_button"),
         third_party_js("angular_components:material_legacy_chips"),
         third_party_js("angular_components:material_table"),
         third_party_js("angular_components:material_stepper"),

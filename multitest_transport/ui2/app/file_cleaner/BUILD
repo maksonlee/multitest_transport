@@ -34,7 +34,7 @@ ng_module(
     deps = [
         third_party_js("angular2:core"),
         third_party_js("angular_components:cdk_a11y"),
-        third_party_js("angular_components:material_legacy_button"),
+        third_party_js("angular_components:material_button"),
         third_party_js("angular2:router"),
         third_party_js("rxjs"),
         "//multitest_transport/ui2/app/services",

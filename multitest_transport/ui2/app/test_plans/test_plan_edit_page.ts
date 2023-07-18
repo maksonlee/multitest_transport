@@ -17,7 +17,7 @@
 import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {MatLegacyButton} from '@angular/material/legacy-button';
+import {MatButton} from '@angular/material/button';
 import {MatLegacyChipInputEvent} from '@angular/material/legacy-chips';
 import {MatStepper} from '@angular/material/stepper';
 import {ActivatedRoute, Params, Router} from '@angular/router';
@@ -49,7 +49,7 @@ const TOTAL_STEPS = 4;
 })
 export class TestPlanEditPage extends FormChangeTracker implements
     OnDestroy, OnInit, AfterViewInit {
-  @ViewChild('backButton', {static: false}) backButton?: MatLegacyButton;
+  @ViewChild('backButton', {static: false}) backButton?: MatButton;
 
   // Validation variables
   @ViewChild(TestResourceForm, {static: true})
