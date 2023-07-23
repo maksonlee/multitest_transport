@@ -47,6 +47,9 @@ def GetCacheUrl(url: str = '') -> str:
     a cache URL.
   """
   encoded_url = base64.b64encode(url.encode()).decode()
+  n = 128
+  chunks = [encoded_url[i:i+n] for i in range(0, len(encoded_url), n)]
+  encoded_url = '/'.join(chunks)
   return file_util.GetAppStorageUrl([TEST_RESOURCE_CACHE_DIR, encoded_url])
 
 
