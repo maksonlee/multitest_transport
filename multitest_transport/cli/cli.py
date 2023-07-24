@@ -74,6 +74,8 @@ _SECCOMP_PROFILE_PACKAGE = 'multitest_transport.cli'
 _SECCOMP_PROFILE_NAME = 'seccomp.json'
 # Docker seccomp profile copied to host file system.
 _SECCOMP_PROFILE_PATH = os.path.join(_TMP_DIR, 'mtt_seccomp.json')
+# The help message about remote virtual devices.
+_REMOTE_VIRTUAL_DEVICES_FORMAT_MSG = '<user>@<IP address>/<number of devices>'
 
 # Tradefed accept TSTP signal as 'quit', which will wait all running tests
 # to finish.
@@ -618,6 +620,9 @@ def _StartMttNode(args, host):
       docker_helper.AddSysctl('net.ipv6.conf.all.disable_ipv6', '0')
       docker_helper.AddSysctl('net.ipv6.conf.all.forwarding', '1')
 
+  if args.remote_virtual_devices:
+    docker_helper.AddEnv('REMOTE_VIRTUAL_DEVICES', args.remote_virtual_devices)
+
   if args.extra_ca_cert:
     docker_helper.AddFile(
         args.extra_ca_cert, '/usr/local/share/ca-certificates/')
@@ -1023,6 +1028,15 @@ def _RunDaemonIteration(args, host=None):
     _UpdateMttNode(args, host)
 
 
+def _RemoteVirtualDevicesArg(arg):
+  """Validate --remote_virtual_devices."""
+  user_host, _, cnt = arg.partition('/')
+  user, _, host = user_host.partition('@')
+  if not (user and host and cnt):
+    raise ValueError(f'Expect {_REMOTE_VIRTUAL_DEVICES_FORMAT_MSG}')
+  return arg
+
+
 def _CreateImageArgParser():
   """Create argparser for docker image relate operations."""
   parser = argparse.ArgumentParser(add_help=False)
@@ -1063,6 +1077,11 @@ def _CreateStartArgParser():
   parser.add_argument(
       '--max_local_virtual_devices', type=int, default=0,
       help='Maximum number of virtual devices on local host (experimental).')
+  parser.add_argument(
+      '--remote_virtual_devices',
+      type=_RemoteVirtualDevicesArg,
+      help=('The remote host that runs virtual devices (experimental). Format: '
+            f'{_REMOTE_VIRTUAL_DEVICES_FORMAT_MSG}'))
   parser.add_argument(
       '--extra_docker_args', action='append',
       help='Extra docker args passing to container.')

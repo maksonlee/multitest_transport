@@ -117,9 +117,25 @@ if [[ -f "${MTT_CUSTOM_TF_CONFIG_FILE}" ]]
 then
   cp "${MTT_CUSTOM_TF_CONFIG_FILE}" "${TF_CONFIG_FILE}"
 fi
+
+# Convert REMOTE_VIRTUAL_DEVICES to PRECONFIGURED_VIRTUAL_DEVICE_POOL.
+# Each input element is "${RVD_USER}@${RVD_HOST}/{RVD_COUNT}".
+for RVD in "${REMOTE_VIRTUAL_DEVICES}"
+do
+  RVD_USER_HOST=$(cut -f 1 -d / <<< "${RVD}")
+  RVD_COUNT=$(cut -f 2 -d / <<< "${RVD}")
+  RVD_USER=$(cut -f 1 -d @ <<< "${RVD_USER_HOST}")
+  RVD_HOST=$(cut -f 2 -d @ <<< "${RVD_USER_HOST}")
+  for I in $(seq "${RVD_COUNT}")
+  do
+    PRECONFIGURED_VIRTUAL_DEVICE_POOL+="\\n<option name=\"host_options:preconfigured-virtual-device-pool\" value=\"${RVD_HOST}:${RVD_USER}\" \\/>"
+  done
+done
+
 # Use comma as delimiter because MTT_CONTROL_SERVER_URL has forward slashes.
 sed -e s,\${MTT_CONTROL_SERVER_URL},"${MTT_CONTROL_SERVER_URL}",g \
     -e s/\${MAX_LOCAL_VIRTUAL_DEVICES}/"${MAX_LOCAL_VIRTUAL_DEVICES}"/g \
+    -e s/\${PRECONFIGURED_VIRTUAL_DEVICE_POOL}/"${PRECONFIGURED_VIRTUAL_DEVICE_POOL}"/g \
     -i "${TF_CONFIG_FILE}"
 
 if [[ -z "${MTT_USE_HOST_ADB}" ]]

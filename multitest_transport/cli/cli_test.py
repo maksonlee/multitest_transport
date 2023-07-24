@@ -1403,6 +1403,46 @@ class CliTest(parameterized.TestCase):
                   raise_on_failure=False),
     ])
 
+  def testStart_withRemoteVirtualDevices(self):
+    """Test start with remote_virtual_devices."""
+    args = self.arg_parser.parse_args(
+        ['start', '--remote_virtual_devices', 'user1@192.0.2.3/2'])
+    cli.Start(args, self._CreateHost())
+
+    self.mock_context.Run.assert_has_calls([
+        mock.call([
+            'docker', 'create',
+            '--name', 'mtt', '-it',
+            *_DEFAULT_CREATE_ARGS,
+            '--hostname', 'mock-host',
+            '--network', 'bridge',
+            '-e', 'OPERATION_MODE=unknown',
+            '-e', 'MTT_CLI_VERSION=dev_version',
+            '-e', 'MTT_CONTROL_SERVER_URL=url',
+            '-e', 'IMAGE_NAME=gcr.io/android-mtt/mtt:prod',
+            '-e', 'USER=user',
+            '-e', 'TZ=Etc/UTC',
+            '-e', 'MTT_SERVER_LOG_LEVEL=info',
+            '-e', 'REMOTE_VIRTUAL_DEVICES=user1@192.0.2.3/2',
+            '--mount', 'type=volume,src=mtt-data,dst=/data',
+            '--mount', 'type=volume,src=mtt-temp,dst=/tmp',
+            '--mount', 'type=bind,src=/local/.android,dst=/root/.android',
+            '--mount', ('type=bind,src=/var/run/docker.sock,'
+                        'dst=/var/run/docker.sock'),
+            '--mount', ('type=bind,src=/local/.ats_storage,'
+                        'dst=/tmp/.mnt/.ats_storage'),
+            '-p', '127.0.0.1:5037:5037',
+            '--cap-add', 'sys_admin',
+            '--device', '/dev/fuse',
+            '--security-opt', 'apparmor:unconfined',
+            '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
+            'gcr.io/android-mtt/mtt:prod']),
+        mock.call(['docker', 'start', 'mtt']),
+        mock.call(
+            ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
+            raise_on_failure=False),
+    ])
+
   @mock.patch.object(cli, '_IsDaemonActive')
   @mock.patch.object(cli, '_SetupSystemdScript')
   @mock.patch.object(cli, '_SetupMTTRuntimeIntoLibPath')
@@ -2081,6 +2121,7 @@ _ALL_START_OPTIONS = (
     ('service_account_json_key_path', 'key.json'),
     ('port', 8001),
     ('max_local_virtual_devices', 1),
+    ('remote_virtual_devices', 'user1@192.0.2.3/2'),
     ('server_log_level', 'info'),
     ('operation_mode', 'UNKNOWN'),
 )
