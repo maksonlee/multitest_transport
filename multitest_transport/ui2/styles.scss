@@ -70,6 +70,7 @@ $theme: map_merge(
 @include mat.fab-theme($theme);
 @include mat.progress-bar-theme($theme);
 @include mat.icon-button-theme($theme);
+@include mat.paginator-theme($theme);
 @include mat.tabs-theme($theme);
 
 @include mat.checkbox-typography($typography);
@@ -432,7 +433,8 @@ mat-spinner.loading-spinner {
   flex: 1;
 }
 
-.mat-mdc-tab-group, .mat-mdc-tab-nav-bar {
+.mat-mdc-tab-group,
+.mat-mdc-tab-nav-bar {
   --mdc-tab-indicator-active-indicator-color: $accent-dark;
   --mat-tab-header-active-focus-indicator-color: $accent-dark;
   --mat-tab-header-active-label-text-color: $accent-dark;

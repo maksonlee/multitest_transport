@@ -15,7 +15,7 @@
  */
 import {Component, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
-import {MatLegacyPaginator} from '@angular/material/legacy-paginator';
+import {MatPaginator} from '@angular/material/paginator';
 import {MatRadioChange} from '@angular/material/radio';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatSort} from '@angular/material/sort';
@@ -100,7 +100,7 @@ export class HostUpdateDialog implements OnInit, OnDestroy {
 
   private readonly destroy = new ReplaySubject<void>(1);
 
-  @ViewChild(MatLegacyPaginator) matPaginator!: MatLegacyPaginator;
+  @ViewChild(MatPaginator) matPaginator!: MatPaginator;
   @ViewChild(MatSort) matSort!: MatSort;
 
   get selectedHostGroup() {

@@ -44,6 +44,7 @@ $theme: mat.define-light-theme(
 @include mat.table-theme($theme);
 @include mat.progress-spinner-theme($theme);
 @include mat.progress-bar-theme($theme);
+@include mat.paginator-theme($theme);
 @include mat.tabs-theme($theme);
 
 // Typography

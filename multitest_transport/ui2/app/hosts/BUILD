@@ -78,7 +78,7 @@ ng_module(
         third_party_js("angular_components:material_radio"),
         third_party_js("angular_components:material_table"),
         third_party_js("angular_components:material_tabs"),
-        third_party_js("angular_components:material_legacy_paginator"),
+        third_party_js("angular_components:material_paginator"),
         third_party_js("angular_components:material_sort"),
         third_party_js("angular_components:material_legacy_table"),
         third_party_js("angular2:platform_browser"),

@@ -33,7 +33,7 @@ import {MatLegacyFormFieldModule} from '@angular/material/legacy-form-field';
 import {MatLegacyInputModule} from '@angular/material/legacy-input';
 import {MatLegacyListModule} from '@angular/material/legacy-list';
 import {MatLegacyMenuModule} from '@angular/material/legacy-menu';
-import {MatLegacyPaginatorModule} from '@angular/material/legacy-paginator';
+import {MatPaginatorModule} from '@angular/material/paginator';
 import {MatLegacySelectModule} from '@angular/material/legacy-select';
 import {MatTabsModule} from '@angular/material/tabs';
 import {MatCheckboxModule} from '@angular/material/checkbox';
@@ -96,7 +96,7 @@ const MATERIAL_MODULES = [
   MatLegacyInputModule,
   MatLegacyListModule,
   MatLegacyMenuModule,
-  MatLegacyPaginatorModule,
+  MatPaginatorModule,
   MatProgressBarModule,
   MatProgressSpinnerModule,
   MatRadioModule,
