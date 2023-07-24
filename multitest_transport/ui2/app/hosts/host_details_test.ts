@@ -137,7 +137,7 @@ describe('HostDetails', () => {
   });
 
   it('should call HaTS client on host notes display', () => {
-    getEls(el, '.mat-tab-label').find(x => x.textContent === 'Notes')!.click();
+    getEls(el, '.mdc-tab').find(x => x.textContent === 'Notes')!.click();
     hostDetailsFixture.detectChanges();
     hostDetailsFixture.whenStable().then(() => {
       expect(feedbackService.startSurvey)

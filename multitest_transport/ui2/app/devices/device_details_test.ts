@@ -114,8 +114,7 @@ describe('DeviceDetails', () => {
   });
 
   it('should call HaTS client on device history display', () => {
-    getEls(el, '.mat-tab-label')
-        .find(x => x.textContent === 'History')!.click();
+    getEls(el, '.mdc-tab').find(x => x.textContent === 'History')!.click();
     deviceDetailsFixture.detectChanges();
     deviceDetailsFixture.whenStable().then(() => {
       expect(feedbackService.startSurvey)

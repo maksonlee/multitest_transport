@@ -68,7 +68,7 @@ ng_module(
         third_party_js("angular_components:material_legacy_core"),
         third_party_js("angular_components:material_legacy_dialog"),
         third_party_js("angular_components:material_table"),
-        third_party_js("angular_components:material_legacy_tabs"),
+        third_party_js("angular_components:material_tabs"),
         third_party_js("angular_components:material_stepper"),
         third_party_js("angular_components:material_legacy_table"),
         third_party_js("angular2:platform_browser"),

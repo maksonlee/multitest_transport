@@ -35,7 +35,7 @@ import {MatLegacyListModule} from '@angular/material/legacy-list';
 import {MatLegacyMenuModule} from '@angular/material/legacy-menu';
 import {MatLegacyPaginatorModule} from '@angular/material/legacy-paginator';
 import {MatLegacySelectModule} from '@angular/material/legacy-select';
-import {MatLegacyTabsModule} from '@angular/material/legacy-tabs';
+import {MatTabsModule} from '@angular/material/tabs';
 import {MatCheckboxModule} from '@angular/material/checkbox';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
@@ -106,7 +106,7 @@ const MATERIAL_MODULES = [
   MatSortModule,
   MatStepperModule,
   MatTableModule,
-  MatLegacyTabsModule,
+  MatTabsModule,
   MatToolbarModule,
   MatTooltipModule,
   MatTreeModule,

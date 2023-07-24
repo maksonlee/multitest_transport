@@ -72,31 +72,30 @@ describe('BuildPicker', () => {
 
   it('should display the two default tabs if no channels provided', () => {
     initComponent([]);
-    const tabs = getEls(element, '.mat-tab-label');
+    const tabs = getEls(element, '.mdc-tab');
     expect(tabs.length).toBe(2);
     expect(tabs[0].textContent).toEqual('By Url');
     expect(tabs[1].textContent).toEqual('Local File');
     // URL tab is selected by default
-    expect(getEl(element, '.mat-tab-label-active').textContent)
-        .toEqual('By Url');
+    expect(getEl(element, '.mdc-tab--active').textContent).toEqual('By Url');
   });
 
   it('should set URL value if HTTP URL provided', () => {
     initComponent([], 'https://www.google.com');
     // URL tab is selected and URL value is set
-    expect(getEl(element, '.mat-tab-label-active').textContent)
+    expect(getEl(element, '.mdc-tab--active').textContent)
         .toEqual('By Url');
     expect(component.searchBarUrlValue).toEqual('https://www.google.com');
   });
 
   it('should display an additional tab for each provided channel', () => {
     initComponent([{name: 'Channel #1'}, {name: 'Channel #2'}]);
-    const tabs = getEls(element, '.mat-tab-label');
+    const tabs = getEls(element, '.mdc-tab');
     expect(tabs.length).toBe(4);
     expect(tabs[2].textContent).toEqual('Channel #1');
     expect(tabs[3].textContent).toEqual('Channel #2');
     // URL tab is selected by default
-    expect(getEl(element, '.mat-tab-label-active').textContent)
+    expect(getEl(element, '.mdc-tab--active').textContent)
         .toEqual('By Url');
   });
 
@@ -109,7 +108,7 @@ describe('BuildPicker', () => {
         }],
         'mtt:///channel/path');
     // Build channel tab is selected and path value is initialized
-    expect(getEl(element, '.mat-tab-label-active').textContent)
+    expect(getEl(element, '.mdc-tab--active').textContent)
         .toEqual('Channel');
     expect(component.searchBarFilenameValue).toEqual('path');
     // Build items are loaded and authorization buttons are hidden
@@ -128,7 +127,7 @@ describe('BuildPicker', () => {
         }],
         'mtt:///channel/path');
     // Build channel tab is selected and path value is initialized
-    expect(getEl(element, '.mat-tab-label-active').textContent)
+    expect(getEl(element, '.mdc-tab--active').textContent)
         .toEqual('Channel');
     expect(component.searchBarUrlValue).toEqual('path');
     expect(component.searchBarFilenameValue).toEqual('');

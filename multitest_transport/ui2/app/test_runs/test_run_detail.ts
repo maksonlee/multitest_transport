@@ -18,7 +18,7 @@ import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {AfterViewInit, Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {MatButton} from '@angular/material/button';
 import {MatLegacyDialog} from '@angular/material/legacy-dialog';
-import {MatLegacyTabChangeEvent, MatLegacyTabGroup} from '@angular/material/legacy-tabs';
+import {MatTabChangeEvent, MatTabGroup} from '@angular/material/tabs';
 import {ActivatedRoute, Router} from '@angular/router';
 import {EMPTY, interval, Observable, ReplaySubject, zip} from 'rxjs';
 import {finalize, first, switchMap, takeUntil} from 'rxjs/operators';
@@ -43,7 +43,7 @@ import {TestRunActionPickerDialog, TestRunActionPickerDialogData} from '../test_
 export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('backButton', {static: false}) backButton?: MatButton;
   // TODO Add test for tab change
-  @ViewChild('tabGroup', {static: false}) tabGroup?: MatLegacyTabGroup;
+  @ViewChild('tabGroup', {static: false}) tabGroup?: MatTabGroup;
   readonly OverflowListType = OverflowListType;
   @Input() testRunId!: string;
 
@@ -110,7 +110,7 @@ export class TestRunDetail implements OnInit, AfterViewInit, OnDestroy {
     this.liveAnnouncer.clear();
   }
 
-  switchTab(tabChangeEvent: MatLegacyTabChangeEvent) {
+  switchTab(tabChangeEvent: MatTabChangeEvent) {
     this.router.navigate([], {
       fragment: this.matTabOptions[tabChangeEvent.index],
       queryParamsHandling: 'merge',

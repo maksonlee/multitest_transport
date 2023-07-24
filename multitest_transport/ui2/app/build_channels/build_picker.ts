@@ -18,7 +18,7 @@ import {LiveAnnouncer} from '@angular/cdk/a11y';
 import {SelectionModel} from '@angular/cdk/collections';
 import {Component, EventEmitter, Inject, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
 import {MAT_LEGACY_DIALOG_DATA, MatLegacyDialogRef} from '@angular/material/legacy-dialog';
-import {MatLegacyTabChangeEvent} from '@angular/material/legacy-tabs';
+import {MatTabChangeEvent} from '@angular/material/tabs';
 import {MatTable} from '@angular/material/table';
 import {ReplaySubject, Subject, Subscription} from 'rxjs';
 import {debounceTime, delay, finalize, first, takeUntil} from 'rxjs/operators';
@@ -224,7 +224,7 @@ export class BuildPicker implements OnInit, OnDestroy {
    * The other tabs could include Google Drive, Local file store, and more
    * @param tabEvent A tab change event
    */
-  onSelectedTabChange(tabEvent: MatLegacyTabChangeEvent) {
+  onSelectedTabChange(tabEvent: MatTabChangeEvent) {
     // When switching between tabs, it's possible that one subscription
     // is still loading while the second subscription started. Thus, it's
     // possible that first subscription finishes even later than then
