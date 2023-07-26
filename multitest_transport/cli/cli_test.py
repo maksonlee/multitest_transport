@@ -72,7 +72,8 @@ class CliTest(parameterized.TestCase):
         side_effect=lambda p: p in self.mock_exist_files)
     self.file_exists_patcher.start()
     self.mock_exist_files = ['/dev/kvm', '/dev/vhost-vsock', '/dev/net/tun',
-                             '/dev/vhost-net', '/local/.android']
+                             '/dev/vhost-net', '/local/.android',
+                             '/mock/id_rsa']
     self.old_user = os.environ.get('USER')
     os.environ['USER'] = 'user'
     self.mock_timezone_patcher = mock.patch(
@@ -1403,10 +1404,14 @@ class CliTest(parameterized.TestCase):
                   raise_on_failure=False),
     ])
 
-  def testStart_withRemoteVirtualDevices(self):
+  @mock.patch('__main__.cli.ssh_util')
+  def testStart_withRemoteVirtualDevices(self, mock_ssh_util):
     """Test start with remote_virtual_devices."""
     args = self.arg_parser.parse_args(
-        ['start', '--remote_virtual_devices', 'user1@192.0.2.3/2'])
+        ['start', '--remote_virtual_devices', 'user1@192.0.2.3/2',
+         '--remote_ssh_key', '/mock/id_rsa'])
+    mock_ssh_context = mock.Mock()
+    mock_ssh_util.Context.return_value = mock_ssh_context
     cli.Start(args, self._CreateHost())
 
     self.mock_context.Run.assert_has_calls([
@@ -1437,11 +1442,25 @@ class CliTest(parameterized.TestCase):
             '--security-opt', 'apparmor:unconfined',
             '--security-opt', 'seccomp=/tmp/mtt_seccomp.json',
             'gcr.io/android-mtt/mtt:prod']),
+        mock.call(
+            ['docker', 'cp', '-L', '/mock/id_rsa', 'mtt:/tmp/rvd_id_rsa']),
         mock.call(['docker', 'start', 'mtt']),
         mock.call(
             ['docker', 'exec', 'mtt', 'printenv', 'MTT_VERSION'],
             raise_on_failure=False),
     ])
+    mock_ssh_util.SshConfig.assert_called_once_with(
+        user='user1',
+        hostname='192.0.2.3',
+        ssh_args=(
+            '-o PasswordAuthentication=no '
+            '-o StrictHostKeyChecking=no '
+            '-o UserKnownHostsFile=/dev/null'
+        ),
+        ssh_key='/mock/id_rsa',
+        use_native_ssh=True,
+    )
+    mock_ssh_context.run.assert_called_once()
 
   @mock.patch.object(cli, '_IsDaemonActive')
   @mock.patch.object(cli, '_SetupSystemdScript')

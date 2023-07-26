@@ -28,6 +28,7 @@ py_library(
         ":command_util_lib",
         ":google_auth_util_lib",
         ":host_util_lib",
+        ":ssh_util_lib",
         third_party("packaging"),
         third_party("six"),
         "@tradefed_cluster//tradefed_cluster/configs:lab_config_py_pb2",

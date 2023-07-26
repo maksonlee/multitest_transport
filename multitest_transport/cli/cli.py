@@ -40,6 +40,7 @@ from multitest_transport.cli import cli_util
 from multitest_transport.cli import command_util
 from multitest_transport.cli import google_auth_util
 from multitest_transport.cli import host_util
+from multitest_transport.cli import ssh_util
 from tradefed_cluster.configs import lab_config_pb2
 
 _MTT_CONTAINER_NAME = 'mtt'
@@ -285,6 +286,24 @@ def _CheckMttNodePrerequisites(args, host):
                     'Try `sudo modprobe -a kvm tun vhost_net vhost_vsock`.')
   if messages:
     raise ActionableError('\n'.join(messages))
+  # Try connecting to the remote host that runs virtual devices.
+  if args.remote_virtual_devices:
+    user, host, _ = _ParseRemoteVirtualDevicesArg(args.remote_virtual_devices)
+    if not os.path.exists(args.remote_ssh_key):
+      raise ActionableError(f'{args.remote_ssh_key} does not exist.')
+    ssh_context = ssh_util.Context(
+        ssh_util.SshConfig(user=user, hostname=host,
+                           ssh_args=('-o PasswordAuthentication=no '
+                                     '-o StrictHostKeyChecking=no '
+                                     '-o UserKnownHostsFile=/dev/null'),
+                           ssh_key=args.remote_ssh_key,
+                           use_native_ssh=True))
+    result = ssh_context.run(f'echo connected to {user}@{host}')
+    if result.return_code != 0:
+      logger.warning('The specified --remote_virtual_devices and '
+                     '--remote_ssh_key are invalid. Please test the arguments '
+                     'with `ssh -i %s %s@%s`',
+                     args.remote_ssh_key, user, host)
 
 
 def _CreateSeccompProfile(host):
@@ -620,8 +639,9 @@ def _StartMttNode(args, host):
       docker_helper.AddSysctl('net.ipv6.conf.all.disable_ipv6', '0')
       docker_helper.AddSysctl('net.ipv6.conf.all.forwarding', '1')
 
-  if args.remote_virtual_devices:
+  if args.remote_virtual_devices and args.remote_ssh_key:
     docker_helper.AddEnv('REMOTE_VIRTUAL_DEVICES', args.remote_virtual_devices)
+    docker_helper.AddFile(args.remote_ssh_key, '/tmp/rvd_id_rsa')
 
   if args.extra_ca_cert:
     docker_helper.AddFile(
@@ -1028,12 +1048,18 @@ def _RunDaemonIteration(args, host=None):
     _UpdateMttNode(args, host)
 
 
-def _RemoteVirtualDevicesArg(arg):
-  """Validate --remote_virtual_devices."""
+def _ParseRemoteVirtualDevicesArg(arg):
+  """Parse --remote_virtual_devices."""
   user_host, _, cnt = arg.partition('/')
   user, _, host = user_host.partition('@')
   if not (user and host and cnt):
     raise ValueError(f'Expect {_REMOTE_VIRTUAL_DEVICES_FORMAT_MSG}')
+  return user, host, int(cnt)
+
+
+def _RemoteVirtualDevicesArg(arg):
+  """Validate --remote_virtual_devices."""
+  _ParseRemoteVirtualDevicesArg(arg)
   return arg
 
 
@@ -1082,6 +1108,11 @@ def _CreateStartArgParser():
       type=_RemoteVirtualDevicesArg,
       help=('The remote host that runs virtual devices (experimental). Format: '
             f'{_REMOTE_VIRTUAL_DEVICES_FORMAT_MSG}'))
+  parser.add_argument(
+      '--remote_ssh_key',
+      default=os.path.expanduser('~/.ssh/id_rsa'),
+      help=('The path to the ssh key used to login the remote hosts that runs '
+            'virtual devices (experimental). Default value: ~/.ssh/id_rsa'))
   parser.add_argument(
       '--extra_docker_args', action='append',
       help='Extra docker args passing to container.')
