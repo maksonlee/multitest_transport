@@ -127,7 +127,7 @@ def CreateLogger(args, service_account_key_path=None):
   service_account_key_path = (service_account_key_path or
                               args.cli_stackdriver_logging_key_path)
   if service_account_key_path:
-    cloud_logging_client = gcloud_logging.client.Client(
+    cloud_logging_client = gcloud_logging.Client(
         project=_STACKDRIVER_CLOUD_PROJECT,
         credentials=google_auth_util.CreateCredentialFromServiceAccount(
             service_account_key_path,
