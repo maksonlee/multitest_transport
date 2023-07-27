@@ -26,7 +26,8 @@ import pytz
 
 logger = logging.getLogger(__name__)
 
-_DISCOVERY_URL = '{}/$discovery/rest?version=v1'
+_API_VERSION = 'v1'
+_DISCOVERY_URL = '{}/$discovery/rest?version={}'
 _HOST_UPDATE_STATE_CHANGED_EVENT_TYPE = 'HOST_UPDATE_STATE_CHANGED'
 _DEFAULT_HTTP_TIMEOUT_SECONDS = 60
 
@@ -70,10 +71,13 @@ def _CreateControlServerApiClient(
     # By separating the two steps, we use different auth for the two steps:
     # api key for discovery and service account for api call.
     api_doc = apiclient.discovery._retrieve_discovery_doc(  
-        url=_DISCOVERY_URL.format(control_server_url),
+        url=_DISCOVERY_URL.format(control_server_url, _API_VERSION),
         http=httplib2.Http(timeout=_DEFAULT_HTTP_TIMEOUT_SECONDS),
+        serviceName='',  # unused, required positional argument
+        version=_API_VERSION,  # unused, required positional argument
         cache_discovery=False,
-        developerKey=api_key)
+        developerKey=api_key,
+        static_discovery=False)
     http = google_auth_httplib2.AuthorizedHttp(
         creds, httplib2.Http(timeout=_DEFAULT_HTTP_TIMEOUT_SECONDS))
     control_server_api_client = apiclient.discovery.build_from_document(
