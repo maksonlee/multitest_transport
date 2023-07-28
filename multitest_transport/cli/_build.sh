@@ -70,7 +70,7 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 10
 
 COPY ./requirements.txt /tmp
 RUN pip3 install --upgrade setuptools pip
-RUN pip3 install pex
+RUN pip3 install pex==2.1.137
 RUN pip3 install -r /tmp/requirements.txt
 RUN pip3 install --upgrade keyrings.alt
 
@@ -95,7 +95,8 @@ pex --python="python3.11" --python="python3.10" --python="python3.9" --python="p
   --python-shebang="/usr/bin/env python3" \
   -D src -r requirements.txt \
   -m multitest_transport.cli.cli \
-  -o mtt
+  -o mtt \
+  --no-emit-warnings
 # Build zip file include all mtt source.
 cd src/
 zip -r /workspace/mtt.zip *
@@ -107,7 +108,8 @@ pex --python="python3.11" --python="python3.10" --python="python3.9" --python="p
   --python-sheban="/usr/bin/env python3" \
   -D src -r requirements.txt \
   -m multitest_transport.cli.lab_cli \
-  -o mtt_lab
+  -o mtt_lab \
+  --no-emit-warnings
 EOF
 chmod +x inside_docker_build.sh
 
